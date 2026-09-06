@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#070910">
+  <title>إنشاء حساب | شنو منو تك تك</title>
+  <style>
+    :root{
+      --bg:#070910;
+      --bg2:#0d1020;
+      --card:rgba(17,20,35,.76);
+      --line:rgba(255,255,255,.09);
+      --text:#f7f7fb;
+      --muted:#a9adc1;
+      --primary:#7c5cff;
+      --primary2:#27d8c4;
+      --pink:#ff4f9a;
+      --danger:#ff647c;
+      --success:#32d583;
+      --warning:#fdb022;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Tahoma,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 15% 20%,rgba(124,92,255,.19),transparent 34%),
+        radial-gradient(circle at 85% 15%,rgba(39,216,196,.12),transparent 30%),
+        radial-gradient(circle at 55% 90%,rgba(255,79,154,.12),transparent 35%),
+        var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    body:before,
+    body:after{
+      content:"";
+      position:fixed;
+      width:280px;
+      height:280px;
+      border-radius:50%;
+      filter:blur(90px);
+      opacity:.22;
+      pointer-events:none;
+      animation:float 9s ease-in-out infinite;
+    }
+
+    body:before{
+      top:5%;
+      right:-80px;
+      background:var(--primary);
+    }
+
+    body:after{
+      bottom:5%;
+      left:-80px;
+      background:var(--primary2);
+      animation-delay:-4s;
+    }
+
+    @keyframes float{
+      50%{transform:translateY(25px) translateX(-15px)}
+    }
+
+    .topbar{
+      max-width:1180px;
+      margin:auto;
+      padding:22px 24px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:white;
+      text-decoration:none;
+      font-size:20px;
+      font-weight:800;
+    }
+
+    .logo{
+      width:44px;
+      height:44px;
+      border-radius:15px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,var(--primary),var(--pink));
+      box-shadow:0 12px 34px rgba(124,92,255,.34);
+      font-size:20px;
+    }
+
+    .back{
+      color:var(--muted);
+      text-decoration:none;
+      border:1px solid var(--line);
+      padding:10px 15px;
+      border-radius:14px;
+      background:rgba(255,255,255,.035);
+      transition:.2s;
+    }
+
+    .back:hover{
+      color:#fff;
+      border-color:rgba(124,92,255,.6);
+    }
+
+    main{
+      width:min(1100px,calc(100% - 28px));
+      margin:15px auto 60px;
+      display:grid;
+      grid-template-columns:1fr 1.15fr;
+      gap:30px;
+      align-items:center;
+    }
+
+    .intro{
+      padding:30px 18px;
+    }
+
+    .badge{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:9px 14px;
+      border:1px solid rgba(124,92,255,.28);
+      background:rgba(124,92,255,.08);
+      color:#cbc3ff;
+      border-radius:999px;
+      font-size:14px;
+      margin-bottom:20px;
+    }
+
+    .intro h1{
+      margin:0 0 18px;
+      font-size:clamp(34px,5vw,60px);
+      line-height:1.08;
+    }
+
+    .gradient{
+      background:linear-gradient(90deg,var(--primary2),#fff,var(--pink));
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    .intro p{
+      margin:0;
+      color:var(--muted);
+      line-height:2;
+      max-width:540px;
+      font-size:17px;
+    }
+
+    .mini-features{
+      display:grid;
+      gap:13px;
+      margin-top:28px;
+    }
+
+    .mini{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      color:#d7d9e5;
+    }
+
+    .mini span:first-child{
+      width:34px;
+      height:34px;
+      display:grid;
+      place-items:center;
+      border-radius:11px;
+      background:rgba(39,216,196,.09);
+      border:1px solid rgba(39,216,196,.16);
+    }
+
+    .card{
+      background:linear-gradient(180deg,rgba(21,24,42,.91),rgba(11,13,25,.9));
+      border:1px solid var(--line);
+      box-shadow:0 30px 80px rgba(0,0,0,.35);
+      backdrop-filter:blur(18px);
+      border-radius:28px;
+      padding:28px;
+    }
+
+    .card h2{
+      margin:0 0 7px;
+      font-size:28px;
+    }
+
+    .sub{
+      color:var(--muted);
+      margin:0 0 24px;
+      line-height:1.7;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:15px;
+    }
+
+    .field{
+      margin-bottom:15px;
+    }
+
+    label{
+      display:block;
+      margin:0 0 8px;
+      color:#dfe1ea;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    input,select{
+      width:100%;
+      background:rgba(255,255,255,.045);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.09);
+      outline:none;
+      border-radius:15px;
+      padding:14px 15px;
+      font-size:15px;
+      transition:.2s;
+    }
+
+    input:focus,select:focus{
+      border-color:rgba(124,92,255,.75);
+      box-shadow:0 0 0 4px rgba(124,92,255,.10);
+    }
+
+    select option{
+      color:#111;
+    }
+
+    .password-wrap{
+      position:relative;
+    }
+
+    .password-wrap input{
+      padding-left:53px;
+    }
+
+    .toggle{
+      position:absolute;
+      left:7px;
+      top:50%;
+      transform:translateY(-50%);
+      border:0;
+      background:transparent;
+      color:#c7c9d8;
+      cursor:pointer;
+      width:40px;
+      height:40px;
+      border-radius:10px;
+      font-size:18px;
+    }
+
+    .toggle:hover{
+      background:rgba(255,255,255,.05);
+    }
+
+    .strength{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+    }
+
+    .strength span{
+      height:5px;
+      background:rgba(255,255,255,.09);
+      border-radius:999px;
+      transition:.25s;
+    }
+
+    .strength-label{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .checkline{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      margin:18px 0;
+      color:#cfd2df;
+      line-height:1.7;
+      font-size:14px;
+    }
+
+    .checkline input{
+      width:18px;
+      height:18px;
+      margin-top:3px;
+      accent-color:var(--primary);
+    }
+
+    .checkline a{
+      color:#bdb3ff;
+    }
+
+    .message{
+      display:none;
+      padding:12px 14px;
+      border-radius:13px;
+      margin:12px 0;
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .message.error{
+      display:block;
+      color:#ffd9df;
+      border:1px solid rgba(255,100,124,.25);
+      background:rgba(255,100,124,.08);
+    }
+
+    .message.info{
+      display:block;
+      color:#d9f8f4;
+      border:1px solid rgba(39,216,196,.23);
+      background:rgba(39,216,196,.08);
+    }
+
+    .error-text{
+      display:block;
+      color:#ff9dac;
+      font-size:12px;
+      margin-top:7px;
+      min-height:15px;
+    }
+
+    .btn{
+      width:100%;
+      border:0;
+      border-radius:16px;
+      padding:15px;
+      font-size:16px;
+      font-weight:800;
+      cursor:pointer;
+      color:white;
+      background:linear-gradient(100deg,var(--primary),#8f63ff,var(--pink));
+      box-shadow:0 16px 40px rgba(124,92,255,.25);
+      transition:.2s;
+    }
+
+    .btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 20px 50px rgba(124,92,255,.34);
+    }
+
+    .signin{
+      text-align:center;
+      margin-top:18px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .signin a{
+      color:#c9c0ff;
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    @media(max-width:850px){
+      main{
+        grid-template-columns:1fr;
+        max-width:680px;
+      }
+
+      .intro{
+        text-align:center;
+      }
+
+      .intro p{
+        margin:auto;
+      }
+
+      .mini-features{
+        max-width:440px;
+        margin:25px auto 0;
+        text-align:right;
+      }
+    }
+
+    @media(max-width:560px){
+      .topbar{
+        padding:16px;
+      }
+
+      .brand span:last-child{
+        display:none;
+      }
+
+      main{
+        width:min(100% - 18px,680px);
+        margin-top:0;
+      }
+
+      .card{
+        padding:20px 15px;
+        border-radius:22px;
+      }
+
+      .grid2{
+        grid-template-columns:1fr;
+        gap:0;
+      }
+
+      .intro{
+        padding:22px 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="logo">تك</span>
+    <span>شنو منو تك تك</span>
+  </a>
+
+  <a class="back" href="index.html">← الرئيسية</a>
+</header>
+
+<main>
+  <section class="intro">
+    <div class="badge">🇮🇶 منصة عراقية • تك تك بس عراقي</div>
+
+    <h1>
+      حساب واحد<br>
+      <span class="gradient">لعالم كامل</span>
+    </h1>
+
+    <p>
+      سجّل حسابك وابدأ رحلتك داخل شنو منو تك تك:
+      دردشة، غرف، أسواق، خدمات، ألعاب ومجتمع عراقي واحد.
+    </p>
+
+    <div class="mini-features">
+      <div class="mini"><span>💬</span><span>تواصل ودردشة وغرف</span></div>
+      <div class="mini"><span>🛍️</span><span>أسواق ومتاجر وخدمات</span></div>
+      <div class="mini"><span>🎮</span><span>ترفيه وألعاب ومجتمع</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>إنشاء حساب</h2>
+    <p class="sub">أدخل بياناتك الأساسية للانضمام إلى المنصة.</p>
+
+    <form id="signupForm" novalidate>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="fullName">الاسم الكامل</label>
+          <input id="fullName" autocomplete="name" maxlength="80" placeholder="مثال: محمد علي">
+          <span class="error-text" id="fullNameError"></span>
+        </div>
+
+        <div class="field">
+          <label for="username">اسم المستخدم</label>
+          <input id="username" autocomplete="username" maxlength="30" placeholder="اسم مستخدم فريد">
+          <span class="error-text" id="usernameError"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="contact">الهاتف أو البريد الإلكتروني</label>
+        <input id="contact" autocomplete="email" maxlength="100" placeholder="07xxxxxxxxx أو example@email.com">
+        <span class="error-text" id="contactError"></span>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="birthDate">تاريخ الميلاد</label>
+          <input id="birthDate" type="date">
+          <span class="error-text" id="birthDateError"></span>
+        </div>
+
+        <div class="field">
+          <label for="gender">الجنس</label>
+          <select id="gender">
+            <option value="">اختر</option>
+            <option value="male">ذكر</option>
+            <option value="female">أنثى</option>
+            <option value="prefer_not">أفضل عدم التحديد</option>
+          </select>
+          <span class="error-text" id="genderError"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">كلمة المرور</label>
+        <div class="password-wrap">
+          <input id="password" type="password" autocomplete="new-password" maxlength="128" placeholder="8 أحرف على الأقل">
+          <button class="toggle" type="button" data-target="password" aria-label="إظهار أو إخفاء كلمة المرور">👁</button>
+        </div>
+
+        <div class="strength" id="strengthBars">
+          <span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="strength-label" id="strengthLabel">قوة كلمة المرور: —</div>
+        <span class="error-text" id="passwordError"></span>
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">تأكيد كلمة المرور</label>
+        <div class="password-wrap">
+          <input id="confirmPassword" type="password" autocomplete="new-password" maxlength="128" placeholder="أعد كتابة كلمة المرور">
+          <button class="toggle" type="button" data-target="confirmPassword" aria-label="إظهار أو إخفاء كلمة المرور">👁</button>
+        </div>
+        <span class="error-text" id="confirmPasswordError"></span>
+      </div>
+
+      <label class="checkline">
+        <input id="terms" type="checkbox">
+        <span>
+          أوافق على
+          <a href="#" onclick="return false">الشروط والأحكام</a>
+          وسياسة الخصوصية.
+        </span>
+      </label>
+      <span class="error-text" id="termsError"></span>
+
+      <div id="formMessage" class="message"></div>
+
+      <button class="btn" type="submit">إنشاء الحساب</button>
+
+      <div class="signin">
+        لديك حساب بالفعل؟
+        <a href="signin.html">تسجيل الدخول</a>
+      </div>
+
+    </form>
+  </section>
+</main>
+
+<script>
+  const form = document.getElementById('signupForm');
+  const password = document.getElementById('password');
+  const confirmPassword = document.getElementById('confirmPassword');
+  const strengthLabel = document.getElementById('strengthLabel');
+  const strengthBars = [...document.querySelectorAll('#strengthBars span')];
+
+  const errorIds = [
+    'fullNameError',
+    'usernameError',
+    'contactError',
+    'birthDateError',
+    'genderError',
+    'passwordError',
+    'confirmPasswordError',
+    'termsError'
+  ];
+
+  function setError(id, message = '') {
+    document.getElementById(id).textContent = message;
+  }
+
+  function clearErrors() {
+    errorIds.forEach(id => setError(id));
+    const box = document.getElementById('formMessage');
+    box.className = 'message';
+    box.textContent = '';
+  }
+
+  document.querySelectorAll('.toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const input = document.getElementById(button.dataset.target);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      button.textContent = input.type === 'password' ? '👁' : '🙈';
+    });
+  });
+
+  function passwordScore(value) {
+    let score = 0;
+    if (value.length >= 8) score++;
+    if (/[A-Za-z]/.test(value) && /\d/.test(value)) score++;
+    if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value) || value.length >= 12) score++;
+    return score;
+  }
+
+  function updateStrength() {
+    const score = passwordScore(password.value);
+    const labels = ['ضعيفة جدًا', 'ضعيفة', 'متوسطة', 'قوية', 'قوية جدًا'];
+    const colors = ['#ff647c', '#ff647c', '#fdb022', '#27d8c4', '#32d583'];
+
+    strengthBars.forEach((bar, i) => {
+      bar.style.background = i < score ? colors[score] : 'rgba(255,255,255,.09)';
+    });
+
+    strengthLabel.textContent = password.value
+      ? 'قوة كلمة المرور: ' + labels[score]
+      : 'قوة كلمة المرور: —';
+  }
+
+  password.addEventListener('input', () => {
+    updateStrength();
+
+    if (confirmPassword.value) {
+      setError(
+        'confirmPasswordError',
+        password.value === confirmPassword.value ? '' : 'كلمتا المرور غير متطابقتين.'
+      );
+    }
+  });
+
+  confirmPassword.addEventListener('input', () => {
+    setError(
+      'confirmPasswordError',
+      password.value === confirmPassword.value ? '' : 'كلمتا المرور غير متطابقتين.'
+    );
+  });
+
+  function validContact(value) {
+    const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phone = /^07\d{9}$/;
+    return email.test(value) || phone.test(value.replace(/\s+/g, ''));
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    clearErrors();
+
+    const fullName = document.getElementById('fullName').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const contact = document.getElementById('contact').value.trim();
+    const birthDate = document.getElementById('birthDate').value;
+    const gender = document.getElementById('gender').value;
+    const terms = document.getElementById('terms').checked;
+
+    let valid = true;
+
+    if (fullName.length < 3) {
+      setError('fullNameError', 'يرجى كتابة الاسم الكامل.');
+      valid = false;
+    }
+
+    if (!/^[A-Za-z0-9_\u0600-\u06FF.]{3,30}$/.test(username)) {
+      setError('usernameError', 'اسم المستخدم يجب أن يكون بين 3 و30 حرفًا بدون مسافات.');
+      valid = false;
+    }
+
+    if (!validContact(contact)) {
+      setError('contactError', 'أدخل رقم هاتف عراقي يبدأ بـ 07 أو بريدًا إلكترونيًا صحيحًا.');
+      valid = false;
+    }
+
+    if (!birthDate) {
+      setError('birthDateError', 'يرجى اختيار تاريخ الميلاد.');
+      valid = false;
+    } else {
+      const selected = new Date(birthDate);
+      const today = new Date();
+      if (selected >= today) {
+        setError('birthDateError', 'تاريخ الميلاد غير صحيح.');
+        valid = false;
+      }
+    }
+
+    if (!gender) {
+      setError('genderError', 'يرجى اختيار الجنس.');
+      valid = false;
+    }
+
+    if (password.value.length < 8) {
+      setError('passwordError', 'كلمة المرور يجب أن تتكون من 8 أحرف على الأقل.');
+      valid = false;
+    }
+
+    if (password.value !== confirmPassword.value) {
+      setError('confirmPasswordError', 'كلمتا المرور غير متطابقتين.');
+      valid = false;
+    }
+
+    if (!terms) {
+      setError('termsError', 'يجب الموافقة على الشروط للمتابعة.');
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    const box = document.getElementById('formMessage');
+    box.className = 'message info';
+    box.textContent =
+      'البيانات صحيحة محليًا، لكن إنشاء الحساب الحقيقي غير مفعّل بعد لأن خادم التسجيل لم يتم ربطه. لم يتم إنشاء أي حساب.';
+  });
+</script>
+
+</body>
+</html>

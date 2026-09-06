@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080b14" />
+
+  <title>شنو منو تك تك</title>
+
+  <style>
+    :root{
+      --bg:#070910;
+      --bg-soft:#0d1120;
+      --card:#111728cc;
+      --text:#ffffff;
+      --muted:#a9b0c3;
+      --line:rgba(255,255,255,.09);
+      --primary:#7c5cff;
+      --primary-2:#27d8c4;
+      --pink:#ff4f9a;
+      --shadow:0 25px 80px rgba(0,0,0,.38);
+      --radius:28px;
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html{
+      scroll-behavior:smooth;
+    }
+
+    body{
+      font-family:
+        "Tajawal",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+      background:
+        radial-gradient(circle at 85% 10%, rgba(124,92,255,.20), transparent 32%),
+        radial-gradient(circle at 12% 35%, rgba(39,216,196,.13), transparent 28%),
+        radial-gradient(circle at 50% 100%, rgba(255,79,154,.11), transparent 30%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    button,
+    a{
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .container{
+      width:min(1180px, calc(100% - 36px));
+      margin:auto;
+    }
+
+    /* خلفية متحركة */
+    .orb{
+      position:fixed;
+      border-radius:50%;
+      filter:blur(15px);
+      pointer-events:none;
+      opacity:.45;
+      z-index:-2;
+      animation:floatOrb 14s ease-in-out infinite;
+    }
+
+    .orb.one{
+      width:260px;
+      height:260px;
+      background:#6f4cff;
+      top:10%;
+      right:-90px;
+    }
+
+    .orb.two{
+      width:220px;
+      height:220px;
+      background:#18cdb7;
+      bottom:8%;
+      left:-70px;
+      animation-delay:-5s;
+    }
+
+    .orb.three{
+      width:180px;
+      height:180px;
+      background:#ff3f8f;
+      top:55%;
+      right:22%;
+      opacity:.22;
+      animation-delay:-9s;
+    }
+
+    @keyframes floatOrb{
+      0%,100%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(0,-30px,0) scale(1.08)}
+    }
+
+    /* Header */
+    header{
+      position:sticky;
+      top:0;
+      z-index:50;
+      backdrop-filter:blur(18px);
+      background:rgba(7,9,16,.70);
+      border-bottom:1px solid rgba(255,255,255,.05);
+    }
+
+    nav{
+      min-height:74px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:1.08rem;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+
+    .logo{
+      width:44px;
+      height:44px;
+      border-radius:15px;
+      display:grid;
+      place-items:center;
+      background:
+        linear-gradient(135deg,var(--primary),var(--primary-2));
+      box-shadow:0 12px 35px rgba(124,92,255,.35);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .logo::after{
+      content:"";
+      width:18px;
+      height:18px;
+      border:3px solid white;
+      border-radius:50%;
+      position:absolute;
+    }
+
+    .logo::before{
+      content:"";
+      width:7px;
+      height:7px;
+      background:white;
+      border-radius:50%;
+      position:absolute;
+      transform:translate(9px,-8px);
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:28px;
+      color:#c6cbda;
+      font-size:.95rem;
+    }
+
+    .nav-links a{
+      transition:.25s ease;
+    }
+
+    .nav-links a:hover{
+      color:white;
+    }
+
+    .nav-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .btn{
+      min-height:46px;
+      padding:0 21px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      font-weight:700;
+      cursor:pointer;
+      transition:
+        transform .25s ease,
+        box-shadow .25s ease,
+        border-color .25s ease,
+        background .25s ease;
+    }
+
+    .btn:hover{
+      transform:translateY(-2px);
+    }
+
+    .btn-ghost{
+      background:rgba(255,255,255,.035);
+      color:white;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,var(--primary),#9c6dff);
+      color:white;
+      border-color:transparent;
+      box-shadow:0 12px 30px rgba(124,92,255,.26);
+    }
+
+    /* Hero */
+    .hero{
+      padding:92px 0 70px;
+      position:relative;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:1.03fr .97fr;
+      gap:64px;
+      align-items:center;
+    }
+
+    .badge{
+      width:max-content;
+      max-width:100%;
+      padding:9px 14px;
+      border-radius:999px;
+      border:1px solid rgba(124,92,255,.3);
+      background:rgba(124,92,255,.08);
+      color:#d8ceff;
+      font-size:.92rem;
+      margin-bottom:23px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .badge-dot{
+      width:8px;
+      height:8px;
+      background:#39e7ca;
+      border-radius:50%;
+      box-shadow:0 0 16px #39e7ca;
+    }
+
+    h1{
+      font-size:clamp(3.3rem, 7vw, 6.6rem);
+      line-height:.98;
+      letter-spacing:-2px;
+      margin-bottom:22px;
+    }
+
+    .gradient-text{
+      background:linear-gradient(
+        90deg,
+        #ffffff 5%,
+        #bfadff 38%,
+        #63f0df 68%,
+        #ff8aba 100%
+      );
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    .tagline{
+      font-size:clamp(1.25rem,2vw,1.65rem);
+      color:#fff;
+      font-weight:800;
+      margin-bottom:16px;
+    }
+
+    .hero p{
+      color:var(--muted);
+      font-size:1.08rem;
+      line-height:2;
+      max-width:650px;
+    }
+
+    .hero-buttons{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-top:32px;
+    }
+
+    .hero-buttons .btn{
+      min-height:56px;
+      padding:0 28px;
+      border-radius:17px;
+      font-size:1rem;
+    }
+
+    .trust{
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:18px;
+      margin-top:28px;
+      color:#969daf;
+      font-size:.9rem;
+    }
+
+    .trust span{
+      display:flex;
+      align-items:center;
+      gap:7px;
+    }
+
+    .check{
+      width:21px;
+      height:21px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:rgba(39,216,196,.1);
+      color:#62f3df;
+      font-size:.7rem;
+    }
+
+    /* Phone */
+    .visual{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:570px;
+    }
+
+    .phone-glow{
+      position:absolute;
+      width:390px;
+      height:390px;
+      border-radius:50%;
+      background:
+        radial-gradient(circle, rgba(124,92,255,.29), transparent 68%);
+      filter:blur(3px);
+      animation:pulseGlow 4s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow{
+      0%,100%{transform:scale(.96);opacity:.75}
+      50%{transform:scale(1.08);opacity:1}
+    }
+
+    .phone{
+      width:min(355px,86vw);
+      min-height:565px;
+      border-radius:46px;
+      padding:13px;
+      background:
+        linear-gradient(145deg,#202535,#080a10);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:
+        0 40px 100px rgba(0,0,0,.52),
+        inset 0 1px 0 rgba(255,255,255,.12);
+      position:relative;
+      z-index:2;
+      transform:rotate(-2deg);
+      animation:phoneFloat 5s ease-in-out infinite;
+    }
+
+    @keyframes phoneFloat{
+      0%,100%{transform:translateY(0) rotate(-2deg)}
+      50%{transform:translateY(-13px) rotate(-.5deg)}
+    }
+
+    .screen{
+      min-height:537px;
+      border-radius:35px;
+      background:
+        radial-gradient(circle at 100% 0,rgba(124,92,255,.18),transparent 35%),
+        #0b0f19;
+      overflow:hidden;
+      padding:20px;
+    }
+
+    .notch{
+      width:105px;
+      height:24px;
+      background:#030407;
+      border-radius:20px;
+      margin:-13px auto 19px;
+    }
+
+    .screen-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:24px;
+    }
+
+    .mini-title{
+      font-weight:800;
+    }
+
+    .avatar{
+      width:42px;
+      height:42px;
+      border-radius:15px;
+      background:
+        linear-gradient(135deg,#24d8c1,#7558ff);
+      display:grid;
+      place-items:center;
+      font-weight:800;
+    }
+
+    .story-row{
+      display:flex;
+      gap:12px;
+      margin-bottom:25px;
+      overflow:hidden;
+    }
+
+    .story{
+      min-width:61px;
+      text-align:center;
+      color:#aab0c1;
+      font-size:.73rem;
+    }
+
+    .story-pic{
+      width:54px;
+      height:54px;
+      border-radius:19px;
+      margin:auto auto 7px;
+      padding:2px;
+      background:linear-gradient(135deg,#6a50ff,#26d8c4,#ff5aa2);
+    }
+
+    .story-pic div{
+      width:100%;
+      height:100%;
+      border-radius:17px;
+      background:#171c29;
+      display:grid;
+      place-items:center;
+      font-size:1.2rem;
+    }
+
+    .chat-box{
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:23px;
+      padding:15px;
+      margin-bottom:12px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      transition:.25s ease;
+    }
+
+    .chat-box:hover{
+      transform:translateX(-3px);
+      background:rgba(255,255,255,.055);
+    }
+
+    .chat-avatar{
+      width:48px;
+      height:48px;
+      min-width:48px;
+      border-radius:16px;
+      background:linear-gradient(135deg,#1bcab5,#6954ff);
+      display:grid;
+      place-items:center;
+      font-weight:800;
+    }
+
+    .chat-main{
+      flex:1;
+      min-width:0;
+    }
+
+    .chat-name{
+      font-size:.92rem;
+      font-weight:800;
+      margin-bottom:5px;
+    }
+
+    .chat-message{
+      color:#8f97aa;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:.79rem;
+    }
+
+    .chat-meta{
+      font-size:.68rem;
+      color:#747d91;
+      text-align:left;
+    }
+
+    .online{
+      display:inline-block;
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#37d9ad;
+      box-shadow:0 0 10px #37d9ad;
+      margin-left:5px;
+    }
+
+    /* Floating cards */
+    .floating-card{
+      position:absolute;
+      z-index:3;
+      background:rgba(16,21,34,.78);
+      backdrop-filter:blur(17px);
+      border:1px solid rgba(255,255,255,.11);
+      border-radius:20px;
+      padding:14px 17px;
+      box-shadow:var(--shadow);
+      animation:floatCard 5.5s ease-in-out infinite;
+    }
+
+    .fc1{
+      right:-15px;
+      top:110px;
+    }
+
+    .fc2{
+      left:-30px;
+      bottom:105px;
+      animation-delay:-2.5s;
+    }
+
+    @keyframes floatCard{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-11px)}
+    }
+
+    .floating-title{
+      font-size:.75rem;
+      color:#aeb5c8;
+      margin-bottom:4px;
+    }
+
+    .floating-value{
+      font-size:.92rem;
+      font-weight:800;
+    }
+
+    /* Features */
+    .section{
+      padding:95px 0;
+    }
+
+    .section-head{
+      text-align:center;
+      max-width:700px;
+      margin:0 auto 48px;
+    }
+
+    .section-kicker{
+      color:#8f79ff;
+      font-weight:800;
+      margin-bottom:10px;
+    }
+
+    .section-head h2{
+      font-size:clamp(2rem,4vw,3.3rem);
+      margin-bottom:15px;
+    }
+
+    .section-head p{
+      color:var(--muted);
+      line-height:1.9;
+    }
+
+    .features{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:17px;
+    }
+
+    .feature{
+      min-height:210px;
+      border-radius:24px;
+      padding:24px;
+      background:
+        linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+      border:1px solid var(--line);
+      box-shadow:0 15px 45px rgba(0,0,0,.16);
+      transition:.35s ease;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .feature::after{
+      content:"";
+      position:absolute;
+      width:120px;
+      height:120px;
+      background:radial-gradient(circle,rgba(124,92,255,.25),transparent 68%);
+      left:-45px;
+      top:-45px;
+      opacity:0;
+      transition:.35s ease;
+    }
+
+    .feature:hover{
+      transform:translateY(-8px);
+      border-color:rgba(124,92,255,.35);
+    }
+
+    .feature:hover::after{
+      opacity:1;
+    }
+
+    .feature-icon{
+      width:50px;
+      height:50px;
+      border-radius:17px;
+      display:grid;
+      place-items:center;
+      background:rgba(124,92,255,.12);
+      border:1px solid rgba(124,92,255,.22);
+      margin-bottom:18px;
+      font-size:1.3rem;
+    }
+
+    .feature h3{
+      margin-bottom:10px;
+      font-size:1.05rem;
+    }
+
+    .feature p{
+      color:#929bad;
+      line-height:1.75;
+      font-size:.9rem;
+    }
+
+    /* CTA */
+    .cta{
+      margin:20px 0 90px;
+      padding:58px;
+      border-radius:34px;
+      background:
+        radial-gradient(circle at 80% 0,rgba(39,216,196,.19),transparent 30%),
+        radial-gradient(circle at 15% 100%,rgba(255,79,154,.16),transparent 35%),
+        linear-gradient(135deg,rgba(124,92,255,.17),rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.09);
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .cta h2{
+      font-size:clamp(2rem,4vw,3.1rem);
+      margin-bottom:13px;
+    }
+
+    .cta p{
+      color:#a7aec0;
+      margin-bottom:26px;
+      line-height:1.8;
+    }
+
+    .cta .hero-buttons{
+      justify-content:center;
+      margin-top:0;
+    }
+
+    footer{
+      border-top:1px solid var(--line);
+      padding:28px 0 35px;
+      color:#858c9f;
+    }
+
+    .footer-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+
+    .footer-name{
+      color:#d4d8e4;
+      font-weight:700;
+    }
+
+    /* reveal animation */
+    .reveal{
+      opacity:0;
+      transform:translateY(24px);
+      transition:
+        opacity .75s ease,
+        transform .75s ease;
+    }
+
+    .reveal.show{
+      opacity:1;
+      transform:none;
+    }
+
+    /* Responsive */
+    @media (max-width:1000px){
+      .hero-grid{
+        grid-template-columns:1fr;
+      }
+
+      .hero-copy{
+        text-align:center;
+      }
+
+      .badge{
+        margin-left:auto;
+        margin-right:auto;
+      }
+
+      .hero p{
+        margin:auto;
+      }
+
+      .hero-buttons,
+      .trust{
+        justify-content:center;
+      }
+
+      .visual{
+        min-height:620px;
+      }
+
+      .features{
+        grid-template-columns:repeat(2,1fr);
+      }
+
+      .nav-links{
+        display:none;
+      }
+    }
+
+    @media (max-width:650px){
+      .container{
+        width:min(100% - 24px,1180px);
+      }
+
+      nav{
+        min-height:66px;
+      }
+
+      .brand span{
+        font-size:.94rem;
+      }
+
+      .logo{
+        width:40px;
+        height:40px;
+      }
+
+      .nav-actions .btn-ghost{
+        display:none;
+      }
+
+      .nav-actions .btn{
+        min-height:41px;
+        padding:0 15px;
+        font-size:.84rem;
+      }
+
+      .hero{
+        padding-top:65px;
+      }
+
+      h1{
+        font-size:clamp(3rem,17vw,4.8rem);
+      }
+
+      .hero p{
+        font-size:.98rem;
+        line-height:1.9;
+      }
+
+      .hero-buttons{
+        flex-direction:column;
+      }
+
+      .hero-buttons .btn{
+        width:100%;
+      }
+
+      .visual{
+        min-height:585px;
+      }
+
+      .phone{
+        width:min(330px,92vw);
+      }
+
+      .fc1{
+        right:-2px;
+        top:90px;
+      }
+
+      .fc2{
+        left:-2px;
+        bottom:85px;
+      }
+
+      .features{
+        grid-template-columns:1fr;
+      }
+
+      .section{
+        padding:72px 0;
+      }
+
+      .cta{
+        padding:42px 20px;
+        border-radius:27px;
+      }
+
+      .footer-row{
+        justify-content:center;
+        text-align:center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="orb three"></div>
+
+  <header>
+    <div class="container">
+      <nav>
+
+        <a href="#" class="brand">
+          <div class="logo"></div>
+          <span>شنو منو تك تك</span>
+        </a>
+
+        <div class="nav-links">
+          <a href="#features">المزايا</a>
+          <a href="#about">عن المنصة</a>
+          <a href="#start">ابدأ الآن</a>
+        </div>
+
+        <div class="nav-actions">
+          <a href="signin.html" class="btn btn-ghost">
+            تسجيل الدخول
+          </a>
+
+          <a href="signup.html" class="btn btn-primary">
+            إنشاء حساب
+          </a>
+        </div>
+
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="container hero-grid">
+
+        <div class="hero-copy reveal">
+
+          <div class="badge">
+            <span class="badge-dot"></span>
+            منصة اجتماعية عراقية بروح جديدة
+          </div>
+
+          <h1>
+            <span class="gradient-text">شنو منو</span>
+            <br>
+            تك تك
+          </h1>
+
+          <div class="tagline">
+            تك تك بس عراقي 🇮🇶
+          </div>
+
+          <p>
+            عالم اجتماعي جديد يجمع الدردشة والغرف والمقاطع والصوت والفيديو
+            والأسواق والمشاهدة الجماعية في تجربة عصرية واحدة.
+            تواصل، شارك، اكتشف وعيش التفاصيل بطريقتك.
+          </p>
+
+          <div class="hero-buttons">
+            <a href="signup.html" class="btn btn-primary">
+              ابدأ الآن مجانًا
+              <span>←</span>
+            </a>
+
+            <a href="signin.html" class="btn btn-ghost">
+              لدي حساب بالفعل
+            </a>
+          </div>
+
+          <div class="trust">
+            <span>
+              <i class="check">✓</i>
+              تجربة سهلة
+            </span>
+
+            <span>
+              <i class="check">✓</i>
+              تصميم عصري
+            </span>
+
+            <span>
+              <i class="check">✓</i>
+              خصوصية وأمان
+            </span>
+          </div>
+
+        </div>
+
+        <div class="visual reveal">
+
+          <div class="phone-glow"></div>
+
+          <div class="floating-card fc1">
+            <div class="floating-title">غرفة مباشرة</div>
+            <div class="floating-value">🎙️ بغداد لايف</div>
+          </div>
+
+          <div class="floating-card fc2">
+            <div class="floating-title">متصل الآن</div>
+            <div class="floating-value">● 1,248 شخص</div>
+          </div>
+
+          <div class="phone">
+
+            <div class="screen">
+
+              <div class="notch"></div>
+
+              <div class="screen-head">
+                <div>
+                  <div class="mini-title">هلا بيك 👋</div>
+                  <small style="color:#777f93">
+                    شوف شنو صاير اليوم
+                  </small>
+                </div>
+
+                <div class="avatar">
+                  م
+                </div>
+              </div>
+
+              <div class="story-row">
+
+                <div class="story">
+                  <div class="story-pic">
+                    <div>+</div>
+                  </div>
+                  قصتك
+                </div>
+
+                <div class="story">
+                  <div class="story-pic">
+                    <div>ع</div>
+                  </div>
+                  علي
+                </div>
+
+                <div class="story">
+                  <div class="story-pic">
+                    <div>س</div>
+                  </div>
+                  سارة
+                </div>
+
+                <div class="story">
+                  <div class="story-pic">
+                    <div>ح</div>
+                  </div>
+                  حسن
+                </div>
+
+              </div>
+
+              <div class="chat-box">
+
+                <div class="chat-avatar">
+                  س
+                </div>
+
+                <div class="chat-main">
+                  <div class="chat-name">
+                    <span class="online"></span>
+                    سارة
+                  </div>
+
+                  <div class="chat-message">
+                    ههههه شنو الأخبار اليوم؟ 😄
+                  </div>
+                </div>
+
+                <div class="chat-meta">
+                  الآن
+                </div>
+
+              </div>
+
+              <div class="chat-box">
+
+                <div class="chat-avatar"
+                     style="background:linear-gradient(135deg,#ff4d99,#794fff)">
+                  ع
+                </div>
+
+                <div class="chat-main">
+                  <div class="chat-name">
+                    علي
+                  </div>
+
+                  <div class="chat-message">
+                    تعال للغرفة، الشباب كلهم موجودين
+                  </div>
+                </div>
+
+                <div class="chat-meta">
+                  2 د
+                </div>
+
+              </div>
+
+              <div class="chat-box">
+
+                <div class="chat-avatar"
+                     style="background:linear-gradient(135deg,#ff9c42,#ff4e73)">
+                  ب
+                </div>
+
+                <div class="chat-main">
+                  <div class="chat-name">
+                    بغداد لايف
+                  </div>
+
+                  <div class="chat-message">
+                    🎙️ غرفة صوتية مباشرة الآن
+                  </div>
+                </div>
+
+                <div class="chat-meta">
+                  12 د
+                </div>
+
+              </div>
+
+              <div class="chat-box">
+
+                <div class="chat-avatar"
+                     style="background:linear-gradient(135deg,#3e8cff,#23d7ca)">
+                  هـ
+                </div>
+
+                <div class="chat-main">
+                  <div class="chat-name">
+                    سوق هرج
+                  </div>
+
+                  <div class="chat-message">
+                    إعلان جديد قريب منك 📦
+                  </div>
+                </div>
+
+                <div class="chat-meta">
+                  جديد
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <section class="section" id="features">
+      <div class="container">
+
+        <div class="section-head reveal">
+
+          <div class="section-kicker">
+            كل شي بمكان واحد
+          </div>
+
+          <h2>
+            مو بس شات
+          </h2>
+
+          <p>
+            نبني تجربة اجتماعية عراقية متكاملة تجمع التواصل والترفيه
+            والمحتوى والأسواق في منصة واحدة.
+          </p>
+
+        </div>
+
+
+        <div class="features">
+
+          <article class="feature reveal">
+            <div class="feature-icon">💬</div>
+            <h3>دردشة خاصة وعامة</h3>
+            <p>
+              محادثات سريعة وسلسة مع الأصدقاء والمجموعات والغرف.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">🎙️</div>
+            <h3>غرف صوتية</h3>
+            <p>
+              ادخل غرف، شارك النقاش وتعرّف على ناس جدد بسهولة.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">🎥</div>
+            <h3>صوت وفيديو</h3>
+            <p>
+              مكالمات ومحتوى حي وتجربة اجتماعية أكثر قربًا وتفاعلاً.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">▶️</div>
+            <h3>مقاطع وفيديو</h3>
+            <p>
+              انشر مقاطعك واكتشف محتوى جديد من المجتمع العراقي.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">🛍️</div>
+            <h3>سوق هرج</h3>
+            <p>
+              بيع واشتري المستعمل وتواصل مباشرة مع الأشخاص.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">👕</div>
+            <h3>سوق الملابس</h3>
+            <p>
+              مساحة مخصصة للملابس والمنتجات والعروض المحلية.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">🍿</div>
+            <h3>مشاهدة جماعية</h3>
+            <p>
+              شاهد المحتوى مع أصدقائك وشارك اللحظة مباشرة.
+            </p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature-icon">⚡</div>
+            <h3>تك تك</h3>
+            <p>
+              تجربة خفيفة، سريعة، شبابية ومصممة بروح عراقية.
+            </p>
+          </article>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <section class="section" id="about">
+      <div class="container">
+
+        <div class="cta reveal" id="start">
+
+          <h2>
+            جاهز تدخل عالم تك تك؟
+          </h2>
+
+          <p>
+            افتح حسابك وكن من أوائل المستخدمين في المنصة.
+          </p>
+
+          <div class="hero-buttons">
+
+            <a href="signup.html" class="btn btn-primary">
+              إنشاء حساب جديد
+            </a>
+
+            <a href="signin.html" class="btn btn-ghost">
+              تسجيل الدخول
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+
+  <footer>
+
+    <div class="container footer-row">
+
+      <div class="footer-name">
+        شنو منو تك تك
+      </div>
+
+      <div>
+        تك تك بس عراقي 🇮🇶
+      </div>
+
+      <div>
+        © <span id="year"></span>
+      </div>
+
+    </div>
+
+  </footer>
+
+
+  <script>
+
+    // سنة الفوتر
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+
+    // إظهار العناصر عند النزول
+    const observer = new IntersectionObserver(
+      entries => {
+
+        entries.forEach(entry => {
+
+          if(entry.isIntersecting){
+
+            entry.target.classList.add("show");
+
+            observer.unobserve(entry.target);
+
+          }
+
+        });
+
+      },
+      {
+        threshold:0.13
+      }
+    );
+
+
+    document
+      .querySelectorAll(".reveal")
+      .forEach(el => observer.observe(el));
+
+
+    // حركة خفيفة للبطاقات حسب الماوس
+    document
+      .querySelectorAll(".feature")
+      .forEach(card => {
+
+        card.addEventListener("mousemove", e => {
+
+          const rect = card.getBoundingClientRect();
+
+          const x =
+            (e.clientX - rect.left) / rect.width - .5;
+
+          const y =
+            (e.clientY - rect.top) / rect.height - .5;
+
+          card.style.transform =
+            `translateY(-8px)
+             rotateX(${y * -3}deg)
+             rotateY(${x * 3}deg)`;
+
+        });
+
+        card.addEventListener("mouseleave", () => {
+
+          card.style.transform = "";
+
+        });
+
+      });
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحة الكود مع زر النسخ</title>
+    <!-- استدعاء مكتبة أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --code-bg: #2d2d2d;
+            --text-color: #d4d4d4;
+            --accent-color: #007acc;
+            --success-color: #4caf50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .code-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-header {
+            background-color: #252526;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        .filename {
+            font-size: 0.9rem;
+            color: #9cdcfe;
+        }
+
+        / تنسيق زر النسخ /
+        .copy-btn {
+            background-color: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .copy-btn.copied {
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .copy-btn.copied:hover {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        pre {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            direction: ltr; / الكود دائماً من اليسار لليمين /
+            text-align: left;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        / ألوان بسيطة للأكواد (Syntax Highlighting) /
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .function { color: #dcdcaa; }
+
+    </style>
+</head>
+<body>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="filename">script.js</span>
+            <!-- زر النسخ -->
+            <button class="copy-btn" onclick="copyCode()">
+                <i class="fa-solid fa-copy"></i>
+                <span id="btn-text">نسخ</span>
+            </button>
+        </div>
+        
+        <!-- منطقة الكود -->
+        <pre><code id="code-block">
+// مثال لكود JavaScript
+function greetUser(name) {
+    // هذه دالة ترحيب بسيطة
+    let message = مرحباً بك يا ${name}!;
+    console.log(message);
+    return message;
+}
+
+const userName = "مستخدم";
+greetUser(userName);
+        </code></pre>
+    </div>
+
+    <script>
+        function copyCode() {
+            // 1. جلب النص من عنصر الكود
+            const codeText = document.getElementById('code-block').innerText;
+            
+            // 2. استخدام Clipboard API للنسخ
+            navigator.clipboard.writeText(codeText).then(() => {
+                // 3. تغيير شكل الزر ليدل على النجاح
+                const btn = document.querySelector('.copy-btn');
+                const btnText = document.getElementById('btn-text');
+                const icon = btn.querySelector('i');
+
+                // حفظ النص الأصلي لإعادة عرضه لاحقاً
+                const originalText = btnText.innerText;
+                const originalIconClass = icon.className;
+
+                // تحديث الزر
+                btn.classList.add('copied');
+                btnText.innerText = "تم النسخ!";
+                icon.className = "fa-solid fa-check";
+
+                // إعادة الزر لحالته الأصلية بعد ثانيتين
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btnText.innerText = originalText;
+                    icon.className = originalIconClass;
+                }, 2000);
+
+            }).catch(err => {
+                console.error('فشل النسخ: ', err);
+                alert('عذراً، المتصفح لا يدعم النسخ التلقائي.');
+            });
+        }
+    </script>
+
+</body>
+</html>

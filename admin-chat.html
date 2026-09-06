@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080b14">
+<title>مراقبة الشات | شنو منو تك تك</title>
+
+<style>
+:root{
+  --bg:#070910;
+  --card:#111728cc;
+  --text:#fff;
+  --muted:#a9b0c3;
+  --line:rgba(255,255,255,.09);
+  --primary:#7c5cff;
+  --primary-2:#27d8c4;
+  --pink:#ff4f9a;
+  --danger:#ff5b6e;
+  --warning:#ffbe55;
+  --success:#39e7ca;
+  --shadow:0 25px 80px rgba(0,0,0,.38);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:"Tajawal","Segoe UI",Arial,sans-serif;
+  background:
+    radial-gradient(circle at 85% 10%,rgba(124,92,255,.20),transparent 32%),
+    radial-gradient(circle at 12% 35%,rgba(39,216,196,.13),transparent 28%),
+    radial-gradient(circle at 50% 100%,rgba(255,79,154,.11),transparent 30%),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
+
+a{color:inherit;text-decoration:none}
+button,input{font:inherit}
+
+.container{
+  width:min(1320px,calc(100% - 32px));
+  margin:auto;
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:50;
+  backdrop-filter:blur(18px);
+  background:rgba(7,9,16,.78);
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+nav{
+  min-height:74px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-weight:800;
+}
+
+.logo{
+  width:44px;height:44px;
+  border-radius:15px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  box-shadow:0 12px 35px rgba(124,92,255,.35);
+  position:relative;
+}
+
+.logo::after{
+  content:"";
+  width:18px;height:18px;
+  border:3px solid #fff;
+  border-radius:50%;
+  position:absolute;
+  inset:0;
+  margin:auto;
+}
+
+.btn{
+  min-height:42px;
+  padding:0 15px;
+  border-radius:13px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.035);
+  color:white;
+  cursor:pointer;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),#9c6dff);
+  border-color:transparent;
+}
+
+.btn-danger{
+  color:#ffb7c0;
+  background:rgba(255,91,110,.08);
+  border-color:rgba(255,91,110,.22);
+}
+
+.btn-warning{
+  color:#ffd789;
+  background:rgba(255,190,85,.08);
+  border-color:rgba(255,190,85,.22);
+}
+
+.page{padding:28px 0 50px}
+
+.hero{
+  background:linear-gradient(135deg,rgba(124,92,255,.14),rgba(39,216,196,.06)),rgba(17,23,40,.62);
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:26px;
+  margin-bottom:20px;
+  box-shadow:var(--shadow);
+}
+
+.hero h1{
+  font-size:clamp(1.6rem,3vw,2.4rem);
+  margin-bottom:8px;
+}
+
+.hero p{
+  color:var(--muted);
+  line-height:1.8;
+}
+
+.note{
+  margin-top:14px;
+  color:#ffc86a;
+  font-size:.9rem;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.stat{
+  background:rgba(17,23,40,.72);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:18px;
+}
+
+.stat strong{
+  display:block;
+  font-size:1.7rem;
+  margin-top:8px;
+}
+
+.stat span{
+  color:var(--muted);
+  font-size:.88rem;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:18px;
+}
+
+.panel{
+  background:rgba(17,23,40,.72);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:20px;
+  box-shadow:0 18px 55px rgba(0,0,0,.20);
+  margin-bottom:18px;
+}
+
+.panel-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+
+.search{
+  min-height:42px;
+  min-width:260px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.035);
+  color:white;
+  padding:0 13px;
+  outline:none;
+}
+
+.table-wrap{overflow:auto}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:760px;
+}
+
+th,td{
+  padding:13px 11px;
+  text-align:right;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+th{
+  color:#9098ac;
+  font-size:.8rem;
+}
+
+td{
+  color:#e6e9f1;
+  font-size:.87rem;
+}
+
+.empty{
+  text-align:center;
+  color:#8992a7;
+  padding:38px 15px;
+}
+
+.action-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  padding:0 10px;
+  border-radius:999px;
+  font-size:.76rem;
+  font-weight:800;
+}
+
+.pill.offline{
+  color:#b8bdc9;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--line);
+}
+
+.list{
+  display:grid;
+  gap:12px;
+}
+
+.list-item{
+  padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.list-item:last-child{border-bottom:0}
+
+.list-item strong{
+  display:block;
+  margin-bottom:5px;
+}
+
+.list-item p{
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.6;
+}
+
+.toast{
+  position:fixed;
+  left:22px;
+  bottom:22px;
+  max-width:390px;
+  background:#131a2c;
+  border:1px solid rgba(255,190,85,.25);
+  color:#ffe1a6;
+  border-radius:16px;
+  padding:15px 17px;
+  box-shadow:0 18px 60px rgba(0,0,0,.45);
+  opacity:0;
+  transform:translateY(20px);
+  pointer-events:none;
+  transition:.25s ease;
+  z-index:100;
+}
+
+.toast.show{
+  opacity:1;
+  transform:none;
+}
+
+footer{
+  text-align:center;
+  color:#7f879b;
+  font-size:.82rem;
+  padding-bottom:30px;
+}
+
+@media(max-width:950px){
+  .grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:650px){
+  .container{width:min(100% - 20px,1320px)}
+  .stats{grid-template-columns:1fr 1fr}
+  .search{min-width:100%}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <nav>
+      <a class="brand" href="index.html">
+        <div class="logo"></div>
+        <span>شنو منو تك تك</span>
+      </a>
+
+      <div style="display:flex;gap:9px">
+        <a href="developer.html" class="btn">لوحة المطور</a>
+        <a href="admin-approvals.html" class="btn btn-primary">الموافقات</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="container page">
+
+  <section class="hero">
+    <h1>مراقبة الشات</h1>
+    <p>
+      مركز الإشراف على الغرف العامة والبلاغات والرسائل المبلغ عنها
+      والحظر والكتم وإجراءات المشرفين.
+    </p>
+
+    <div class="note">
+      ⚠️ هذه واجهة إدارية فقط حاليًا. لا توجد مراقبة أو حذف أو حظر فعلي قبل ربط Backend وSocket.IO.
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat">
+      💬
+      <strong>—</strong>
+      <span>الغرف النشطة</span>
+    </div>
+
+    <div class="stat">
+      👥
+      <strong>—</strong>
+      <span>المتصلون الآن</span>
+    </div>
+
+    <div class="stat">
+      🚨
+      <strong>—</strong>
+      <span>بلاغات الشات</span>
+    </div>
+
+    <div class="stat">
+      🔇
+      <strong>—</strong>
+      <span>حالات الكتم والحظر</span>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>الغرف العامة</h2>
+            <div style="color:var(--muted);font-size:.83rem;margin-top:5px">
+              ستظهر الغرف الحقيقية عند تشغيل نظام الشات
+            </div>
+          </div>
+
+          <input
+            type="search"
+            class="search"
+            placeholder="ابحث عن غرفة أو مستخدم..."
+          >
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الغرفة</th>
+                <th>المشرف</th>
+                <th>المتصلون</th>
+                <th>البلاغات</th>
+                <th>الحالة</th>
+                <th>الإدارة</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td colspan="6" class="empty">
+                  لا توجد غرف حقيقية لعرضها حتى الآن.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>الرسائل المبلغ عنها</h2>
+            <div style="color:var(--muted);font-size:.83rem;margin-top:5px">
+              تتم مراجعتها من البلاغ، وليس فتح المحادثات الخاصة عشوائيًا
+            </div>
+          </div>
+
+          <span class="pill offline">غير مربوط</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>المُبلّغ</th>
+                <th>صاحب الرسالة</th>
+                <th>المكان</th>
+                <th>سبب البلاغ</th>
+                <th>التاريخ</th>
+                <th>الإجراء</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td colspan="6" class="empty">
+                  لا توجد بلاغات حقيقية حتى الآن.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>إجراءات الإشراف</h2>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-warning" onclick="notConnected()">🔇 كتم مستخدم</button>
+          <button class="btn btn-danger" onclick="notConnected()">⛔ حظر مستخدم</button>
+          <button class="btn btn-danger" onclick="notConnected()">🗑 حذف رسالة مخالفة</button>
+          <button class="btn" onclick="notConnected()">🔒 إغلاق غرفة</button>
+          <button class="btn" onclick="notConnected()">📜 سجل الإجراءات</button>
+        </div>
+
+        <div style="
+          margin-top:18px;
+          padding:15px;
+          border:1px solid var(--line);
+          border-radius:15px;
+          color:var(--muted);
+          line-height:1.8
+        ">
+          كل إجراء فعلي لاحقًا يجب أن يسجل اسم المشرف، السبب،
+          المستخدم أو الرسالة المستهدفة، التاريخ والوقت.
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>سياسة المراقبة</h2>
+        </div>
+
+        <div class="list">
+          <div class="list-item">
+            <strong>الغرف العامة</strong>
+            <p>يمكن للمشرفين متابعة المحتوى العام وتنفيذ إجراءات الإشراف حسب الصلاحيات.</p>
+          </div>
+
+          <div class="list-item">
+            <strong>المحادثات الخاصة</strong>
+            <p>لا تعرض بصورة مفتوحة للمشرف. تتم مراجعة المحتوى المرتبط ببلاغ أو إجراء إداري مصرح به.</p>
+          </div>
+
+          <div class="list-item">
+            <strong>البلاغات</strong>
+            <p>يحتفظ النظام بسبب البلاغ والمحتوى المطلوب مراجعته وقرار المشرف.</p>
+          </div>
+
+          <div class="list-item">
+            <strong>الصلاحيات</strong>
+            <p>Developer وAdmin وModerator ستكون لكل منها صلاحيات مختلفة عند بناء Backend.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  شنو منو تك تك 🇮🇶 — إدارة الشات
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const toast = document.getElementById('toast');
+
+function notConnected(){
+  toast.textContent =
+    'الخادم ونظام الشات غير مربوطين بعد، لذلك لم يتم تنفيذ أي إجراء حقيقي.';
+  toast.classList.add('show');
+
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(()=>{
+    toast.classList.remove('show');
+  },3200);
+}
+</script>
+
+</body>
+</html>
