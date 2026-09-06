@@ -708,7 +708,7 @@
           username,
           contact,
           birthDate,
-          gender,
+          gender: gender === 'prefer_not' ? 'other' : gender,
           password: password.value,
           confirmPassword: confirmPassword.value,
           termsAccepted: terms

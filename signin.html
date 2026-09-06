@@ -469,13 +469,21 @@
       });
 
       const data = await response.json().catch(() => ({}));
-      const succeeded = response.ok && data.ok !== false && data.token;
+      const succeeded = response.ok && data.ok === true && data.token;
 
       message.className = 'message info';
       message.textContent = data.message || 'تعذر تسجيل الدخول.';
 
       if (succeeded) {
-        localStorage.setItem('token', data.token);
+        const storage = document.getElementById('remember').checked
+          ? localStorage
+          : sessionStorage;
+        const otherStorage = storage === localStorage ? sessionStorage : localStorage;
+
+        otherStorage.removeItem('token');
+        otherStorage.removeItem('user');
+        storage.setItem('token', data.token);
+        storage.setItem('user', JSON.stringify(data.user));
       }
     } catch (error) {
       message.className = 'message info';
