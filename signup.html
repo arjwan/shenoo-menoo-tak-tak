@@ -547,6 +547,7 @@
 </main>
 
 <script>
+  const API_BASE_URL = 'https://shino-mino-tak-tak.duckdns.org';
   const form = document.getElementById('signupForm');
   const password = document.getElementById('password');
   const confirmPassword = document.getElementById('confirmPassword');
@@ -630,7 +631,7 @@
     return email.test(value) || phone.test(value.replace(/\s+/g, ''));
   }
 
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', async event => {
     event.preventDefault();
     clearErrors();
 
@@ -693,9 +694,43 @@
     if (!valid) return;
 
     const box = document.getElementById('formMessage');
-    box.className = 'message info';
-    box.textContent =
-      'البيانات صحيحة محليًا، لكن إنشاء الحساب الحقيقي غير مفعّل بعد لأن خادم التسجيل لم يتم ربطه. لم يتم إنشاء أي حساب.';
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName,
+          username,
+          contact,
+          birthDate,
+          gender,
+          password: password.value,
+          confirmPassword: confirmPassword.value,
+          termsAccepted: terms
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+      box.className = response.ok && data.ok !== false
+        ? 'message info'
+        : 'message error';
+      box.textContent = data.message || 'تعذر إكمال طلب التسجيل.';
+
+      if (response.ok && data.ok !== false) {
+        form.reset();
+        updateStrength();
+      }
+    } catch (error) {
+      box.className = 'message error';
+      box.textContent = 'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى.';
+    } finally {
+      submitButton.disabled = false;
+    }
   });
 </script>
 
