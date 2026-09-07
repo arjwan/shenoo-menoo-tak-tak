@@ -2,10 +2,13 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
 const Conversation = require('./models/Conversation');
+const GameRoom = require('./models/GameRoom');
+const { publicState, canSpectate, canVoice, decorate } = require('./routes/game-rooms.routes');
 const { blocked, friends } = require('./routes/friends.routes');
 
 function attachSocket(httpServer) {
   const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
+  const voiceRooms = new Map();
   io.use(async (socket, next) => {
     try {
       const authorization = socket.handshake.headers.authorization || '';
@@ -25,6 +28,96 @@ function attachSocket(httpServer) {
     socket.join(userRoom);
     User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': true } }).catch(() => {});
     socket.emit('presence:online', { userId: socket.user._id });
+
+    const emitSpectators = async (roomId) => {
+      const room = await GameRoom.findById(roomId).populate('spectators', 'fullName displayName username profile');
+      if (!room) return;
+      io.to(`game:${roomId}`).emit('game:spectators', {
+        count: room.spectators.length,
+        spectators: room.spectators.map((user) => ({ id: user._id, name: user.displayName || user.fullName, username: user.username, avatarUrl: user.profile?.avatarUrl || '' }))
+      });
+    };
+    const getGameRoom = async (id) => {
+      const room = await GameRoom.findById(id).catch(() => null);
+      return room ? decorate(room) : null;
+    };
+    socket.on('game:join', async ({ roomId } = {}, ack) => {
+      const room = await getGameRoom(roomId);
+      if (!room || !room.players.some((id) => String(id) === String(socket.user._id))) return typeof ack === 'function' && ack({ ok: false, message: 'هذه الغرفة لا تخصك' });
+      socket.join(`game:${roomId}`);
+      io.to(`game:${roomId}`).emit('game:state', publicState(room));
+      if (typeof ack === 'function') ack({ ok: true, room: publicState(room) });
+    });
+    socket.on('game:spectate', async ({ roomId } = {}, ack) => {
+      const room = await getGameRoom(roomId);
+      if (!room || !(await canSpectate(socket.user, room))) return typeof ack === 'function' && ack({ ok: false, message: 'لا تملك صلاحية مشاهدة هذه المباراة' });
+      if (!room.spectators.some((id) => String(id) === String(socket.user._id))) {
+        room.spectators.push(socket.user._id);
+        await room.save();
+      }
+      socket.join(`game:${roomId}`);
+      socket.emit('game:state', publicState(room));
+      await emitSpectators(roomId);
+      if (typeof ack === 'function') ack({ ok: true, room: publicState(room) });
+    });
+    socket.on('game:spectator:leave', async ({ roomId } = {}) => {
+      const room = await getGameRoom(roomId);
+      if (!room) return;
+      room.spectators = room.spectators.filter((id) => String(id) !== String(socket.user._id));
+      await room.save();
+      socket.leave(`game:${roomId}`);
+      await emitSpectators(roomId);
+    });
+    socket.on('game:move', async ({ roomId, move } = {}, ack) => {
+      const room = await getGameRoom(roomId);
+      const isPlayer = room && room.players.some((id) => String(id) === String(socket.user._id));
+      if (!room || !isPlayer || room.spectators.some((id) => String(id) === String(socket.user._id))) return typeof ack === 'function' && ack({ ok: false, message: 'المشاهد لا يستطيع اللعب' });
+      if (room.gameState.turn && String(room.gameState.turn) !== String(socket.user._id)) return typeof ack === 'function' && ack({ ok: false, message: 'ليس دورك' });
+      const safeMove = move && typeof move === 'object' ? { tile: String(move.tile || '').slice(0, 20), side: ['left', 'right'].includes(move.side) ? move.side : null } : null;
+      if (!safeMove || !safeMove.tile) return typeof ack === 'function' && ack({ ok: false, message: 'حركة غير صالحة' });
+      room.gameState.board.push(safeMove);
+      room.gameState.moveCount += 1;
+      room.gameState.turn = room.players[(room.players.findIndex((id) => String(id) === String(socket.user._id)) + 1) % room.players.length];
+      room.gameState.status = 'active';
+      room.gameState.updatedAt = new Date();
+      await room.save();
+      io.to(`game:${roomId}`).emit('game:state', publicState(room));
+      if (typeof ack === 'function') ack({ ok: true });
+    });
+    socket.on('voice:join', async ({ roomId } = {}, ack) => {
+      const room = await getGameRoom(roomId);
+      const allowed = room && (await canVoice(socket.user, room)) && (room.spectators.some((id) => String(id) === String(socket.user._id)) || room.players.some((id) => String(id) === String(socket.user._id)) || String(room.owner) === String(socket.user._id));
+      if (!allowed) return typeof ack === 'function' && ack({ ok: false, message: 'لا تملك صلاحية الانضمام إلى صوت الغرفة' });
+      if (!voiceRooms.has(String(roomId))) voiceRooms.set(String(roomId), new Map());
+      voiceRooms.get(String(roomId)).set(String(socket.user._id), { id: socket.user._id, name: socket.user.displayName || socket.user.fullName, muted: true });
+      socket.join(`voice:${roomId}`);
+      const participants = Array.from(voiceRooms.get(String(roomId)).values());
+      io.to(`voice:${roomId}`).emit('voice:participants', { roomId, participants });
+      if (typeof ack === 'function') ack({ ok: true, participants });
+    });
+    socket.on('voice:mute-state', async ({ roomId, muted } = {}) => {
+      const participants = voiceRooms.get(String(roomId));
+      const participant = participants?.get(String(socket.user._id));
+      if (!participant) return;
+      participant.muted = Boolean(muted);
+      io.to(`voice:${roomId}`).emit('voice:mute-state', { roomId, userId: socket.user._id, muted: participant.muted });
+    });
+    socket.on('voice:leave', ({ roomId } = {}) => {
+      const participants = voiceRooms.get(String(roomId));
+      if (!participants) return;
+      participants.delete(String(socket.user._id));
+      socket.leave(`voice:${roomId}`);
+      io.to(`voice:${roomId}`).emit('voice:participants', { roomId, participants: Array.from(participants.values()) });
+      if (!participants.size) voiceRooms.delete(String(roomId));
+    });
+    const relayVoiceSignal = (event) => ({ roomId, userId, data } = {}) => {
+      const participants = voiceRooms.get(String(roomId));
+      if (!participants?.has(String(socket.user._id)) || !participants.has(String(userId))) return;
+      io.to(`user:${userId}`).emit(event, { roomId, from: socket.user._id, data });
+    };
+    socket.on('webrtc:voice-offer', relayVoiceSignal('webrtc:voice-offer'));
+    socket.on('webrtc:voice-answer', relayVoiceSignal('webrtc:voice-answer'));
+    socket.on('webrtc:voice-ice', relayVoiceSignal('webrtc:voice-ice'));
 
     const joinConversation = async (id, ack) => {
       const conversation = await Conversation.findOne({ _id: id, participants: socket.user._id }).catch(() => null);
@@ -73,6 +166,12 @@ function attachSocket(httpServer) {
 
     socket.on('presence:online', () => socket.broadcast.emit('presence:online', { userId: socket.user._id }));
     socket.on('disconnect', async () => {
+      for (const [roomId, participants] of voiceRooms) {
+        if (participants.delete(String(socket.user._id))) {
+          io.to(`voice:${roomId}`).emit('voice:participants', { roomId, participants: Array.from(participants.values()) });
+          if (!participants.size) voiceRooms.delete(roomId);
+        }
+      }
       const lastSeen = new Date();
       await User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': false, 'profile.lastSeen': lastSeen } }).catch(() => {});
       socket.broadcast.emit('presence:offline', { userId: socket.user._id, lastSeen });

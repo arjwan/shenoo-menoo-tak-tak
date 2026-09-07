@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  var privacyKeys = { profile: "رؤية الملف الشخصي", posts: "رؤية منشوراتي", photo: "رؤية الصورة الشخصية", cover: "رؤية صورة الغلاف", lastSeen: "رؤية آخر ظهور", online: "رؤية حالة online", birthDate: "رؤية تاريخ الميلاد", about: "رؤية معلومات عني", friendsList: "رؤية قائمة أصدقائي", phone: "رؤية رقم الهاتف", email: "رؤية البريد الإلكتروني", friendRequests: "إرسال طلب صداقة", messaging: "مراسلتي", audioCalls: "الاتصال بي صوتياً", videoCalls: "الاتصال بي فيديو", comments: "التعليق على منشوراتي", mentions: "الإشارة إليّ" };
+  var privacyKeys = { profile: "رؤية الملف الشخصي", posts: "رؤية منشوراتي", photo: "رؤية الصورة الشخصية", cover: "رؤية صورة الغلاف", lastSeen: "رؤية آخر ظهور", online: "رؤية حالة online", birthDate: "رؤية تاريخ الميلاد", about: "رؤية معلومات عني", friendsList: "رؤية قائمة أصدقائي", phone: "رؤية رقم الهاتف", email: "رؤية البريد الإلكتروني", friendRequests: "إرسال طلب صداقة", messaging: "مراسلتي", audioCalls: "الاتصال بي صوتياً", videoCalls: "الاتصال بي فيديو", gameSpectating: "مشاهدة مبارياتي", gameVoice: "الانضمام لصوت مبارياتي", comments: "التعليق على منشوراتي", mentions: "الإشارة إليّ" };
   var offlineBanner = document.querySelector("[data-settings-offline]");
   var cachedKey = "shenoo-settings-cache";
   function isOffline() { return !navigator.onLine; }

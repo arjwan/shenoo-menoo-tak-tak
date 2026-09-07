@@ -11,6 +11,7 @@ const adminRoutes = require('./routes/admin.routes');
 const userRoutes = require('./routes/user.routes');
 const friendsRoutes = require('./routes/friends.routes');
 const conversationRoutes = require('./routes/conversations.routes');
+const gameRoomRoutes = require('./routes/game-rooms.routes');
 const { attachSocket } = require('./socket');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/friends', friendsRoutes.router);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/game-rooms', gameRoomRoutes.router);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 
 app.use((error, req, res, next) => {

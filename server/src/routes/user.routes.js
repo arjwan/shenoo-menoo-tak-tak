@@ -8,7 +8,7 @@ const router = express.Router();
 const PRIVACY_KEYS = [
   'profile', 'photo', 'cover', 'lastSeen', 'online', 'birthDate', 'about',
   'friendsList', 'phone', 'email', 'friendRequests', 'messaging',
-  'audioCalls', 'videoCalls', 'posts', 'comments', 'mentions'
+  'audioCalls', 'videoCalls', 'gameSpectating', 'gameVoice', 'posts', 'comments', 'mentions'
 ];
 const SAFE_PROFILE_FIELDS = [
   'displayName', 'bio', 'birthDate', 'gender', 'governorate', 'city',

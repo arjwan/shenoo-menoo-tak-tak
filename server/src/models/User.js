@@ -110,6 +110,8 @@ const userSchema = new mongoose.Schema({
       messaging: 'friends',
       audioCalls: 'friends',
       videoCalls: 'friends',
+      gameSpectating: 'friends',
+      gameVoice: 'friends',
       posts: 'everyone',
       comments: 'everyone',
       mentions: 'friends'
