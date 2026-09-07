@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { requireAuth } = require('../middleware/auth');
 const User = require('../models/User');
+const FriendRequest = require('../models/FriendRequest');
 
 const router = express.Router();
 const PRIVACY_KEYS = [
@@ -14,13 +15,13 @@ const SAFE_PROFILE_FIELDS = [
   'profession', 'workplace', 'education', 'website', 'socialLinks'
 ];
 
-function publicUser(user) {
+function publicUser(user, includePrivate = false) {
   return {
     id: user._id,
     username: user.username,
     fullName: user.fullName,
     displayName: user.displayName || user.fullName,
-    contact: user.privacy?.get('phone') === 'everyone' ? user.contact : undefined,
+    contact: includePrivate || user.privacy?.get(user.contactType) === 'everyone' ? user.contact : undefined,
     contactType: user.contactType,
     profile: user.profile,
     privacy: Object.fromEntries(user.privacy || []),
@@ -32,10 +33,19 @@ function validatePrivacy(input) {
   return Object.keys(input || {}).every((key) => PRIVACY_KEYS.includes(key) &&
     ['everyone', 'friends', 'nobody'].includes(input[key]));
 }
+async function areFriends(first, second) {
+  return !!await FriendRequest.exists({
+    $or: [{ sender: first, receiver: second }, { sender: second, receiver: first }],
+    status: 'accepted'
+  });
+}
+function canSee(setting, isSelf, isFriend) {
+  return isSelf || setting === 'everyone' || (setting === 'friends' && isFriend);
+}
 
 router.use(requireAuth);
 
-router.get('/me', (req, res) => res.json({ ok: true, user: publicUser(req.user) }));
+router.get('/me', (req, res) => res.json({ ok: true, user: publicUser(req.user, true) }));
 
 router.patch('/me', async (req, res) => {
   try {
@@ -117,6 +127,55 @@ router.patch('/me/phone', async (req, res) => {
 router.get('/me/blocked', async (req, res) => {
   const users = await User.find({ _id: { $in: req.user.blockedUsers || [] } }).select('fullName username profile');
   return res.json({ ok: true, users });
+});
+
+router.get('/search', async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (q.length < 2) return res.json({ ok: true, users: [] });
+  const users = await User.find({
+    status: 'active', _id: { $ne: req.user._id, $nin: req.user.blockedUsers || [] },
+    $or: [{ username: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }, { fullName: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }]
+  }).select('username fullName displayName profile status blockedUsers').limit(25);
+  res.json({ ok: true, users: users.filter((u) => !u.blockedUsers?.some((id) => String(id) === String(req.user._id))).map((u) => ({ id: u._id, username: u.username, fullName: u.displayName || u.fullName, bio: u.profile?.bio || '', avatarUrl: u.profile?.avatarUrl || '' })) });
+});
+
+router.get('/:id/profile', async (req, res) => {
+  const user = req.params.id === 'me'
+    ? req.user
+    : await User.findById(req.params.id);
+  if (!user || user.status !== 'active') return res.status(404).json({ ok: false, message: 'المستخدم غير موجود' });
+  const isSelf = String(user._id) === String(req.user._id);
+  const isBlocked = (user.blockedUsers || []).some((id) => String(id) === String(req.user._id))
+    || (req.user.blockedUsers || []).some((id) => String(id) === String(user._id));
+  if (isBlocked && !isSelf) return res.status(403).json({ ok: false, message: 'لا يمكن عرض هذا الملف' });
+  const isFriend = isSelf || await areFriends(req.user._id, user._id);
+  const relation = isSelf ? null : await FriendRequest.findOne({
+    $or: [{ sender: req.user._id, receiver: user._id }, { sender: user._id, receiver: req.user._id }]
+  }).sort({ updatedAt: -1 });
+  const privacy = user.privacy || new Map();
+  const profile = user.profile || {};
+  const visible = {
+    id: user._id,
+    username: user.username,
+    fullName: user.fullName,
+    displayName: user.displayName || user.fullName,
+    bio: canSee(privacy.get('about'), isSelf, isFriend) ? profile.bio : '',
+    governorate: canSee(privacy.get('about'), isSelf, isFriend) ? profile.governorate : '',
+    city: canSee(privacy.get('about'), isSelf, isFriend) ? profile.city : '',
+    avatarUrl: canSee(privacy.get('photo'), isSelf, isFriend) ? profile.avatarUrl : '',
+    coverUrl: canSee(privacy.get('cover'), isSelf, isFriend) ? profile.coverUrl : '',
+    online: canSee(privacy.get('online'), isSelf, isFriend) ? profile.online : false,
+    lastSeen: canSee(privacy.get('lastSeen'), isSelf, isFriend) ? profile.lastSeen : null,
+    lastSeenVisible: canSee(privacy.get('lastSeen'), isSelf, isFriend),
+    isSelf,
+    isFriend,
+    friendStatus: relation?.status || 'none',
+    friendsCount: await FriendRequest.countDocuments({ $or: [{ sender: user._id }, { receiver: user._id }], status: 'accepted' }),
+    privacy: isSelf ? Object.fromEntries(privacy) : undefined
+  };
+  if (canSee(privacy.get('phone'), isSelf, isFriend) && user.contactType === 'phone') visible.phone = user.contact;
+  if (canSee(privacy.get('email'), isSelf, isFriend) && user.contactType === 'email') visible.email = user.contact;
+  res.json({ ok: true, user: visible });
 });
 
 router.post('/:id/block', async (req, res) => {

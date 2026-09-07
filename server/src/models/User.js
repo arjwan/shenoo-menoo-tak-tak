@@ -81,6 +81,8 @@ const userSchema = new mongoose.Schema({
     bio: { type: String, maxlength: 500, default: '' },
     avatarUrl: { type: String, default: '' },
     coverUrl: { type: String, default: '' },
+    online: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: null },
     governorate: { type: String, maxlength: 80, default: '' },
     city: { type: String, maxlength: 80, default: '' },
     profession: { type: String, maxlength: 120, default: '' },

@@ -10,7 +10,10 @@
   function avatar(person) { return person.avatarUrl ? '<span class="avatar"><img src="' + person.avatarUrl + '" alt=""><i class="presence ' + (person.online ? "online" : "") + '"></i></span>' : '<span class="avatar">' + (person.fullName || person.name || "?").slice(0, 1) + '<i class="presence ' + (person.online ? "online" : "") + '"></i></span>'; }
   function render(items) {
     if (!items.length) { list.innerHTML = '<div class="social-empty" style="min-height:220px"><span class="social-empty-icon">◇</span><strong>لا توجد نتائج</strong><p>لا توجد بيانات حقيقية في هذا القسم حالياً.</p></div>'; return; }
-    list.innerHTML = items.map(function (person) { return '<button class="social-list-item" type="button" data-person-id="' + person.id + '">' + avatar(person) + '<span class="social-list-copy"><strong>' + (person.fullName || person.name || "مستخدم") + '</strong><small>@' + (person.username || "غير متاح") + '</small></span><span class="social-list-meta">' + (person.status || "مستخدم") + "</span></button>"; }).join("");
+    list.innerHTML = items.map(function (person) {
+      var requestActions = currentTab === "incoming" ? '<button class="small-button" data-request-action="accept" data-request-id="' + (person.requestId || "") + '">قبول</button><button class="small-button" data-request-action="reject" data-request-id="' + (person.requestId || "") + '">رفض</button>' : currentTab === "outgoing" ? '<button class="small-button" data-request-action="cancel" data-request-id="' + (person.requestId || "") + '">إلغاء</button>' : "";
+      return '<div class="social-list-item" data-person-id="' + person.id + '">' + avatar(person) + '<span class="social-list-copy"><strong>' + (person.fullName || person.name || "مستخدم") + '</strong><small>@' + (person.username || "غير متاح") + '</small></span><span class="social-list-meta">' + (person.status || "مستخدم") + requestActions + "</span></div>";
+    }).join("");
   }
   async function load(tab, query) {
     currentTab = tab || currentTab;
@@ -30,6 +33,14 @@
   document.querySelectorAll("[data-tab]").forEach(function (tab) { tab.addEventListener("click", function () { document.querySelectorAll("[data-tab]").forEach(function (item) { item.classList.toggle("is-active", item === tab); }); load(tab.dataset.tab); }); });
   search.addEventListener("keydown", function (event) { if (event.key === "Enter") load("search", search.value.trim()); });
   list.addEventListener("click", function (event) { var item = event.target.closest("[data-person-id]"); if (item) showPerson(cache[item.dataset.personId]); });
+  list.addEventListener("click", async function (event) {
+    var button = event.target.closest("[data-request-action]");
+    if (!button) return;
+    event.stopPropagation();
+    var action = button.dataset.requestAction;
+    var path = action === "cancel" ? "/api/friends/" + encodeURIComponent(button.dataset.requestId) : "/api/friends/requests/" + encodeURIComponent(button.dataset.requestId) + "/" + action;
+    try { await SocialAPI.request(path, { method: action === "cancel" ? "DELETE" : "POST" }); feedback("تم تحديث الطلب.", "success"); await load(currentTab); } catch (error) { feedback(error.message, "error"); }
+  });
   detail.addEventListener("click", async function (event) {
     var button = event.target.closest("[data-friend-action]"); if (!button) return;
     var id = button.dataset.userId;

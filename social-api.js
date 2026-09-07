@@ -12,5 +12,5 @@
     if (!response.ok) throw new Error(data.message || "تعذر تنفيذ الطلب (" + response.status + ").");
     return data;
   }
-  global.SocialAPI = { request: request, token: getToken };
+  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL };
 }(window));
