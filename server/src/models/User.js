@@ -70,6 +70,55 @@ const userSchema = new mongoose.Schema({
     default: ''
   },
 
+  displayName: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+    default: ''
+  },
+
+  profile: {
+    bio: { type: String, maxlength: 500, default: '' },
+    avatarUrl: { type: String, default: '' },
+    coverUrl: { type: String, default: '' },
+    governorate: { type: String, maxlength: 80, default: '' },
+    city: { type: String, maxlength: 80, default: '' },
+    profession: { type: String, maxlength: 120, default: '' },
+    workplace: { type: String, maxlength: 120, default: '' },
+    education: { type: String, maxlength: 120, default: '' },
+    website: { type: String, maxlength: 240, default: '' },
+    socialLinks: { type: [String], default: [] }
+  },
+
+  privacy: {
+    type: Map,
+    of: { type: String, enum: ['everyone', 'friends', 'nobody'] },
+    default: {
+      profile: 'everyone',
+      photo: 'everyone',
+      cover: 'everyone',
+      lastSeen: 'friends',
+      online: 'friends',
+      birthDate: 'nobody',
+      about: 'everyone',
+      friendsList: 'friends',
+      phone: 'nobody',
+      email: 'nobody',
+      friendRequests: 'everyone',
+      messaging: 'friends',
+      audioCalls: 'friends',
+      videoCalls: 'friends',
+      posts: 'everyone',
+      comments: 'everyone',
+      mentions: 'friends'
+    }
+  },
+
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+
   reviewedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

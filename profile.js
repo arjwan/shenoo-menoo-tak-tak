@@ -39,7 +39,7 @@
     if (actionName === "privacy") { document.querySelector("[data-privacy-section]").scrollIntoView({ behavior: "smooth" }); return; }
     if (actionName === "message") { location.href = "messages.html?user=" + encodeURIComponent(id); return; }
     if (actionName === "audio" || actionName === "video") { location.href = "messages.html?call=" + actionName + "&user=" + encodeURIComponent(id); return; }
-    if (actionName === "edit") { document.querySelector("[data-edit-modal]").hidden = false; return; }
+    if (actionName === "edit") { location.href = "settings.html"; return; }
     try {
       var path = actionName === "add-friend" ? "/api/friends/request/" + id : actionName === "cancel-friend" ? "/api/friends/" + id : actionName === "block" ? "/api/users/" + id + "/block" : "";
       if (!path) { setMessage("سيتم إرسال البلاغ إلى نظام المراجعة عند توفر endpoint.", ""); return; }
