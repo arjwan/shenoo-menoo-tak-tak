@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
+const Store = require('../models/Store');
 const Conversation = require('../models/Conversation');
 const GameRoom = require('../models/GameRoom');
 const AuditLog = require('../models/AuditLog');
@@ -102,7 +103,8 @@ async function countOptionalCollection(names) {
 async function getDashboardStats() {
   const [
     users,
-    pending,
+    pendingUsers,
+    pendingStores,
     online,
     rooms,
     conversations,
@@ -115,10 +117,11 @@ async function getDashboardStats() {
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ status: 'pending' }),
+    Store.countDocuments({ status: 'pending' }),
     User.countDocuments({ status: 'active', 'profile.online': true }),
     GameRoom.countDocuments({ 'gameState.status': { $in: ['waiting', 'active'] } }),
     Conversation.countDocuments(),
-    countOptionalCollection(['stores', 'shops']),
+    Store.countDocuments(),
     countOptionalCollection(['ads', 'advertisements']),
     countOptionalCollection(['subscriptions']),
     countOptionalCollection(['reports', 'userreports']),
@@ -128,7 +131,9 @@ async function getDashboardStats() {
 
   return {
     users,
-    pending,
+    pending: pendingUsers + pendingStores,
+    pendingUsers,
+    pendingStores,
     online,
     rooms,
     conversations,
@@ -174,24 +179,48 @@ router.get('/dashboard', async (req, res) => {
 
 router.get('/approvals', async (req, res) => {
   try {
-    const users = await User.find({ status: 'pending' })
-      .select('fullName displayName username contact createdAt status')
-      .sort({ createdAt: -1 })
-      .lean();
+    const [users, stores] = await Promise.all([
+      User.find({ status: 'pending' })
+        .select('fullName displayName username contact createdAt status')
+        .sort({ createdAt: -1 })
+        .lean(),
+      Store.find({ status: 'pending' })
+        .populate('owner', 'fullName displayName username contact')
+        .sort({ createdAt: -1 })
+        .lean()
+    ]);
+
+    const userApprovals = users.map((user) => ({
+      id: user._id,
+      applicant: user.fullName || user.displayName || user.username,
+      username: user.username,
+      contact: user.contact,
+      type: 'user',
+      typeLabel: 'تسجيل مستخدم',
+      details: 'طلب تسجيل حساب جديد',
+      createdAt: user.createdAt,
+      status: user.status
+    }));
+
+    const storeApprovals = stores.map((store) => ({
+      id: store._id,
+      applicant: store.owner?.fullName || store.owner?.displayName || store.owner?.username || store.name,
+      username: store.owner?.username || store.name,
+      contact: store.owner?.contact || store.phone || '',
+      type: 'store',
+      typeLabel: 'متجر',
+      details: `${store.name} — ${store.category} — ${store.governorate}/${store.area} — الباقة: ${store.plan}`,
+      createdAt: store.createdAt,
+      status: store.status
+    }));
+
+    const approvals = [...userApprovals, ...storeApprovals].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     return res.json({
       ok: true,
-      approvals: users.map((user) => ({
-        id: user._id,
-        applicant: user.fullName || user.displayName || user.username,
-        username: user.username,
-        contact: user.contact,
-        type: 'user',
-        typeLabel: 'تسجيل مستخدم',
-        details: 'طلب تسجيل حساب جديد',
-        createdAt: user.createdAt,
-        status: user.status
-      })),
-      stores: [],
+      approvals,
+      users: userApprovals,
+      stores: storeApprovals,
       consultants: [],
       serviceProviders: [],
       advertisements: [],
@@ -211,30 +240,41 @@ router.patch('/approvals/:id/:decision', async (req, res) => {
     if (!['approve', 'reject'].includes(req.params.decision)) {
       return res.status(400).json({ ok: false, message: 'قرار المراجعة غير صالح' });
     }
-    const user = await User.findOne({ _id: req.params.id, status: 'pending' });
-    if (!user) {
-      return res.status(404).json({ ok: false, message: 'طلب التسجيل غير موجود أو تمت مراجعته' });
-    }
+
     const reason = String(req.body.reason || '').trim();
     if (req.params.decision === 'reject' && !reason) {
       return res.status(400).json({ ok: false, message: 'سبب الرفض مطلوب' });
     }
-    user.status = req.params.decision === 'approve' ? 'active' : 'rejected';
-    user.rejectionReason = req.params.decision === 'reject' ? reason : '';
-    user.reviewedBy = req.user._id;
-    user.reviewedAt = new Date();
-    await user.save();
-    await writeAudit(
-      req.user,
-      `approval.${req.params.decision}`,
-      user,
-      reason || `تم ${req.params.decision === 'approve' ? 'قبول' : 'رفض'} طلب ${user.username}`
-    );
-    return res.json({
-      ok: true,
-      message: req.params.decision === 'approve' ? 'تم قبول الطلب' : 'تم رفض الطلب',
-      approval: { id: user._id, status: user.status }
-    });
+
+    const user = await User.findOne({ _id: req.params.id, status: 'pending' });
+    if (user) {
+      user.status = req.params.decision === 'approve' ? 'active' : 'rejected';
+      user.rejectionReason = req.params.decision === 'reject' ? reason : '';
+      user.reviewedBy = req.user._id;
+      user.reviewedAt = new Date();
+      await user.save();
+      await writeAudit(req.user, `approval.user.${req.params.decision}`, user, reason || `تم ${req.params.decision === 'approve' ? 'قبول' : 'رفض'} تسجيل ${user.username}`);
+      return res.json({
+        ok: true,
+        message: req.params.decision === 'approve' ? 'تم قبول طلب التسجيل' : 'تم رفض طلب التسجيل',
+        approval: { id: user._id, type: 'user', status: user.status }
+      });
+    }
+
+    const store = await Store.findOne({ _id: req.params.id, status: 'pending' });
+    if (store) {
+      store.status = req.params.decision === 'approve' ? 'approved' : 'rejected';
+      store.rejectionReason = req.params.decision === 'reject' ? reason : '';
+      await store.save();
+      await writeAudit(req.user, `approval.store.${req.params.decision}`, null, reason || `تم ${req.params.decision === 'approve' ? 'قبول' : 'رفض'} متجر ${store.name}`);
+      return res.json({
+        ok: true,
+        message: req.params.decision === 'approve' ? 'تم قبول المتجر وتفعيله' : 'تم رفض طلب المتجر',
+        approval: { id: store._id, type: 'store', status: store.status }
+      });
+    }
+
+    return res.status(404).json({ ok: false, message: 'الطلب غير موجود أو تمت مراجعته مسبقًا' });
   } catch (error) {
     console.error('Developer approval decision failed:', error.message);
     return res.status(500).json({ ok: false, message: 'تعذر تنفيذ قرار الموافقة' });
