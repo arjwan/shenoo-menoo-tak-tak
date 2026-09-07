@@ -18,6 +18,7 @@
     <section class="store-header"><div class="store-logo" aria-label="شعار المتجر">م</div><div class="store-title"><h1>صفحة متجرك</h1><p>ستظهر هوية متجرك ومعلوماته هنا بعد التسجيل والاعتماد.</p><div class="store-meta"><span class="meta-chip">التصنيف غير محدد</span><span class="meta-chip">المحافظة غير محددة</span><span class="status-badge">بانتظار التفعيل</span></div></div></section>
     <section class="store-info-grid"><article class="info-card"><h2>عن المتجر</h2><p>لا يوجد وصف منشور لهذا المتجر بعد. هذه الصفحة جاهزة لاستقبال بيانات المتجر الحقيقية من المنصة دون عرض معلومات تجريبية.</p></article><article class="info-card"><h2>الموقع والتواصل</h2><p>المحافظة والمنطقة وبيانات التواصل ستظهر بعد اكتمال ملف المتجر.</p><div class="contact-list"><span class="contact-link">لا توجد وسيلة تواصل منشورة</span></div></article></section>
     <section><div class="products-toolbar"><h2>منتجات المتجر</h2><div class="products-toolbar-actions"><label class="field product-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><span class="sr-only">ابحث داخل المنتجات</span><input type="search" placeholder="ابحث داخل المنتجات" data-product-search></label><label class="sr-only" for="product-sort">فرز المنتجات</label><select class="product-sort" id="product-sort" data-product-sort><option value="newest">الأحدث</option><option value="price-low">السعر: الأقل أولاً</option><option value="price-high">السعر: الأعلى أولاً</option><option value="discount">الأعلى خصماً</option></select></div></div>
+      <p class="offline-store-note" data-store-offline-note hidden>وضع عدم الاتصال · الأسعار والتوفر حسب آخر تحديث محفوظ</p>
       <div class="store-empty product-empty"><span class="store-empty-icon"><svg viewBox="0 0 48 48"><path d="M8 13h32v29H8zM14 13a10 10 0 0 1 20 0M17 24h14M17 31h9"/></svg></span><h3>لا توجد منتجات منشورة</h3><p data-product-feedback>لم يضف هذا المتجر منتجات بعد. ستظهر بطاقات المنتجات والصور والأسعار بالدينار العراقي عند توفر بيانات حقيقية.</p><p class="empty-caption">البحث والفرز جاهزان للعمل مع منتجات API القادمة.</p></div>
     </section>
     <template id="product-card-template">
@@ -29,6 +30,6 @@
     <section class="ad-note"><div><h2>مساحة العروض والإعلانات</h2><p>ستظهر عروض المتجر وإعلاناته هنا بعد اعتمادها ونشرها.</p></div><a class="button button-primary" href="signup.html">أنشئ متجرك</a></section>
   </main>
   <footer class="container footer"><span>© 2026 مول العراق · جزء من شنو منو تك تك</span><span>من العراق، إلى العراق.</span></footer>
-  <script src="mall.js"></script><script src="store.js"></script>
+  <script src="mall.js"></script><script src="offline-store.js"></script><script src="store.js"></script>
 </body>
 </html>

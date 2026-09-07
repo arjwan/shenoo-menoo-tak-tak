@@ -24,6 +24,17 @@
   function showSearchMessage() {
     if (!searchInput || !searchFeedback) return;
     var query = searchInput.value.trim();
+    if (!navigator.onLine && window.MallOffline) {
+      window.MallOffline.loadStores().then(function (stores) {
+        var matches = stores.filter(function (store) {
+          return [store.name, store.category, store.governorate, store.area].filter(Boolean).join(" ").toLowerCase().includes(query.toLowerCase());
+        });
+        searchFeedback.textContent = matches.length
+          ? "تم العثور على " + matches.length + " متجر محفوظ. افتح صفحة المتاجر لتصفحه."
+          : "لا توجد نتائج محفوظة عن «" + query + "».";
+      }).catch(function (error) { searchFeedback.textContent = error.message; });
+      return;
+    }
     searchFeedback.textContent = query
       ? "لا توجد نتائج منشورة عن «" + query + "» حالياً — كن أول من يضيفها."
       : "اكتب اسم متجر أو منتج للبحث.";

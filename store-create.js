@@ -15,6 +15,10 @@
   if (form) form.addEventListener("submit", async function (event) {
     event.preventDefault();
     if (!form.reportValidity()) return;
+    if (!navigator.onLine) {
+      setMessage("وضع عدم الاتصال: لا يمكن إنشاء متجر أو إظهار نجاح العملية دون اتصال بالخادم.", "error");
+      return;
+    }
     var authToken = token();
     if (!authToken) {
       setMessage("يجب تسجيل الدخول قبل إرسال طلب إنشاء متجر.", "error");

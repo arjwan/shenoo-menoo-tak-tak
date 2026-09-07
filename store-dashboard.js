@@ -12,6 +12,7 @@
     return authToken ? { Authorization: "Bearer " + authToken } : {};
   }
   async function request(path, options) {
+    if (!navigator.onLine) throw new Error("وضع عدم الاتصال: لا يمكن تعديل الأسعار أو المنتجات أو الإعلانات دون اتصال بالخادم.");
     var config = options || {};
     config.headers = Object.assign({}, authHeaders(), config.headers || {});
     var response = await fetch(API_BASE_URL + path, config);
