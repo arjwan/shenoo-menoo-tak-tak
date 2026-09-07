@@ -25,13 +25,14 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 public final class MainActivity extends Activity {
-    private static final String HOME_URL = "https://shino-mino-tak-tak.duckdns.org/";
+    private static final String HOME_URL = "https://shino-mino-tak-tak.duckdns.org/taktak.html";
     private static final int FILE_PICKER = 41;
     private static final int MEDIA_PERMISSIONS = 42;
     private WebView webView;
     private TextView offlineBanner;
     private ValueCallback<Uri[]> fileCallback;
     private PermissionRequest pendingPermissionRequest;
+    private boolean signinSeen;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -64,7 +65,8 @@ public final class MainActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " ShenooMenooTakTakAndroid/1.0");
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setUserAgentString(settings.getUserAgentString() + " ShenooMenooTakTakAndroid/1.1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
@@ -82,6 +84,19 @@ public final class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 offlineBanner.setVisibility(isOnline() ? View.GONE : View.VISIBLE);
+
+                if (url != null && url.contains("signin.html")) {
+                    signinSeen = true;
+                    // Inside the Android app we always keep the session on this device.
+                    view.evaluateJavascript(
+                        "(function(){var r=document.getElementById('remember');if(r){r.checked=true;}})();",
+                        null
+                    );
+                } else if (url != null && url.contains("taktak.html") && signinSeen) {
+                    // Do not let Android Back return to the sign-in screen after a successful login.
+                    view.clearHistory();
+                    signinSeen = false;
+                }
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
@@ -144,7 +159,10 @@ public final class MainActivity extends Activity {
             boolean granted = true;
             for (int result : results) granted &= result == PackageManager.PERMISSION_GRANTED;
             if (granted) grantWebPermission();
-            else if (pendingPermissionRequest != null) pendingPermissionRequest.deny();
+            else if (pendingPermissionRequest != null) {
+                pendingPermissionRequest.deny();
+                pendingPermissionRequest = null;
+            }
         }
     }
 
