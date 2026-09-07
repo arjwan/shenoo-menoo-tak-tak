@@ -17,6 +17,7 @@ const postRoutes = require('./routes/posts.routes');
 const supportRoutes = require('./routes/support.routes');
 const groupRoutes = require('./routes/groups.routes');
 const islamicRoutes = require('./routes/islamic.routes');
+const storesRoutes = require('./routes/stores.routes');
 const { attachSocket } = require('./socket');
 
 const app = express();
@@ -40,13 +41,14 @@ app.use('/api/posts', postRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/islamic', islamicRoutes);
+app.use('/api/stores', storesRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     return res.status(400).json({ ok: false, message: error.code === 'LIMIT_FILE_SIZE' ? 'حجم الملف أكبر من الحد المسموح' : 'نوع أو عدد الملفات غير مسموح' });
   }
-  if (error) return res.status(500).json({ ok: false, message: 'حدث خطأ في الخادم' });
+  if (error) return res.status(500).json({ ok: false, message: error.message || 'حدث خطأ في الخادم' });
   next();
 });
 
