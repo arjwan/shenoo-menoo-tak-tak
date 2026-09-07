@@ -8,16 +8,15 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>الرئيسية | شنو منو تك تك</title>
-  <link rel="stylesheet" href="taktak-feed.css?v=20260907-5">
+  <link rel="stylesheet" href="taktak-feed.css?v=20260907-6">
 </head>
 <body>
-<script src="auth-guard.js?v=20260907-5"></script>
+<script src="auth-guard.js?v=20260907-6"></script>
 <header class="home-top">
   <nav class="home-nav">
     <a class="home-brand" href="taktak.html">شنو منو تك تك</a>
     <input class="home-search" type="search" placeholder="ابحث في شنو منو..." aria-label="البحث">
     <div class="top-actions">
-      <a href="stories.html" title="قصتي">✨</a>
       <a href="reels.html" title="مقاطع تك تك">▶</a>
       <a href="taal-nsolf.html" title="تعال نسولف">💬</a>
       <a href="messages.html" title="المحادثات">✉</a>
@@ -36,8 +35,6 @@
     <a href="invite-friends.html">📱 دعوة وإضافة جهات الاتصال</a>
     <a href="messages.html">✉ المحادثات الخاصة</a>
     <a href="mall.html">🛍 مول العراق</a>
-    <a href="stories.html">✨ قصتي</a>
-    <a href="reels.html">🎬 مقاطع تك تك</a>
     <a href="challenges.html">🏆 التحديات والبث</a>
     <a href="game-room.html">🎲 كهوة عزاوي</a>
     <a href="islamic.html">☪ الصفحة الإسلامية</a>
@@ -50,11 +47,17 @@
   </aside>
 
   <section class="feed" aria-label="المنشورات">
-    <div class="composer" style="display:flex;gap:8px;overflow:auto;margin-bottom:12px">
-      <a class="tool-btn" href="stories.html" style="text-decoration:none">✨ أضف قصتك</a>
-      <a class="tool-btn" href="reels.html" style="text-decoration:none">🎬 مقاطع تك تك</a>
-      <a class="tool-btn" href="challenges.html" style="text-decoration:none">🔴 بث وتحديات</a>
-    </div>
+    <section class="stories-strip" aria-label="القصص">
+      <a class="story-tile story-me" href="stories.html?create=1">
+        <span class="story-avatar" data-story-me-avatar>؟</span>
+        <span class="story-plus">+</span>
+        <strong>قصتي</strong>
+      </a>
+      <div class="stories-list" data-stories-list>
+        <a class="story-tile" href="stories.html"><span class="story-avatar">✨</span><strong>القصص</strong></a>
+      </div>
+    </section>
+
     <form class="composer" data-composer>
       <div class="composer-top">
         <span class="avatar" data-me-avatar>؟</span>
@@ -63,14 +66,16 @@
       <input type="file" data-media accept="image/*,video/mp4,video/webm,video/quicktime" hidden>
       <div class="composer-tools">
         <button class="tool-btn" type="button" data-photo-btn>🖼 صورة</button>
-        <button class="tool-btn" type="button" data-video-btn>🎥 فيديو / مقطع</button>
+        <button class="tool-btn" type="button" data-video-btn>🎥 فيديو</button>
+        <a class="tool-btn" href="reels.html?create=1" style="text-decoration:none">🎬 إنشاء مقطع ريلز</a>
+        <a class="tool-btn" href="reels.html" style="text-decoration:none">▶ مشاهدة الريلز</a>
         <select class="tool-btn" data-visibility aria-label="خصوصية المنشور">
           <option value="everyone">🌐 الجميع</option>
           <option value="friends">👥 الأصدقاء</option>
         </select>
         <button class="tool-btn publish" type="submit">نشر</button>
       </div>
-      <div class="notice">الصور والفيديو تُرفع إلى حسابك، والفيديو حتى 100MB. الإعلانات الممولة تُنشر بصلاحية الإدارة.</div>
+      <div class="notice">أنشئ منشورًا بصورة أو فيديو، أو انتقل مباشرة لإنشاء مقطع ريلز.</div>
     </form>
     <div data-feed><div class="post-card empty">جارٍ تحميل المنشورات…</div></div>
   </section>
@@ -91,8 +96,8 @@
 
 <nav class="mobile-bar" aria-label="التنقل السريع">
   <a href="taktak.html"><b>⌂</b>الرئيسية</a>
-  <a href="stories.html"><b>✨</b>قصتي</a>
-  <a href="reels.html"><b>▶</b>المقاطع</a>
+  <a href="stories.html"><b>✨</b>القصص</a>
+  <a href="reels.html"><b>▶</b>الريلز</a>
   <a href="taal-nsolf.html"><b>💬</b>نسولف</a>
   <a href="profile.html"><b>👤</b>حسابي</a>
 </nav>
@@ -100,14 +105,9 @@
 (function(){
   const slides=[...document.querySelectorAll('.paid-ad-slide')];
   const dotsRoot=document.querySelector('[data-paid-dots]');
-  if(!slides.length||!dotsRoot)return;
-  let index=0;
-  const dots=slides.map((_,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','إعلان '+(i+1));b.addEventListener('click',()=>show(i));dotsRoot.appendChild(b);return b;});
-  function show(i){index=i;slides.forEach((s,n)=>s.classList.toggle('is-active',n===i));dots.forEach((d,n)=>d.classList.toggle('is-active',n===i));}
-  show(0);
-  setInterval(()=>show((index+1)%slides.length),5000);
+  if(slides.length&&dotsRoot){let index=0;const dots=slides.map((_,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','إعلان '+(i+1));b.addEventListener('click',()=>show(i));dotsRoot.appendChild(b);return b;});function show(i){index=i;slides.forEach((s,n)=>s.classList.toggle('is-active',n===i));dots.forEach((d,n)=>d.classList.toggle('is-active',n===i));}show(0);setInterval(()=>show((index+1)%slides.length),5000);}
 }());
 </script>
-<script src="taktak-feed.js?v=20260907-5"></script>
+<script src="taktak-feed.js?v=20260907-6"></script>
 </body>
 </html>
