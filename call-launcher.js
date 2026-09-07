@@ -2,7 +2,19 @@
   'use strict';
   const params=new URLSearchParams(location.search);
   const requested=params.get('call');
-  if(!['audio','video'].includes(requested))return;
+  const userId=params.get('user');
+  if(!['audio','video'].includes(requested)||!userId)return;
+  let conversationId='';
+  SocialAPI.request('/api/conversations/'+encodeURIComponent(userId),{method:'POST'}).then(function(data){
+    conversationId=data.conversation&&data.conversation.id||'';
+    if(window.io&&conversationId){
+      const socket=window.io(SocialAPI.baseUrl,{auth:{token:SocialAPI.token()}});
+      socket.on('connect',function(){
+        socket.emit('call:invite',{userId:userId,conversationId:conversationId,type:requested});
+        setTimeout(function(){socket.disconnect();},1500);
+      });
+    }
+  }).catch(function(){});
   let tries=0;
   const timer=setInterval(function(){
     tries++;
