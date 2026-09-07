@@ -36,6 +36,45 @@ function userView(user) {
   };
 }
 
+function canManagePost(post, user) {
+  return String(post.author?._id || post.author) === String(user._id) || ['admin', 'developer'].includes(user.role);
+}
+
+function mediaFromFile(file) {
+  return file ? [{
+    url: `/uploads/posts/${file.filename}`,
+    type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+    mimeType: file.mimetype,
+    size: file.size
+  }] : [];
+}
+
+function deleteStoredMedia(media) {
+  for (const item of media || []) {
+    if (!item?.url || !item.url.startsWith('/uploads/posts/')) continue;
+    const file = path.join(uploadDir, path.basename(item.url));
+    fs.unlink(file, () => {});
+  }
+}
+
+function postView(post, user) {
+  return {
+    id: post._id,
+    author: userView(post.author),
+    text: post.text,
+    media: post.media,
+    type: post.type,
+    visibility: post.visibility,
+    likesCount: post.likes.length,
+    liked: post.likes.some((id) => String(id) === String(user._id)),
+    commentsCount: post.commentsCount,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    canEdit: canManagePost(post, user),
+    canDelete: canManagePost(post, user)
+  };
+}
+
 async function friendIds(userId) {
   const rows = await FriendRequest.find({
     $or: [{ sender: userId }, { receiver: userId }], status: 'accepted'
@@ -60,18 +99,7 @@ router.get('/', async (req, res) => {
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
-  res.json({ ok: true, posts: posts.map((post) => ({
-    id: post._id,
-    author: userView(post.author),
-    text: post.text,
-    media: post.media,
-    type: post.type,
-    visibility: post.visibility,
-    likesCount: post.likes.length,
-    liked: post.likes.some((id) => String(id) === String(req.user._id)),
-    commentsCount: post.commentsCount,
-    createdAt: post.createdAt
-  })) });
+  res.json({ ok: true, posts: posts.map((post) => postView(post, req.user)) });
 });
 
 router.post('/', upload.single('media'), async (req, res) => {
@@ -81,18 +109,49 @@ router.post('/', upload.single('media'), async (req, res) => {
   const requestedType = req.body.type === 'ad' ? 'ad' : 'post';
   if (requestedType === 'ad' && !['admin', 'developer'].includes(req.user.role)) return res.status(403).json({ ok: false, message: 'نشر الإعلانات متاح للإدارة فقط' });
   const visibility = req.body.visibility === 'friends' ? 'friends' : 'everyone';
-  const media = req.file ? [{
-    url: `/uploads/posts/${req.file.filename}`,
-    type: req.file.mimetype.startsWith('video/') ? 'video' : 'image',
-    mimeType: req.file.mimetype,
-    size: req.file.size
-  }] : [];
+  const media = mediaFromFile(req.file);
   const post = await Post.create({ author: req.user._id, text, media, type: requestedType, visibility });
   await post.populate('author', 'fullName displayName username profile');
-  res.status(201).json({ ok: true, post: {
-    id: post._id, author: userView(post.author), text: post.text, media: post.media,
-    type: post.type, visibility: post.visibility, likesCount: 0, liked: false, commentsCount: 0, createdAt: post.createdAt
-  }});
+  res.status(201).json({ ok: true, post: postView(post, req.user) });
+});
+
+router.patch('/:id', upload.single('media'), async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ ok: false, message: 'منشور غير صالح' });
+  const post = await Post.findOne({ _id: req.params.id, active: true });
+  if (!post) return res.status(404).json({ ok: false, message: 'المنشور غير موجود' });
+  if (!canManagePost(post, req.user)) return res.status(403).json({ ok: false, message: 'لا يمكنك تعديل هذا المنشور' });
+
+  if (req.body.text !== undefined) {
+    const text = String(req.body.text || '').trim();
+    if (text.length > 5000) return res.status(400).json({ ok: false, message: 'المنشور طويل جداً' });
+    post.text = text;
+  }
+  if (req.body.visibility !== undefined) post.visibility = req.body.visibility === 'friends' ? 'friends' : 'everyone';
+
+  if (req.file) {
+    deleteStoredMedia(post.media);
+    post.media = mediaFromFile(req.file);
+  } else if (String(req.body.removeMedia || '').toLowerCase() === 'true') {
+    deleteStoredMedia(post.media);
+    post.media = [];
+  }
+
+  if (!post.text && (!post.media || !post.media.length)) return res.status(400).json({ ok: false, message: 'لا يمكن حفظ منشور فارغ' });
+  await post.save();
+  await post.populate('author', 'fullName displayName username profile');
+  return res.json({ ok: true, message: 'تم تعديل المنشور', post: postView(post, req.user) });
+});
+
+router.delete('/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ ok: false, message: 'منشور غير صالح' });
+  const post = await Post.findOne({ _id: req.params.id, active: true });
+  if (!post) return res.status(404).json({ ok: false, message: 'المنشور غير موجود' });
+  if (!canManagePost(post, req.user)) return res.status(403).json({ ok: false, message: 'لا يمكنك حذف هذا المنشور' });
+
+  deleteStoredMedia(post.media);
+  await PostComment.deleteMany({ post: post._id });
+  await Post.deleteOne({ _id: post._id });
+  return res.json({ ok: true, message: 'تم حذف المنشور' });
 });
 
 router.post('/:id/like', async (req, res) => {
