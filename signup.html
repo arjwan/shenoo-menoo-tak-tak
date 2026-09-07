@@ -724,6 +724,8 @@
       if (response.ok && data.ok !== false) {
         form.reset();
         updateStrength();
+        box.textContent = 'تم إرسال طلبك للمراجعة';
+        setTimeout(() => { window.location.href = 'signin.html'; }, 1500);
       }
     } catch (error) {
       box.className = 'message error';

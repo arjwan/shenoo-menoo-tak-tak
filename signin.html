@@ -484,6 +484,8 @@
         otherStorage.removeItem('user');
         storage.setItem('token', data.token);
         storage.setItem('user', JSON.stringify(data.user));
+        message.textContent = 'تم تسجيل الدخول، جارٍ فتح المنصة...';
+        setTimeout(() => { window.location.href = 'taktak.html'; }, 500);
       }
     } catch (error) {
       message.className = 'message info';
