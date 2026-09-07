@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>الصفحة الدينية | شنو منو تك تك</title>
+<style>
+:root{color-scheme:dark;--bg:#08131d;--card:#102331;--line:#214255;--accent:#39c6a3;--text:#f5fbff;--muted:#a9bac5;--danger:#ff6b6b}*{box-sizing:border-box}body{margin:0;font-family:"Cairo",system-ui,sans-serif;background:linear-gradient(160deg,#07131d,#0b2330 55%,#0d322d);color:var(--text);min-height:100dvh}.shell{width:min(1500px,100%);margin:auto;padding:14px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;background:rgba(8,19,29,.88);backdrop-filter:blur(12px);padding:10px;border:1px solid var(--line);border-radius:18px}.top a,.btn{border:0;border-radius:14px;padding:11px 14px;background:#17394b;color:#fff;text-decoration:none;cursor:pointer;font-weight:700}.btn.primary{background:var(--accent);color:#062017}.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px}.card{background:rgba(16,35,49,.94);border:1px solid var(--line);border-radius:20px;padding:16px}.qibla{display:grid;place-items:center;text-align:center;min-height:340px}.compass{width:210px;height:210px;border-radius:50%;border:10px solid #173d4c;position:relative;background:radial-gradient(circle,#123342,#07131d);box-shadow:0 0 0 2px #2e5c6e inset}.needle{position:absolute;left:50%;top:50%;width:10px;height:82px;background:linear-gradient(var(--accent),#fff);border-radius:10px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg)}.needle:after{content:"🕋";position:absolute;top:-34px;left:50%;transform:translateX(-50%);font-size:25px}.qibla small{color:var(--muted)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{border:1px solid var(--line);background:#102b3a;color:#fff;padding:10px 13px;border-radius:999px;cursor:pointer}.tab.active{background:var(--accent);color:#062017}.composer{display:grid;gap:10px}.composer input,.composer textarea,.composer select,.comment-row input{width:100%;background:#071822;border:1px solid #285064;border-radius:13px;padding:12px;color:#fff;font-size:16px}.composer textarea{min-height:110px;resize:vertical}.posts{display:grid;gap:14px}.post h3{margin:0 0 6px}.meta{color:var(--muted);font-size:.9rem}.post-media{margin-top:12px}.post-media img,.post-media video{max-width:100%;border-radius:14px;display:block}.post-media audio{width:100%}.post-media a{color:#8fdfff}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{border:1px solid var(--line);background:#0b2634;color:#fff;border-radius:12px;padding:9px 12px;cursor:pointer}.comments{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.comment{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}.comment-row{display:flex;gap:8px;margin-top:8px}.comment-row button{white-space:nowrap}.notice{color:#ffd889;font-size:.9rem}.empty{color:var(--muted);text-align:center;padding:30px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px}input[type=file]{font-size:15px}@media(max-width:850px){.hero{grid-template-columns:1fr}.shell{padding:8px}.top{border-radius:14px}.qibla{min-height:300px}.comment-row{flex-direction:column}.btn,.top a{min-height:44px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top"><strong>☪️ الصفحة الدينية</strong><div><a href="taktak.html">الرئيسية</a></div></header>
+
+  <section class="hero">
+    <div class="card">
+      <div class="section-title"><h2>منبر المحتوى الإسلامي</h2><span class="notice">النشر مفتوح مع التعليقات والمشاركة إلى العام</span></div>
+      <form id="composer" class="composer">
+        <select name="category">
+          <option value="dua">🤲 أدعية</option><option value="ziyarat">🕌 زيارات</option><option value="books">📚 كتب إسلامية</option><option value="lecture">🎙️ محاضرات</option><option value="quran">📖 قرآن</option><option value="general">✨ عام</option>
+        </select>
+        <input name="title" maxlength="180" placeholder="العنوان">
+        <textarea name="text" maxlength="10000" placeholder="اكتب النص هنا..."></textarea>
+        <input name="media" type="file" accept="image/*,video/mp4,video/webm,audio/*,application/pdf">
+        <button class="btn primary" type="submit">نشر المحتوى</button>
+        <small class="notice">ملفات مدعومة: صورة، فيديو، صوت، PDF. نصوص القرآن والمصادر الحساسة يجب نقلها من مصدر موثوق وعدم كتابتها بالذاكرة.</small>
+      </form>
+    </div>
+
+    <div class="card qibla">
+      <h2>🧭 بوصلة القبلة</h2>
+      <div class="compass"><div id="needle" class="needle"></div></div>
+      <p id="qiblaText">اضغط لتحديد موقعك وحساب اتجاه القبلة.</p>
+      <button id="qiblaBtn" class="btn primary" type="button">تحديد القبلة</button>
+      <small>الاتجاه يحسب من موقع الجهاز إلى الكعبة. دقة دوران البوصلة تعتمد على حساس الجهاز وإذن الاتجاه.</small>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-category="">الكل</button><button class="tab" data-category="dua">🤲 أدعية</button><button class="tab" data-category="ziyarat">🕌 زيارات</button><button class="tab" data-category="books">📚 كتب</button><button class="tab" data-category="lecture">🎙️ محاضرات</button><button class="tab" data-category="quran">📖 قرآن</button><button class="tab" data-category="general">✨ عام</button>
+  </nav>
+
+  <main id="posts" class="posts"><div class="empty">جارِ تحميل المحتوى...</div></main>
+</div>
+<script>
+const API='/api/islamic';
+const postsEl=document.getElementById('posts');
+let currentCategory='';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(url,opt={}){const r=await fetch(url,{credentials:'include',...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||'تعذر تنفيذ الطلب');return d}
+function mediaHtml(items){return (items||[]).map(m=>{const u=esc(m.url);if(m.type==='image')return `<img src="${u}" alt="">`;if(m.type==='video')return `<video src="${u}" controls playsinline></video>`;if(m.type==='audio')return `<audio src="${u}" controls></audio>`;return `<a href="${u}" target="_blank" rel="noopener">📄 فتح/تحميل الكتاب أو الملف PDF</a>`}).join('')}
+function postHtml(p){const comments=(p.comments||[]).map(c=>`<div class="comment"><strong>${esc(c.author?.fullName||c.author?.username||'مستخدم')}</strong> ${esc(c.text)}</div>`).join('');return `<article class="card post" data-id="${esc(p.id)}"><div class="meta">${esc(p.author?.fullName||p.author?.username||'مستخدم')} · ${new Date(p.createdAt).toLocaleString('ar-IQ')}</div><h3>${esc(p.title)}</h3><div>${esc(p.text).replace(/\n/g,'<br>')}</div><div class="post-media">${mediaHtml(p.media)}</div><div class="actions"><button data-like>❤️ ${p.likesCount||0}</button><button data-share>📣 مشاركة على العام${p.sharedToGeneral?' ✓':''}</button></div><div class="comments">${comments}<div class="comment-row"><input data-comment maxlength="2000" placeholder="اكتب تعليقاً"><button class="btn" data-send>إرسال</button></div></div></article>`}
+async function loadPosts(){try{const q=currentCategory?`?category=${encodeURIComponent(currentCategory)}`:'';const d=await api(`${API}/posts${q}`);postsEl.innerHTML=d.posts.length?d.posts.map(postHtml).join(''):'<div class="card empty">لا يوجد محتوى في هذا القسم بعد.</div>'}catch(e){postsEl.innerHTML=`<div class="card empty">${esc(e.message)}</div>`}}
+document.getElementById('composer').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget);try{await api(`${API}/posts`,{method:'POST',body:f});e.currentTarget.reset();await loadPosts();alert('تم نشر المحتوى')}catch(err){alert(err.message)}});
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentCategory=b.dataset.category;loadPosts()});
+postsEl.addEventListener('click',async e=>{const card=e.target.closest('[data-id]');if(!card)return;const id=card.dataset.id;try{if(e.target.closest('[data-like]')){await api(`${API}/posts/${id}/like`,{method:'POST'});return loadPosts()}if(e.target.closest('[data-share]')){await api(`${API}/posts/${id}/share-general`,{method:'POST'});alert('تمت مشاركة المنشور على الصفحة العامة');return loadPosts()}if(e.target.closest('[data-send]')){const input=card.querySelector('[data-comment]');const text=input.value.trim();if(!text)return;await api(`${API}/posts/${id}/comments`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});return loadPosts()}}catch(err){alert(err.message)}});
+
+let qiblaBearing=null;const needle=document.getElementById('needle'),qText=document.getElementById('qiblaText');
+function bearing(lat,lon){const phi1=lat*Math.PI/180,phi2=21.422487*Math.PI/180,dLam=(39.826206-lon)*Math.PI/180;const y=Math.sin(dLam)*Math.cos(phi2),x=Math.cos(phi1)*Math.sin(phi2)-Math.sin(phi1)*Math.cos(phi2)*Math.cos(dLam);return (Math.atan2(y,x)*180/Math.PI+360)%360}
+function setNeedle(deviceHeading){if(qiblaBearing==null)return;const angle=deviceHeading==null?qiblaBearing:qiblaBearing-deviceHeading;needle.style.transform=`translate(-50%,-100%) rotate(${angle}deg)`}
+async function enableOrientation(){if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){try{const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted')return}catch(_){return}}window.addEventListener('deviceorientation',e=>{let h=null;if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;else if(typeof e.alpha==='number')h=360-e.alpha;if(h!=null)setNeedle(h)},true)}
+document.getElementById('qiblaBtn').addEventListener('click',()=>{if(!navigator.geolocation){qText.textContent='تحديد الموقع غير مدعوم على هذا الجهاز.';return}qText.textContent='جارِ تحديد الموقع...';navigator.geolocation.getCurrentPosition(async pos=>{qiblaBearing=bearing(pos.coords.latitude,pos.coords.longitude);qText.textContent=`اتجاه القبلة: ${qiblaBearing.toFixed(1)}° من الشمال`;setNeedle(null);await enableOrientation()},err=>{qText.textContent='تعذر الحصول على الموقع. فعّل إذن الموقع ثم أعد المحاولة.'},{enableHighAccuracy:true,timeout:12000,maximumAge:60000})});
+loadPosts();
+</script>
+<script src="auth-guard.js"></script>
+</body>
+</html>
