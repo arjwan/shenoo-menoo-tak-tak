@@ -1,34 +1,22 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#070910"><title>إنشاء متجر | مول العراق</title>
-  <link rel="stylesheet" href="mall.css"><link rel="stylesheet" href="mall-pages.css">
-</head>
-<body>
-  <div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div>
-  <header class="site-header"><nav class="container nav" aria-label="التنقل الرئيسي">
-    <a class="brand" href="mall.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 20h28l-2 19H12L10 20Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 20a8 8 0 0 1 16 0M15 27h18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"/></svg></span><span><strong>شنو منو</strong><small>مول العراق</small></span></a>
-    <div class="nav-actions"><a class="nav-link" href="mall.html">الرئيسية</a><a class="nav-link" href="stores.html">المتاجر</a><a class="nav-link" href="store-dashboard.html">لوحتي</a></div>
-    <button class="menu-toggle" type="button" aria-label="فتح القائمة" aria-expanded="false" data-menu-toggle><span></span><span></span><span></span></button>
-  </nav><div class="mobile-menu container" data-mobile-menu><a href="mall.html">الرئيسية</a><a href="stores.html">المتاجر</a><a href="store-dashboard.html">لوحتي</a></div></header>
-  <main class="container page-shell"><section class="page-intro"><div><span class="eyebrow"><i></i> خطوة لبداية جديدة</span><h1>أنشئ متجرك<br><span>وخلي شغلك ينشاف.</span></h1><p>أرسل طلبك بمعلومات صحيحة. سيقوم الفريق بمراجعة الطلب، ولن يظهر متجرك للجمهور قبل اعتماده.</p></div><a class="back-link" href="mall.html">← العودة إلى المول</a></section>
-    <form class="form-card" id="store-create-form" novalidate>
-      <div class="form-grid">
-        <div class="form-field"><label for="store-name">اسم المتجر *</label><input id="store-name" name="name" required maxlength="120"></div>
-        <div class="form-field"><label for="store-category">الاختصاص *</label><select id="store-category" name="category" required><option value="">اختر الاختصاص</option><option>الأجهزة الكهربائية</option><option>الموبايلات</option><option>الحاسبات</option><option>الإكسسوارات</option><option>الملابس</option><option>العطور</option><option>الساعات</option><option>الأثاث</option><option>المواد المنزلية</option><option>السيارات وملحقاتها</option><option>الأغذية</option><option>الصحة والجمال</option></select></div>
-        <div class="form-field full"><label for="store-description">وصف المتجر *</label><textarea id="store-description" name="description" required maxlength="1000" placeholder="ما الذي يميز متجرك؟"></textarea></div>
-        <div class="form-field"><label for="store-governorate">المحافظة *</label><select id="store-governorate" name="governorate" required><option value="">اختر المحافظة</option><option>بغداد</option><option>البصرة</option><option>أربيل</option><option>النجف</option><option>الموصل</option><option>كربلاء</option></select></div>
-        <div class="form-field"><label for="store-area">المنطقة *</label><input id="store-area" name="area" required maxlength="100"></div>
-        <div class="form-field"><label for="store-phone">الهاتف *</label><input id="store-phone" name="phone" type="tel" required maxlength="30" inputmode="tel"></div>
-        <div class="form-field"><label for="store-social">وسائل التواصل</label><input id="store-social" name="socialLinks" maxlength="300" placeholder="فيسبوك، إنستغرام، واتساب"></div>
-        <div class="form-field"><label for="store-logo">شعار المتجر</label><input id="store-logo" name="logo" type="file" accept="image/*"><span class="form-help">PNG أو JPG، وسيتم رفعه مع الطلب.</span></div>
-        <div class="form-field"><label for="store-cover">صورة الغلاف</label><input id="store-cover" name="cover" type="file" accept="image/*"><span class="form-help">صورة عريضة اختيارية لواجهة متجرك.</span></div>
-        <div class="form-field full"><label>نوع المساحة / الباقة *</label><div class="package-grid"><div class="package-option"><input id="package-basic" name="plan" value="basic" type="radio" required><label for="package-basic"><strong>الأساسية</strong><small>حضور بسيط وواضح</small></label></div><div class="package-option"><input id="package-plus" name="plan" value="plus" type="radio"><label for="package-plus"><strong>المميزة</strong><small>ظهور ومساحة أكبر</small></label></div><div class="package-option"><input id="package-featured" name="plan" value="featured" type="radio"><label for="package-featured"><strong>الواجهة</strong><small>مساحة إعلانية موسعة</small></label></div></div></div>
-      </div>
-      <div class="form-actions"><button class="button button-primary" type="submit" data-submit>إرسال طلب إنشاء المتجر <span>←</span></button><p class="form-message" role="status" aria-live="polite" data-form-message></p></div>
-    </form>
-  </main><footer class="container footer"><span>© 2026 مول العراق · جزء من شنو منو تك تك</span><span>من العراق، إلى العراق.</span></footer>
-  <script src="mall.js"></script><script src="store-create.js"></script>
-</body>
-</html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#070910"><title>إنشاء متجر | مول العراق</title><link rel="stylesheet" href="mall.css"><link rel="stylesheet" href="mall-pages.css"></head><body>
+<div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div>
+<header class="site-header"><nav class="container nav"><a class="brand" href="mall.html"><span><strong>شنو منو</strong><small>مول العراق</small></span></a><div class="nav-actions"><a class="nav-link" href="taktak.html">🏠 الرئيسية العامة</a><a class="nav-link" href="mall.html">المول</a><a class="nav-link" href="stores.html">المتاجر</a><a class="nav-link" href="store-dashboard.html">لوحتي</a></div></nav></header>
+<main class="container page-shell"><section class="page-intro"><div><span class="eyebrow"><i></i> افتح باب رزقك</span><h1>أنشئ متجرك <span>واعرض بضاعتك.</span></h1><p>املأ بيانات المتجر بدقة. يبقى الطلب بانتظار موافقة الإدارة قبل ظهوره للجمهور.</p></div><a class="back-link" href="taktak.html">← الرئيسية العامة</a></section>
+<form class="form-card" id="store-create-form" novalidate><div class="form-grid">
+<div class="form-field"><label for="store-name">اسم المتجر *</label><input id="store-name" name="name" required maxlength="120"></div>
+<div class="form-field"><label for="store-category">الاختصاص *</label><select id="store-category" name="category" required><option value="">اختر الاختصاص</option><option>الأجهزة الكهربائية</option><option>الموبايلات</option><option>الحاسبات</option><option>الإكسسوارات</option><option>الملابس</option><option>العطور</option><option>الساعات</option><option>الأثاث</option><option>المواد المنزلية</option><option>السيارات وملحقاتها</option><option>الأغذية</option><option>الصحة والجمال</option></select></div>
+<div class="form-field full"><label for="store-description">وصف المتجر *</label><textarea id="store-description" name="description" required maxlength="1000" placeholder="ما الذي يميز متجرك؟"></textarea></div>
+<div class="form-field"><label for="store-governorate">المحافظة *</label><input id="store-governorate" name="governorate" required maxlength="80" placeholder="مثال: بغداد"></div>
+<div class="form-field"><label for="store-area">المنطقة *</label><input id="store-area" name="area" required maxlength="100"></div>
+<div class="form-field full"><label for="store-address">العنوان التفصيلي *</label><input id="store-address" name="address" required maxlength="240" placeholder="الشارع، أقرب نقطة دالة، رقم المحل إن وجد"></div>
+<div class="form-field"><label for="store-phone">الهاتف *</label><input id="store-phone" name="phone" type="tel" required maxlength="30" inputmode="tel"></div>
+<div class="form-field"><label for="store-whatsapp">واتساب</label><input id="store-whatsapp" name="whatsapp" type="tel" maxlength="30" inputmode="tel"></div>
+<div class="form-field"><label for="store-facebook">فيسبوك</label><input id="store-facebook" name="facebook" maxlength="220"></div>
+<div class="form-field"><label for="store-instagram">إنستغرام</label><input id="store-instagram" name="instagram" maxlength="220"></div>
+<div class="form-field full"><label for="store-website">الموقع الإلكتروني</label><input id="store-website" name="website" maxlength="220" placeholder="اختياري"></div>
+<div class="form-field"><label for="store-logo">شعار المتجر</label><input id="store-logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp"></div><div class="form-field"><label for="store-cover">صورة الغلاف</label><input id="store-cover" name="cover" type="file" accept="image/png,image/jpeg,image/webp"></div>
+<div class="form-field full"><label>مندوبي المبيعات — حتى مندوبين اثنين</label><div class="form-grid"><div class="form-field"><input name="delegate1Name" maxlength="120" placeholder="اسم المندوب الأول"></div><div class="form-field"><input name="delegate1Phone" maxlength="30" placeholder="هاتف المندوب الأول"></div><div class="form-field"><input name="delegate2Name" maxlength="120" placeholder="اسم المندوب الثاني"></div><div class="form-field"><input name="delegate2Phone" maxlength="30" placeholder="هاتف المندوب الثاني"></div></div><span class="form-help">المندوب لا يحصل على صلاحيات إدارة المتجر تلقائيًا؛ تُفعّل الصلاحية بعد اعتماد الحساب.</span></div>
+<div class="form-field full"><label>نوع المساحة / الباقة *</label><div class="package-grid"><div class="package-option"><input id="package-basic" name="plan" value="basic" type="radio" required><label for="package-basic"><strong>الأساسية</strong><small>حضور بسيط وواضح</small></label></div><div class="package-option"><input id="package-plus" name="plan" value="plus" type="radio"><label for="package-plus"><strong>المميزة</strong><small>ظهور ومساحة أكبر</small></label></div><div class="package-option"><input id="package-featured" name="plan" value="featured" type="radio"><label for="package-featured"><strong>الواجهة</strong><small>مساحة إعلانية موسعة</small></label></div></div></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit" data-submit>إرسال طلب إنشاء المتجر <span>←</span></button><p class="form-message" role="status" aria-live="polite" data-form-message></p></div></form></main>
+<footer class="container footer"><span>© 2026 مول العراق · جزء من شنو منو تك تك</span><span>اعرض بضاعتك… والرزق على الله.</span></footer><script src="mall.js"></script><script src="store-create.js?v=20260907-2"></script></body></html>
