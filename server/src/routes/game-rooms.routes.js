@@ -9,6 +9,8 @@ const { friends, blocked } = require('./friends.routes');
 const router = express.Router();
 router.use(requireAuth);
 const inviteWindows = new Map();
+const GAME_TYPES = ['chess', 'domino', 'tawla', 'cards'];
+const GAME_NAMES = { chess: 'شطرنج', domino: 'دومنة', tawla: 'طاولي', cards: 'ورق' };
 
 function publicState(room) {
   const profiles = new Map((room.playerProfiles || []).map((user) => [String(user._id), user]));
@@ -19,6 +21,10 @@ function publicState(room) {
   return {
     id: room._id,
     name: room.name,
+    gameType: room.gameType || 'domino',
+    gameName: GAME_NAMES[room.gameType || 'domino'],
+    maxPlayers: room.maxPlayers || 2,
+    liveEnabled: room.liveEnabled !== false,
     owner: person(room.owner),
     players: room.players.map(person),
     spectators: room.spectators.map(person),
@@ -40,10 +46,8 @@ async function decorate(room) {
   room.playerProfiles = await User.find({ _id: { $in: [...room.players, ...room.spectators, room.owner] } }).select('fullName displayName username profile');
   return room;
 }
+async function loadRoom(id) { return mongoose.isValidObjectId(id) ? GameRoom.findById(id) : null; }
 
-async function loadRoom(id) {
-  return mongoose.isValidObjectId(id) ? GameRoom.findById(id) : null;
-}
 async function canSpectate(user, room) {
   if (String(room.owner) === String(user._id) || room.players.some((id) => String(id) === String(user._id))) return true;
   const playerUsers = await User.find({ _id: { $in: room.players } }).select('blockedUsers privacy');
@@ -73,13 +77,27 @@ async function canVoice(user, room) {
   return false;
 }
 
+router.get('/', async (req, res) => {
+  const query = { isActive: { $ne: false } };
+  if (GAME_TYPES.includes(req.query.gameType)) query.gameType = req.query.gameType;
+  const rooms = await GameRoom.find(query).sort({ updatedAt: -1 }).limit(50);
+  const result = [];
+  for (const room of rooms) result.push(publicState(await decorate(room)));
+  res.json({ ok: true, rooms: result });
+});
+
 router.post('/', async (req, res) => {
+  const gameType = GAME_TYPES.includes(req.body.gameType) ? req.body.gameType : 'domino';
+  const maxPlayers = gameType === 'cards' ? Math.min(4, Math.max(2, Number(req.body.maxPlayers) || 4)) : 2;
   const room = await GameRoom.create({
-    name: String(req.body.name || 'مباراة دومنة').trim(),
+    name: String(req.body.name || `تحدي ${GAME_NAMES[gameType]}`).trim(),
+    gameType,
+    maxPlayers,
     owner: req.user._id,
     players: [req.user._id],
     spectatorsPolicy: ['public', 'friends', 'none'].includes(req.body.spectatorsPolicy) ? req.body.spectatorsPolicy : 'friends',
-    voicePolicy: ['open', 'players_friends', 'players_only'].includes(req.body.voicePolicy) ? req.body.voicePolicy : 'players_friends'
+    voicePolicy: ['open', 'players_friends', 'players_only'].includes(req.body.voicePolicy) ? req.body.voicePolicy : 'players_friends',
+    liveEnabled: req.body.liveEnabled !== false
   });
   res.status(201).json({ ok: true, room: publicState(await decorate(room)) });
 });
@@ -95,7 +113,7 @@ router.post('/:id/join', async (req, res) => {
   const room = await loadRoom(req.params.id);
   if (!room) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
   if (room.players.some((id) => String(id) === String(req.user._id))) return res.json({ ok: true, room: publicState(await decorate(room)) });
-  if (room.players.length >= 2) return res.status(409).json({ ok: false, message: 'الغرفة مكتملة' });
+  if (room.players.length >= (room.maxPlayers || 2)) return res.status(409).json({ ok: false, message: 'الغرفة مكتملة' });
   const playerUsers = await User.find({ _id: { $in: room.players } }).select('blockedUsers');
   if (playerUsers.some((player) => blocked(req.user, player))) return res.status(403).json({ ok: false, message: 'لا يمكنك الانضمام لهذه الغرفة' });
   room.players.push(req.user._id);
@@ -125,6 +143,7 @@ router.patch('/:id/settings', async (req, res) => {
     room.voicePolicy = req.body.voicePolicy;
   }
   if (req.body.voiceEnabled !== undefined) room.voiceEnabled = Boolean(req.body.voiceEnabled);
+  if (req.body.liveEnabled !== undefined) room.liveEnabled = Boolean(req.body.liveEnabled);
   await room.save();
   res.json({ ok: true, room: publicState(await decorate(room)) });
 });
@@ -133,22 +152,17 @@ router.post('/:id/spectator-invites', async (req, res) => {
   const now = Date.now();
   const recent = (inviteWindows.get(String(req.user._id)) || []).filter((time) => now - time < 60 * 1000);
   if (recent.length >= 10) return res.status(429).json({ ok: false, message: 'محاولات الدعوة كثيرة، حاول لاحقاً' });
-  recent.push(now);
-  inviteWindows.set(String(req.user._id), recent);
+  recent.push(now); inviteWindows.set(String(req.user._id), recent);
   const room = await loadRoom(req.params.id);
   if (!room || !room.players.some((id) => String(id) === String(req.user._id))) return res.status(403).json({ ok: false, message: 'اللاعبون فقط يستطيعون إرسال الدعوات' });
   const invitee = await User.findById(req.body.userId).select('_id fullName username blockedUsers');
   if (!invitee || String(invitee._id) === String(req.user._id) || blocked(req.user, invitee) || !(await friends(req.user._id, invitee._id))) return res.status(400).json({ ok: false, message: 'يمكن دعوة الأصدقاء فقط' });
-  const invite = await GameSpectatorInvite.findOneAndUpdate(
-    { room: room._id, inviter: req.user._id, invitee: invitee._id },
-    { $set: { status: 'pending' } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-  res.status(201).json({ ok: true, invite: { id: invite._id, roomId: room._id, invitee: invitee._id, message: `${req.user.displayName || req.user.fullName} دعاك لمشاهدة مباراة دومنة` } });
+  const invite = await GameSpectatorInvite.findOneAndUpdate({ room: room._id, inviter: req.user._id, invitee: invitee._id }, { $set: { status: 'pending' } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+  res.status(201).json({ ok: true, invite: { id: invite._id, roomId: room._id, invitee: invitee._id, message: `${req.user.displayName || req.user.fullName} دعاك لمشاهدة تحدي ${GAME_NAMES[room.gameType || 'domino']}` } });
 });
 
 router.get('/invites/incoming', async (req, res) => {
-  const invites = await GameSpectatorInvite.find({ invitee: req.user._id, status: 'pending' }).populate('room inviter', 'name fullName displayName username');
+  const invites = await GameSpectatorInvite.find({ invitee: req.user._id, status: 'pending' }).populate('room inviter', 'name gameType fullName displayName username');
   res.json({ ok: true, invites });
 });
 router.post('/invites/:id/:action', async (req, res) => {
