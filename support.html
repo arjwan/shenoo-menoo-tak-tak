@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#070910">
+  <title>الدعم الفني | شنو منو تك تك</title>
+  <link rel="stylesheet" href="social.css">
+  <style>
+    body{margin:0;background:#070910;color:#fff;font-family:Tahoma,Arial,sans-serif}.support-wrap{width:min(980px,calc(100% - 28px));margin:34px auto}.support-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.support-head a{color:#fff;text-decoration:none}.support-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.support-card{padding:22px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:rgba(17,23,40,.78)}.support-card h1,.support-card h2{margin-top:0}.support-card p{color:#a9b0c3;line-height:1.8}.field{margin:14px 0}.field label{display:block;margin-bottom:7px;font-size:13px}.field input,.field textarea,.field select{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#101625;color:#fff;padding:12px}.field textarea{min-height:150px;resize:vertical}.btn{border:0;border-radius:12px;padding:12px 16px;color:#fff;background:linear-gradient(135deg,#7c5cff,#ff4f9a);font-weight:800;cursor:pointer}.note{font-size:12px;color:#9ea6bb}.result{margin-top:14px;min-height:22px;color:#8ee8d9}.warning{padding:12px;border-radius:12px;background:rgba(255,79,154,.08);color:#ffc1d9;border:1px solid rgba(255,79,154,.2)}@media(max-width:760px){.support-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="support-wrap">
+    <div class="support-head"><h1>الدعم الفني</h1><a href="index.html">← الرئيسية</a></div>
+    <div class="support-grid">
+      <section class="support-card">
+        <h2>أرسل طلب دعم</h2>
+        <p>للمشاكل التقنية، انتهاك الخصوصية، أو الاعتراض على حظر الحساب.</p>
+        <form id="supportForm">
+          <div class="field"><label>نوع الطلب</label><select id="type"><option value="technical">دعم فني</option><option value="privacy">انتهاك خصوصية</option><option value="unban">طلب إلغاء الحظر</option></select></div>
+          <div class="field"><label>اسم المستخدم / الهاتف / البريد</label><input id="identity" required maxlength="160" placeholder="مثال: username أو 07... أو البريد"></div>
+          <div class="field"><label>عنوان الطلب</label><input id="subject" required maxlength="180"></div>
+          <div class="field"><label>التفاصيل</label><textarea id="message" required maxlength="5000" placeholder="اشرح المشكلة بوضوح، ولطلب إلغاء الحظر اذكر سبب الاعتراض وأي تفاصيل تساعد المراجعة."></textarea></div>
+          <button class="btn" type="submit">إرسال الطلب</button>
+          <div class="result" id="result" role="status"></div>
+        </form>
+      </section>
+      <aside class="support-card">
+        <h2>طلبات إلغاء الحظر</h2>
+        <div class="warning">طلب إلغاء الحظر لا يعني رفع الحظر تلقائيًا. تتم مراجعته من الإدارة، ويمكن قبول الطلب أو رفضه بعد التحقق.</div>
+        <p>اكتب اسم المستخدم أو الهاتف أو البريد المرتبط بالحساب، ثم اختر <strong>طلب إلغاء الحظر</strong> واشرح سبب اعتراضك.</p>
+        <h2>انتهاك الخصوصية</h2>
+        <p>إذا تعرضت لنشر معلومات شخصية، انتحال، ابتزاز، مشاركة صور أو محادثات دون إذن، اختر <strong>انتهاك خصوصية</strong> واذكر التفاصيل بوضوح.</p>
+        <p class="note">لا تضع كلمة المرور أو رموز التحقق أو أي بيانات سرية داخل الطلب.</p>
+        <a class="btn" href="community-standards.html" style="display:inline-block;text-decoration:none;margin-top:8px">معايير المجتمع</a>
+      </aside>
+    </div>
+  </main>
+<script>
+(function(){
+  var form=document.getElementById('supportForm'),result=document.getElementById('result');
+  form.addEventListener('submit',async function(e){
+    e.preventDefault(); result.textContent='جارٍ إرسال الطلب…';
+    try{
+      var r=await fetch('https://shino-mino-tak-tak.duckdns.org/api/support/public',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:document.getElementById('type').value,identity:document.getElementById('identity').value.trim(),subject:document.getElementById('subject').value.trim(),message:document.getElementById('message').value.trim()})});
+      var d=await r.json().catch(function(){return {}});
+      if(!r.ok) throw new Error(d.message||'تعذر إرسال الطلب');
+      result.textContent=(d.message||'تم استلام الطلب')+' — رقم الطلب: '+d.requestId;
+      form.reset();
+    }catch(err){result.style.color='#ff9aaa';result.textContent=err.message;}
+  });
+}());
+</script>
+</body></html>
