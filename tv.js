@@ -17,6 +17,7 @@ const now=document.querySelector('[data-now-title]');
 const playPause=document.querySelector('[data-play-pause]');
 const mute=document.querySelector('[data-mute]');
 const chat=document.querySelector('[data-chat]');
+const individualMode=document.querySelector('[data-individual-mode]');
 let hls=null;
 let editMode=false;
 let pendingM3U='';
@@ -40,6 +41,15 @@ function addChannel(name,url,group='📌 قنوات مخصصة'){if(!name||!url)
 function deleteChannel(c){if(!confirm(`حذف قناة "${c.name}"؟`))return;const p=ensureDefault();const key=playlistSelect.value;if(p[key]&&p[key][c.group]){delete p[key][c.group][c.name];if(!Object.keys(p[key][c.group]).length)delete p[key][c.group];savePlaylists(p);render();}}
 function parseM3U(content){const out={};let group='قنوات عامة',name='';for(let line of String(content||'').split(/\r?\n/)){line=line.trim();if(line.startsWith('#EXTINF')){const gm=line.match(/group-title="([^"]*)"/i);if(gm&&gm[1])group=gm[1];const nm=line.match(/,(.*)$/);name=nm&&nm[1]?nm[1].trim():'';}else if(line&&!line.startsWith('#')&&name){if(validStreamUrl(line)){out[group]||(out[group]={});out[group][name]=line;}name='';}}return out;}
 function setVolume(v){v=Math.max(0,Math.min(100,Number(v)||0));video.volume=v/100;volume.value=String(v);volumeValue.textContent=v+'%';mute.querySelector('i').className=v===0?'fas fa-volume-xmark':v<50?'fas fa-volume-low':'fas fa-volume-high';}
+function activateIndividualMode(){
+  localStorage.setItem('taktak_tv_mode','individual');
+  chat.hidden=true;
+  individualMode.classList.add('is-active');
+  individualMode.setAttribute('aria-pressed','true');
+  individualMode.textContent='✓ مشاهدة فردية';
+  const note=placeholder.querySelector('small');
+  if(note)note.textContent='الوضع الحالي: مشاهدة فردية.';
+}
 setVolume(80);
 
 menuOverlay.addEventListener('click',e=>{if(e.target===menuOverlay)menuOverlay.classList.remove('is-open');});
@@ -64,6 +74,8 @@ document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{if(b.dataset.
 document.addEventListener('keydown',e=>{if(e.key==='Escape')wrapper.classList.remove('is-maximized');});
 document.querySelector('[data-chat-toggle]').onclick=()=>chat.hidden=false;document.querySelector('[data-chat-close]').onclick=()=>chat.hidden=true;
 document.querySelector('[data-voice]').onclick=()=>{if(!navigator.mediaDevices?.getUserMedia)return alert('الصوت غير مدعوم في هذا المتصفح.');navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{s.getTracks().forEach(t=>t.stop());alert('الميكروفون جاهز. ربط الصوت الجماعي بالخادم هو الخطوة التالية.');}).catch(()=>alert('تعذر تشغيل الميكروفون.'));};
+individualMode.onclick=()=>activateIndividualMode();
 urlOverlay.addEventListener('click',e=>{if(e.target===urlOverlay)urlOverlay.classList.remove('is-open');});playlistNameOverlay.addEventListener('click',e=>{if(e.target===playlistNameOverlay)playlistNameOverlay.classList.remove('is-open');});
+activateIndividualMode();
 updatePlaylistSelector();render();
 })();
