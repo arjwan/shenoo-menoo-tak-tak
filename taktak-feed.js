@@ -21,10 +21,17 @@
   function avatar(user){ return user && user.avatarUrl ? '<span class="avatar"><img src="'+esc(API+user.avatarUrl)+'" alt=""></span>' : '<span class="avatar">'+esc((user&&user.fullName||'?').slice(0,1))+'</span>'; }
   function time(value){ try{return new Intl.DateTimeFormat('ar-IQ',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));}catch{return '';} }
   function media(post){ if(!post.media || !post.media.length) return ''; const m=post.media[0]; const src=esc(API+m.url); return m.type==='video' ? '<div class="post-media"><video controls preload="metadata" src="'+src+'"></video></div>' : '<div class="post-media"><img loading="lazy" src="'+src+'" alt="صورة منشور"></div>'; }
+  function manageButtons(post){
+    if(!post.canEdit && !post.canDelete) return '';
+    return '<div class="post-owner-actions">'+
+      (post.canEdit?'<button type="button" data-action="edit">✏ تعديل</button>':'')+
+      (post.canDelete?'<button type="button" data-action="delete">🗑 حذف</button>':'')+
+      '</div>';
+  }
   function card(post){
     return '<article class="post-card" data-post-id="'+esc(post.id)+'">'+
-      '<div class="post-head">'+avatar(post.author)+'<div class="post-meta"><a href="profile.html?id='+esc(post.author.id)+'"><strong>'+esc(post.author.fullName)+'</strong></a><small>@'+esc(post.author.username)+' · '+esc(time(post.createdAt))+'</small></div>'+(post.type==='ad'?'<span class="ad-badge">إعلان ممول</span>':'')+'</div>'+
-      (post.text?'<div class="post-text">'+esc(post.text)+'</div>':'')+media(post)+
+      '<div class="post-head">'+avatar(post.author)+'<div class="post-meta"><a href="profile.html?id='+esc(post.author.id)+'"><strong>'+esc(post.author.fullName)+'</strong></a><small>@'+esc(post.author.username)+' · '+esc(time(post.createdAt))+'</small></div>'+(post.type==='ad'?'<span class="ad-badge">إعلان ممول</span>':'')+manageButtons(post)+'</div>'+
+      (post.text?'<div class="post-text" data-post-text-display>'+esc(post.text)+'</div>':'<div class="post-text" data-post-text-display hidden></div>')+media(post)+
       '<div class="post-stats"><span data-likes-count>'+Number(post.likesCount||0)+' إعجاب</span><span data-comments-count>'+Number(post.commentsCount||0)+' تعليق</span></div>'+
       '<div class="post-actions"><button type="button" data-action="like" class="'+(post.liked?'is-active':'')+'">♡ إعجاب</button><button type="button" data-action="comments">💬 تعليق</button><button type="button" data-action="message" data-user="'+esc(post.author.id)+'">✉ مراسلة</button></div>'+
       '<div class="comments" hidden data-comments><div data-comments-list></div><form class="comment-form" data-comment-form><input name="text" maxlength="2000" placeholder="اكتب تعليقاً..."><button>إرسال</button></form></div></article>';
@@ -52,6 +59,21 @@
       if(action.dataset.action==='like'){ try{const data=await json('/api/posts/'+id+'/like',{method:'POST'}); action.classList.toggle('is-active',data.liked); postEl.querySelector('[data-likes-count]').textContent=data.likesCount+' إعجاب';}catch(error){alert(error.message);} }
       if(action.dataset.action==='comments'){ const box=postEl.querySelector('[data-comments]'); box.hidden=!box.hidden; if(!box.hidden&&!box.dataset.loaded){ try{const data=await json('/api/posts/'+id+'/comments'); box.querySelector('[data-comments-list]').innerHTML=(data.comments||[]).map(c=>'<div class="comment">'+avatar(c.author)+'<div class="comment-body"><strong>'+esc(c.author.fullName)+'</strong><p>'+esc(c.text)+'</p></div></div>').join(''); box.dataset.loaded='1';}catch{} } }
       if(action.dataset.action==='message') location.href='messages.html?user='+encodeURIComponent(action.dataset.user);
+      if(action.dataset.action==='edit'){
+        const display=postEl.querySelector('[data-post-text-display]');
+        const current=display && !display.hidden ? display.textContent : '';
+        const next=prompt('عدّل نص المنشور:', current);
+        if(next===null) return;
+        try{
+          const data=await json('/api/posts/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:next})});
+          const updated=data.post;
+          if(updated.text){ display.textContent=updated.text; display.hidden=false; } else { display.textContent=''; display.hidden=true; }
+        }catch(error){ alert(error.message); }
+      }
+      if(action.dataset.action==='delete'){
+        if(!confirm('حذف هذا المنشور نهائياً؟')) return;
+        try{ await json('/api/posts/'+id,{method:'DELETE'}); postEl.remove(); }catch(error){ alert(error.message); }
+      }
     }
   });
   feed && feed.addEventListener('submit', async function(e){
