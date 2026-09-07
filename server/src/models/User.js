@@ -5,15 +5,19 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true, minlength: 3, maxlength: 30 },
   contact: { type: String, required: true, unique: true, lowercase: true, trim: true },
   contactType: { type: String, enum: ['email', 'phone'], required: true },
-  phone: { type: String, required: true, unique: true, trim: true, match: /^07\d{9}$/ },
+  // New registrations require a phone at the route level. Keep it optional in the
+  // schema so older users can still be loaded and saved safely during migration.
+  phone: { type: String, trim: true, default: '', match: /^$|^07\d{9}$/ },
   email: { type: String, lowercase: true, trim: true, default: '' },
   birthDate: { type: Date, default: null },
   gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
   passwordHash: { type: String, required: true },
   termsAccepted: { type: Boolean, required: true },
-  privacyAccepted: { type: Boolean, required: true },
-  privacyAcceptedAt: { type: Date, required: true },
-  privacyVersion: { type: String, required: true, default: '2026-09-07' },
+  // Privacy consent remains mandatory for new signup requests, but older records
+  // may predate the consent fields and must remain writable.
+  privacyAccepted: { type: Boolean, default: false },
+  privacyAcceptedAt: { type: Date, default: null },
+  privacyVersion: { type: String, default: '2026-09-07' },
   role: { type: String, enum: ['user', 'moderator', 'admin', 'developer'], default: 'user' },
   status: { type: String, enum: ['pending', 'active', 'rejected', 'blocked'], default: 'pending' },
   rejectionReason: { type: String, default: '' },
@@ -33,5 +37,6 @@ const userSchema = new mongoose.Schema({
   reviewedAt: { type: Date, default: null }
 }, { timestamps: true });
 
+userSchema.index({ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: 'string', $gt: '' } } });
 userSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string', $gt: '' } } });
 module.exports = mongoose.model('User', userSchema);
