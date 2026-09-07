@@ -695,6 +695,30 @@ footer{
           <div class="stat-value" id="roomsCount">—</div>
           <div class="stat-label">الغرف النشطة</div>
         </div>
+
+        <div class="stat">
+          <div class="stat-icon">🏪</div>
+          <div class="stat-value" id="storesCount">—</div>
+          <div class="stat-label">المتاجر</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon">📢</div>
+          <div class="stat-value" id="adsCount">—</div>
+          <div class="stat-label">الإعلانات</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon">🚩</div>
+          <div class="stat-value" id="reportsCount">—</div>
+          <div class="stat-label">البلاغات</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon">⛔</div>
+          <div class="stat-value" id="blockedCount">—</div>
+          <div class="stat-label">الحسابات المحظورة</div>
+        </div>
       </section>
 
       <div class="grid-two">
@@ -827,17 +851,17 @@ footer{
 
             <div class="status-item">
               <span class="status-name">الرسائل المبلغ عنها</span>
-              <strong id="conversationsCount">—</strong>
+              <strong id="reportsDetail">—</strong>
             </div>
 
             <div class="status-item">
               <span class="status-name">الحسابات المكتومة</span>
-              <strong>—</strong>
+              <strong id="mutedDetail">—</strong>
             </div>
 
             <div class="status-item">
               <span class="status-name">الحسابات المحظورة</span>
-              <strong>—</strong>
+              <strong id="blockedDetail">—</strong>
             </div>
           </div>
 
@@ -975,8 +999,14 @@ async function loadDashboard(){
   document.getElementById('pendingCount').textContent = data.stats.pending;
   document.getElementById('onlineCount').textContent = data.stats.online;
   document.getElementById('roomsCount').textContent = data.stats.rooms;
+  document.getElementById('storesCount').textContent = data.stats.stores;
+  document.getElementById('adsCount').textContent = data.stats.ads;
+  document.getElementById('reportsCount').textContent = data.stats.reports;
+  document.getElementById('blockedCount').textContent = data.stats.blocked;
   document.getElementById('roomsDetail').textContent = data.stats.rooms;
-  document.getElementById('conversationsCount').textContent = data.stats.conversations;
+  document.getElementById('reportsDetail').textContent = data.stats.reports;
+  document.getElementById('mutedDetail').textContent = data.stats.muted;
+  document.getElementById('blockedDetail').textContent = data.stats.blocked;
   [['apiStatus', data.services.api], ['dbStatus', data.services.database], ['socketStatus', data.services.socket]]
     .forEach(([id, value]) => {
       const element = document.getElementById(id);

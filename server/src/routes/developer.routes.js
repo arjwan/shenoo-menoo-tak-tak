@@ -92,18 +92,61 @@ async function writeAudit(actor, action, target, details = '') {
   await AuditLog.create({ actor: actor._id, action, target: target?._id || null, details });
 }
 
+async function countOptionalCollection(names) {
+  const collections = await mongoose.connection.db.listCollections({}, { nameOnly: true }).toArray();
+  const available = new Set(collections.map((collection) => collection.name));
+  const collectionName = names.find((name) => available.has(name));
+  return collectionName ? mongoose.connection.db.collection(collectionName).countDocuments() : 0;
+}
+
+async function getDashboardStats() {
+  const [
+    users,
+    pending,
+    online,
+    rooms,
+    conversations,
+    stores,
+    ads,
+    subscriptions,
+    reports,
+    muted,
+    blocked
+  ] = await Promise.all([
+    User.countDocuments(),
+    User.countDocuments({ status: 'pending' }),
+    User.countDocuments({ status: 'active', 'profile.online': true }),
+    GameRoom.countDocuments({ 'gameState.status': { $in: ['waiting', 'active'] } }),
+    Conversation.countDocuments(),
+    countOptionalCollection(['stores', 'shops']),
+    countOptionalCollection(['ads', 'advertisements']),
+    countOptionalCollection(['subscriptions']),
+    countOptionalCollection(['reports', 'userreports']),
+    countOptionalCollection(['mutes', 'mutedusers']),
+    User.countDocuments({ 'blockedUsers.0': { $exists: true } })
+  ]);
+
+  return {
+    users,
+    pending,
+    online,
+    rooms,
+    conversations,
+    stores,
+    ads,
+    subscriptions,
+    reports,
+    muted,
+    blocked,
+    activeChats: conversations
+  };
+}
+
 router.get('/me', (req, res) => res.json({ ok: true, user: safeUser(req.user) }));
 
 router.get('/stats', async (req, res) => {
   try {
-    const [users, pending, online, rooms, conversations] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ status: 'pending' }),
-      User.countDocuments({ status: 'active', 'profile.online': true }),
-      GameRoom.countDocuments({ 'gameState.status': { $in: ['waiting', 'active'] } }),
-      Conversation.countDocuments()
-    ]);
-    return res.json({ ok: true, stats: { users, pending, online, rooms, conversations } });
+    return res.json({ ok: true, stats: await getDashboardStats() });
   } catch (error) {
     console.error('Developer stats failed:', error.message);
     return res.status(500).json({ ok: false, message: 'تعذر تحميل إحصاءات لوحة المطور' });
@@ -113,19 +156,13 @@ router.get('/stats', async (req, res) => {
 router.get('/dashboard', async (req, res) => {
   try {
     const [stats, recentRequests] = await Promise.all([
-      Promise.all([
-        User.countDocuments(),
-        User.countDocuments({ status: 'pending' }),
-        User.countDocuments({ status: 'active', 'profile.online': true }),
-        GameRoom.countDocuments({ 'gameState.status': { $in: ['waiting', 'active'] } }),
-        Conversation.countDocuments()
-      ]),
+      getDashboardStats(),
       User.find({ status: 'pending' }).select('fullName username contact createdAt').sort({ createdAt: -1 }).limit(10).lean()
     ]);
 
     return res.json({
       ok: true,
-      stats: { users: stats[0], pending: stats[1], online: stats[2], rooms: stats[3], conversations: stats[4] },
+      stats,
       services: { api: 'online', database: 'online', socket: 'online' },
       recentRequests
     });
