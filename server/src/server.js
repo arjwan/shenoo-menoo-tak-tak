@@ -16,6 +16,7 @@ const gameRoomRoutes = require('./routes/game-rooms.routes');
 const postRoutes = require('./routes/posts.routes');
 const supportRoutes = require('./routes/support.routes');
 const groupRoutes = require('./routes/groups.routes');
+const islamicRoutes = require('./routes/islamic.routes');
 const { attachSocket } = require('./socket');
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/game-rooms', gameRoomRoutes.router);
 app.use('/api/posts', postRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/islamic', islamicRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 
 app.use((error, req, res, next) => {
