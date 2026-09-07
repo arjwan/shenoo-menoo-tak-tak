@@ -52,9 +52,7 @@
   }
 
   function save(storeName, value) {
-    return transaction(storeName, "readwrite", function (store) {
-      return store.put(value);
-    });
+    return transaction(storeName, "readwrite", function (store) { return store.put(value); });
   }
 
   function saveMany(storeName, values) {
@@ -74,11 +72,7 @@
     if (!("caches" in global)) return;
     var cache = await caches.open(IMAGE_CACHE);
     await Promise.all(imageUrls(value).map(async function (url) {
-      try {
-        if (!(await cache.match(url))) await cache.add(url);
-      } catch (error) {
-        return error;
-      }
+      try { if (!(await cache.match(url))) await cache.add(url); } catch (error) { return error; }
       return null;
     }));
   }
@@ -106,11 +100,12 @@
   async function loadStores() {
     if (!global.navigator.onLine) return all("stores");
     try {
-      var data = await fetchJson("/api/mall/stores");
+      var data = await fetchJson("/api/stores");
       var stores = data.stores || data.data || [];
-      await saveMany("stores", stores.map(function (store) { return Object.assign({}, store, { id: String(store.id || store._id) }); }));
-      await Promise.all(stores.map(cacheImages));
-      return stores;
+      var normalized = stores.map(function (store) { return Object.assign({}, store, { id: String(store.id || store._id) }); });
+      await saveMany("stores", normalized);
+      await Promise.all(normalized.map(cacheImages));
+      return normalized;
     } catch (error) {
       var cached = await all("stores");
       if (cached.length) return cached;
@@ -122,10 +117,9 @@
     var cached = await get("stores", String(id));
     if (!global.navigator.onLine) return cached ? { store: cached, products: await productsFor(id), offline: true } : null;
     try {
-      var data = await fetchJson("/api/mall/stores/" + encodeURIComponent(id));
+      var data = await fetchJson("/api/stores/" + encodeURIComponent(id));
       var store = data.store || data.data || data;
-      var productsData = await fetchJson("/api/mall/stores/" + encodeURIComponent(id) + "/products");
-      var products = productsData.products || productsData.data || [];
+      var products = [];
       await cacheStore(store, products);
       return { store: store, products: products, offline: false };
     } catch (error) {
@@ -167,10 +161,7 @@
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
   }
 
-  shellPromise = Promise.resolve().then(function () {
-    setOfflineBanner();
-    registerServiceWorker();
-  });
+  shellPromise = Promise.resolve().then(function () { setOfflineBanner(); registerServiceWorker(); });
 
   global.MallOffline = {
     ready: shellPromise,
@@ -180,8 +171,6 @@
     getCachedStore: function (id) { return get("stores", String(id)); },
     getCachedProducts: productsFor,
     isOffline: function () { return !global.navigator.onLine; },
-    cachedImage: function (url) {
-      return caches.match(url).then(function (response) { return response ? response.url : ""; }).catch(function () { return ""; });
-    }
+    cachedImage: function (url) { return caches.match(url).then(function (response) { return response ? response.url : ""; }).catch(function () { return ""; }); }
   };
 }(window));
