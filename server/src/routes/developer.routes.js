@@ -172,6 +172,75 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+router.get('/approvals', async (req, res) => {
+  try {
+    const users = await User.find({ status: 'pending' })
+      .select('fullName displayName username contact createdAt status')
+      .sort({ createdAt: -1 })
+      .lean();
+    return res.json({
+      ok: true,
+      approvals: users.map((user) => ({
+        id: user._id,
+        applicant: user.fullName || user.displayName || user.username,
+        username: user.username,
+        contact: user.contact,
+        type: 'user',
+        typeLabel: 'تسجيل مستخدم',
+        details: 'طلب تسجيل حساب جديد',
+        createdAt: user.createdAt,
+        status: user.status
+      })),
+      stores: [],
+      consultants: [],
+      serviceProviders: [],
+      advertisements: [],
+      businessAccounts: []
+    });
+  } catch (error) {
+    console.error('Developer approvals failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تحميل طلبات الموافقة' });
+  }
+});
+
+router.patch('/approvals/:id/:decision', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ ok: false, message: 'معرف الطلب غير صالح' });
+    }
+    if (!['approve', 'reject'].includes(req.params.decision)) {
+      return res.status(400).json({ ok: false, message: 'قرار المراجعة غير صالح' });
+    }
+    const user = await User.findOne({ _id: req.params.id, status: 'pending' });
+    if (!user) {
+      return res.status(404).json({ ok: false, message: 'طلب التسجيل غير موجود أو تمت مراجعته' });
+    }
+    const reason = String(req.body.reason || '').trim();
+    if (req.params.decision === 'reject' && !reason) {
+      return res.status(400).json({ ok: false, message: 'سبب الرفض مطلوب' });
+    }
+    user.status = req.params.decision === 'approve' ? 'active' : 'rejected';
+    user.rejectionReason = req.params.decision === 'reject' ? reason : '';
+    user.reviewedBy = req.user._id;
+    user.reviewedAt = new Date();
+    await user.save();
+    await writeAudit(
+      req.user,
+      `approval.${req.params.decision}`,
+      user,
+      reason || `تم ${req.params.decision === 'approve' ? 'قبول' : 'رفض'} طلب ${user.username}`
+    );
+    return res.json({
+      ok: true,
+      message: req.params.decision === 'approve' ? 'تم قبول الطلب' : 'تم رفض الطلب',
+      approval: { id: user._id, status: user.status }
+    });
+  } catch (error) {
+    console.error('Developer approval decision failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تنفيذ قرار الموافقة' });
+  }
+});
+
 router.get('/admins', async (req, res) => {
   const admins = await User.find({ role: { $in: ['admin', 'developer'] } }).select('-passwordHash').sort({ role: 1, createdAt: -1 }).lean();
   res.json({ ok: true, admins: admins.map(safeUser) });

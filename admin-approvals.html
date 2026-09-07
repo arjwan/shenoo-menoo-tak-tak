@@ -196,9 +196,7 @@ footer{
       مراجعة التسجيلات والطلبات التي تحتاج قرارًا إداريًا قبل تفعيلها
       داخل المنصة.
     </p>
-    <div class="note">
-      ⚠️ الصفحة غير مرتبطة بالخادم حاليًا، لذلك أي زر قبول أو رفض لن ينفذ تغييرًا حقيقيًا.
-    </div>
+    <div class="note" id="connectionNote">جارٍ الاتصال بالخادم...</div>
   </section>
 
   <div class="toolbar">
@@ -217,7 +215,7 @@ footer{
       <div>
         <h2>الطلبات بانتظار المراجعة</h2>
         <div style="color:var(--muted);font-size:.84rem;margin-top:5px">
-          تظهر الطلبات الحقيقية بعد ربط قاعدة البيانات
+          الطلبات المعروضة مأخوذة مباشرة من قاعدة البيانات
         </div>
       </div>
 
@@ -242,14 +240,7 @@ footer{
           </tr>
         </thead>
 
-        <tbody>
-          <tr>
-            <td colspan="7" class="empty">
-              لا توجد طلبات حقيقية حتى الآن.
-              بعد ربط Backend ستظهر هنا تسجيلات المستخدمين وباقي طلبات الموافقة.
-            </td>
-          </tr>
-        </tbody>
+        <tbody id="approvalsBody"><tr><td colspan="7" class="empty">جارٍ تحميل الطلبات...</td></tr></tbody>
       </table>
     </div>
 
@@ -260,17 +251,13 @@ footer{
       <div>
         <h2>إجراءات المراجعة المعتمدة</h2>
         <div style="color:var(--muted);font-size:.84rem;margin-top:5px">
-          التصميم جاهز للربط لاحقًا
+          يتم تسجيل كل قرار في سجل التدقيق
         </div>
       </div>
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-success" onclick="notConnected()">✓ قبول الطلب</button>
-      <button class="btn btn-danger" onclick="notConnected()">✕ رفض الطلب</button>
-      <button class="btn btn-warning" onclick="notConnected()">↩ طلب معلومات إضافية</button>
-      <button class="btn" onclick="notConnected()">👁 فتح التفاصيل</button>
-      <button class="btn" onclick="notConnected()">📜 سجل القرارات</button>
+      <span class="small">اختر الإجراء من صف الطلب. لا توجد إجراءات وهمية.</span>
     </div>
 
     <div style="
@@ -282,7 +269,7 @@ footer{
       color:var(--muted);
       line-height:1.8
     ">
-      عند الربط الحقيقي سيتم تسجيل:
+      عند تنفيذ قرار حقيقي سيتم تسجيل:
       اسم الأدمن، القرار، سبب القرار، التاريخ والوقت،
       وأي ملاحظات أو مستندات تمت مراجعتها.
     </div>
@@ -297,17 +284,97 @@ footer{
 <div id="toast" class="toast"></div>
 
 <script>
+const API_BASE_URL = window.location.protocol === 'file:' ? 'https://shino-mino-tak-tak.duckdns.org' : window.location.origin;
 const toast = document.getElementById('toast');
+const body = document.getElementById('approvalsBody');
+const search = document.querySelector('.search');
+const filters = document.querySelectorAll('.filter');
+let approvals = [];
+let activeFilter = 'all';
 
-function notConnected(){
-  toast.textContent =
-    'هذا الإجراء غير مربوط بالخادم بعد، لذلك لم يتم تنفيذ قبول أو رفض أو تعديل حقيقي.';
+function token() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+}
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[character]));
+}
+function showToast(message) {
+  toast.textContent = message;
   toast.classList.add('show');
-
   clearTimeout(window.toastTimer);
-  window.toastTimer = setTimeout(()=>{
-    toast.classList.remove('show');
-  },3200);
+  window.toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: { ...(options.headers || {}), Authorization: `Bearer ${token()}` }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'تعذر الاتصال بالخادم');
+  return data;
+}
+function render() {
+  const query = search.value.trim().toLowerCase();
+  const rows = approvals.filter((item) => {
+    const matchesFilter = activeFilter === 'all' || item.typeLabel === activeFilter;
+    const haystack = `${item.applicant} ${item.username} ${item.contact} ${item.typeLabel} ${item.details}`.toLowerCase();
+    return matchesFilter && haystack.includes(query);
+  });
+  body.innerHTML = rows.length ? rows.map((item) => `<tr>
+    <td>${escapeHtml(item.applicant)}</td>
+    <td>${escapeHtml(item.username)}</td>
+    <td>${escapeHtml(item.typeLabel)}</td>
+    <td>${escapeHtml(item.details)}</td>
+    <td>${new Date(item.createdAt).toLocaleString('ar-IQ')}</td>
+    <td><span class="pill pending">بانتظار المراجعة</span></td>
+    <td>
+      <button class="btn btn-success" data-decision="approve" data-id="${item.id}">قبول</button>
+      <button class="btn btn-danger" data-decision="reject" data-id="${item.id}">رفض</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="7" class="empty">لا توجد طلبات مطابقة.</td></tr>';
+}
+async function loadApprovals() {
+  const data = await apiRequest('/api/developer/approvals');
+  approvals = data.approvals || [];
+  document.getElementById('connectionNote').textContent = `متصل بالخادم — ${approvals.length} طلب قيد المراجعة`;
+  render();
+}
+body.addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-decision]');
+  if (!button) return;
+  let reason = '';
+  if (button.dataset.decision === 'reject') {
+    reason = window.prompt('سبب الرفض (مطلوب):')?.trim() || '';
+    if (!reason) return showToast('سبب الرفض مطلوب ولم يتم تنفيذ أي تغيير');
+  }
+  button.disabled = true;
+  try {
+    await apiRequest(`/api/developer/approvals/${button.dataset.id}/${button.dataset.decision}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    showToast('تم تحديث الطلب وتسجيل الإجراء');
+    await loadApprovals();
+  } catch (error) {
+    showToast(error.message);
+    button.disabled = false;
+  }
+});
+filters.forEach((filter) => filter.addEventListener('click', () => {
+  filters.forEach((item) => item.classList.remove('active'));
+  filter.classList.add('active');
+  activeFilter = filter.textContent.trim() === 'الكل' ? 'all' : filter.textContent.trim();
+  render();
+}));
+search.addEventListener('input', render);
+if (!token()) {
+  document.getElementById('connectionNote').textContent = 'يجب تسجيل الدخول بحساب مطور لعرض الطلبات';
+} else {
+  loadApprovals().catch((error) => {
+    document.getElementById('connectionNote').textContent = error.message;
+    showToast(error.message);
+  });
 }
 </script>
 
