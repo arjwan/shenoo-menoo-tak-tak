@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f172a">
   <title>شنو منو TV</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="tv.css">
+  <link rel="stylesheet" href="tv.css?v=20260907-2">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
@@ -15,7 +15,7 @@
   <div class="player-header">
     <h2><i class="fas fa-tv"></i> شنو منو TV</h2>
     <div class="header-actions">
-      <span class="room-badge" data-room-badge>مشاهدة فردية</span>
+      <button class="room-badge is-active" type="button" data-individual-mode aria-pressed="true">👤 مشاهدة فردية</button>
       <a class="btn btn-outline" href="taktak.html">⬅ رجوع</a>
     </div>
   </div>
@@ -25,7 +25,7 @@
     <div class="video-placeholder" id="videoPlaceholder">
       <i class="fas fa-tv"></i>
       <strong>اختر قناة من القائمة</strong>
-      <small>في الغرفة الجماعية صاحب الغرفة فقط يبدّل القناة.</small>
+      <small>الوضع الحالي: مشاهدة فردية.</small>
     </div>
     <div class="custom-video-bar">
       <button type="button" class="icon-control" data-play-pause title="تشغيل/إيقاف"><i class="fas fa-play"></i></button>
@@ -93,6 +93,6 @@
   <form><input type="text" placeholder="اكتب رسالة..." disabled><button disabled>إرسال</button></form>
 </section>
 
-<script src="tv.js"></script>
+<script src="tv.js?v=20260907-2"></script>
 </body>
 </html>
