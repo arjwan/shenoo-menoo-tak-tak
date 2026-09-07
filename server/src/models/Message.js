@@ -8,7 +8,7 @@ const attachmentSchema = new mongoose.Schema({
 const messageSchema = new mongoose.Schema({
   conversation: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', required: true, index: true },
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  type: { type: String, enum: ['text', 'image', 'file', 'audio'], default: 'text' },
+  type: { type: String, enum: ['text', 'image', 'video', 'file', 'audio'], default: 'text' },
   text: { type: String, trim: true, maxlength: 5000, default: '' },
   attachment: { type: attachmentSchema, default: null },
   replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },

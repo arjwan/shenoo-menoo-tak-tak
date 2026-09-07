@@ -8,7 +8,7 @@ const Message = require('../models/Message');
 const upload = require('../middleware/upload');
 const router = express.Router();
 router.use(requireAuth);
-const safeUser = (u) => ({ id: u._id, username: u.username, fullName: u.displayName || u.fullName, avatarUrl: u.profile?.avatarUrl || '' });
+const safeUser = (u) => ({ id: u._id, username: u.username, fullName: u.displayName || u.fullName, avatarUrl: u.profile?.avatarUrl || '', online: Boolean(u.profile?.online), lastSeen: u.profile?.lastSeen || null });
 async function getConversation(id, userId) {
   if (!mongoose.isValidObjectId(id)) return null;
   return Conversation.findOne({ _id: id, participants: userId }).populate('participants', 'username fullName displayName profile');
@@ -38,7 +38,7 @@ router.get('/:id/messages', async (req, res) => {
   const conversation = await getConversation(req.params.id, req.user._id);
   if (!conversation) return res.status(404).json({ ok: false, message: 'المحادثة غير موجودة' });
   const page = Math.max(1, Number(req.query.page) || 1), limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
-  const messages = await Message.find({ conversation: conversation._id }).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit);
+  const messages = await Message.find({ conversation: conversation._id, deletedFor: { $ne: req.user._id } }).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit);
   const other = conversation.participants.find((u) => String(u._id) !== String(req.user._id));
   res.json({ ok: true, conversation: { id: conversation._id, otherUser: safeUser(other) }, messages: messages.reverse().map((m) => ({ ...m.toObject(), senderId: m.sender, mine: String(m.sender) === String(req.user._id), currentUserId: req.user._id })) });
 });
@@ -47,7 +47,8 @@ router.post('/:id/messages', upload.single('attachment'), async (req, res) => {
   if (!conversation) return res.status(404).json({ ok: false, message: 'المحادثة غير موجودة' });
   const other = conversation.participants.find((p) => String(p._id) !== String(req.user._id));
   if (!other || blocked(req.user, other)) return res.status(403).json({ ok: false, message: 'لا يمكن إرسال الرسائل إلى هذا المستخدم' });
-  const type = ['text', 'image', 'file', 'audio'].includes(req.body.type) ? req.body.type : (req.file ? 'file' : 'text');
+  const inferredType = req.file?.mimetype.startsWith('image/') ? 'image' : req.file?.mimetype.startsWith('video/') ? 'video' : req.file?.mimetype.startsWith('audio/') ? 'audio' : 'file';
+  const type = ['text', 'image', 'video', 'file', 'audio'].includes(req.body.type) ? req.body.type : (req.file ? inferredType : 'text');
   const text = String(req.body.text || '').trim();
   if (!text && !req.file) return res.status(400).json({ ok: false, message: 'الرسالة فارغة' });
   if (type === 'text' && text.length > 5000) return res.status(400).json({ ok: false, message: 'الرسالة طويلة جداً' });
@@ -58,13 +59,18 @@ router.post('/:id/messages', upload.single('attachment'), async (req, res) => {
   conversation.lastMessage = message._id;
   conversation.unread.set(String(other._id), (conversation.unread.get(String(other._id)) || 0) + 1);
   await conversation.save();
-  res.status(201).json({ ok: true, message: serializeMessage(message, req.user._id) });
+  const serialized = serializeMessage(message, req.user._id);
+  const io = req.app.get('io');
+  if (io) io.to(`conversation:${conversation._id}`).emit('private:message', { conversationId: String(conversation._id), message: serialized, senderId: String(req.user._id) });
+  res.status(201).json({ ok: true, message: serialized });
 });
 router.patch('/:id/read', async (req, res) => {
   const conversation = await getConversation(req.params.id, req.user._id);
   if (!conversation) return res.status(404).json({ ok: false, message: 'المحادثة غير موجودة' });
   conversation.unread.set(String(req.user._id), 0); await conversation.save();
   await Message.updateMany({ conversation: conversation._id, sender: { $ne: req.user._id }, readAt: null }, { $set: { readAt: new Date() } });
+  const io = req.app.get('io');
+  if (io) io.to(`conversation:${conversation._id}`).emit('private:read', { conversationId: String(conversation._id), userId: String(req.user._id) });
   res.json({ ok: true });
 });
 router.patch('/:id/messages/:messageId/read', async (req, res) => {
@@ -85,6 +91,8 @@ router.delete('/:id/messages/:messageId', async (req, res) => {
     if (!message.deletedFor.some((id) => String(id) === String(req.user._id))) message.deletedFor.push(req.user._id);
   }
   await message.save();
+  const io = req.app.get('io');
+  if (io) io.to(`conversation:${conversation._id}`).emit('private:message', { conversationId: String(conversation._id), deletedMessageId: String(message._id), deletedForEveryone: message.deletedForEveryone });
   res.json({ ok: true, deletedForEveryone: message.deletedForEveryone });
 });
 module.exports = router;

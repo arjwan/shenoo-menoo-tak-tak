@@ -58,7 +58,7 @@ app.use((req, res) => res.status(404).json({ ok: false, message: 'المسار �
 
 const port = Number(process.env.PORT || 3000);
 connectDB().then(() => {
-  attachSocket(httpServer);
+  app.set('io', attachSocket(httpServer));
   httpServer.listen(port, () => console.log(`Server running on http://localhost:${port}`));
 }).catch(error => {
   console.error('Server startup failed:', error.message);
