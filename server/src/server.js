@@ -8,6 +8,7 @@ const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const developerRoutes = require('./routes/developer.routes');
 const userRoutes = require('./routes/user.routes');
 const friendsRoutes = require('./routes/friends.routes');
 const conversationRoutes = require('./routes/conversations.routes');
@@ -29,6 +30,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/developer', developerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/friends', friendsRoutes.router);
 app.use('/api/conversations', conversationRoutes);

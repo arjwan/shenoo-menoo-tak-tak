@@ -4,6 +4,30 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const router = express.Router();
+const loginAttempts = new Map();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 5;
+
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const current = loginAttempts.get(ip);
+  if (!current || now - current.startedAt > LOGIN_WINDOW_MS) {
+    loginAttempts.set(ip, { startedAt: now, attempts: 0 });
+    return null;
+  }
+  if (current.attempts >= LOGIN_MAX_ATTEMPTS) return Math.ceil((LOGIN_WINDOW_MS - (now - current.startedAt)) / 1000);
+  return null;
+}
+
+function recordLoginFailure(ip) {
+  const current = loginAttempts.get(ip) || { startedAt: Date.now(), attempts: 0 };
+  current.attempts += 1;
+  loginAttempts.set(ip, current);
+}
+
+function clearLoginAttempts(ip) {
+  loginAttempts.delete(ip);
+}
 
 function detectContactType(value) {
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -115,6 +139,12 @@ router.post('/signup', async (req, res) => {
 
 router.post('/signin', async (req, res) => {
   try {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const retryAfter = checkLoginRateLimit(ip);
+    if (retryAfter) {
+      res.set('Retry-After', String(retryAfter));
+      return res.status(429).json({ ok: false, message: 'محاولات تسجيل الدخول كثيرة، حاول لاحقًا' });
+    }
     const { identifier, password } = req.body;
 
     if (!identifier || !password) {
@@ -134,6 +164,7 @@ router.post('/signin', async (req, res) => {
     });
 
     if (!user) {
+      recordLoginFailure(ip);
       return res.status(401).json({
         ok: false,
         message: 'بيانات تسجيل الدخول غير صحيحة'
@@ -143,6 +174,7 @@ router.post('/signin', async (req, res) => {
     const valid = await bcrypt.compare(password, user.passwordHash);
 
     if (!valid) {
+      recordLoginFailure(ip);
       return res.status(401).json({
         ok: false,
         message: 'بيانات تسجيل الدخول غير صحيحة'
@@ -190,6 +222,7 @@ router.post('/signin', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+    clearLoginAttempts(ip);
 
     return res.json({
       ok: true,

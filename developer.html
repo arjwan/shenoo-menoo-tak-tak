@@ -263,12 +263,6 @@ nav{
   max-width:760px;
 }
 
-.preview-note{
-  margin-top:16px;
-  color:#ffc86a;
-  font-size:.9rem;
-}
-
 .stats{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
@@ -414,6 +408,12 @@ nav{
   border:1px solid rgba(124,92,255,.20);
 }
 
+.pill.online{
+  color:#9df0e6;
+  background:rgba(39,216,196,.10);
+  border:1px solid rgba(39,216,196,.20);
+}
+
 .table-wrap{overflow:auto}
 
 table{
@@ -521,6 +521,48 @@ footer{
   transform:none;
 }
 
+.auth-screen{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:24px;
+}
+
+.auth-card{
+  width:min(440px,100%);
+  background:rgba(17,23,40,.86);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:28px;
+  box-shadow:var(--shadow);
+}
+
+.auth-card h1{margin:14px 0 8px}
+.auth-card p{color:var(--muted);line-height:1.8}
+.auth-card label{display:block;margin-top:18px;color:#dce0ec;font-size:.9rem}
+.auth-card input{
+  width:100%;margin-top:8px;padding:13px 14px;border-radius:12px;
+  border:1px solid var(--line);background:#0b1020;color:white;outline:none;
+}
+.auth-card input:focus{border-color:var(--primary)}
+.auth-error{min-height:24px;color:#ff9aaa;margin-top:12px;font-size:.86rem}
+.auth-card button{width:100%;margin-top:8px}
+.is-hidden{display:none!important}
+
+.admin-form{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.admin-form label{color:var(--muted);font-size:.85rem}
+.admin-form input,.admin-form select{
+  width:100%;margin-top:6px;padding:11px;border-radius:10px;
+  border:1px solid var(--line);background:#0b1020;color:white;
+}
+.admin-form .full{grid-column:1/-1}
+.admin-form button{grid-column:1/-1}
+.admin-message{min-height:22px;color:#9df0e6;font-size:.85rem}
+
 @media(max-width:1050px){
   .layout{grid-template-columns:1fr}
   .sidebar{
@@ -560,6 +602,22 @@ footer{
 
 <body>
 
+<section class="auth-screen" id="authScreen">
+  <form class="auth-card" id="developerLoginForm">
+    <div class="eyebrow">🔐 وصول محمي</div>
+    <h1>دخول المطور</h1>
+    <p>هذه المنطقة مخصصة لحسابات المطور المعتمدة فقط.</p>
+    <label for="developerIdentifier">اسم المستخدم أو البريد الإلكتروني</label>
+    <input id="developerIdentifier" autocomplete="username" required minlength="3">
+    <label for="developerPassword">كلمة المرور</label>
+    <input id="developerPassword" type="password" autocomplete="current-password" required>
+    <div class="auth-error" id="authError" role="alert"></div>
+    <button class="btn btn-primary" type="submit">تسجيل الدخول</button>
+  </form>
+</section>
+
+<div id="dashboardContent" class="is-hidden">
+
 <div class="orb one"></div>
 <div class="orb two"></div>
 <div class="orb three"></div>
@@ -574,12 +632,12 @@ footer{
 
       <div class="nav-actions">
         <a href="index.html" class="btn btn-ghost">الرئيسية</a>
-        <button class="btn btn-primary" type="button" onclick="notConnected()">
-          حساب المطور
+        <button class="btn btn-primary" type="button" id="logoutButton">
+          تسجيل الخروج
         </button>
-      </div>
+      </a>
     </nav>
-  </div>
+  </a>
 </header>
 
 <div class="container">
@@ -589,14 +647,10 @@ footer{
       <div class="sidebar-title">إدارة المنصة</div>
 
       <button class="side-link active">🏠 نظرة عامة</button>
-      <button class="side-link" onclick="goPending('admin-approvals.html')">✅ الموافقات</button>
-      <button class="side-link" onclick="goPending('admin-chat.html')">💬 مراقبة الشات</button>
-      <button class="side-link" onclick="notConnected()">👥 المستخدمون</button>
-      <button class="side-link" onclick="notConnected()">🏪 المتاجر</button>
-      <button class="side-link" onclick="notConnected()">📢 الإعلانات</button>
-      <button class="side-link" onclick="notConnected()">💳 الاشتراكات</button>
-      <button class="side-link" onclick="notConnected()">🚨 البلاغات</button>
-      <button class="side-link" onclick="notConnected()">⚙️ إعدادات المنصة</button>
+      <a class="side-link" href="#admins">🛡️ المسؤولون</a>
+      <a class="side-link" href="#audit">📋 سجل التدقيق</a>
+      <a class="side-link" href="admin-approvals.html">✅ الموافقات</a>
+      <a class="side-link" href="admin-chat.html">💬 مراقبة الشات</a>
     </aside>
 
     <main class="main">
@@ -611,38 +665,35 @@ footer{
               والمتاجر والاشتراكات والإعلانات وحالة خدمات المنصة.
             </p>
 
-            <div class="preview-note">
-              ⚠️ هذه الصفحة معاينة واجهة حاليًا. لم يتم ربط بيانات أو إجراءات حقيقية بالخادم بعد.
-            </div>
           </div>
 
-          <span class="pill demo">وضع المعاينة</span>
+          <span class="pill" id="accountBadge">حساب مطور</span>
         </div>
       </section>
 
       <section class="stats">
         <div class="stat">
           <div class="stat-icon">👥</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="usersCount">—</div>
           <div class="stat-label">إجمالي المستخدمين</div>
         </div>
 
         <div class="stat">
           <div class="stat-icon">✅</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="pendingCount">—</div>
           <div class="stat-label">طلبات بانتظار الموافقة</div>
         </div>
 
         <div class="stat">
           <div class="stat-icon">💬</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="onlineCount">—</div>
           <div class="stat-label">المستخدمون المتصلون</div>
         </div>
 
         <div class="stat">
           <div class="stat-icon">🚨</div>
-          <div class="stat-value">—</div>
-          <div class="stat-label">البلاغات المفتوحة</div>
+          <div class="stat-value" id="roomsCount">—</div>
+          <div class="stat-label">الغرف النشطة</div>
         </div>
       </section>
 
@@ -655,64 +706,85 @@ footer{
           </div>
 
           <div class="quick-grid">
-            <div class="quick" onclick="goPending('admin-approvals.html')">
+            <a class="quick" href="admin-approvals.html">
               <strong>✅ مركز الموافقات</strong>
               <span>قبول التسجيلات ومراجعة جميع الطلبات والقرارات.</span>
             </div>
 
-            <div class="quick" onclick="goPending('admin-chat.html')">
+            <a class="quick" href="admin-chat.html">
               <strong>💬 مراقبة الشات</strong>
               <span>الغرف العامة والبلاغات والرسائل المبلغ عنها والإشراف.</span>
             </div>
 
-            <div class="quick" onclick="notConnected()">
-              <strong>👤 إدارة المستخدمين</strong>
-              <span>الحسابات والحالات والصلاحيات والحظر الإداري.</span>
-            </div>
+            <a class="quick" href="#admins">
+              <strong>🛡️ إدارة المسؤولين</strong>
+              <span>إنشاء المسؤولين وتحديث حالاتهم وصلاحياتهم.</span>
+            </a>
 
-            <div class="quick" onclick="notConnected()">
-              <strong>🏪 الإدارة التجارية</strong>
-              <span>المتاجر والاشتراكات والإعلانات والمساحات المدفوعة.</span>
-            </div>
+            <a class="quick" href="#audit">
+              <strong>📋 سجل التدقيق</strong>
+              <span>مراجعة إجراءات الإدارة الأخيرة.</span>
+            </a>
           </div>
         </section>
 
         <section class="panel">
           <div class="panel-head">
             <h2>حالة النظام</h2>
-            <span class="small">تحتاج Backend</span>
+            <span class="small">حالة مباشرة</span>
           </div>
 
           <div class="status-list">
             <div class="status-item">
               <span class="status-name">API Server</span>
-              <span class="pill offline">غير مربوط</span>
+              <span class="pill" id="apiStatus">—</span>
             </div>
 
             <div class="status-item">
               <span class="status-name">MongoDB</span>
-              <span class="pill offline">غير مربوط</span>
+              <span class="pill" id="dbStatus">—</span>
             </div>
 
             <div class="status-item">
               <span class="status-name">Socket.IO</span>
-              <span class="pill offline">غير مربوط</span>
+              <span class="pill" id="socketStatus">—</span>
             </div>
 
             <div class="status-item">
               <span class="status-name">نظام الإشعارات</span>
-              <span class="pill pending">قيد التطوير</span>
+              <span class="pill" id="notificationsStatus">غير متاح</span>
             </div>
           </div>
         </section>
       </div>
 
+      <section class="panel" id="admins" style="margin-bottom:22px">
+        <div class="panel-head">
+          <h2>إدارة المسؤولين</h2>
+          <span class="small">المطور فقط</span>
+        </div>
+        <form class="admin-form" id="adminForm">
+          <label>الاسم الكامل<input name="fullName" required maxlength="100"></label>
+          <label>اسم المستخدم<input name="username" required pattern="[a-zA-Z0-9_]{3,30}"></label>
+          <label>البريد أو الهاتف<input name="contact" required></label>
+          <label>كلمة المرور<input name="password" type="password" required minlength="8"></label>
+          <div class="admin-message full" id="adminMessage" role="status"></div>
+          <button class="btn btn-primary" type="submit">إنشاء مسؤول</button>
+        </form>
+        <div class="table-wrap" style="margin-top:20px">
+          <table>
+            <thead><tr><th>المسؤول</th><th>اسم المستخدم</th><th>الدور</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="adminsBody"><tr><td colspan="5">جارٍ تحميل المسؤولين...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="panel" style="margin-bottom:22px">
         <div class="panel-head">
           <h2>الطلبات الأخيرة</h2>
-          <button class="action" onclick="goPending('admin-approvals.html')">
+          <a class="action" href="admin-approvals.html">
             عرض مركز الموافقات
-          </button>
+          </a>
         </div>
 
         <div class="table-wrap">
@@ -731,7 +803,7 @@ footer{
             <tbody>
               <tr>
                 <td colspan="6" style="text-align:center;color:#8d95a8;padding:35px">
-                  لا توجد بيانات حقيقية حتى الآن — ستظهر الطلبات بعد ربط الخادم وقاعدة البيانات.
+                  جارٍ تحميل البيانات...
                 </td>
               </tr>
             </tbody>
@@ -739,23 +811,23 @@ footer{
         </div>
       </section>
 
-      <div class="grid-two">
+      <div class="grid-two" id="audit">
 
         <section class="panel">
           <div class="panel-head">
             <h2>مراقبة الشات</h2>
-            <span class="pill pending">بانتظار الربط</span>
+            <span class="pill" id="chatStatus">مباشر</span>
           </div>
 
           <div class="status-list">
             <div class="status-item">
               <span class="status-name">الغرف النشطة الآن</span>
-              <strong>—</strong>
+              <strong id="roomsDetail">—</strong>
             </div>
 
             <div class="status-item">
               <span class="status-name">الرسائل المبلغ عنها</span>
-              <strong>—</strong>
+              <strong id="conversationsCount">—</strong>
             </div>
 
             <div class="status-item">
@@ -769,13 +841,9 @@ footer{
             </div>
           </div>
 
-          <button
-            class="btn btn-primary"
-            style="margin-top:17px;width:100%"
-            onclick="goPending('admin-chat.html')"
-          >
+          <a class="btn btn-primary" style="margin-top:17px;width:100%" href="admin-chat.html">
             فتح إدارة الشات
-          </button>
+          </a>
         </section>
 
         <section class="panel">
@@ -784,29 +852,14 @@ footer{
             <span class="small">Audit Log</span>
           </div>
 
-          <div class="activity">
-            <div class="activity-item">
-              <span class="dot"></span>
-              <div>
-                <p>لم يتم تسجيل أي إجراء إداري حقيقي بعد.</p>
-                <time>يبدأ السجل بعد ربط نظام الإدارة بالخادم.</time>
-              </div>
-            </div>
-
-            <div class="activity-item">
-              <span class="dot"></span>
-              <div>
-                <p>سيتم الاحتفاظ باسم المسؤول ونوع الإجراء ووقت التنفيذ.</p>
-                <time>لا توجد بيانات تجريبية مزيفة.</time>
-              </div>
-            </div>
-          </div>
+          <div class="activity" id="auditList"><p class="small">جارٍ تحميل السجل...</p></div>
         </section>
 
       </div>
 
     </main>
   </div>
+</div>
 </div>
 
 <footer>
@@ -816,7 +869,186 @@ footer{
 <div class="toast" id="toast"></div>
 
 <script>
+const API_BASE_URL = window.location.protocol === 'file:'
+  ? 'https://shino-mino-tak-tak.duckdns.org'
+  : window.location.origin;
 const toast = document.getElementById('toast');
+const authScreen = document.getElementById('authScreen');
+const dashboardContent = document.getElementById('dashboardContent');
+const authError = document.getElementById('authError');
+const loginForm = document.getElementById('developerLoginForm');
+const tokenStores = [localStorage, sessionStorage];
+
+function getToken(){
+  return tokenStores.map((storage) => storage.getItem('token')).find(Boolean) || '';
+}
+
+function clearSession(){
+  tokenStores.forEach((storage) => {
+    storage.removeItem('token');
+    storage.removeItem('user');
+  });
+}
+
+function setAuthenticated(value){
+  authScreen.classList.toggle('is-hidden', value);
+  dashboardContent.classList.toggle('is-hidden', !value);
+}
+
+async function apiRequest(path, options = {}){
+  const headers = { ...(options.headers || {}), Authorization: `Bearer ${getToken()}` };
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      clearSession();
+      setAuthenticated(false);
+    }
+    throw new Error(data.message || 'تعذر الاتصال بالخادم');
+  }
+  return data;
+}
+
+function renderRequests(requests){
+  const body = document.querySelector('tbody');
+  if (!requests.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#8d95a8;padding:35px">لا توجد طلبات معلقة.</td></tr>';
+    return;
+  }
+  body.innerHTML = requests.map((request) => `<tr>
+    <td>${escapeHtml(request.fullName || request.username)}</td>
+    <td>تسجيل حساب</td><td>المستخدمون</td>
+    <td>${new Date(request.createdAt).toLocaleDateString('ar-IQ')}</td>
+    <td><span class="pill pending">بانتظار الموافقة</span></td>
+    <td><a class="action" href="admin-approvals.html">مراجعة</a></td>
+  </tr>`).join('');
+}
+
+function renderAdmins(admins){
+  const body = document.getElementById('adminsBody');
+  body.innerHTML = admins.map((admin) => `<tr>
+    <td>${escapeHtml(admin.fullName)}</td>
+    <td>${escapeHtml(admin.username)}</td>
+    <td>${admin.role === 'developer' ? 'مطور' : 'مسؤول'}</td>
+    <td><span class="pill ${admin.status === 'active' ? 'online' : 'offline'}">${admin.status === 'active' ? 'نشط' : 'محظور'}</span></td>
+    <td>${admin.role === 'developer' ? 'محمي' : `<button class="action" data-admin-id="${admin.id}" data-admin-status="${admin.status}">${admin.status === 'active' ? 'حظر' : 'تفعيل'}</button>`}</td>
+  </tr>`).join('') || '<tr><td colspan="5">لا يوجد مسؤولون.</td></tr>';
+  body.querySelectorAll('[data-admin-id]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        await apiRequest(`/api/developer/admins/${button.dataset.adminId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: button.dataset.adminStatus === 'active' ? 'blocked' : 'active' })
+        });
+        await loadAdmins();
+        await loadAudit();
+      } catch (error) { showToast(error.message); } finally { button.disabled = false; }
+    });
+  });
+}
+
+async function loadAdmins(){
+  const data = await apiRequest('/api/developer/admins');
+  renderAdmins(data.admins || []);
+}
+
+async function loadAudit(){
+  const data = await apiRequest('/api/developer/audit');
+  const list = document.getElementById('auditList');
+  list.innerHTML = (data.audit || []).map((entry) => `<div class="activity-item">
+    <span class="dot"></span><div><p>${escapeHtml(entry.details || entry.action)}</p>
+    <time>${escapeHtml(entry.actor?.username || 'system')} · ${new Date(entry.createdAt).toLocaleString('ar-IQ')}</time></div>
+  </div>`).join('') || '<p class="small">لا توجد إجراءات مسجلة.</p>';
+}
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+  }[character]));
+}
+
+async function loadDashboard(){
+  const data = await apiRequest('/api/developer/dashboard');
+  document.getElementById('usersCount').textContent = data.stats.users;
+  document.getElementById('pendingCount').textContent = data.stats.pending;
+  document.getElementById('onlineCount').textContent = data.stats.online;
+  document.getElementById('roomsCount').textContent = data.stats.rooms;
+  document.getElementById('roomsDetail').textContent = data.stats.rooms;
+  document.getElementById('conversationsCount').textContent = data.stats.conversations;
+  [['apiStatus', data.services.api], ['dbStatus', data.services.database], ['socketStatus', data.services.socket]]
+    .forEach(([id, value]) => {
+      const element = document.getElementById(id);
+      element.textContent = value === 'online' ? 'متصل' : 'غير متاح';
+      element.className = `pill ${value === 'online' ? 'online' : 'offline'}`;
+    });
+  renderRequests(data.recentRequests || []);
+  await Promise.all([loadAdmins(), loadAudit()]);
+}
+
+async function showDashboard(){
+  setAuthenticated(true);
+  try {
+    await loadDashboard();
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+loginForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  authError.textContent = '';
+  const button = loginForm.querySelector('button');
+  button.disabled = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/developer/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: document.getElementById('developerIdentifier').value.trim(),
+        password: document.getElementById('developerPassword').value
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.token) throw new Error(data.message || 'بيانات تسجيل الدخول غير صحيحة');
+    if (data.user?.role !== 'developer') throw new Error('هذا الحساب لا يملك صلاحية المطور');
+    clearSession();
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    await showDashboard();
+  } catch (error) {
+    authError.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById('logoutButton').addEventListener('click', () => {
+  clearSession();
+  setAuthenticated(false);
+  loginForm.reset();
+});
+
+document.getElementById('adminForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const message = document.getElementById('adminMessage');
+  const button = form.querySelector('button');
+  button.disabled = true;
+  message.textContent = '';
+  try {
+    const values = Object.fromEntries(new FormData(form));
+    await apiRequest('/api/developer/admins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values)
+    });
+    form.reset();
+    message.textContent = 'تم إنشاء المسؤول بنجاح.';
+    await Promise.all([loadAdmins(), loadAudit()]);
+  } catch (error) { message.textContent = error.message; } finally { button.disabled = false; }
+});
 
 function showToast(message){
   toast.textContent = message;
@@ -828,20 +1060,8 @@ function showToast(message){
   },3200);
 }
 
-function notConnected(){
-  showToast('هذا الإجراء غير مربوط بالخادم بعد، لذلك لم يتم تنفيذ أي تغيير.');
-}
-
-function goPending(page){
-  const existingPages = ['admin-approvals.html','admin-chat.html'];
-
-  if(existingPages.includes(page)){
-    showToast('سننشئ هذه الصفحة في الخطوة التالية. لم يتم تنفيذ أي إجراء إداري.');
-    return;
-  }
-
-  notConnected();
-}
+if (getToken()) showDashboard();
+else setAuthenticated(false);
 </script>
 
 </body>
