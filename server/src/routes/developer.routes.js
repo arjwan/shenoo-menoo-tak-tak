@@ -7,6 +7,8 @@ const User = require('../models/User');
 const Store = require('../models/Store');
 const Conversation = require('../models/Conversation');
 const GameRoom = require('../models/GameRoom');
+const Group = require('../models/Group');
+const GroupReport = require('../models/GroupReport');
 const AuditLog = require('../models/AuditLog');
 
 const router = express.Router();
@@ -112,6 +114,7 @@ async function getDashboardStats() {
     ads,
     subscriptions,
     reports,
+    roomReports,
     muted,
     blocked
   ] = await Promise.all([
@@ -125,6 +128,7 @@ async function getDashboardStats() {
     countOptionalCollection(['ads', 'advertisements']),
     countOptionalCollection(['subscriptions']),
     countOptionalCollection(['reports', 'userreports']),
+    GroupReport.countDocuments({ status: { $in: ['open', 'reviewing'] } }),
     countOptionalCollection(['mutes', 'mutedusers']),
     User.countDocuments({ 'blockedUsers.0': { $exists: true } })
   ]);
@@ -140,7 +144,7 @@ async function getDashboardStats() {
     stores,
     ads,
     subscriptions,
-    reports,
+    reports: reports + roomReports,
     muted,
     blocked,
     activeChats: conversations
@@ -354,6 +358,42 @@ router.get('/audit', async (req, res) => {
       target: entry.target ? { id: entry.target._id, fullName: entry.target.fullName, username: entry.target.username, role: entry.target.role } : null
     }))
   });
+});
+
+router.get('/rooms', async (req, res) => {
+  const rooms = await Group.find().populate('owner', 'fullName displayName username').sort({ updatedAt: -1 }).limit(200).lean();
+  res.json({ ok: true, rooms: rooms.map(room => ({ id: room._id, name: room.name, roomType: room.roomType, privacy: room.privacy, isOfficial: room.isOfficial, isLive: room.isLive, isLocked: room.isLocked, isActive: room.isActive, memberCount: room.members?.length || 0, owner: room.owner ? { id: room.owner._id, fullName: room.owner.displayName || room.owner.fullName, username: room.owner.username } : null })) });
+});
+
+router.patch('/rooms/:id', async (req, res) => {
+  const room = await Group.findById(req.params.id);
+  if (!room) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
+  if (req.body.isActive !== undefined) room.isActive = Boolean(req.body.isActive);
+  if (req.body.isLocked !== undefined) room.isLocked = Boolean(req.body.isLocked);
+  if (req.body.isOfficial !== undefined) room.isOfficial = Boolean(req.body.isOfficial);
+  if (req.body.ownerId !== undefined) {
+    const owner = await User.findOne({ _id: req.body.ownerId, status: 'active' });
+    if (!owner) return res.status(400).json({ ok: false, message: 'المالك الجديد غير صالح' });
+    room.owner = owner._id;
+    if (!room.members.some(id => String(id) === String(owner._id))) room.members.push(owner._id);
+    if (!room.admins.some(id => String(id) === String(owner._id))) room.admins.push(owner._id);
+  }
+  await room.save(); await writeAudit(req.user, 'developer.room.updated', null, `room:${room._id}`);
+  res.json({ ok: true, room: { id: room._id, isActive: room.isActive, isLocked: room.isLocked, isOfficial: room.isOfficial, owner: room.owner } });
+});
+
+router.get('/room-reports', async (req, res) => {
+  const reports = await GroupReport.find().populate('group', 'name roomType').populate('reporter targetUser', 'fullName displayName username').sort({ createdAt: -1 }).limit(200).lean();
+  res.json({ ok: true, reports });
+});
+
+router.patch('/room-reports/:id', async (req, res) => {
+  const status = String(req.body.status || '');
+  if (!['reviewing', 'resolved', 'dismissed'].includes(status)) return res.status(400).json({ ok: false, message: 'حالة البلاغ غير صالحة' });
+  const report = await GroupReport.findByIdAndUpdate(req.params.id, { status, reviewedBy: req.user._id, resolution: String(req.body.resolution || '').trim().slice(0, 500) }, { new: true });
+  if (!report) return res.status(404).json({ ok: false, message: 'البلاغ غير موجود' });
+  await writeAudit(req.user, `room.report.${status}`, report.targetUser ? { _id: report.targetUser } : null, `report:${report._id}`);
+  res.json({ ok: true, report });
 });
 
 module.exports = router;

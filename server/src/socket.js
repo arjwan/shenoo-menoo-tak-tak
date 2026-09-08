@@ -132,16 +132,19 @@ function attachSocket(httpServer) {
 
     socket.on('group:join', async ({ groupId } = {}, ack) => {
       const group = await Group.findById(groupId).catch(() => null);
-      const allowed = group && group.isActive && (group.privacy === 'public' || group.members.some(id => String(id) === String(socket.user._id)) || String(group.owner) === String(socket.user._id));
+      const banned = group?.bannedMembers?.some(id => String(id) === String(socket.user._id));
+      const allowed = group && group.isActive && !banned && (socket.user.role === 'developer' || group.privacy === 'public' || group.members.some(id => String(id) === String(socket.user._id)) || String(group.owner) === String(socket.user._id));
       if (!allowed) return typeof ack === 'function' && ack({ ok: false, message: 'لا يمكنك دخول هذه الغرفة' });
       socket.join(`group:${groupId}`);
       if (typeof ack === 'function') ack({ ok: true });
     });
     socket.on('group-voice:join', async ({ groupId } = {}, ack) => {
       const group = await Group.findById(groupId).catch(() => null);
-      const allowed = group && group.roomType === 'voice' && group.members.some(id => String(id) === String(socket.user._id));
+      const privileged = group && (socket.user.role === 'developer' || String(group.owner) === String(socket.user._id) || group.admins.some(id => String(id) === String(socket.user._id)) || group.moderators.some(id => String(id) === String(socket.user._id)));
+      const allowed = group && group.isActive && ['voice', 'challenge'].includes(group.roomType) && !group.bannedMembers.some(id => String(id) === String(socket.user._id)) && !group.mutedMembers.some(id => String(id) === String(socket.user._id)) && (privileged || (group.allowMemberAudio && group.members.some(id => String(id) === String(socket.user._id))));
       if (!allowed) return typeof ack === 'function' && ack({ ok: false, message: 'انضم إلى الغرفة الصوتية أولاً' });
       if (!groupVoiceRooms.has(String(groupId))) groupVoiceRooms.set(String(groupId), new Map());
+      if (!groupVoiceRooms.get(String(groupId)).has(String(socket.user._id)) && groupVoiceRooms.get(String(groupId)).size >= group.maxSpeakers) return typeof ack === 'function' && ack({ ok: false, message: 'اكتمل عدد المتحدثين في الغرفة' });
       groupVoiceRooms.get(String(groupId)).set(String(socket.user._id), { id: socket.user._id, name: socket.user.displayName || socket.user.fullName, muted: true });
       socket.join(`group-voice:${groupId}`);
       const participants = Array.from(groupVoiceRooms.get(String(groupId)).values());

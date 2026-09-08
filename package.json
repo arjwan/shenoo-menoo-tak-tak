@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
+    "test": "node --test server/test/*.test.js",
     "seed:developer": "node server/src/scripts/createDeveloper.js",
     "seed:rooms": "node server/src/scripts/seedOfficialRooms.js"
   },

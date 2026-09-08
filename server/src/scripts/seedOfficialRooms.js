@@ -6,7 +6,7 @@ const Group = require('../models/Group');
 const rooms = [
   { name: 'سوالف العراق', description: 'الغرفة الكتابية العامة الرسمية لمجتمع شنو منو.', roomType: 'text' },
   { name: 'صوت شنو منو', description: 'غرفة صوتية عامة للتعارف والنقاش المحترم.', roomType: 'voice' },
-  { name: 'ساحة التحديات', description: 'الغرفة الرسمية للتحديات والألعاب والمنافسات.', roomType: 'challenge' }
+  { name: 'ساحة التحديات', description: 'الغرفة الرسمية للتحديات والألعاب والمنافسات.', roomType: 'challenge', maxSpeakers: 2 }
 ];
 
 connectDB().then(async () => {
