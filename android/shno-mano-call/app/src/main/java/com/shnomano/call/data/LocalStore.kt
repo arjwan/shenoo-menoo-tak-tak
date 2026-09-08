@@ -48,8 +48,17 @@ interface LocalDao {
     @Query("SELECT * FROM messages WHERE conversationId = :conversationId ORDER BY createdAt")
     fun observeMessages(conversationId: String): Flow<List<MessageEntity>>
 
+    @Query("SELECT * FROM messages WHERE conversationId = :conversationId ORDER BY createdAt")
+    suspend fun messagesOnce(conversationId: String): List<MessageEntity>
+
+    @Query("SELECT * FROM messages WHERE state = 'pending' ORDER BY createdAt")
+    suspend fun pendingMessages(): List<MessageEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveMessages(items: List<MessageEntity>)
+
+    @Query("DELETE FROM messages WHERE id = :id")
+    suspend fun deleteMessage(id: String)
 }
 
 @Database(entities = [ContactEntity::class, MessageEntity::class], version = 1, exportSchema = false)
