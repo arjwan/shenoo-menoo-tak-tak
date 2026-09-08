@@ -20,6 +20,7 @@ const groupRoutes = require('./routes/groups.routes');
 const islamicRoutes = require('./routes/islamic.routes');
 const storesRoutes = require('./routes/stores.routes');
 const consultationRoutes = require('./routes/consultations.routes');
+const astrologyRoutes = require('./routes/astrology.routes');
 const { attachSocket } = require('./socket');
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/islamic', islamicRoutes);
 app.use('/api/stores', storesRoutes);
 app.use('/api/consultations', consultationRoutes);
+app.use('/api/astrology', astrologyRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 
 app.use((error, req, res, next) => {
