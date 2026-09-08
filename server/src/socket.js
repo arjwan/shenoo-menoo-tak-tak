@@ -7,10 +7,45 @@ const Group = require('./models/Group');
 const { publicState, canSpectate, canVoice, decorate } = require('./routes/game-rooms.routes');
 const { blocked, friends } = require('./routes/friends.routes');
 
+class PrivateCallRegistry {
+  constructor() {
+    this.calls = new Map();
+    this.users = new Map();
+  }
+  invite(call) {
+    if (!call.callId || this.calls.has(call.callId) || this.users.has(call.callerId) || this.users.has(call.calleeId)) return false;
+    this.calls.set(call.callId, { ...call, state: 'ringing' });
+    this.users.set(call.callerId, call.callId);
+    this.users.set(call.calleeId, call.callId);
+    return true;
+  }
+  get(callId) { return this.calls.get(callId); }
+  accept(callId, calleeSocketId) {
+    const call = this.calls.get(callId);
+    if (!call || call.state !== 'ringing') return false;
+    call.state = 'accepted';
+    call.calleeSocketId = calleeSocketId;
+    return true;
+  }
+  end(callId) {
+    const call = this.calls.get(callId);
+    if (!call) return null;
+    this.calls.delete(callId);
+    this.users.delete(call.callerId);
+    this.users.delete(call.calleeId);
+    return call;
+  }
+  forUser(userId) {
+    const callId = this.users.get(String(userId));
+    return callId ? this.calls.get(callId) : null;
+  }
+}
+
 function attachSocket(httpServer) {
   const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
   const voiceRooms = new Map();
   const groupVoiceRooms = new Map();
+  const privateCalls = new PrivateCallRegistry();
   io.use(async (socket, next) => {
     try {
       const authorization = socket.handshake.headers.authorization || '';
@@ -29,7 +64,7 @@ function attachSocket(httpServer) {
     const userRoom = `user:${socket.user._id}`;
     socket.join(userRoom);
     User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': true } }).catch(() => {});
-    socket.emit('presence:online', { userId: socket.user._id });
+    socket.broadcast.emit('presence:online', { userId: socket.user._id });
 
     const emitSpectators = async (roomId) => {
       const room = await GameRoom.findById(roomId).populate('spectators', 'fullName displayName username profile');
@@ -193,18 +228,75 @@ function attachSocket(httpServer) {
       if (conversation) io.to(`conversation:${conversationId}`).emit('private:read', { messageId, userId: socket.user._id });
     });
 
-    const relayCall = (signal) => async ({ userId, conversationId, type, data } = {}) => {
-      const conversation = await Conversation.findOne({ _id: conversationId, participants: socket.user._id });
-      const target = await User.findById(userId);
-      const permission = type === 'video' ? target?.privacy?.get('videoCalls') : target?.privacy?.get('audioCalls');
-      if (!conversation || !target || blocked(socket.user, target) || permission === 'nobody' || (permission !== 'everyone' && !(await friends(socket.user._id, target._id)))) return;
-      io.to(`user:${target._id}`).emit(signal, { conversationId, type, data, from: socket.user._id, signal });
+    const authenticatedCallContext = async ({ userId, conversationId, type } = {}) => {
+      if (!['audio', 'video'].includes(type) || !userId || !conversationId) return null;
+      const conversation = await Conversation.findOne({ _id: conversationId, participants: socket.user._id }).catch(() => null);
+      if (!conversation || conversation.participants.length !== 2) return null;
+      const otherId = conversation.participants.find((id) => String(id) !== String(socket.user._id));
+      if (!otherId || String(otherId) !== String(userId)) return null;
+      const target = await User.findById(otherId);
+      if (!target || target.status !== 'active' || blocked(socket.user, target) || !(await friends(socket.user._id, target._id))) return null;
+      const permission = type === 'video' ? target.privacy?.get('videoCalls') : target.privacy?.get('audioCalls');
+      if (permission === 'nobody') return null;
+      return { conversation, target };
     };
-    ['call:invite', 'call:accept', 'call:reject', 'call:end', 'webrtc:offer', 'webrtc:answer', 'webrtc:ice'].forEach((event) => socket.on(event, relayCall(event)));
-    socket.on('call:signal', relayCall('call:signal'));
+    const peerIdFor = (call, senderId) => call.callerId === String(senderId) ? call.calleeId : call.callerId;
+    const ownsCall = (call, userId) => call && [call.callerId, call.calleeId].includes(String(userId));
+
+    socket.on('call:invite', async (payload = {}, ack) => {
+      const callId = String(payload.callId || '').slice(0, 100);
+      const context = await authenticatedCallContext(payload);
+      if (!context) return typeof ack === 'function' && ack({ ok: false, reason: 'forbidden', message: 'لا يمكن بدء مكالمة مع هذا المستخدم' });
+      const call = { callId, callerId: String(socket.user._id), callerSocketId: socket.id, calleeId: String(context.target._id), conversationId: String(context.conversation._id), type: payload.type };
+      if (!privateCalls.invite(call)) return typeof ack === 'function' && ack({ ok: false, reason: 'busy', message: 'المستخدم مشغول بمكالمة أخرى' });
+      io.to(`user:${call.calleeId}`).emit('call:invite', { callId, conversationId: call.conversationId, type: call.type, from: call.callerId, callerName: socket.user.displayName || socket.user.fullName || socket.user.username });
+      setTimeout(() => {
+        const pending = privateCalls.get(callId);
+        if (!pending || pending.state !== 'ringing') return;
+        privateCalls.end(callId);
+        io.to(`user:${pending.callerId}`).to(`user:${pending.calleeId}`).emit('call:end', { callId, conversationId: pending.conversationId, type: pending.type, reason: 'no-answer' });
+      }, 35000);
+      if (typeof ack === 'function') ack({ ok: true, callId });
+    });
+
+    socket.on('call:accept', (payload = {}, ack) => {
+      const call = privateCalls.get(String(payload.callId || ''));
+      if (!ownsCall(call, socket.user._id) || call.calleeId !== String(socket.user._id) || !privateCalls.accept(call.callId, socket.id)) return typeof ack === 'function' && ack({ ok: false, message: 'هذه المكالمة لم تعد متاحة' });
+      io.to(`user:${call.callerId}`).emit('call:accept', { callId: call.callId, conversationId: call.conversationId, type: call.type, from: call.calleeId });
+      if (typeof ack === 'function') ack({ ok: true });
+    });
+
+    const finishPrivateCall = (event) => (payload = {}, ack) => {
+      const call = privateCalls.get(String(payload.callId || ''));
+      if (!ownsCall(call, socket.user._id)) return typeof ack === 'function' && ack({ ok: false });
+      if (call.state === 'accepted' && socket.id !== call.callerSocketId && socket.id !== call.calleeSocketId) return typeof ack === 'function' && ack({ ok: false });
+      const peerId = peerIdFor(call, socket.user._id);
+      privateCalls.end(call.callId);
+      io.to(`user:${peerId}`).emit(event, { callId: call.callId, conversationId: call.conversationId, type: call.type, from: String(socket.user._id), reason: String(payload.reason || '').slice(0, 40) });
+      if (typeof ack === 'function') ack({ ok: true });
+    };
+    socket.on('call:reject', finishPrivateCall('call:reject'));
+    socket.on('call:end', finishPrivateCall('call:end'));
+
+    const relayWebRtc = (event) => (payload = {}, ack) => {
+      const call = privateCalls.get(String(payload.callId || ''));
+      if (!ownsCall(call, socket.user._id) || call.state !== 'accepted') return typeof ack === 'function' && ack({ ok: false });
+      if (socket.id !== call.callerSocketId && socket.id !== call.calleeSocketId) return typeof ack === 'function' && ack({ ok: false });
+      const peerId = peerIdFor(call, socket.user._id);
+      if (String(payload.userId || peerId) !== peerId) return typeof ack === 'function' && ack({ ok: false });
+      io.to(`user:${peerId}`).emit(event, { callId: call.callId, conversationId: call.conversationId, type: call.type, data: payload.data, from: String(socket.user._id) });
+      if (typeof ack === 'function') ack({ ok: true });
+    };
+    ['webrtc:offer', 'webrtc:answer', 'webrtc:ice'].forEach((event) => socket.on(event, relayWebRtc(event)));
 
     socket.on('presence:online', () => socket.broadcast.emit('presence:online', { userId: socket.user._id }));
     socket.on('disconnect', async () => {
+      const privateCall = privateCalls.forUser(socket.user._id);
+      if (privateCall && (socket.id === privateCall.callerSocketId || socket.id === privateCall.calleeSocketId)) {
+        const peerId = peerIdFor(privateCall, socket.user._id);
+        privateCalls.end(privateCall.callId);
+        io.to(`user:${peerId}`).emit('call:end', { callId: privateCall.callId, conversationId: privateCall.conversationId, type: privateCall.type, from: String(socket.user._id), reason: 'disconnected' });
+      }
       for (const [roomId, participants] of voiceRooms) {
         if (participants.delete(String(socket.user._id))) {
           io.to(`voice:${roomId}`).emit('voice:participants', { roomId, participants: Array.from(participants.values()) });
@@ -217,12 +309,15 @@ function attachSocket(httpServer) {
           if (!participants.size) groupVoiceRooms.delete(groupId);
         }
       }
-      const lastSeen = new Date();
-      await User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': false, 'profile.lastSeen': lastSeen } }).catch(() => {});
-      socket.broadcast.emit('presence:offline', { userId: socket.user._id, lastSeen });
+      const remainingSockets = await io.in(userRoom).fetchSockets().catch(() => []);
+      if (!remainingSockets.length) {
+        const lastSeen = new Date();
+        await User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': false, 'profile.lastSeen': lastSeen } }).catch(() => {});
+        socket.broadcast.emit('presence:offline', { userId: socket.user._id, lastSeen });
+      }
     });
   });
   return io;
 }
 
-module.exports = { attachSocket };
+module.exports = { attachSocket, PrivateCallRegistry };

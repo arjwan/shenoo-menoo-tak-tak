@@ -43,25 +43,35 @@ router.get('/:id/messages', async (req, res) => {
   res.json({ ok: true, conversation: { id: conversation._id, otherUser: safeUser(other) }, messages: messages.reverse().map((m) => ({ ...m.toObject(), senderId: m.sender, mine: String(m.sender) === String(req.user._id), currentUserId: req.user._id })) });
 });
 router.post('/:id/messages', upload.single('attachment'), async (req, res) => {
+  if (req.file && !(await upload.validateStoredFile(req.file))) {
+    await require('fs').promises.unlink(req.file.path).catch(() => {});
+    return res.status(400).json({ ok: false, message: 'محتوى الملف لا يطابق نوعه أو غير مسموح' });
+  }
   const conversation = await getConversation(req.params.id, req.user._id);
-  if (!conversation) return res.status(404).json({ ok: false, message: 'المحادثة غير موجودة' });
+  if (!conversation) {
+    if (req.file) await require('fs').promises.unlink(req.file.path).catch(() => {});
+    return res.status(404).json({ ok: false, message: 'المحادثة غير موجودة' });
+  }
   const other = conversation.participants.find((p) => String(p._id) !== String(req.user._id));
-  if (!other || blocked(req.user, other)) return res.status(403).json({ ok: false, message: 'لا يمكن إرسال الرسائل إلى هذا المستخدم' });
+  if (!other || blocked(req.user, other)) {
+    if (req.file) await require('fs').promises.unlink(req.file.path).catch(() => {});
+    return res.status(403).json({ ok: false, message: 'لا يمكن إرسال الرسائل إلى هذا المستخدم' });
+  }
   const inferredType = req.file?.mimetype.startsWith('image/') ? 'image' : req.file?.mimetype.startsWith('video/') ? 'video' : req.file?.mimetype.startsWith('audio/') ? 'audio' : 'file';
-  const type = ['text', 'image', 'video', 'file', 'audio'].includes(req.body.type) ? req.body.type : (req.file ? inferredType : 'text');
+  const type = req.file ? inferredType : 'text';
   const text = String(req.body.text || '').trim();
   if (!text && !req.file) return res.status(400).json({ ok: false, message: 'الرسالة فارغة' });
   if (type === 'text' && text.length > 5000) return res.status(400).json({ ok: false, message: 'الرسالة طويلة جداً' });
   const replyTo = req.body.replyTo && mongoose.isValidObjectId(req.body.replyTo)
     ? await Message.exists({ _id: req.body.replyTo, conversation: conversation._id })
     : null;
-  const message = await Message.create({ conversation: conversation._id, sender: req.user._id, type, text, replyTo: replyTo ? req.body.replyTo : null, deliveredAt: new Date(), attachment: req.file ? { url: `/uploads/${req.file.filename}`, name: req.file.originalname, mimeType: req.file.mimetype, size: req.file.size } : null });
+  const message = await Message.create({ conversation: conversation._id, sender: req.user._id, type, text, replyTo: replyTo ? req.body.replyTo : null, deliveredAt: new Date(), attachment: req.file ? { url: `/uploads/${req.file.filename}`, name: require('path').basename(req.file.originalname).slice(0, 255), mimeType: req.file.mimetype, size: req.file.size } : null });
   conversation.lastMessage = message._id;
   conversation.unread.set(String(other._id), (conversation.unread.get(String(other._id)) || 0) + 1);
   await conversation.save();
   const serialized = serializeMessage(message, req.user._id);
   const io = req.app.get('io');
-  if (io) io.to(`conversation:${conversation._id}`).emit('private:message', { conversationId: String(conversation._id), message: serialized, senderId: String(req.user._id) });
+  if (io) io.to(`conversation:${conversation._id}`).to(`user:${other._id}`).emit('private:message', { conversationId: String(conversation._id), message: serialized, senderId: String(req.user._id) });
   res.status(201).json({ ok: true, message: serialized });
 });
 router.patch('/:id/read', async (req, res) => {
