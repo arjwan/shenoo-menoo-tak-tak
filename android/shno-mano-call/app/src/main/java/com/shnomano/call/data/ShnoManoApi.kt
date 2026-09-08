@@ -8,9 +8,30 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.PUT
 
-private const val BASE_URL = "https://shino-mino-tak-tak.duckdns.org/"
+const val SHNO_MANO_BASE_URL = "https://shino-mino-tak-tak.duckdns.org/"
+
+data class SignInRequest(
+    val identifier: String,
+    val password: String
+)
+
+data class SignedInUserDto(
+    val id: String,
+    val fullName: String,
+    val username: String,
+    val role: String? = null
+)
+
+data class SignInResponse(
+    val ok: Boolean = false,
+    val message: String? = null,
+    val status: String? = null,
+    val token: String? = null,
+    val user: SignedInUserDto? = null
+)
 
 data class PhoneContactDto(
     val id: String? = null,
@@ -38,6 +59,9 @@ data class FriendsResponse(
 )
 
 interface ShnoManoApi {
+    @POST("api/auth/signin")
+    suspend fun signIn(@Body body: SignInRequest): SignInResponse
+
     @GET("api/phone-contacts")
     suspend fun phoneContacts(): PhoneContactsResponse
 
@@ -65,7 +89,7 @@ object ApiFactory {
             .addInterceptor(logging)
             .build()
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(SHNO_MANO_BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
