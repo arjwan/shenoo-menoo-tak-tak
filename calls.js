@@ -1,0 +1,13 @@
+(function(){
+  'use strict';
+  var list=document.querySelector('[data-call-list]'),search=document.querySelector('[data-call-search]'),feedback=document.querySelector('[data-call-feedback]'),people=[];
+  function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function avatar(p){var name=p.fullName||p.name||p.username||'؟';return '<span class="avatar calls-avatar">'+(p.avatarUrl?'<img src="'+esc(p.avatarUrl)+'" alt="">':esc(name.slice(0,1)))+'<i class="presence '+(p.online?'online':'')+'"></i></span>';}
+  function render(items){
+    if(!items.length){list.innerHTML='<div class="social-empty"><span class="social-empty-icon">☎</span><strong>لا توجد جهات اتصال</strong><p>أضف أصدقاء أولاً، وبعد قبول الصداقة ستظهر أزرار الاتصال هنا.</p><a class="icon-button primary" href="friends.html">فتح الأصدقاء</a></div>';return;}
+    list.innerHTML=items.map(function(p){var id=encodeURIComponent(p.id);return '<article class="call-contact" data-call-person="'+esc(p.id)+'">'+avatar(p)+'<a class="call-contact-copy" href="messages.html?user='+id+'"><strong>'+esc(p.fullName||p.name||'مستخدم')+'</strong><small>@'+esc(p.username||'غير متاح')+' · '+(p.online?'متصل الآن':'غير متصل')+'</small></a><div class="call-contact-actions"><a class="call-action chat" aria-label="مراسلة '+esc(p.fullName||'')+'" href="messages.html?user='+id+'">💬<span>رسالة</span></a><a class="call-action audio" aria-label="اتصال صوتي '+esc(p.fullName||'')+'" href="messages.html?user='+id+'&call=audio">☎<span>صوت</span></a><a class="call-action video" aria-label="اتصال فيديو '+esc(p.fullName||'')+'" href="messages.html?user='+id+'&call=video">▣<span>فيديو</span></a></div></article>';}).join('');
+  }
+  async function load(){try{var data=await SocialAPI.request('/api/friends');people=data.friends||data.users||data.data||[];people=people.map(function(x){return x.user||x;});render(people);}catch(e){feedback.textContent=e.message;feedback.className='form-message is-error';list.innerHTML='<div class="social-empty"><strong>تعذر تحميل جهات الاتصال</strong><p>تحقق من الاتصال ثم أعد المحاولة.</p></div>';}}
+  var timer;search.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(function(){var q=search.value.trim().toLocaleLowerCase('ar');render(!q?people:people.filter(function(p){return String((p.fullName||p.name||'')+' '+(p.username||'')).toLocaleLowerCase('ar').includes(q);}));},120);});
+  load();
+}());
