@@ -35,6 +35,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           p = Path('app/src/main/java/com/shnomano/call/MainActivity.kt')
           s = p.read_text()
           s = s.replace('setContent { ShnoManoCallApp() }', 'setContent { ShnoManoTheme { ShnoManoCallApp() } }')
@@ -42,10 +43,14 @@ jobs:
           s = s.replace('Button(onClick=onLogout,colors=ButtonDefaults.buttonColors(containerColor=Violet),modifier=Modifier.fillMaxWidth()){Text("تسجيل الخروج")}', 'Button(onClick=onLogout,colors=ButtonDefaults.buttonColors(containerColor=Violet),modifier=Modifier.fillMaxWidth()){Text("تسجيل الخروج")};Spacer(Modifier.height(10.dp));OutlinedButton(onClick={(context as? ComponentActivity)?.finishAffinity()},modifier=Modifier.fillMaxWidth()){Icon(Icons.Default.Close,null);Spacer(Modifier.width(8.dp));Text("إغلاق التطبيق")}')
           old = 'private fun openShnoCall(context:android.content.Context,userId:String,type:String){if(userId.isBlank())return;openUri(context,"https://shino-mino-tak-tak.duckdns.org/messages.html?user=${Uri.encode(userId)}&prepare=$type")}'
           new = 'private fun openShnoCall(context:android.content.Context,userId:String,type:String){if(userId.isBlank())return;val url="https://shino-mino-tak-tak.duckdns.org/messages.html?user=${Uri.encode(userId)}&prepare=$type";context.startActivity(Intent(context,WebCallActivity::class.java).putExtra(WebCallActivity.EXTRA_URL,url))}'
-          if old not in s:
-              raise SystemExit('openShnoCall patch target not found')
-          s = s.replace(old, new)
+          if old in s:
+              s = s.replace(old, new)
           p.write_text(s)
+
+          native = Path('app/src/main/java/com/shnomano/call/NativeMainActivity.kt')
+          ns = native.read_text()
+          ns = ns.replace('val repo = remember { AppRepository(LocalContext.current) }', 'val context = LocalContext.current\n    val repo = remember(context) { AppRepository(context) }')
+          native.write_text(ns)
           PY
 
       - name: Build installable debug APK
