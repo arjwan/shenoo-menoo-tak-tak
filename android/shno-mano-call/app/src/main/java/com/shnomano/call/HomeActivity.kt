@@ -3,7 +3,7 @@ package com.shnomano.call
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.setContent
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -35,52 +35,52 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val session = SessionStore(this)
         if (!session.isSignedIn()) {
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, WelcomeActivity::class.java))
             finish()
             return
         }
-        setContent { ShnoHome() }
+        setContent { ShnoManoTheme { ShnoHome() } }
     }
 
     @Composable
     private fun ShnoHome() {
-        MaterialTheme {
-            Scaffold(
-                containerColor = HomeNight,
-                bottomBar = {
-                    NavigationBar(containerColor = Color(0xFF0B0E17)) {
-                        NavigationBarItem(false, { openConnection() }, { Icon(Icons.Default.ChatBubble, null) }, label = { Text("الدردشات", fontSize = 10.sp) })
-                        NavigationBarItem(false, { openConnection() }, { Icon(Icons.Default.People, null) }, label = { Text("الأصدقاء", fontSize = 10.sp) })
-                        NavigationBarItem(false, { openSection("mall.html") }, { Text("🛍️", fontSize = 20.sp) }, label = { Text("مول العراق", fontSize = 10.sp) })
-                        NavigationBarItem(false, { openSection("services.html") }, { Text("🧰", fontSize = 20.sp) }, label = { Text("الخدمات", fontSize = 10.sp) })
-                        NavigationBarItem(true, { openConnection() }, { Icon(Icons.Default.Call, null) }, label = { Text("اتصال", fontSize = 10.sp) })
+        Scaffold(
+            containerColor = HomeNight,
+            bottomBar = {
+                NavigationBar(containerColor = Color(0xFF0B0E17)) {
+                    NavigationBarItem(false, { openConnection() }, { Icon(Icons.Default.ChatBubble, null) }, label = { Text("الدردشات", fontSize = 10.sp) })
+                    NavigationBarItem(false, { openConnection() }, { Icon(Icons.Default.People, null) }, label = { Text("الأصدقاء", fontSize = 10.sp) })
+                    NavigationBarItem(false, { openSection("mall.html") }, { Text("🛍️", fontSize = 20.sp) }, label = { Text("مول العراق", fontSize = 10.sp) })
+                    NavigationBarItem(false, { openSection("reels.html") }, { Text("🎬", fontSize = 20.sp) }, label = { Text("الريلز", fontSize = 10.sp) })
+                    NavigationBarItem(true, { openConnection() }, { Icon(Icons.Default.Call, null) }, label = { Text("اتصال", fontSize = 10.sp) })
+                }
+            }
+        ) { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).background(
+                    Brush.verticalGradient(listOf(Color(0xFF0B1020), HomeNight, Color(0xFF090C14)))
+                ).padding(18.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(50.dp).background(Brush.linearGradient(listOf(HomeViolet, HomeAqua)), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) { Text("ش", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black) }
+                    Column(Modifier.padding(start = 12.dp)) {
+                        Text("شنو منو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                        Text("اتصال • مول العراق • الريلز • الخدمات", color = HomeMuted, fontSize = 12.sp)
                     }
                 }
-            ) { padding ->
-                Column(
-                    Modifier.fillMaxSize().padding(padding).background(
-                        Brush.verticalGradient(listOf(Color(0xFF0B1020), HomeNight, Color(0xFF090C14)))
-                    ).padding(18.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(50.dp).background(Brush.linearGradient(listOf(HomeViolet, HomeAqua)), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) { Text("ش", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black) }
-                        Column(Modifier.padding(start = 12.dp)) {
-                            Text("شنو منو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-                            Text("اتصال • مول العراق • الخدمات", color = HomeMuted, fontSize = 12.sp)
-                        }
-                    }
-                    Spacer(Modifier.height(24.dp))
-                    HomeCard("💬", "الدردشات", "رسائلك ومحادثاتك مع أصدقاء شنو منو") { openConnection() }
-                    Spacer(Modifier.height(12.dp))
-                    HomeCard("🛍️", "مول العراق", "تصفح المتاجر والمنتجات داخل شنو منو بدون تسجيل دخول جديد") { openSection("mall.html") }
-                    Spacer(Modifier.height(12.dp))
-                    HomeCard("🧰", "الخدمات", "قسم الخدمات جاهز للميزات التي سنضيفها لاحقاً") { openSection("services.html") }
-                    Spacer(Modifier.height(12.dp))
-                    HomeCard("☎️", "شنو منو اتصال", "جهات الهاتف، الأصدقاء، المكالمات والرسائل") { openConnection() }
-                }
+                Spacer(Modifier.height(22.dp))
+                HomeCard("💬", "الدردشات", "رسائلك ومحادثاتك مع أصدقاء شنو منو") { openConnection() }
+                Spacer(Modifier.height(10.dp))
+                HomeCard("🛍️", "مول العراق", "تصفح المتاجر والمنتجات داخل التطبيق دون تسجيل جديد") { openSection("mall.html") }
+                Spacer(Modifier.height(10.dp))
+                HomeCard("🎬", "الريلز", "مقاطع شنو منو القصيرة داخل التطبيق") { openSection("reels.html") }
+                Spacer(Modifier.height(10.dp))
+                HomeCard("🧰", "الخدمات", "صفحة الخدمات جاهزة للإضافات القادمة") { openSection("services.html") }
+                Spacer(Modifier.height(10.dp))
+                HomeCard("☎️", "شنو منو اتصال", "جهات الهاتف، الأصدقاء، المكالمات والرسائل") { openConnection() }
             }
         }
     }
@@ -92,13 +92,13 @@ class HomeActivity : ComponentActivity() {
             colors = CardDefaults.cardColors(containerColor = HomePanel),
             shape = RoundedCornerShape(22.dp)
         ) {
-            Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(54.dp).background(Color(0x227C5CFF), CircleShape), contentAlignment = Alignment.Center) {
-                    Text(icon, fontSize = 26.sp)
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(50.dp).background(Color(0x227C5CFF), CircleShape), contentAlignment = Alignment.Center) {
+                    Text(icon, fontSize = 24.sp)
                 }
                 Column(Modifier.padding(start = 14.dp).weight(1f)) {
-                    Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text(subtitle, color = HomeMuted, fontSize = 12.sp, lineHeight = 18.sp)
+                    Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text(subtitle, color = HomeMuted, fontSize = 11.sp, lineHeight = 17.sp)
                 }
                 Text("‹", color = HomeAqua, fontSize = 28.sp)
             }
