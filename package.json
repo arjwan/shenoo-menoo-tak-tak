@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
-    "seed:developer": "node server/src/scripts/createDeveloper.js"
+    "seed:developer": "node server/src/scripts/createDeveloper.js",
+    "seed:rooms": "node server/src/scripts/seedOfficialRooms.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema({
     type: Map, of: { type: String, enum: ['everyone', 'friends', 'nobody'] },
     default: { profile:'everyone', photo:'everyone', cover:'everyone', lastSeen:'friends', online:'friends', birthDate:'nobody', about:'everyone', friendsList:'friends', phone:'nobody', email:'nobody', friendRequests:'everyone', messaging:'friends', audioCalls:'friends', videoCalls:'friends', gameSpectating:'friends', gameVoice:'friends', posts:'everyone', comments:'everyone', mentions:'friends' }
   },
+  phoneVisibility: { type: String, enum: ['nobody', 'all_friends', 'selected_friends'], default: 'nobody' },
+  phoneVisibleTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   reviewedAt: { type: Date, default: null }

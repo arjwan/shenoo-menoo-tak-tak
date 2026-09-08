@@ -3,12 +3,14 @@ const jwt = require('jsonwebtoken');
 const User = require('./models/User');
 const Conversation = require('./models/Conversation');
 const GameRoom = require('./models/GameRoom');
+const Group = require('./models/Group');
 const { publicState, canSpectate, canVoice, decorate } = require('./routes/game-rooms.routes');
 const { blocked, friends } = require('./routes/friends.routes');
 
 function attachSocket(httpServer) {
   const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
   const voiceRooms = new Map();
+  const groupVoiceRooms = new Map();
   io.use(async (socket, next) => {
     try {
       const authorization = socket.handshake.headers.authorization || '';
@@ -128,6 +130,40 @@ function attachSocket(httpServer) {
     socket.on('private:join', joinConversation);
     socket.on('conversation:join', joinConversation);
 
+    socket.on('group:join', async ({ groupId } = {}, ack) => {
+      const group = await Group.findById(groupId).catch(() => null);
+      const allowed = group && group.isActive && (group.privacy === 'public' || group.members.some(id => String(id) === String(socket.user._id)) || String(group.owner) === String(socket.user._id));
+      if (!allowed) return typeof ack === 'function' && ack({ ok: false, message: 'لا يمكنك دخول هذه الغرفة' });
+      socket.join(`group:${groupId}`);
+      if (typeof ack === 'function') ack({ ok: true });
+    });
+    socket.on('group-voice:join', async ({ groupId } = {}, ack) => {
+      const group = await Group.findById(groupId).catch(() => null);
+      const allowed = group && group.roomType === 'voice' && group.members.some(id => String(id) === String(socket.user._id));
+      if (!allowed) return typeof ack === 'function' && ack({ ok: false, message: 'انضم إلى الغرفة الصوتية أولاً' });
+      if (!groupVoiceRooms.has(String(groupId))) groupVoiceRooms.set(String(groupId), new Map());
+      groupVoiceRooms.get(String(groupId)).set(String(socket.user._id), { id: socket.user._id, name: socket.user.displayName || socket.user.fullName, muted: true });
+      socket.join(`group-voice:${groupId}`);
+      const participants = Array.from(groupVoiceRooms.get(String(groupId)).values());
+      io.to(`group-voice:${groupId}`).emit('group-voice:participants', { groupId, participants });
+      if (typeof ack === 'function') ack({ ok: true, participants });
+    });
+    socket.on('group-voice:mute', ({ groupId, muted } = {}) => {
+      const participant = groupVoiceRooms.get(String(groupId))?.get(String(socket.user._id)); if (!participant) return;
+      participant.muted = Boolean(muted); io.to(`group-voice:${groupId}`).emit('group-voice:mute', { groupId, userId: socket.user._id, muted: participant.muted });
+    });
+    socket.on('group-voice:leave', ({ groupId } = {}) => {
+      const room = groupVoiceRooms.get(String(groupId)); if (!room) return; room.delete(String(socket.user._id)); socket.leave(`group-voice:${groupId}`);
+      io.to(`group-voice:${groupId}`).emit('group-voice:participants', { groupId, participants: Array.from(room.values()) }); if (!room.size) groupVoiceRooms.delete(String(groupId));
+    });
+    const relayGroupVoice = event => ({ groupId, userId, data } = {}) => {
+      const room = groupVoiceRooms.get(String(groupId)); if (!room?.has(String(socket.user._id)) || !room.has(String(userId))) return;
+      io.to(`user:${userId}`).emit(event, { groupId, from: socket.user._id, data });
+    };
+    socket.on('webrtc:group-offer', relayGroupVoice('webrtc:group-offer'));
+    socket.on('webrtc:group-answer', relayGroupVoice('webrtc:group-answer'));
+    socket.on('webrtc:group-ice', relayGroupVoice('webrtc:group-ice'));
+
     socket.on('private:typing', async ({ conversationId, active } = {}) => {
       const conversation = await Conversation.findOne({ _id: conversationId, participants: socket.user._id }).populate('participants', 'blockedUsers');
       if (!conversation) return;
@@ -170,6 +206,12 @@ function attachSocket(httpServer) {
         if (participants.delete(String(socket.user._id))) {
           io.to(`voice:${roomId}`).emit('voice:participants', { roomId, participants: Array.from(participants.values()) });
           if (!participants.size) voiceRooms.delete(roomId);
+        }
+      }
+      for (const [groupId, participants] of groupVoiceRooms) {
+        if (participants.delete(String(socket.user._id))) {
+          io.to(`group-voice:${groupId}`).emit('group-voice:participants', { groupId, participants: Array.from(participants.values()) });
+          if (!participants.size) groupVoiceRooms.delete(groupId);
         }
       }
       const lastSeen = new Date();
