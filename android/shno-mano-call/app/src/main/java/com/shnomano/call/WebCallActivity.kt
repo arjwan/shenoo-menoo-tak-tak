@@ -2,8 +2,13 @@ package com.shnomano.call
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -22,9 +27,11 @@ import org.json.JSONObject
 
 class WebCallActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private lateinit var audioManager: AudioManager
     private var targetUrl: String = ""
     private var bootstrapped = false
     private var pendingPermissionRequest: PermissionRequest? = null
+    private var audioFocusRequest: AudioFocusRequest? = null
 
     private val mediaPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -32,7 +39,10 @@ class WebCallActivity : ComponentActivity() {
         val granted = result.values.all { it }
         val request = pendingPermissionRequest
         pendingPermissionRequest = null
-        if (granted) request?.grant(request.resources) else request?.deny()
+        if (granted) {
+            prepareCallAudio()
+            request?.grant(request.resources)
+        } else request?.deny()
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -40,6 +50,9 @@ class WebCallActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(7, 9, 16)
         window.navigationBarColor = Color.rgb(7, 9, 16)
+
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        prepareCallAudio()
 
         targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
         if (targetUrl.isBlank()) {
@@ -59,6 +72,7 @@ class WebCallActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    prepareCallAudio()
                     if (!bootstrapped && url?.contains("signin.html") == true) {
                         bootstrapped = true
                         val token = SessionStore(this@WebCallActivity).token.orEmpty()
@@ -79,7 +93,10 @@ class WebCallActivity : ComponentActivity() {
                         val missing = mutableListOf<String>()
                         if (needsAudio && ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) missing += Manifest.permission.RECORD_AUDIO
                         if (needsVideo && ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) missing += Manifest.permission.CAMERA
-                        if (missing.isEmpty()) request.grant(request.resources) else {
+                        if (missing.isEmpty()) {
+                            prepareCallAudio()
+                            request.grant(request.resources)
+                        } else {
                             pendingPermissionRequest = request
                             mediaPermissionLauncher.launch(missing.toTypedArray())
                         }
@@ -109,17 +126,65 @@ class WebCallActivity : ComponentActivity() {
         webView.loadUrl("https://shino-mino-tak-tak.duckdns.org/signin.html")
     }
 
+    private fun prepareCallAudio() {
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        @Suppress("DEPRECATION")
+        if (!audioManager.isBluetoothScoOn && !audioManager.isWiredHeadsetOn) {
+            audioManager.isSpeakerphoneOn = true
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (audioFocusRequest == null) {
+                val attrs = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+                audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(attrs)
+                    .setAcceptsDelayedFocusGain(false)
+                    .setOnAudioFocusChangeListener { }
+                    .build()
+            }
+            audioFocusRequest?.let { audioManager.requestAudioFocus(it) }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+        }
+    }
+
+    private fun releaseCallAudio() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(null)
+        }
+        @Suppress("DEPRECATION")
+        runCatching { audioManager.stopBluetoothSco() }
+        audioManager.mode = AudioManager.MODE_NORMAL
+        @Suppress("DEPRECATION")
+        runCatching { audioManager.isSpeakerphoneOn = false }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::audioManager.isInitialized) prepareCallAudio()
+    }
+
     override fun onBackPressed() {
         if (::webView.isInitialized && webView.canGoBack()) webView.goBack() else super.onBackPressed()
     }
 
     override fun onDestroy() {
+        pendingPermissionRequest?.deny()
+        pendingPermissionRequest = null
         if (::webView.isInitialized) {
             webView.stopLoading()
             webView.loadUrl("about:blank")
             webView.removeAllViews()
             webView.destroy()
         }
+        if (::audioManager.isInitialized) releaseCallAudio()
         super.onDestroy()
     }
 
