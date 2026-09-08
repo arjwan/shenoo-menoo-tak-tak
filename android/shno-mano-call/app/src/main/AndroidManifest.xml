@@ -5,12 +5,19 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
+        android:name=".ShnoManoApp"
         android:allowBackup="true"
         android:label="شنو منو اتصال"
         android:supportsRtl="true"
         android:theme="@style/Theme.ShnoManoCall">
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
