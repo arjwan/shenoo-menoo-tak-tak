@@ -2,7 +2,7 @@ const express = require('express');
 const ConsultationProvider = require('../models/ConsultationProvider');
 const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
-const categories = ['medical','legal','psychological','social'];
+const categories = ['medical','legal','educational','psychological'];
 const clean=(v,max=500)=>String(v||'').trim().slice(0,max);
 
 router.get('/', async (req,res)=>{
