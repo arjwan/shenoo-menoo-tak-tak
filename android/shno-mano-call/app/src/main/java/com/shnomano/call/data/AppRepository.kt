@@ -3,6 +3,7 @@ package com.shnomano.call.data
 import android.content.Context
 import android.provider.ContactsContract
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class AppRepository(context: Context) {
@@ -10,6 +11,8 @@ class AppRepository(context: Context) {
     val session = SessionStore(app)
     private val api = ApiFactory.create { session.token }
     private val dao = ShnoManoDatabase.get(app).localDao()
+
+    fun observeContacts(): Flow<List<ContactEntity>> = dao.observeContacts()
 
     suspend fun signIn(identifier: String, password: String): Result<SignedInUserDto> =
         AuthRepository(session, api).signIn(identifier, password)
