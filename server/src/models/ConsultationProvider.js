@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const consultationProviderSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  category: { type: String, enum: ['medical','legal','psychological','social'], required: true, index: true },
+  category: { type: String, enum: ['medical','legal','educational','psychological'], required: true, index: true },
   title: { type: String, required: true, trim: true, maxlength: 120 },
   specialty: { type: String, required: true, trim: true, maxlength: 120 },
   bio: { type: String, required: true, trim: true, maxlength: 1200 },
