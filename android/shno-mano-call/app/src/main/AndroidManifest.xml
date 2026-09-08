@@ -23,9 +23,10 @@
         <activity android:name=".WelcomeActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".MainActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".HomeActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".NativeMainActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity
-            android:name=".NativeMainActivity"
+            android:name=".WhatsAppStyleActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
