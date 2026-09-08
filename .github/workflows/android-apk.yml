@@ -30,28 +30,20 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Apply self-contained app patch
+      - name: Apply compatibility patch
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           p = Path('app/src/main/java/com/shnomano/call/MainActivity.kt')
           s = p.read_text()
           s = s.replace('setContent { ShnoManoCallApp() }', 'setContent { ShnoManoTheme { ShnoManoCallApp() } }')
           s = s.replace('Text("الإصدار 1.1.0 • بناء 2",color=Aqua,fontSize=12.sp,fontWeight=FontWeight.Bold)', 'Text("الإصدار 1.2.0 • بناء 3",color=Aqua,fontSize=12.sp,fontWeight=FontWeight.Bold)')
-          s = s.replace('Button(onClick=onLogout,colors=ButtonDefaults.buttonColors(containerColor=Violet),modifier=Modifier.fillMaxWidth()){Text("تسجيل الخروج")}', 'Button(onClick=onLogout,colors=ButtonDefaults.buttonColors(containerColor=Violet),modifier=Modifier.fillMaxWidth()){Text("تسجيل الخروج")};Spacer(Modifier.height(10.dp));OutlinedButton(onClick={(context as? ComponentActivity)?.finishAffinity()},modifier=Modifier.fillMaxWidth()){Icon(Icons.Default.Close,null);Spacer(Modifier.width(8.dp));Text("إغلاق التطبيق")}')
           old = 'private fun openShnoCall(context:android.content.Context,userId:String,type:String){if(userId.isBlank())return;openUri(context,"https://shino-mino-tak-tak.duckdns.org/messages.html?user=${Uri.encode(userId)}&prepare=$type")}'
           new = 'private fun openShnoCall(context:android.content.Context,userId:String,type:String){if(userId.isBlank())return;val url="https://shino-mino-tak-tak.duckdns.org/messages.html?user=${Uri.encode(userId)}&prepare=$type";context.startActivity(Intent(context,WebCallActivity::class.java).putExtra(WebCallActivity.EXTRA_URL,url))}'
           if old in s:
               s = s.replace(old, new)
           p.write_text(s)
-
-          native = Path('app/src/main/java/com/shnomano/call/NativeMainActivity.kt')
-          ns = native.read_text()
-          ns = ns.replace('val repo = remember { AppRepository(LocalContext.current) }', 'val context = LocalContext.current\n    val repo = remember(context) { AppRepository(context) }')
-          ns = ns.replace('FilledIconButton(onClick=onSend,colors=IconButtonDefaults.filledIconButtonColors(containerColor=Accent)){Icon(if(value.isBlank())Icons.Default.Mic else Icons.Default.Send,null,tint=Bg)}}}\n\n@Composable private fun SearchBox', 'FilledIconButton(onClick=onSend,colors=IconButtonDefaults.filledIconButtonColors(containerColor=Accent)){Icon(if(value.isBlank())Icons.Default.Mic else Icons.Default.Send,null,tint=Bg)}}}}\n\n@Composable private fun SearchBox')
-          native.write_text(ns)
           PY
 
       - name: Build installable debug APK
@@ -60,7 +52,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shno-mano-call-apk-1.2.0-build3
+          name: shno-mano-call-apk-stable
           path: android/shno-mano-call/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
