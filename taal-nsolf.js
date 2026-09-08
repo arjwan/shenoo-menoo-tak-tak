@@ -17,7 +17,7 @@
     try{
       const data=await SocialAPI.request('/api/friends');
       const items=data.friends||[];
-      friendsRoot.innerHTML=items.length?items.map(row).join(''):'<div class="empty">لا يوجد أصدقاء بعد. ابدأ من صفحة إضافة الأصدقاء.</div>';
+      friendsRoot.innerHTML=items.length?items.map(row).join(''):'<div class="empty"><p>لا يوجد أصدقاء بعد.</p><a class="talk-action" href="friends.html?intent=add">➕ اكتشف أشخاصاً وأرسل طلب صداقة</a></div>';
     }catch(error){friendsRoot.innerHTML='<div class="empty">تعذر تحميل الأصدقاء: '+esc(error.message)+'</div>';}
   }
 

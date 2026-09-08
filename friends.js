@@ -5,6 +5,7 @@
   var message = document.querySelector("[data-friends-message]");
   var search = document.querySelector("[data-people-search]");
   var currentTab = "friends";
+  var requestedIntent = new URLSearchParams(location.search).get("intent") || "";
   var cache = {};
   function feedback(text, type) { message.textContent = text; message.className = "form-message" + (type ? " is-" + type : ""); }
   function avatar(person) { return person.avatarUrl ? '<span class="avatar"><img src="' + person.avatarUrl + '" alt=""><i class="presence ' + (person.online ? "online" : "") + '"></i></span>' : '<span class="avatar">' + (person.fullName || person.name || "?").slice(0, 1) + '<i class="presence ' + (person.online ? "online" : "") + '"></i></span>'; }
@@ -16,7 +17,7 @@
     return '<span class="request-actions"><button class="small-button primary" type="button" data-friend-action="add" data-user-id="' + person.id + '">＋ إضافة صديق</button></span>';
   }
   function render(items) {
-    if (!items.length) { list.innerHTML = '<div class="social-empty" style="min-height:220px"><span class="social-empty-icon">◇</span><strong>لا توجد نتائج</strong><p>لا توجد بيانات حقيقية في هذا القسم حالياً.</p></div>'; return; }
+    if (!items.length) { list.innerHTML = '<div class="social-empty" style="min-height:220px"><span class="social-empty-icon">◇</span><strong>لا توجد نتائج</strong><p>لا توجد بيانات حقيقية في هذا القسم حالياً.</p>' + (currentTab === "friends" ? '<button class="icon-button primary" type="button" data-open-suggestions>اكتشف أشخاصاً</button>' : "") + '</div>'; return; }
     list.innerHTML = items.map(function (person) {
       return '<div class="social-list-item" data-person-id="' + person.id + '">' + avatar(person) + '<span class="social-list-copy"><strong>' + (person.fullName || person.name || "مستخدم") + '</strong><small>@' + (person.username || "غير متاح") + '</small></span><span class="social-list-meta"><small>' + (person.online ? "متصل الآن" : (person.status || "مستخدم")) + '</small>' + actionButtons(person) + '</span></div>';
     }).join("");
@@ -35,7 +36,7 @@
   async function load(tab, query) {
     currentTab = tab || currentTab;
     try {
-      var endpoint = query ? "/api/users/search?q=" + encodeURIComponent(query) : currentTab === "friends" ? "/api/friends" : currentTab === "suggestions" ? "/api/users/search?q=__suggestions__" : "/api/friends/requests?type=" + (currentTab === "outgoing" ? "sent" : "incoming");
+      var endpoint = query ? "/api/users/search?q=" + encodeURIComponent(query) : currentTab === "friends" ? "/api/friends" : currentTab === "suggestions" ? "/api/users/discover" : "/api/friends/requests?type=" + (currentTab === "outgoing" ? "sent" : "incoming");
       var data = await SocialAPI.request(endpoint);
       cache = {};
       var items = data.users || data.friends || data.requests || data.data || [];
@@ -62,6 +63,7 @@
   search.addEventListener("input", function(){ clearTimeout(searchTimer); var q=search.value.trim(); if(q.length<2) return; searchTimer=setTimeout(function(){ load("search", q); },300); });
   search.addEventListener("keydown", function (event) { if (event.key === "Enter") { event.preventDefault(); var q=search.value.trim(); if(q.length>=2) load("search", q); } });
   list.addEventListener("click", async function (event) {
+    var suggestionsButton = event.target.closest("[data-open-suggestions]"); if (suggestionsButton) { var tab = document.querySelector('[data-tab="suggestions"]'); if (tab) tab.click(); return; }
     var requestButton = event.target.closest("[data-request-action]"); if (requestButton) { event.stopPropagation(); await handleRequestAction(requestButton); return; }
     var friendButton = event.target.closest("[data-friend-action]"); if (friendButton) { event.stopPropagation(); try { await SocialAPI.request("/api/friends/request/" + friendButton.dataset.userId, { method: "POST" }); feedback("تم إرسال طلب الصداقة.", "success"); friendButton.textContent='⏳ طلب مرسل'; friendButton.disabled=true; if(cache[friendButton.dataset.userId]) cache[friendButton.dataset.userId].friendStatus='pending'; } catch (error) { feedback(error.message, "error"); } return; }
     var item = event.target.closest("[data-person-id]"); if (item) showPerson(cache[item.dataset.personId]);
@@ -72,5 +74,10 @@
     var id = button.dataset.userId;
     try { await SocialAPI.request(button.dataset.friendAction === "add" ? "/api/friends/request/" + id : "/api/users/" + id + "/block", { method: "POST" }); feedback(button.dataset.friendAction === "add" ? "تم إرسال طلب الصداقة." : "تم حظر المستخدم.", "success"); if(button.dataset.friendAction==='add'){button.textContent='⏳ طلب مرسل';button.disabled=true;if(cache[id])cache[id].friendStatus='pending';} else await load(currentTab); } catch (error) { feedback(error.message, "error"); }
   });
-  load("friends");
+  if (requestedIntent) {
+    var suggestionsTab = document.querySelector('[data-tab="suggestions"]');
+    document.querySelectorAll("[data-tab]").forEach(function (item) { item.classList.toggle("is-active", item === suggestionsTab); });
+    feedback(requestedIntent === "video" ? "اختر شخصاً وأرسل له طلب صداقة أولاً، وبعد قبوله يظهر اتصال الفيديو." : requestedIntent === "audio" ? "اختر شخصاً وأرسل له طلب صداقة أولاً، وبعد قبوله يظهر الاتصال الصوتي." : "اختر شخصاً لإرسال طلب صداقة.", "success");
+    load("suggestions");
+  } else load("friends");
 }());
