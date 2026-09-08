@@ -1,20 +1,16 @@
 package com.shnomano.call
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,506 +20,151 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shnomano.call.data.*
-import kotlinx.coroutines.launch
 
-private val NativeNight = Color(0xFF07100D)
-private val NativeTop = Color(0xFF0A1713)
-private val NativePanel = Color(0xFF10201B)
-private val NativeGreen = Color(0xFF22C78A)
-private val NativeAqua = Color(0xFF43E0BE)
-private val NativeMuted = Color(0xFF91A39D)
-private val NativeLine = Color(0xFF203A33)
+private val Bg = Color(0xFF03110F)
+private val Bg2 = Color(0xFF061B18)
+private val Card = Color(0xFF102723)
+private val Card2 = Color(0xFF16332E)
+private val Accent = Color(0xFF18E0B5)
+private val Accent2 = Color(0xFF3CF2CE)
+private val TextMuted = Color(0xFF95ABA6)
+private val Danger = Color(0xFFFF4B4B)
 
 class NativeMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!SessionStore(this).isSignedIn()) {
-            startActivity(Intent(this, WelcomeActivity::class.java))
-            finish()
-            return
-        }
-        setContent { ShnoManoTheme { NativeShnoManoApp() } }
+        setContent { ShnoManoTheme { ShnoApp() } }
     }
 }
 
-private enum class NativeTab(val title: String, val icon: ImageVector) {
-    CHATS("الدردشات", Icons.Default.ChatBubble),
-    CONTACTS("جهات الاتصال", Icons.Default.Contacts),
-    CALLS("المكالمات", Icons.Default.Call),
-    ACCOUNT("حسابي", Icons.Default.Person)
-}
+private data class Person(val id:String,val name:String,val status:String,val unread:Int=0,val online:Boolean=false,val last:String="")
+private enum class MainTab(val title:String,val icon:ImageVector){ CHATS("الدردشات",Icons.Default.ChatBubble), CALLS("المكالمات",Icons.Default.Call), COMMUNITY("المجتمع",Icons.Default.Groups), SETTINGS("الإعدادات",Icons.Default.Settings) }
+private sealed interface Screen { data object Login:Screen; data object Home:Screen; data class Chat(val p:Person):Screen; data class Profile(val p:Person):Screen; data class Voice(val p:Person):Screen; data class Video(val p:Person):Screen; data object Contacts:Screen; data object Status:Screen }
 
-private data class DemoPerson(val id: String, val name: String, val phone: String, val subtitle: String)
+private val demoPeople = listOf(
+    Person("1","سارة أحمد","متصلة الآن",2,true,"حسناً، أراك لاحقاً"),
+    Person("2","علي الكربلائي","آخر ظهور 9:18",0,false,"مكالمة صوتية"),
+    Person("3","مجموعة الأصدقاء","5 أعضاء نشطين",5,true,"محمد: صورة جديدة"),
+    Person("4","نور الهدى","آخر ظهور أمس",0,false,"شكراً جزيلاً"),
+    Person("5","أحمد سامي","متصل الآن",1,true,"ممتاز 👍"),
+    Person("6","عائلتي","12 عضو",0,false,"أمي: فيديو")
+)
 
-private sealed interface NativeScreen {
-    data object Home : NativeScreen
-    data class Friend(val friend: FriendDto) : NativeScreen
-    data class Phone(val contact: ContactEntity) : NativeScreen
-    data class Demo(val person: DemoPerson) : NativeScreen
-    data class Chat(val conversation: ConversationDto) : NativeScreen
-}
-
-@Composable
-private fun NativeShnoManoApp() {
-    val repo = remember { AppRepository(LocalContext.current) }
-    var tab by remember { mutableStateOf(NativeTab.CHATS) }
-    var screen by remember { mutableStateOf<NativeScreen>(NativeScreen.Home) }
-    val demos = remember {
-        mutableStateListOf(
-            DemoPerson("demo-1", "علي بغداد", "0770 111 2233", "جهة تجريبية"),
-            DemoPerson("demo-2", "زينب البصرة", "0780 555 4411", "جهة تجريبية"),
-            DemoPerson("demo-3", "حيدر النجف", "0750 220 8899", "جهة تجريبية")
-        )
-    }
-
-    BackHandler(enabled = screen !is NativeScreen.Home) { screen = NativeScreen.Home }
-
-    when (val current = screen) {
-        NativeScreen.Home -> NativeHome(repo, tab, { tab = it }, demos, { demos.remove(it) }, { screen = NativeScreen.Friend(it) }, { screen = NativeScreen.Phone(it) }, { screen = NativeScreen.Demo(it) }, { screen = NativeScreen.Chat(it) })
-        is NativeScreen.Friend -> NativeFriendProfile(repo, current.friend, { screen = NativeScreen.Home }, { screen = NativeScreen.Chat(it) })
-        is NativeScreen.Phone -> NativePhoneProfile(repo, current.contact, { screen = NativeScreen.Home }, { screen = NativeScreen.Chat(it) })
-        is NativeScreen.Demo -> NativeDemoProfile(current.person, { screen = NativeScreen.Home }) { demos.remove(current.person); screen = NativeScreen.Home }
-        is NativeScreen.Chat -> NativeChat(repo, current.conversation) { screen = NativeScreen.Home }
+@Composable private fun ShnoApp(){
+    var screen by rememberSaveable { mutableStateOf<Screen>(Screen.Login) }
+    var tab by rememberSaveable { mutableStateOf(MainTab.CHATS) }
+    BackHandler(enabled = screen !is Screen.Login && screen !is Screen.Home){ screen = Screen.Home }
+    when(val s=screen){
+        Screen.Login -> LoginScreen { screen=Screen.Home }
+        Screen.Home -> HomeScreen(tab,{tab=it},{screen=Screen.Chat(it)},{screen=Screen.Profile(it)},{screen=Screen.Contacts},{screen=Screen.Status})
+        is Screen.Chat -> ChatScreen(s.p,{screen=Screen.Home},{screen=Screen.Voice(s.p)},{screen=Screen.Video(s.p)},{screen=Screen.Profile(s.p)})
+        is Screen.Profile -> ProfileScreen(s.p,{screen=Screen.Home},{screen=Screen.Chat(s.p)},{screen=Screen.Voice(s.p)},{screen=Screen.Video(s.p)})
+        is Screen.Voice -> VoiceCallScreen(s.p){screen=Screen.Profile(s.p)}
+        is Screen.Video -> VideoCallScreen(s.p){screen=Screen.Profile(s.p)}
+        Screen.Contacts -> ContactsScreen({screen=Screen.Home},{screen=Screen.Profile(it)})
+        Screen.Status -> StatusScreen { screen=Screen.Home }
     }
 }
 
-@Composable
-private fun NativeHome(
-    repo: AppRepository,
-    tab: NativeTab,
-    onTab: (NativeTab) -> Unit,
-    demos: List<DemoPerson>,
-    onDeleteDemo: (DemoPerson) -> Unit,
-    onFriend: (FriendDto) -> Unit,
-    onPhone: (ContactEntity) -> Unit,
-    onDemo: (DemoPerson) -> Unit,
-    onChat: (ConversationDto) -> Unit
-) {
-    Scaffold(
-        containerColor = NativeNight,
-        topBar = { NativeTopBar(tab.title) },
-        bottomBar = {
-            NavigationBar(containerColor = Color(0xFF081612), tonalElevation = 0.dp) {
-                NativeTab.entries.forEach { item ->
-                    NavigationBarItem(
-                        selected = tab == item,
-                        onClick = { onTab(item) },
-                        icon = { Icon(item.icon, item.title) },
-                        label = { Text(item.title, fontSize = 10.sp) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = NativeGreen,
-                            selectedTextColor = NativeGreen,
-                            indicatorColor = Color(0x3322C78A),
-                            unselectedIconColor = NativeMuted,
-                            unselectedTextColor = NativeMuted
-                        )
-                    )
-                }
-            }
-        }
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding).background(Brush.verticalGradient(listOf(Color(0xFF0A1713), NativeNight)))) {
-            when (tab) {
-                NativeTab.CHATS -> NativeChats(repo, onChat)
-                NativeTab.CONTACTS -> NativeContacts(repo, demos, onDeleteDemo, onFriend, onPhone, onDemo)
-                NativeTab.CALLS -> NativeCalls(repo, demos, onFriend, onDemo)
-                NativeTab.ACCOUNT -> NativeAccount(repo)
-            }
+@Composable private fun AppBackground(content:@Composable BoxScope.()->Unit){
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF062522),Bg,Color(0xFF020A09)))),content=content)
+}
+
+@Composable private fun LoginScreen(onPreview:()->Unit){
+    var user by rememberSaveable{mutableStateOf("")}; var pass by rememberSaveable{mutableStateOf("")}
+    AppBackground{
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(26.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+            Box(Modifier.size(106.dp).background(Brush.radialGradient(listOf(Accent2,Color(0xFF0B8C78))),CircleShape),contentAlignment=Alignment.Center){ Icon(Icons.Default.Phone, null, tint=Color.White, modifier=Modifier.size(54.dp)) }
+            Spacer(Modifier.height(22.dp)); Text("شنو منو",fontSize=38.sp,fontWeight=FontWeight.Black,color=Color.White); Text("تواصل ... بلا حدود",color=Accent,fontSize=18.sp)
+            Spacer(Modifier.height(38.dp))
+            OutlinedTextField(user,{user=it},Modifier.fillMaxWidth(),label={Text("رقم الهاتف أو اسم المستخدم")},leadingIcon={Icon(Icons.Default.Person,null)},singleLine=true,colors=darkField())
+            Spacer(Modifier.height(12.dp)); OutlinedTextField(pass,{pass=it},Modifier.fillMaxWidth(),label={Text("كلمة المرور")},leadingIcon={Icon(Icons.Default.Lock,null)},singleLine=true,colors=darkField())
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End){ Text("نسيت كلمة المرور؟",color=Accent,fontSize=12.sp) }
+            Spacer(Modifier.height(18.dp)); Button(onClick={},enabled=false,modifier=Modifier.fillMaxWidth().height(54.dp),colors=ButtonDefaults.buttonColors(containerColor=Accent,disabledContainerColor=Accent.copy(alpha=.35f))){Text("تسجيل الدخول",fontWeight=FontWeight.Bold)}
+            Spacer(Modifier.height(12.dp)); OutlinedButton(onClick=onPreview,modifier=Modifier.fillMaxWidth().height(52.dp),colors=ButtonDefaults.outlinedButtonColors(contentColor=Accent)){Text("معاينة التصميم الجديد")}
+            Spacer(Modifier.height(18.dp)); Text("هذه النسخة مستقلة عن الموقع. ربط الحساب والمزامنة سيتم في المرحلة التالية.",color=TextMuted,fontSize=11.sp,textAlign=TextAlign.Center)
         }
     }
 }
 
-@Composable
-private fun NativeTopBar(section: String) {
-    Surface(color = NativeTop) {
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("شنو منو", color = NativeGreen, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
-                Text(section, color = NativeMuted, fontSize = 11.sp)
-            }
-            IconButton(onClick = {}) { Icon(Icons.Default.Search, "بحث", tint = Color.White) }
-            IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, "المزيد", tint = Color.White) }
-        }
+@Composable private fun HomeScreen(tab:MainTab,onTab:(MainTab)->Unit,onChat:(Person)->Unit,onProfile:(Person)->Unit,onContacts:()->Unit,onStatus:()->Unit){
+    Scaffold(containerColor=Bg,topBar={TopBar(tab.title,onContacts)},bottomBar={NavigationBar(containerColor=Color(0xFF061713)){MainTab.entries.forEach{t->NavigationBarItem(selected=t==tab,onClick={onTab(t)},icon={Icon(t.icon,null)},label={Text(t.title,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Accent,selectedTextColor=Accent,indicatorColor=Accent.copy(.14f),unselectedIconColor=TextMuted,unselectedTextColor=TextMuted))}}}){pad->
+        AppBackground{ Box(Modifier.fillMaxSize().padding(pad)){ when(tab){MainTab.CHATS->ChatsTab(onChat,onProfile,onStatus);MainTab.CALLS->CallsTab(onProfile);MainTab.COMMUNITY->CommunityTab();MainTab.SETTINGS->SettingsTab()} } }
     }
 }
 
-@Composable
-private fun NativeChats(repo: AppRepository, onChat: (ConversationDto) -> Unit) {
-    var rows by remember { mutableStateOf<List<ConversationDto>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var query by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(Unit) { rows = repo.loadConversations(); loading = false }
-    val filtered = rows.filter {
-        val name = it.otherUser?.fullName ?: it.otherUser?.username ?: ""
-        query.isBlank() || name.contains(query, true)
-    }
-    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
-        NativeSearch(query, { query = it }, "ابحث في الدردشات")
-        Spacer(Modifier.height(8.dp))
-        when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = NativeGreen) }
-            filtered.isEmpty() -> NativeEmpty("💬", "لا توجد محادثات بعد", "ابدأ من جهات الاتصال أو من صفحة أحد الأصدقاء")
-            else -> LazyColumn { items(filtered, key = { it.id }) { c ->
-                val other = c.otherUser
-                NativePersonRow(other?.fullName ?: other?.username ?: "محادثة", c.lastMessage?.text?.ifBlank { "رسالة" } ?: "ابدأ المحادثة", other?.online == true, c.unreadCount) { onChat(c) }
-            } }
-        }
+@Composable private fun TopBar(title:String,onContacts:()->Unit){
+    Surface(color=Color(0xFF061713)){Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal=16.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("شنو منو",color=Accent,fontSize=25.sp,fontWeight=FontWeight.Black);Text(title,color=TextMuted,fontSize=11.sp)};IconButton(onClick={}){Icon(Icons.Default.Search,null,tint=Color.White)};IconButton(onClick=onContacts){Icon(Icons.Default.PersonAdd,null,tint=Color.White)}}}
+}
+
+@Composable private fun ChatsTab(onChat:(Person)->Unit,onProfile:(Person)->Unit,onStatus:()->Unit){
+    var q by rememberSaveable{mutableStateOf("")}; val shown=demoPeople.filter{q.isBlank()||it.name.contains(q,true)}
+    Column(Modifier.fillMaxSize().padding(horizontal=14.dp)){
+        SearchBox(q,{q=it},"البحث في الدردشات...")
+        Spacer(Modifier.height(12.dp)); Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())){ StoryAdd(onStatus); demoPeople.take(4).forEach{StoryChip(it,onProfile)} }
+        Spacer(Modifier.height(10.dp)); LazyColumn{items(shown,key={it.id}){p->PersonRow(p,{onChat(p)},{onProfile(p)})}}
     }
 }
 
-@Composable
-private fun NativeContacts(
-    repo: AppRepository,
-    demos: List<DemoPerson>,
-    onDeleteDemo: (DemoPerson) -> Unit,
-    onFriend: (FriendDto) -> Unit,
-    onPhone: (ContactEntity) -> Unit,
-    onDemo: (DemoPerson) -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    val contacts by repo.observeContacts().collectAsState(initial = emptyList())
-    var friends by remember { mutableStateOf<List<FriendDto>>(emptyList()) }
-    var query by rememberSaveable { mutableStateOf("") }
-    var status by remember { mutableStateOf<String?>(null) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
-        scope.launch { repo.importPickedPhone(uri).onSuccess { status = "تم حفظ ${it.name}" }.onFailure { status = it.message } }
-    }
-    LaunchedEffect(Unit) { repo.syncContacts(); friends = repo.loadFriends() }
-    val ff = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
-    val fp = contacts.filter { query.isBlank() || it.name.contains(query, true) || it.phone.contains(query) }
-    val fd = demos.filter { query.isBlank() || it.name.contains(query, true) || it.phone.contains(query) }
+@Composable private fun CallsTab(onProfile:(Person)->Unit){
+    Column(Modifier.fillMaxSize().padding(horizontal=14.dp)){ SearchBox("",{},"ابحث في سجل المكالمات");Spacer(Modifier.height(12.dp));Row(Modifier.horizontalScroll(rememberScrollState())){FilterChip(true,{}, {Text("الكل")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("صادرة")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("واردة")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("فائتة")})};Spacer(Modifier.height(8.dp));LazyColumn{items(demoPeople){p->CallRow(p,onProfile)}} }
+}
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
-        NativeSearch(query, { query = it }, "ابحث بالاسم أو الرقم")
-        Spacer(Modifier.height(8.dp))
-        FilledTonalButton(
-            onClick = { picker.launch(Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0x3322C78A), contentColor = NativeGreen)
-        ) {
-            Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("إضافة جهة اتصال")
-        }
-        status?.let { Text(it, color = NativeAqua, fontSize = 11.sp, modifier = Modifier.padding(top = 5.dp)) }
-        LazyColumn {
-            if (ff.isNotEmpty()) {
-                item { NativeSection("أصدقاء شنو منو") }
-                items(ff, key = { "friend-${it.userId}" }) { f -> NativePersonRow(f.displayName, if (f.online) "متصل الآن" else "@${f.username ?: ""}", f.online, 0) { onFriend(f) } }
-            }
-            if (fp.isNotEmpty()) {
-                item { NativeSection("جهات الهاتف") }
-                items(fp, key = { "phone-${it.phone}" }) { p -> NativePersonRow(p.name, p.phone, false, 0) { onPhone(p) } }
-            }
-            if (ff.isEmpty() && fp.isEmpty() && fd.isNotEmpty()) {
-                item { NativeSection("جهات تجريبية — اضغط على الاسم لفتح الصفحة") }
-                items(fd, key = { it.id }) { d -> DemoPersonRow(d, { onDemo(d) }, { onDeleteDemo(d) }) }
-            }
-            if (ff.isEmpty() && fp.isEmpty() && fd.isEmpty()) item { NativeEmpty("👥", "لا توجد جهات", "أضف جهة من هاتفك أو أضف صديقاً في شنو منو") }
-        }
+@Composable private fun CommunityTab(){
+    val groups=listOf("العائلة" to "12 عضو","أصدقاء الجامعة" to "28 عضو","أهل الحي" to "45 عضو","عشاق التقنية" to "1.2K عضو","أخبار العراق" to "125K متابع")
+    Column(Modifier.fillMaxSize().padding(14.dp)){SearchBox("",{},"ابحث في المجتمعات...");Spacer(Modifier.height(12.dp));OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.outlinedButtonColors(contentColor=Accent)){Icon(Icons.Default.GroupAdd,null);Spacer(Modifier.width(8.dp));Text("إنشاء مجموعة جديدة")};Spacer(Modifier.height(12.dp));groups.forEachIndexed{i,g->Surface(color=if(i%2==0) Card else Card2,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().padding(vertical=5.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Avatar(g.first,48.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(g.first,color=Color.White,fontWeight=FontWeight.Bold);Text(g.second,color=TextMuted,fontSize=12.sp)};Icon(Icons.Default.ChevronLeft,null,tint=TextMuted)}}}}
+}
+
+@Composable private fun SettingsTab(){
+    val rows=listOf(Triple(Icons.Default.AccountCircle,"الحساب","الخصوصية، الأمان، تغيير الرقم"),Triple(Icons.Default.Palette,"المظهر","الوضع الداكن، السمات، اللغة"),Triple(Icons.Default.Notifications,"الإشعارات","المكالمات، الرسائل، الأصوات"),Triple(Icons.Default.Storage,"البيانات والتخزين","استخدام البيانات والتنزيل"),Triple(Icons.Default.Help,"المساعدة","مركز المساعدة، تواصل معنا"),Triple(Icons.Default.Info,"حول التطبيق","شنو منو — إصدار تجريبي"))
+    Column(Modifier.fillMaxSize().padding(14.dp)){Row(Modifier.fillMaxWidth().padding(vertical=16.dp),verticalAlignment=Alignment.CenterVertically){Avatar("أحمد العراقي",64.dp);Column(Modifier.padding(start=14.dp)){Text("أحمد العراقي",color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("+964 770 123 4567",color=TextMuted)}};rows.forEach{r->Surface(color=Card,shape=RoundedCornerShape(15.dp),modifier=Modifier.fillMaxWidth().padding(vertical=4.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(r.first,null,tint=Accent);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(r.second,color=Color.White,fontWeight=FontWeight.SemiBold);Text(r.third,color=TextMuted,fontSize=11.sp)};Icon(Icons.Default.ChevronLeft,null,tint=TextMuted)}}}}
+}
+
+@Composable private fun ChatScreen(p:Person,onBack:()->Unit,onVoice:()->Unit,onVideo:()->Unit,onProfile:()->Unit){
+    var msg by rememberSaveable{mutableStateOf("")}; val local=remember{mutableStateListOf("مرحباً، كيف حالك اليوم؟","بخير والله الحمد، وأنت؟","ممتاز 😊","نتكلم لاحقاً؟","نعم بالتأكيد")}
+    Scaffold(containerColor=Bg,topBar={Surface(color=Color(0xFF061713)){Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Avatar(p.name,42.dp);Column(Modifier.weight(1f).padding(horizontal=10.dp).clickable(onClick=onProfile)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Text(p.status,color=if(p.online)Accent else TextMuted,fontSize=11.sp)};IconButton(onClick=onVideo){Icon(Icons.Default.Videocam,null,tint=Color.White)};IconButton(onClick=onVoice){Icon(Icons.Default.Call,null,tint=Color.White)};IconButton(onClick={}){Icon(Icons.Default.MoreVert,null,tint=Color.White)}}}},bottomBar={MessageComposer(msg,{msg=it}){if(msg.isNotBlank()){local.add(msg);msg=""}}}){pad->
+        AppBackground{LazyColumn(Modifier.fillMaxSize().padding(pad).padding(horizontal=12.dp),verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(vertical=16.dp)){items(local){m->val mine=local.indexOf(m)%2==1;Row(Modifier.fillMaxWidth(),horizontalArrangement=if(mine)Arrangement.End else Arrangement.Start){Surface(color=if(mine)Color(0xFF08745F) else Card,shape=RoundedCornerShape(16.dp)){Text(m,color=Color.White,modifier=Modifier.padding(horizontal=14.dp,vertical=10.dp),fontSize=14.sp)}}}}}
     }
 }
 
-@Composable
-private fun NativeCalls(repo: AppRepository, demos: List<DemoPerson>, onFriend: (FriendDto) -> Unit, onDemo: (DemoPerson) -> Unit) {
-    var friends by remember { mutableStateOf<List<FriendDto>>(emptyList()) }
-    var query by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(Unit) { friends = repo.loadFriends() }
-    val filtered = friends.filter { query.isBlank() || it.displayName.contains(query, true) }
-    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
-        NativeSearch(query, { query = it }, "ابحث للاتصال")
-        Spacer(Modifier.height(8.dp))
-        LazyColumn {
-            if (filtered.isNotEmpty()) items(filtered, key = { it.userId }) { f -> NativePersonRow(f.displayName, if (f.online) "متصل الآن" else "اضغط لعرض تفاصيل الاتصال", f.online, 0) { onFriend(f) } }
-            else items(demos, key = { "call-${it.id}" }) { d -> NativePersonRow(d.name, "جهة تجريبية — افتح التفاصيل", false, 0) { onDemo(d) } }
-        }
-    }
+@Composable private fun ProfileScreen(p:Person,onBack:()->Unit,onChat:()->Unit,onVoice:()->Unit,onVideo:()->Unit){
+    AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){Row(Modifier.fillMaxWidth()){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)}};Spacer(Modifier.height(24.dp));Avatar(p.name,108.dp);Spacer(Modifier.height(14.dp));Text(p.name,color=Color.White,fontSize=26.sp,fontWeight=FontWeight.Black);Text(p.status,color=if(p.online)Accent else TextMuted);Spacer(Modifier.height(28.dp));Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){ActionCircle("رسالة",Icons.Default.ChatBubble,onChat);ActionCircle("صوتي",Icons.Default.Call,onVoice);ActionCircle("فيديو",Icons.Default.Videocam,onVideo)};Spacer(Modifier.height(28.dp));InfoCard(Icons.Default.Phone,"رقم الهاتف","+964 770 123 4567");InfoCard(Icons.Default.AlternateEmail,"اسم المستخدم","@${p.name.replace(" ","_")}");InfoCard(Icons.Default.Lock,"الخصوصية","معلومات الاتصال خاصة داخل التطبيق")}}
 }
 
-@Composable
-private fun DemoPersonRow(person: DemoPerson, onOpen: () -> Unit, onDelete: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 9.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        NativeAvatar(person.name, 52.dp, 19.sp)
-        Column(Modifier.padding(start = 12.dp).weight(1f)) {
-            Text(person.name, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            Text(person.phone, color = NativeMuted, fontSize = 12.sp)
-        }
-        IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, "حذف الجهة التجريبية", tint = NativeMuted) }
-    }
-    HorizontalDivider(color = NativeLine.copy(alpha = 0.55f), thickness = 0.5.dp)
+@Composable private fun VoiceCallScreen(p:Person,onEnd:()->Unit){
+    AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.weight(.35f));Box(Modifier.fillMaxWidth().height(84.dp).background(Brush.horizontalGradient(listOf(Color.Transparent,Accent.copy(.35f),Color.Transparent))),contentAlignment=Alignment.Center){Text("▂▅▇▃▆▂▇▅▃▆▂",color=Accent,fontSize=28.sp)};Spacer(Modifier.height(20.dp));Avatar(p.name,130.dp);Spacer(Modifier.height(18.dp));Text(p.name,color=Color.White,fontSize=30.sp,fontWeight=FontWeight.Black);Text("00:15",color=Color.White,fontSize=18.sp);Text("مكالمة صوتية",color=TextMuted);Spacer(Modifier.weight(1f));Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){ActionCircle("كتم",Icons.Default.MicOff){};ActionCircle("مكبر الصوت",Icons.Default.VolumeUp){};ActionCircle("إضافة",Icons.Default.PersonAdd){}};Spacer(Modifier.height(26.dp));FloatingActionButton(onClick=onEnd,containerColor=Danger,modifier=Modifier.size(72.dp)){Icon(Icons.Default.CallEnd,null,tint=Color.White,modifier=Modifier.size(34.dp))};Spacer(Modifier.height(28.dp))}}
 }
 
-@Composable
-private fun NativeFriendProfile(repo: AppRepository, friend: FriendDto, onBack: () -> Unit, onChat: (ConversationDto) -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    NativeProfileShell(friend.displayName, "@${friend.username ?: ""}", if (friend.online) "متصل الآن" else "غير متصل", onBack) {
-        ProfileActions(
-            onMessage = {
-                if (!busy && friend.userId.isNotBlank()) {
-                    busy = true
-                    scope.launch { repo.openConversation(friend.userId).onSuccess(onChat).onFailure { error = it.message }; busy = false }
-                }
-            },
-            onAudio = { nativeOpenCall(context, friend.userId, "audio") },
-            onVideo = { nativeOpenCall(context, friend.userId, "video") }
-        )
-        Spacer(Modifier.height(22.dp))
-        ProfileInfoRow(Icons.Default.AlternateEmail, "اسم المستخدم", "@${friend.username ?: "—"}")
-        ProfileInfoRow(Icons.Default.AccountCircle, "حساب شنو منو", "صديق مقبول — الرسائل والمكالمات متاحة")
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)) }
-    }
+@Composable private fun VideoCallScreen(p:Person,onEnd:()->Unit){
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF24332F),Color(0xFF0A1412))))){Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Column(horizontalAlignment=Alignment.CenterHorizontally){Avatar(p.name,150.dp);Spacer(Modifier.height(12.dp));Text(p.name,color=Color.White,fontSize=26.sp,fontWeight=FontWeight.Bold);Text("الفيديو التجريبي",color=TextMuted)}};Surface(color=Color(0xBB102723),shape=RoundedCornerShape(18.dp),modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).size(105.dp,145.dp)){Box(contentAlignment=Alignment.Center){Icon(Icons.Default.Person,null,tint=TextMuted,modifier=Modifier.size(54.dp))}};Row(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(22.dp).fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){CallControl(Icons.Default.CameraAlt){};CallControl(Icons.Default.MicOff){};CallControl(Icons.Default.Cameraswitch){};FloatingActionButton(onClick=onEnd,containerColor=Danger){Icon(Icons.Default.CallEnd,null,tint=Color.White)}}}
 }
 
-@Composable
-private fun NativePhoneProfile(repo: AppRepository, contact: ContactEntity, onBack: () -> Unit, onChat: (ConversationDto) -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var error by remember { mutableStateOf<String?>(null) }
-    NativeProfileShell(contact.name, contact.phone, if (contact.linkedUserId.isNullOrBlank()) "جهة هاتف" else "مرتبط بشنو منو", onBack) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            RoundProfileAction("هاتف", Icons.Default.Phone) { nativeDial(context, contact.phone) }
-            RoundProfileAction("واتساب", Icons.Default.Chat) { nativeWhatsApp(context, contact.phone) }
-            if (!contact.linkedUserId.isNullOrBlank()) RoundProfileAction("رسالة", Icons.Default.ChatBubble) {
-                scope.launch { repo.openConversation(contact.linkedUserId!!).onSuccess(onChat).onFailure { error = it.message } }
-            }
-        }
-        if (!contact.linkedUserId.isNullOrBlank()) {
-            Spacer(Modifier.height(18.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                RoundProfileAction("صوت", Icons.Default.Call) { nativeOpenCall(context, contact.linkedUserId!!, "audio") }
-                RoundProfileAction("فيديو", Icons.Default.Videocam) { nativeOpenCall(context, contact.linkedUserId!!, "video") }
-            }
-        }
-        Spacer(Modifier.height(22.dp))
-        ProfileInfoRow(Icons.Default.Phone, "رقم الهاتف", contact.phone)
-        ProfileInfoRow(Icons.Default.Info, "الحالة", if (contact.linkedUserId.isNullOrBlank()) "غير مسجل في شنو منو" else "حساب شنو منو مرتبط")
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)) }
-    }
-}
+@Composable private fun ContactsScreen(onBack:()->Unit,onOpen:(Person)->Unit){AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(14.dp)){Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Text("جهات الاتصال",color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Bold)};SearchBox("",{},"البحث في جهات الاتصال...");Spacer(Modifier.height(12.dp));Surface(color=Accent.copy(.12f),shape=RoundedCornerShape(14.dp),modifier=Modifier.fillMaxWidth().clickable{} ){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(44.dp).background(Accent,CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Default.PersonAdd,null,tint=Bg)};Text("إضافة جهة اتصال جديدة",color=Accent,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=12.dp))}};Spacer(Modifier.height(8.dp));LazyColumn{items(demoPeople){p->PersonRow(p,{onOpen(p)},{onOpen(p)})}}}}}
 
-@Composable
-private fun NativeDemoProfile(person: DemoPerson, onBack: () -> Unit, onDelete: () -> Unit) {
-    NativeProfileShell(person.name, person.phone, "جهة تجريبية", onBack) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            RoundProfileAction("هاتف", Icons.Default.Phone) { }
-            RoundProfileAction("رسالة", Icons.Default.ChatBubble) { }
-            RoundProfileAction("فيديو", Icons.Default.Videocam) { }
-        }
-        Spacer(Modifier.height(22.dp))
-        ProfileInfoRow(Icons.Default.Phone, "رقم الهاتف", person.phone)
-        ProfileInfoRow(Icons.Default.Science, "ملاحظة", "هذه جهة تجريبية لعرض التصميم فقط")
-        Spacer(Modifier.height(18.dp))
-        OutlinedButton(onClick = onDelete, colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF7B88))) {
-            Icon(Icons.Default.DeleteOutline, null); Spacer(Modifier.width(8.dp)); Text("حذف الجهة التجريبية")
-        }
-    }
-}
+@Composable private fun StatusScreen(onBack:()->Unit){AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(14.dp)){Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Text("الحالة",color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Bold)};Surface(color=Card,shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth()){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Box{Avatar("قصتي",58.dp);Box(Modifier.size(22.dp).background(Accent,CircleShape).align(Alignment.BottomEnd),contentAlignment=Alignment.Center){Icon(Icons.Default.Add,null,tint=Bg,modifier=Modifier.size(16.dp))}};Column(Modifier.padding(start=12.dp)){Text("قصتي",color=Color.White,fontWeight=FontWeight.Bold);Text("اضغط لإضافة حالة",color=TextMuted,fontSize=12.sp)}}};Text("الحالات الحديثة",color=TextMuted,modifier=Modifier.padding(vertical=16.dp));demoPeople.take(4).forEach{StoryListRow(it)}}}}
 
-@Composable
-private fun NativeProfileShell(name: String, subtitle: String, status: String, onBack: () -> Unit, body: @Composable ColumnScope.() -> Unit) {
-    Scaffold(containerColor = NativeNight, topBar = {
-        Surface(color = NativeTop) {
-            Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "رجوع", tint = Color.White) }
-                Text("معلومات جهة الاتصال", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, "المزيد", tint = Color.White) }
-            }
-        }
-    }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(22.dp))
-            NativeAvatar(name, 104.dp, 38.sp)
-            Spacer(Modifier.height(14.dp))
-            Text(name, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp)
-            Text(subtitle, color = NativeMuted, fontSize = 13.sp)
-            Text(status, color = NativeGreen, fontSize = 11.sp)
-            Spacer(Modifier.height(22.dp))
-            body()
-        }
-    }
-}
+@Composable private fun MessageComposer(value:String,onChange:(String)->Unit,onSend:()->Unit){Surface(color=Color(0xFF061713)){Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={}){Icon(Icons.Default.EmojiEmotions,null,tint=TextMuted)};OutlinedTextField(value,onChange,Modifier.weight(1f),placeholder={Text("اكتب رسالة...")},singleLine=true,colors=darkField());IconButton(onClick={}){Icon(Icons.Default.AttachFile,null,tint=TextMuted)};FilledIconButton(onClick=onSend,colors=IconButtonDefaults.filledIconButtonColors(containerColor=Accent)){Icon(if(value.isBlank())Icons.Default.Mic else Icons.Default.Send,null,tint=Bg)}}}
 
-@Composable
-private fun ProfileActions(onMessage: () -> Unit, onAudio: () -> Unit, onVideo: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        RoundProfileAction("رسالة", Icons.Default.ChatBubble, onMessage)
-        RoundProfileAction("صوت", Icons.Default.Call, onAudio)
-        RoundProfileAction("فيديو", Icons.Default.Videocam, onVideo)
-    }
-}
+@Composable private fun SearchBox(v:String,on:(String)->Unit,hint:String){OutlinedTextField(v,on,Modifier.fillMaxWidth(),placeholder={Text(hint,color=TextMuted)},leadingIcon={Icon(Icons.Default.Search,null,tint=TextMuted)},singleLine=true,shape=RoundedCornerShape(22.dp),colors=darkField())}
+@Composable private fun StoryAdd(on:()->Unit){Column(Modifier.width(72.dp).clickable(onClick=on),horizontalAlignment=Alignment.CenterHorizontally){Box(Modifier.size(55.dp).background(Card,CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Default.Add,null,tint=Accent)};Text("إضافة",color=TextMuted,fontSize=10.sp)}}
+@Composable private fun StoryChip(p:Person,on:(Person)->Unit){Column(Modifier.width(72.dp).clickable{on(p)},horizontalAlignment=Alignment.CenterHorizontally){Box(Modifier.size(58.dp).background(Accent,CircleShape).padding(2.dp).background(Bg,CircleShape),contentAlignment=Alignment.Center){Text(p.name.take(1),color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold)};Text(p.name.substringBefore(" "),color=Color.White,fontSize=10.sp,maxLines=1)}}
 
-@Composable
-private fun RoundProfileAction(text: String, icon: ImageVector, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick).padding(6.dp)) {
-        Box(Modifier.size(52.dp).background(Color(0x3322C78A), CircleShape), contentAlignment = Alignment.Center) { Icon(icon, text, tint = NativeGreen) }
-        Spacer(Modifier.height(6.dp)); Text(text, color = Color.White, fontSize = 11.sp)
-    }
-}
+@Composable private fun PersonRow(p:Person,onClick:()->Unit,onLong:()->Unit){Row(Modifier.fillMaxWidth().clickable(onClick=onClick).padding(vertical=10.dp, horizontal=4.dp),verticalAlignment=Alignment.CenterVertically){Avatar(p.name,54.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text(p.name,color=Color.White,fontSize=16.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f));Text(if(p.online)"10:24" else "أمس",color=if(p.unread>0)Accent else TextMuted,fontSize=11.sp)};Row(verticalAlignment=Alignment.CenterVertically){Text(p.last.ifBlank{p.status},color=TextMuted,fontSize=12.sp,modifier=Modifier.weight(1f),maxLines=1);if(p.unread>0)Box(Modifier.size(22.dp).background(Accent,CircleShape),contentAlignment=Alignment.Center){Text(p.unread.toString(),color=Bg,fontSize=10.sp,fontWeight=FontWeight.Bold)}}}}
 
-@Composable
-private fun ProfileInfoRow(icon: ImageVector, title: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = NativeGreen)
-        Column(Modifier.padding(start = 14.dp).weight(1f)) {
-            Text(title, color = NativeMuted, fontSize = 11.sp)
-            Text(value, color = Color.White, fontSize = 14.sp)
-        }
-    }
-    HorizontalDivider(color = NativeLine.copy(alpha = 0.55f), thickness = 0.5.dp)
-}
+@Composable private fun CallRow(p:Person,on:(Person)->Unit){Row(Modifier.fillMaxWidth().clickable{on(p)}.padding(vertical=11.dp),verticalAlignment=Alignment.CenterVertically){Avatar(p.name,52.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Row(verticalAlignment=Alignment.CenterVertically){Icon(if(p.online)Icons.Default.CallReceived else Icons.Default.CallMade,null,tint=if(p.online)Accent else TextMuted,modifier=Modifier.size(14.dp));Spacer(Modifier.width(5.dp));Text(if(p.online)"مكالمة صوتية • منذ دقيقتين" else "مكالمة فيديو • أمس",color=TextMuted,fontSize=11.sp)}};Icon(Icons.Default.Call,null,tint=Accent)} }
 
-@Composable
-private fun NativeChat(repo: AppRepository, conversation: ConversationDto, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val other = conversation.otherUser
-    var messages by remember { mutableStateOf<List<MessageDto>>(emptyList()) }
-    var text by remember { mutableStateOf("") }
-    var busy by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(conversation.id) { repo.loadMessages(conversation.id).onSuccess { messages = it }.onFailure { error = it.message } }
+@Composable private fun StoryListRow(p:Person){Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(58.dp).background(Accent,CircleShape).padding(2.dp).background(Bg,CircleShape),contentAlignment=Alignment.Center){Text(p.name.take(1),color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold)};Column(Modifier.padding(start=12.dp)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Text("منذ ${demoPeople.indexOf(p)+1} ساعة",color=TextMuted,fontSize=11.sp)}}}
 
-    Scaffold(
-        containerColor = NativeNight,
-        topBar = {
-            Surface(color = NativeTop) {
-                Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "رجوع", tint = Color.White) }
-                    NativeAvatar(other?.fullName ?: other?.username ?: "ش", 40.dp, 16.sp)
-                    Column(Modifier.padding(start = 9.dp).weight(1f)) {
-                        Text(other?.fullName ?: other?.username ?: "محادثة", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text(if (other?.online == true) "متصل الآن" else "شنو منو", color = if (other?.online == true) NativeGreen else NativeMuted, fontSize = 10.sp)
-                    }
-                    if (!other?.id.isNullOrBlank()) {
-                        IconButton(onClick = { nativeOpenCall(context, other!!.id, "audio") }) { Icon(Icons.Default.Call, "صوت", tint = NativeGreen) }
-                        IconButton(onClick = { nativeOpenCall(context, other!!.id, "video") }) { Icon(Icons.Default.Videocam, "فيديو", tint = NativeGreen) }
-                    }
-                }
-            }
-        },
-        bottomBar = {
-            Column(Modifier.navigationBarsPadding().background(NativeTop)) {
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)) }
-                Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TextField(text, { text = it }, Modifier.weight(1f), placeholder = { Text("رسالة") }, singleLine = true, shape = RoundedCornerShape(24.dp), colors = TextFieldDefaults.colors(focusedContainerColor = NativePanel, unfocusedContainerColor = NativePanel, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent))
-                    Spacer(Modifier.width(6.dp))
-                    FilledIconButton(onClick = {
-                        if (text.isBlank() || busy) return@FilledIconButton
-                        val outgoing = text; text = ""; busy = true
-                        scope.launch { repo.sendMessage(conversation.id, outgoing).onSuccess { messages = messages + it }.onFailure { error = it.message; text = outgoing }; busy = false }
-                    }, colors = IconButtonDefaults.filledIconButtonColors(containerColor = NativeGreen)) { Icon(Icons.Default.Send, "إرسال", tint = Color(0xFF04100C)) }
-                }
-            }
-        }
-    ) { padding ->
-        if (messages.isEmpty()) Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { Text("ابدأ المحادثة", color = NativeMuted) }
-        else LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(messages, key = { it.messageId.ifBlank { "${it.createdAt}-${it.text}" } }) { m ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.mine) Arrangement.End else Arrangement.Start) {
-                    Surface(color = if (m.mine) Color(0xFF176B51) else NativePanel, shape = RoundedCornerShape(16.dp)) {
-                        Column(Modifier.widthIn(max = 300.dp).padding(horizontal = 11.dp, vertical = 8.dp)) {
-                            Text(m.text.orEmpty(), color = Color.White, fontSize = 14.sp)
-                            if (m.localState == "pending") Text("قيد الإرسال", color = NativeMuted, fontSize = 9.sp, modifier = Modifier.align(Alignment.End))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NativeAccount(repo: AppRepository) {
-    val context = LocalContext.current
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            NativeAvatar(repo.session.fullName ?: repo.session.username ?: "ش", 66.dp, 25.sp)
-            Column(Modifier.padding(start = 13.dp).weight(1f)) {
-                Text(repo.session.fullName ?: "حساب شنو منو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("@${repo.session.username ?: ""}", color = NativeMuted, fontSize = 12.sp)
-            }
-        }
-        Spacer(Modifier.height(18.dp))
-        NativeAccountRow(Icons.Default.Settings, "الإعدادات والرنين والإشعارات") { context.startActivity(Intent(context, SettingsActivity::class.java)) }
-        NativeAccountEmoji("🛍️", "مول العراق") { nativeOpenSection(context, "mall.html") }
-        NativeAccountEmoji("🎬", "الريلز") { nativeOpenSection(context, "reels.html") }
-        NativeAccountEmoji("🧰", "الخدمات") { nativeOpenSection(context, "services.html") }
-        NativeAccountRow(Icons.Default.Logout, "تسجيل الخروج", true) {
-            repo.signOut(); context.startActivity(Intent(context, WelcomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
-        }
-    }
-}
-
-@Composable private fun NativeSearch(value: String, onValue: (String) -> Unit, hint: String) {
-    TextField(value, onValue, Modifier.fillMaxWidth(), placeholder = { Text(hint) }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, shape = RoundedCornerShape(24.dp), colors = TextFieldDefaults.colors(focusedContainerColor = NativePanel, unfocusedContainerColor = NativePanel, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent))
-}
-
-@Composable private fun NativePersonRow(name: String, subtitle: String, online: Boolean, badge: Int, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box { NativeAvatar(name, 52.dp, 19.sp); if (online) Box(Modifier.size(12.dp).align(Alignment.BottomEnd).background(NativeGreen, CircleShape)) }
-        Column(Modifier.padding(start = 12.dp).weight(1f)) {
-            Text(name, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            Text(subtitle, color = NativeMuted, fontSize = 12.sp, maxLines = 1)
-        }
-        if (badge > 0) Badge(containerColor = NativeGreen, contentColor = Color(0xFF04100C)) { Text(badge.toString()) }
-    }
-    HorizontalDivider(color = NativeLine.copy(alpha = 0.55f), thickness = 0.5.dp)
-}
-
-@Composable private fun NativeAvatar(name: String, size: androidx.compose.ui.unit.Dp, font: androidx.compose.ui.unit.TextUnit) {
-    Box(Modifier.size(size).background(Brush.linearGradient(listOf(Color(0xFF197351), Color(0xFF25B984))), CircleShape), contentAlignment = Alignment.Center) {
-        Text(name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "ش", color = Color.White, fontWeight = FontWeight.Bold, fontSize = font)
-    }
-}
-
-@Composable private fun NativeAccountRow(icon: ImageVector, title: String, destructive: Boolean = false, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(42.dp).background(if (destructive) Color(0x33C43B4D) else Color(0x3322C78A), CircleShape), contentAlignment = Alignment.Center) { Icon(icon, null, tint = if (destructive) Color(0xFFFF7B88) else NativeGreen) }
-        Text(title, color = if (destructive) Color(0xFFFF8C97) else Color.White, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 12.dp).weight(1f))
-        Icon(Icons.Default.ChevronLeft, null, tint = NativeMuted)
-    }
-    HorizontalDivider(color = NativeLine.copy(alpha = 0.6f), thickness = 0.5.dp)
-}
-
-@Composable private fun NativeAccountEmoji(icon: String, title: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(42.dp).background(Color(0x3322C78A), CircleShape), contentAlignment = Alignment.Center) { Text(icon, fontSize = 20.sp) }
-        Text(title, color = Color.White, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 12.dp).weight(1f)); Icon(Icons.Default.ChevronLeft, null, tint = NativeMuted)
-    }
-    HorizontalDivider(color = NativeLine.copy(alpha = 0.6f), thickness = 0.5.dp)
-}
-
-@Composable private fun NativeSection(text: String) { Text(text, color = NativeAqua, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp)) }
-
-@Composable private fun NativeEmpty(icon: String, title: String, subtitle: String) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 44.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(icon, fontSize = 38.sp); Spacer(Modifier.height(9.dp)); Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp); Spacer(Modifier.height(4.dp)); Text(subtitle, color = NativeMuted, fontSize = 12.sp, textAlign = TextAlign.Center)
-    }
-}
-
-private fun nativeOpenCall(context: Context, userId: String, type: String) {
-    if (userId.isBlank()) return
-    val url = "https://shino-mino-tak-tak.duckdns.org/messages.html?user=${Uri.encode(userId)}&prepare=$type"
-    context.startActivity(Intent(context, WebCallActivity::class.java).putExtra(WebCallActivity.EXTRA_URL, url))
-}
-
-private fun nativeDial(context: Context, phone: String) { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))) }
-
-private fun nativeWhatsApp(context: Context, phone: String) {
-    val normalized = AppRepository.normalizeIraqiPhone(phone); val international = if (normalized.startsWith("0")) "964${normalized.drop(1)}" else normalized
-    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$international"))) }
-}
-
-private fun nativeOpenSection(context: Context, page: String) { context.startActivity(Intent(context, WebSectionActivity::class.java).putExtra(WebSectionActivity.EXTRA_URL, WebSectionActivity.BASE + page)) }
+@Composable private fun Avatar(name:String,size:androidx.compose.ui.unit.Dp){Box(Modifier.size(size).background(Brush.linearGradient(listOf(Color(0xFF0D8E78),Accent)),CircleShape),contentAlignment=Alignment.Center){Text(name.take(1),color=Color.White,fontWeight=FontWeight.Black,fontSize=(size.value*.38f).sp)}}
+@Composable private fun ActionCircle(label:String,icon:ImageVector,on:()->Unit){Column(horizontalAlignment=Alignment.CenterHorizontally){FilledIconButton(onClick=on,modifier=Modifier.size(58.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=Card2,contentColor=Accent)){Icon(icon,null,modifier=Modifier.size(25.dp))};Spacer(Modifier.height(6.dp));Text(label,color=TextMuted,fontSize=11.sp)}}
+@Composable private fun CallControl(icon:ImageVector,on:()->Unit){FilledIconButton(onClick=on,modifier=Modifier.size(52.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=Color(0xBB203833),contentColor=Color.White)){Icon(icon,null)}}
+@Composable private fun InfoCard(icon:ImageVector,title:String,value:String){Surface(color=Card,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().padding(vertical=5.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(icon,null,tint=Accent);Column(Modifier.padding(start=12.dp)){Text(title,color=TextMuted,fontSize=11.sp);Text(value,color=Color.White,fontWeight=FontWeight.SemiBold)}}}}
+@Composable private fun darkField()=OutlinedTextFieldDefaults.colors(focusedTextColor=Color.White,unfocusedTextColor=Color.White,focusedBorderColor=Accent,unfocusedBorderColor=Color(0xFF29433D),focusedLabelColor=Accent,unfocusedLabelColor=TextMuted,cursorColor=Accent)
