@@ -12,11 +12,11 @@
         android:allowBackup="true"
         android:label="شنو منو اتصال"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/Theme.ShnoManoCall">
 
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false" />
+        <activity android:name=".WebCallActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".SettingsActivity" android:exported="false" />
 
         <activity
             android:name=".MainActivity"
