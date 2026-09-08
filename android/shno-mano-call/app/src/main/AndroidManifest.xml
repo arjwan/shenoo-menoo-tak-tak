@@ -18,6 +18,8 @@
         <activity android:name=".WebSectionActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WebCallActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".RegisterActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".WelcomeActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".MainActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity
