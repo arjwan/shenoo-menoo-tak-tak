@@ -2,6 +2,8 @@ package com.shnomano.call.data
 
 import android.content.Context
 import android.provider.ContactsContract
+import java.io.IOException
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -13,6 +15,7 @@ class AppRepository(context: Context) {
     private val dao = ShnoManoDatabase.get(app).localDao()
 
     fun observeContacts(): Flow<List<ContactEntity>> = dao.observeContacts()
+    fun observeMessages(conversationId: String): Flow<List<MessageEntity>> = dao.observeMessages(conversationId)
 
     suspend fun signIn(identifier: String, password: String): Result<SignedInUserDto> =
         AuthRepository(session, api).signIn(identifier, password)
@@ -78,17 +81,93 @@ class AppRepository(context: Context) {
         api.openConversation(userId).conversation ?: error("تعذر فتح المحادثة")
     }
 
-    suspend fun loadMessages(conversationId: String): Result<List<MessageDto>> = runCatching {
-        val response = api.messages(conversationId)
-        runCatching { api.markRead(conversationId) }
-        response.messages
+    suspend fun loadMessages(conversationId: String): Result<List<MessageDto>> = withContext(Dispatchers.IO) {
+        retryPendingMessages(conversationId)
+        try {
+            val response = api.messages(conversationId)
+            runCatching { api.markRead(conversationId) }
+            val otherId = response.conversation?.otherUser?.id.orEmpty()
+            val selfId = session.userId.orEmpty()
+            val entities = response.messages.mapNotNull { message ->
+                val id = message.messageId.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                val sender = message.senderId.orEmpty()
+                MessageEntity(
+                    id = id,
+                    conversationId = conversationId,
+                    senderId = sender,
+                    recipientId = if (sender == selfId) otherId else selfId,
+                    body = message.text.orEmpty(),
+                    createdAt = System.currentTimeMillis(),
+                    state = "sent"
+                )
+            }
+            if (entities.isNotEmpty()) dao.saveMessages(entities)
+            Result.success(response.messages.map { it.copy(mine = it.senderId == selfId) })
+        } catch (error: Throwable) {
+            val cached = dao.messagesOnce(conversationId).map { it.toDto() }
+            if (cached.isNotEmpty()) Result.success(cached) else Result.failure(error)
+        }
     }
 
-    suspend fun sendMessage(conversationId: String, text: String): Result<MessageDto> = runCatching {
+    suspend fun sendMessage(conversationId: String, text: String): Result<MessageDto> = withContext(Dispatchers.IO) {
         val clean = text.trim()
-        if (clean.isBlank()) error("الرسالة فارغة")
-        api.sendMessage(conversationId, SendMessageRequest(clean)).message ?: error("تعذر إرسال الرسالة")
+        if (clean.isBlank()) return@withContext Result.failure(IllegalArgumentException("الرسالة فارغة"))
+        try {
+            val remote = api.sendMessage(conversationId, SendMessageRequest(clean)).message
+                ?: return@withContext Result.failure(IllegalStateException("تعذر إرسال الرسالة"))
+            val dto = remote.copy(mine = true)
+            val remoteId = dto.messageId.takeIf { it.isNotBlank() }
+            if (remoteId != null) {
+                dao.saveMessages(listOf(MessageEntity(
+                    id = remoteId,
+                    conversationId = conversationId,
+                    senderId = session.userId.orEmpty(),
+                    recipientId = "",
+                    body = clean,
+                    createdAt = System.currentTimeMillis(),
+                    state = "sent"
+                )))
+            }
+            Result.success(dto)
+        } catch (error: IOException) {
+            val pending = MessageEntity(
+                id = "local-${UUID.randomUUID()}",
+                conversationId = conversationId,
+                senderId = session.userId.orEmpty(),
+                recipientId = "",
+                body = clean,
+                createdAt = System.currentTimeMillis(),
+                state = "pending"
+            )
+            dao.saveMessages(listOf(pending))
+            Result.success(pending.toDto())
+        } catch (error: Throwable) {
+            Result.failure(error)
+        }
     }
+
+    private suspend fun retryPendingMessages(conversationId: String) {
+        val pending = dao.pendingMessages().filter { it.conversationId == conversationId }
+        for (item in pending) {
+            try {
+                val remote = api.sendMessage(item.conversationId, SendMessageRequest(item.body)).message ?: continue
+                dao.deleteMessage(item.id)
+                val remoteId = remote.messageId.takeIf { it.isNotBlank() } ?: continue
+                dao.saveMessages(listOf(item.copy(id = remoteId, state = "sent")))
+            } catch (_: Throwable) {
+                return
+            }
+        }
+    }
+
+    private fun MessageEntity.toDto(): MessageDto = MessageDto(
+        id = id,
+        senderId = senderId,
+        text = body,
+        createdAt = createdAt.toString(),
+        mine = senderId == session.userId,
+        localState = state
+    )
 
     companion object {
         fun normalizeIraqiPhone(value: String): String {
