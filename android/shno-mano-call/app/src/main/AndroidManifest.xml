@@ -25,7 +25,7 @@
         <activity android:name=".HomeActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity
-            android:name=".NativeMainActivity"
+            android:name=".SafeMainActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
