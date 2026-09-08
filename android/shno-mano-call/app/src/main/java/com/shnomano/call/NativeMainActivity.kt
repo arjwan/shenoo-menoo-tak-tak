@@ -20,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val Bg = Color(0xFF03110F)
-private val Bg2 = Color(0xFF061B18)
 private val Card = Color(0xFF102723)
 private val Card2 = Color(0xFF16332E)
 private val Accent = Color(0xFF18E0B5)
@@ -79,25 +77,26 @@ private val demoPeople = listOf(
 }
 
 @Composable private fun LoginScreen(onPreview:()->Unit){
-    var user by rememberSaveable{mutableStateOf("")}; var pass by rememberSaveable{mutableStateOf("")}
+    var user by rememberSaveable{mutableStateOf("")}
+    var pass by rememberSaveable{mutableStateOf("")}
     AppBackground{
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(26.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
-            Box(Modifier.size(106.dp).background(Brush.radialGradient(listOf(Accent2,Color(0xFF0B8C78))),CircleShape),contentAlignment=Alignment.Center){ Icon(Icons.Default.Phone, null, tint=Color.White, modifier=Modifier.size(54.dp)) }
-            Spacer(Modifier.height(22.dp)); Text("شنو منو",fontSize=38.sp,fontWeight=FontWeight.Black,color=Color.White); Text("تواصل ... بلا حدود",color=Accent,fontSize=18.sp)
+            Box(Modifier.size(106.dp).background(Brush.radialGradient(listOf(Accent2,Color(0xFF0B8C78))),CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Default.Phone,null,tint=Color.White,modifier=Modifier.size(54.dp))}
+            Spacer(Modifier.height(22.dp));Text("شنو منو",fontSize=38.sp,fontWeight=FontWeight.Black,color=Color.White);Text("تواصل ... بلا حدود",color=Accent,fontSize=18.sp)
             Spacer(Modifier.height(38.dp))
             OutlinedTextField(user,{user=it},Modifier.fillMaxWidth(),label={Text("رقم الهاتف أو اسم المستخدم")},leadingIcon={Icon(Icons.Default.Person,null)},singleLine=true,colors=darkField())
-            Spacer(Modifier.height(12.dp)); OutlinedTextField(pass,{pass=it},Modifier.fillMaxWidth(),label={Text("كلمة المرور")},leadingIcon={Icon(Icons.Default.Lock,null)},singleLine=true,colors=darkField())
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End){ Text("نسيت كلمة المرور؟",color=Accent,fontSize=12.sp) }
-            Spacer(Modifier.height(18.dp)); Button(onClick={},enabled=false,modifier=Modifier.fillMaxWidth().height(54.dp),colors=ButtonDefaults.buttonColors(containerColor=Accent,disabledContainerColor=Accent.copy(alpha=.35f))){Text("تسجيل الدخول",fontWeight=FontWeight.Bold)}
-            Spacer(Modifier.height(12.dp)); OutlinedButton(onClick=onPreview,modifier=Modifier.fillMaxWidth().height(52.dp),colors=ButtonDefaults.outlinedButtonColors(contentColor=Accent)){Text("معاينة التصميم الجديد")}
-            Spacer(Modifier.height(18.dp)); Text("هذه النسخة مستقلة عن الموقع. ربط الحساب والمزامنة سيتم في المرحلة التالية.",color=TextMuted,fontSize=11.sp,textAlign=TextAlign.Center)
+            Spacer(Modifier.height(12.dp));OutlinedTextField(pass,{pass=it},Modifier.fillMaxWidth(),label={Text("كلمة المرور")},leadingIcon={Icon(Icons.Default.Lock,null)},singleLine=true,colors=darkField())
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End){Text("نسيت كلمة المرور؟",color=Accent,fontSize=12.sp)}
+            Spacer(Modifier.height(18.dp));Button(onClick={},enabled=false,modifier=Modifier.fillMaxWidth().height(54.dp),colors=ButtonDefaults.buttonColors(containerColor=Accent,disabledContainerColor=Accent.copy(alpha=.35f))){Text("تسجيل الدخول",fontWeight=FontWeight.Bold)}
+            Spacer(Modifier.height(12.dp));OutlinedButton(onClick=onPreview,modifier=Modifier.fillMaxWidth().height(52.dp),colors=ButtonDefaults.outlinedButtonColors(contentColor=Accent)){Text("معاينة التصميم الجديد")}
+            Spacer(Modifier.height(18.dp));Text("هذه النسخة مستقلة عن الموقع. ربط الحساب والمزامنة سيتم في المرحلة التالية.",color=TextMuted,fontSize=11.sp,textAlign=TextAlign.Center)
         }
     }
 }
 
 @Composable private fun HomeScreen(tab:MainTab,onTab:(MainTab)->Unit,onChat:(Person)->Unit,onProfile:(Person)->Unit,onContacts:()->Unit,onStatus:()->Unit){
     Scaffold(containerColor=Bg,topBar={TopBar(tab.title,onContacts)},bottomBar={NavigationBar(containerColor=Color(0xFF061713)){MainTab.entries.forEach{t->NavigationBarItem(selected=t==tab,onClick={onTab(t)},icon={Icon(t.icon,null)},label={Text(t.title,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Accent,selectedTextColor=Accent,indicatorColor=Accent.copy(.14f),unselectedIconColor=TextMuted,unselectedTextColor=TextMuted))}}}){pad->
-        AppBackground{ Box(Modifier.fillMaxSize().padding(pad)){ when(tab){MainTab.CHATS->ChatsTab(onChat,onProfile,onStatus);MainTab.CALLS->CallsTab(onProfile);MainTab.COMMUNITY->CommunityTab();MainTab.SETTINGS->SettingsTab()} } }
+        AppBackground{Box(Modifier.fillMaxSize().padding(pad)){when(tab){MainTab.CHATS->ChatsTab(onChat,onProfile,onStatus);MainTab.CALLS->CallsTab(onProfile);MainTab.COMMUNITY->CommunityTab();MainTab.SETTINGS->SettingsTab()}}}
     }
 }
 
@@ -106,21 +105,22 @@ private val demoPeople = listOf(
 }
 
 @Composable private fun ChatsTab(onChat:(Person)->Unit,onProfile:(Person)->Unit,onStatus:()->Unit){
-    var q by rememberSaveable{mutableStateOf("")}; val shown=demoPeople.filter{q.isBlank()||it.name.contains(q,true)}
+    var q by rememberSaveable{mutableStateOf("")}
+    val shown=demoPeople.filter{q.isBlank()||it.name.contains(q,true)}
     Column(Modifier.fillMaxSize().padding(horizontal=14.dp)){
         SearchBox(q,{q=it},"البحث في الدردشات...")
-        Spacer(Modifier.height(12.dp)); Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())){ StoryAdd(onStatus); demoPeople.take(4).forEach{StoryChip(it,onProfile)} }
-        Spacer(Modifier.height(10.dp)); LazyColumn{items(shown,key={it.id}){p->PersonRow(p,{onChat(p)},{onProfile(p)})}}
+        Spacer(Modifier.height(12.dp));Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())){StoryAdd(onStatus);demoPeople.take(4).forEach{StoryChip(it,onProfile)}}
+        Spacer(Modifier.height(10.dp));LazyColumn{items(shown,key={it.id}){p->PersonRow(p,{onChat(p)})}}
     }
 }
 
 @Composable private fun CallsTab(onProfile:(Person)->Unit){
-    Column(Modifier.fillMaxSize().padding(horizontal=14.dp)){ SearchBox("",{},"ابحث في سجل المكالمات");Spacer(Modifier.height(12.dp));Row(Modifier.horizontalScroll(rememberScrollState())){FilterChip(true,{}, {Text("الكل")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("صادرة")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("واردة")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("فائتة")})};Spacer(Modifier.height(8.dp));LazyColumn{items(demoPeople){p->CallRow(p,onProfile)}} }
+    Column(Modifier.fillMaxSize().padding(horizontal=14.dp)){SearchBox("",{},"ابحث في سجل المكالمات");Spacer(Modifier.height(12.dp));Row(Modifier.horizontalScroll(rememberScrollState())){FilterChip(true,{}, {Text("الكل")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("صادرة")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("واردة")});Spacer(Modifier.width(8.dp));FilterChip(false,{}, {Text("فائتة")})};Spacer(Modifier.height(8.dp));LazyColumn{items(demoPeople){p->CallRow(p,onProfile)}}}
 }
 
 @Composable private fun CommunityTab(){
     val groups=listOf("العائلة" to "12 عضو","أصدقاء الجامعة" to "28 عضو","أهل الحي" to "45 عضو","عشاق التقنية" to "1.2K عضو","أخبار العراق" to "125K متابع")
-    Column(Modifier.fillMaxSize().padding(14.dp)){SearchBox("",{},"ابحث في المجتمعات...");Spacer(Modifier.height(12.dp));OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.outlinedButtonColors(contentColor=Accent)){Icon(Icons.Default.GroupAdd,null);Spacer(Modifier.width(8.dp));Text("إنشاء مجموعة جديدة")};Spacer(Modifier.height(12.dp));groups.forEachIndexed{i,g->Surface(color=if(i%2==0) Card else Card2,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().padding(vertical=5.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Avatar(g.first,48.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(g.first,color=Color.White,fontWeight=FontWeight.Bold);Text(g.second,color=TextMuted,fontSize=12.sp)};Icon(Icons.Default.ChevronLeft,null,tint=TextMuted)}}}}
+    Column(Modifier.fillMaxSize().padding(14.dp)){SearchBox("",{},"ابحث في المجتمعات...");Spacer(Modifier.height(12.dp));OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.outlinedButtonColors(contentColor=Accent)){Icon(Icons.Default.GroupAdd,null);Spacer(Modifier.width(8.dp));Text("إنشاء مجموعة جديدة")};Spacer(Modifier.height(12.dp));groups.forEachIndexed{i,g->Surface(color=if(i%2==0)Card else Card2,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().padding(vertical=5.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Avatar(g.first,48.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(g.first,color=Color.White,fontWeight=FontWeight.Bold);Text(g.second,color=TextMuted,fontSize=12.sp)};Icon(Icons.Default.ChevronLeft,null,tint=TextMuted)}}}}
 }
 
 @Composable private fun SettingsTab(){
@@ -129,7 +129,8 @@ private val demoPeople = listOf(
 }
 
 @Composable private fun ChatScreen(p:Person,onBack:()->Unit,onVoice:()->Unit,onVideo:()->Unit,onProfile:()->Unit){
-    var msg by rememberSaveable{mutableStateOf("")}; val local=remember{mutableStateListOf("مرحباً، كيف حالك اليوم؟","بخير والله الحمد، وأنت؟","ممتاز 😊","نتكلم لاحقاً؟","نعم بالتأكيد")}
+    var msg by rememberSaveable{mutableStateOf("")}
+    val local=remember{mutableStateListOf("مرحباً، كيف حالك اليوم؟","بخير والله الحمد، وأنت؟","ممتاز 😊","نتكلم لاحقاً؟","نعم بالتأكيد")}
     Scaffold(containerColor=Bg,topBar={Surface(color=Color(0xFF061713)){Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Avatar(p.name,42.dp);Column(Modifier.weight(1f).padding(horizontal=10.dp).clickable(onClick=onProfile)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Text(p.status,color=if(p.online)Accent else TextMuted,fontSize=11.sp)};IconButton(onClick=onVideo){Icon(Icons.Default.Videocam,null,tint=Color.White)};IconButton(onClick=onVoice){Icon(Icons.Default.Call,null,tint=Color.White)};IconButton(onClick={}){Icon(Icons.Default.MoreVert,null,tint=Color.White)}}}},bottomBar={MessageComposer(msg,{msg=it}){if(msg.isNotBlank()){local.add(msg);msg=""}}}){pad->
         AppBackground{LazyColumn(Modifier.fillMaxSize().padding(pad).padding(horizontal=12.dp),verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(vertical=16.dp)){items(local){m->val mine=local.indexOf(m)%2==1;Row(Modifier.fillMaxWidth(),horizontalArrangement=if(mine)Arrangement.End else Arrangement.Start){Surface(color=if(mine)Color(0xFF08745F) else Card,shape=RoundedCornerShape(16.dp)){Text(m,color=Color.White,modifier=Modifier.padding(horizontal=14.dp,vertical=10.dp),fontSize=14.sp)}}}}}
     }
@@ -147,22 +148,27 @@ private val demoPeople = listOf(
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF24332F),Color(0xFF0A1412))))){Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Column(horizontalAlignment=Alignment.CenterHorizontally){Avatar(p.name,150.dp);Spacer(Modifier.height(12.dp));Text(p.name,color=Color.White,fontSize=26.sp,fontWeight=FontWeight.Bold);Text("الفيديو التجريبي",color=TextMuted)}};Surface(color=Color(0xBB102723),shape=RoundedCornerShape(18.dp),modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).size(105.dp,145.dp)){Box(contentAlignment=Alignment.Center){Icon(Icons.Default.Person,null,tint=TextMuted,modifier=Modifier.size(54.dp))}};Row(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(22.dp).fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){CallControl(Icons.Default.CameraAlt){};CallControl(Icons.Default.MicOff){};CallControl(Icons.Default.Cameraswitch){};FloatingActionButton(onClick=onEnd,containerColor=Danger){Icon(Icons.Default.CallEnd,null,tint=Color.White)}}}
 }
 
-@Composable private fun ContactsScreen(onBack:()->Unit,onOpen:(Person)->Unit){AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(14.dp)){Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Text("جهات الاتصال",color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Bold)};SearchBox("",{},"البحث في جهات الاتصال...");Spacer(Modifier.height(12.dp));Surface(color=Accent.copy(.12f),shape=RoundedCornerShape(14.dp),modifier=Modifier.fillMaxWidth().clickable{} ){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(44.dp).background(Accent,CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Default.PersonAdd,null,tint=Bg)};Text("إضافة جهة اتصال جديدة",color=Accent,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=12.dp))}};Spacer(Modifier.height(8.dp));LazyColumn{items(demoPeople){p->PersonRow(p,{onOpen(p)},{onOpen(p)})}}}}}
+@Composable private fun ContactsScreen(onBack:()->Unit,onOpen:(Person)->Unit){AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(14.dp)){Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Text("جهات الاتصال",color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Bold)};SearchBox("",{},"البحث في جهات الاتصال...");Spacer(Modifier.height(12.dp));Surface(color=Accent.copy(.12f),shape=RoundedCornerShape(14.dp),modifier=Modifier.fillMaxWidth().clickable{} ){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(44.dp).background(Accent,CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Default.PersonAdd,null,tint=Bg)};Text("إضافة جهة اتصال جديدة",color=Accent,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=12.dp))}};Spacer(Modifier.height(8.dp));LazyColumn{items(demoPeople){p->PersonRow(p,{onOpen(p)})}}}}}
 
 @Composable private fun StatusScreen(onBack:()->Unit){AppBackground{Column(Modifier.fillMaxSize().statusBarsPadding().padding(14.dp)){Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null,tint=Color.White)};Text("الحالة",color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Bold)};Surface(color=Card,shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth()){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Box{Avatar("قصتي",58.dp);Box(Modifier.size(22.dp).background(Accent,CircleShape).align(Alignment.BottomEnd),contentAlignment=Alignment.Center){Icon(Icons.Default.Add,null,tint=Bg,modifier=Modifier.size(16.dp))}};Column(Modifier.padding(start=12.dp)){Text("قصتي",color=Color.White,fontWeight=FontWeight.Bold);Text("اضغط لإضافة حالة",color=TextMuted,fontSize=12.sp)}}};Text("الحالات الحديثة",color=TextMuted,modifier=Modifier.padding(vertical=16.dp));demoPeople.take(4).forEach{StoryListRow(it)}}}}
 
-@Composable private fun MessageComposer(value:String,onChange:(String)->Unit,onSend:()->Unit){Surface(color=Color(0xFF061713)){Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={}){Icon(Icons.Default.EmojiEmotions,null,tint=TextMuted)};OutlinedTextField(value,onChange,Modifier.weight(1f),placeholder={Text("اكتب رسالة...")},singleLine=true,colors=darkField());IconButton(onClick={}){Icon(Icons.Default.AttachFile,null,tint=TextMuted)};FilledIconButton(onClick=onSend,colors=IconButtonDefaults.filledIconButtonColors(containerColor=Accent)){Icon(if(value.isBlank())Icons.Default.Mic else Icons.Default.Send,null,tint=Bg)}}}
+@Composable private fun MessageComposer(value:String,onChange:(String)->Unit,onSend:()->Unit){
+    Surface(color=Color(0xFF061713)){
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp),verticalAlignment=Alignment.CenterVertically){
+            IconButton(onClick={}){Icon(Icons.Default.EmojiEmotions,null,tint=TextMuted)}
+            OutlinedTextField(value,onChange,Modifier.weight(1f),placeholder={Text("اكتب رسالة...")},singleLine=true,colors=darkField())
+            IconButton(onClick={}){Icon(Icons.Default.AttachFile,null,tint=TextMuted)}
+            FilledIconButton(onClick=onSend,colors=IconButtonDefaults.filledIconButtonColors(containerColor=Accent)){Icon(if(value.isBlank())Icons.Default.Mic else Icons.Default.Send,null,tint=Bg)}
+        }
+    }
+}
 
 @Composable private fun SearchBox(v:String,on:(String)->Unit,hint:String){OutlinedTextField(v,on,Modifier.fillMaxWidth(),placeholder={Text(hint,color=TextMuted)},leadingIcon={Icon(Icons.Default.Search,null,tint=TextMuted)},singleLine=true,shape=RoundedCornerShape(22.dp),colors=darkField())}
 @Composable private fun StoryAdd(on:()->Unit){Column(Modifier.width(72.dp).clickable(onClick=on),horizontalAlignment=Alignment.CenterHorizontally){Box(Modifier.size(55.dp).background(Card,CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Default.Add,null,tint=Accent)};Text("إضافة",color=TextMuted,fontSize=10.sp)}}
 @Composable private fun StoryChip(p:Person,on:(Person)->Unit){Column(Modifier.width(72.dp).clickable{on(p)},horizontalAlignment=Alignment.CenterHorizontally){Box(Modifier.size(58.dp).background(Accent,CircleShape).padding(2.dp).background(Bg,CircleShape),contentAlignment=Alignment.Center){Text(p.name.take(1),color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold)};Text(p.name.substringBefore(" "),color=Color.White,fontSize=10.sp,maxLines=1)}}
-
-@Composable private fun PersonRow(p:Person,onClick:()->Unit,onLong:()->Unit){Row(Modifier.fillMaxWidth().clickable(onClick=onClick).padding(vertical=10.dp, horizontal=4.dp),verticalAlignment=Alignment.CenterVertically){Avatar(p.name,54.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text(p.name,color=Color.White,fontSize=16.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f));Text(if(p.online)"10:24" else "أمس",color=if(p.unread>0)Accent else TextMuted,fontSize=11.sp)};Row(verticalAlignment=Alignment.CenterVertically){Text(p.last.ifBlank{p.status},color=TextMuted,fontSize=12.sp,modifier=Modifier.weight(1f),maxLines=1);if(p.unread>0)Box(Modifier.size(22.dp).background(Accent,CircleShape),contentAlignment=Alignment.Center){Text(p.unread.toString(),color=Bg,fontSize=10.sp,fontWeight=FontWeight.Bold)}}}}
-
-@Composable private fun CallRow(p:Person,on:(Person)->Unit){Row(Modifier.fillMaxWidth().clickable{on(p)}.padding(vertical=11.dp),verticalAlignment=Alignment.CenterVertically){Avatar(p.name,52.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Row(verticalAlignment=Alignment.CenterVertically){Icon(if(p.online)Icons.Default.CallReceived else Icons.Default.CallMade,null,tint=if(p.online)Accent else TextMuted,modifier=Modifier.size(14.dp));Spacer(Modifier.width(5.dp));Text(if(p.online)"مكالمة صوتية • منذ دقيقتين" else "مكالمة فيديو • أمس",color=TextMuted,fontSize=11.sp)}};Icon(Icons.Default.Call,null,tint=Accent)} }
-
+@Composable private fun PersonRow(p:Person,onClick:()->Unit){Row(Modifier.fillMaxWidth().clickable(onClick=onClick).padding(vertical=10.dp,horizontal=4.dp),verticalAlignment=Alignment.CenterVertically){Avatar(p.name,54.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text(p.name,color=Color.White,fontSize=16.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f));Text(if(p.online)"10:24" else "أمس",color=if(p.unread>0)Accent else TextMuted,fontSize=11.sp)};Row(verticalAlignment=Alignment.CenterVertically){Text(p.last.ifBlank{p.status},color=TextMuted,fontSize=12.sp,modifier=Modifier.weight(1f),maxLines=1);if(p.unread>0)Box(Modifier.size(22.dp).background(Accent,CircleShape),contentAlignment=Alignment.Center){Text(p.unread.toString(),color=Bg,fontSize=10.sp,fontWeight=FontWeight.Bold)}}}}}
+@Composable private fun CallRow(p:Person,on:(Person)->Unit){Row(Modifier.fillMaxWidth().clickable{on(p)}.padding(vertical=11.dp),verticalAlignment=Alignment.CenterVertically){Avatar(p.name,52.dp);Column(Modifier.weight(1f).padding(horizontal=12.dp)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Row(verticalAlignment=Alignment.CenterVertically){Icon(if(p.online)Icons.Default.CallReceived else Icons.Default.CallMade,null,tint=if(p.online)Accent else TextMuted,modifier=Modifier.size(14.dp));Spacer(Modifier.width(5.dp));Text(if(p.online)"مكالمة صوتية • منذ دقيقتين" else "مكالمة فيديو • أمس",color=TextMuted,fontSize=11.sp)}};Icon(Icons.Default.Call,null,tint=Accent)}}
 @Composable private fun StoryListRow(p:Person){Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(58.dp).background(Accent,CircleShape).padding(2.dp).background(Bg,CircleShape),contentAlignment=Alignment.Center){Text(p.name.take(1),color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold)};Column(Modifier.padding(start=12.dp)){Text(p.name,color=Color.White,fontWeight=FontWeight.Bold);Text("منذ ${demoPeople.indexOf(p)+1} ساعة",color=TextMuted,fontSize=11.sp)}}}
-
 @Composable private fun Avatar(name:String,size:androidx.compose.ui.unit.Dp){Box(Modifier.size(size).background(Brush.linearGradient(listOf(Color(0xFF0D8E78),Accent)),CircleShape),contentAlignment=Alignment.Center){Text(name.take(1),color=Color.White,fontWeight=FontWeight.Black,fontSize=(size.value*.38f).sp)}}
 @Composable private fun ActionCircle(label:String,icon:ImageVector,on:()->Unit){Column(horizontalAlignment=Alignment.CenterHorizontally){FilledIconButton(onClick=on,modifier=Modifier.size(58.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=Card2,contentColor=Accent)){Icon(icon,null,modifier=Modifier.size(25.dp))};Spacer(Modifier.height(6.dp));Text(label,color=TextMuted,fontSize=11.sp)}}
 @Composable private fun CallControl(icon:ImageVector,on:()->Unit){FilledIconButton(onClick=on,modifier=Modifier.size(52.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=Color(0xBB203833),contentColor=Color.White)){Icon(icon,null)}}
