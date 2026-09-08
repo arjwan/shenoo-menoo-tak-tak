@@ -53,7 +53,8 @@ data class MessageDto(
     val text: String? = null,
     val type: String? = null,
     val createdAt: String? = null,
-    val mine: Boolean = false
+    val mine: Boolean = false,
+    val localState: String = "sent"
 ) { val messageId: String get() = id ?: mongoId.orEmpty() }
 data class ConversationDto(val id: String, val otherUser: OtherUserDto? = null, val lastMessage: MessageDto? = null, val updatedAt: String? = null, val unreadCount: Int = 0)
 data class ConversationsResponse(val ok: Boolean = false, val conversations: List<ConversationDto> = emptyList())
