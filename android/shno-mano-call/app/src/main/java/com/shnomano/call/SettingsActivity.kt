@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { SettingsScreen { finish() } }
+        setContent { ShnoManoTheme { SettingsScreen { finish() } } }
     }
 }
 
@@ -55,42 +55,40 @@ private fun SettingsScreen(onBack: () -> Unit) {
         }
     }
 
-    MaterialTheme {
-        Column(
-            Modifier.fillMaxSize().background(Color(0xFF070910)).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("رجوع") }
-                Text("إعدادات شنو منو اتصال", color = Color.White, fontSize = 22.sp)
-            }
-            SettingSwitch("الإشعارات", "تنبيهات الرسائل والمكالمات", notifications) {
-                notifications = it; store.notificationsEnabled = it
-            }
-            SettingSwitch("الاهتزاز", "اهتزاز عند وصول مكالمة أو رسالة", vibration) {
-                vibration = it; store.vibrationEnabled = it
-            }
-            SettingSwitch("صوت المكالمة", "تشغيل نغمة للمكالمة الواردة", callSound) {
-                callSound = it; store.callSoundEnabled = it
-            }
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text("نغمة المكالمة", color = Color.White, fontSize = 16.sp)
-                    Text(ringtoneLabel, color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
-                    Spacer(Modifier.height(10.dp))
-                    Button(onClick = {
-                        val intent = android.content.Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
-                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                            store.ringtoneUri?.let { putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, android.net.Uri.parse(it)) }
-                        }
-                        ringtonePicker.launch(intent)
-                    }) { Text("اختيار نغمة") }
-                }
-            }
-            Text("ملاحظة: تغيير صوت قناة المكالمات قد يحتاج إغلاق التطبيق وفتحه من جديد على بعض أجهزة أندرويد.", color = Color(0xFF98A2B3), fontSize = 11.sp)
+    Column(
+        Modifier.fillMaxSize().background(Color(0xFF070910)).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onBack) { Text("رجوع") }
+            Text("إعدادات شنو منو اتصال", color = Color.White, fontSize = 22.sp)
         }
+        SettingSwitch("الإشعارات", "تنبيهات الرسائل والمكالمات", notifications) {
+            notifications = it; store.notificationsEnabled = it
+        }
+        SettingSwitch("الاهتزاز", "اهتزاز عند وصول مكالمة أو رسالة", vibration) {
+            vibration = it; store.vibrationEnabled = it
+        }
+        SettingSwitch("صوت المكالمة", "تشغيل نغمة للمكالمة الواردة", callSound) {
+            callSound = it; store.callSoundEnabled = it
+        }
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("نغمة المكالمة", color = Color.White, fontSize = 16.sp)
+                Text(ringtoneLabel, color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Spacer(Modifier.height(10.dp))
+                Button(onClick = {
+                    val intent = android.content.Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                        store.ringtoneUri?.let { putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, android.net.Uri.parse(it)) }
+                    }
+                    ringtonePicker.launch(intent)
+                }) { Text("اختيار نغمة") }
+            }
+        }
+        Text("ملاحظة: تغيير صوت قناة المكالمات قد يحتاج إغلاق التطبيق وفتحه من جديد على بعض أجهزة أندرويد.", color = Color(0xFF98A2B3), fontSize = 11.sp)
     }
 }
 
