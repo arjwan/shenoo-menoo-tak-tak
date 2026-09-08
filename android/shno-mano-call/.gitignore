@@ -1,0 +1,10 @@
+# Android Studio / Gradle
+.gradle/
+local.properties
+**/build/
+.idea/
+
+# Release signing secrets
+keystore.properties
+*.jks
+*.keystore
