@@ -19,6 +19,26 @@ const val SHNO_MANO_BASE_URL = "https://shino-mino-tak-tak.duckdns.org/"
 data class SignInRequest(val identifier: String, val password: String)
 data class SignedInUserDto(val id: String, val fullName: String, val username: String, val role: String? = null)
 data class SignInResponse(val ok: Boolean = false, val message: String? = null, val status: String? = null, val token: String? = null, val user: SignedInUserDto? = null)
+
+data class SignUpRequest(
+    val fullName: String,
+    val username: String,
+    val phone: String,
+    val email: String = "",
+    val birthDate: String? = null,
+    val gender: String = "other",
+    val password: String,
+    val confirmPassword: String,
+    val termsAccepted: Boolean = true,
+    val privacyAccepted: Boolean = true
+)
+data class SignUpResponse(
+    val ok: Boolean = false,
+    val status: String? = null,
+    val message: String? = null,
+    val userId: String? = null
+)
+
 data class PhoneContactDto(val id: String? = null, val name: String, val phone: String)
 data class PhoneContactsResponse(val contacts: List<PhoneContactDto> = emptyList())
 data class SavePhoneContactsRequest(val contacts: List<PhoneContactDto>)
@@ -65,6 +85,7 @@ data class SendMessageResponse(val ok: Boolean = false, val message: MessageDto?
 data class OkResponse(val ok: Boolean = false, val message: String? = null)
 
 interface ShnoManoApi {
+    @POST("api/auth/signup") suspend fun signUp(@Body body: SignUpRequest): SignUpResponse
     @POST("api/auth/signin") suspend fun signIn(@Body body: SignInRequest): SignInResponse
     @GET("api/phone-contacts") suspend fun phoneContacts(): PhoneContactsResponse
     @PUT("api/phone-contacts") suspend fun savePhoneContacts(@Body body: SavePhoneContactsRequest): PhoneContactsResponse
