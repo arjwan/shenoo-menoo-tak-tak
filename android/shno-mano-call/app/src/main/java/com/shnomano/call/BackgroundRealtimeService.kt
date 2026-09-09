@@ -96,7 +96,6 @@ class BackgroundRealtimeService : Service() {
 
         disconnectSocket()
         val options = IO.Options().apply {
-            autoConnect = false
             forceNew = false
             reconnection = true
             reconnectionAttempts = Int.MAX_VALUE

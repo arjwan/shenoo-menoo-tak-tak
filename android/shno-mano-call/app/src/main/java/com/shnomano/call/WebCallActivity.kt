@@ -280,7 +280,7 @@ class WebCallActivity : ComponentActivity() {
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
         var selected = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val wantedType = if (speaker) AudioManager.DEVICE_OUT_SPEAKER else AudioManager.DEVICE_OUT_EARPIECE
+            val wantedType = if (speaker) android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER else android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
             val device = audioManager.availableCommunicationDevices.firstOrNull { it.type == wantedType }
             if (device != null) selected = audioManager.setCommunicationDevice(device)
         }
