@@ -243,6 +243,7 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
     val contacts by repo.observeContacts().collectAsState(initial = emptyList())
     var friends by remember { mutableStateOf<List<FriendDto>>(emptyList()) }
     var requests by remember { mutableStateOf<List<FriendRequestDto>>(emptyList()) }
+    var sentRequestUserIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var query by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
 
@@ -263,6 +264,7 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
         repo.syncContacts()
         friends = repo.loadFriends()
         requests = repo.loadFriendRequests()
+        sentRequestUserIds = repo.loadSentFriendRequests().map { it.user.userId }.toSet()
     }
 
     val filteredFriends = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
@@ -291,7 +293,12 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
             Text("اختيار جهة من الهاتف")
         }
         OutlinedButton(
-            onClick = { scope.launch { requests = repo.loadFriendRequests(); friends = repo.loadFriends(); status = "تم تحديث طلبات الصداقة" } },
+            onClick = { scope.launch {
+                requests = repo.loadFriendRequests()
+                sentRequestUserIds = repo.loadSentFriendRequests().map { it.user.userId }.toSet()
+                friends = repo.loadFriends()
+                status = "تم تحديث طلبات الصداقة"
+            } },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(Icons.Default.Refresh, null)
@@ -341,17 +348,19 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
                             if (!c.linkedUserId.isNullOrBlank()) {
                                 val linkedId = c.linkedUserId.orEmpty()
                                 val isFriend = friends.any { it.userId == linkedId }
+                                val requestSent = linkedId in sentRequestUserIds
                                 OutlinedButton(onClick = {
                                     if (isFriend) onMessage(linkedId)
+                                    else if (requestSent) status = "طلب الصداقة مُرسل مسبقًا"
                                     else scope.launch {
                                         repo.sendFriendRequest(linkedId)
-                                            .onSuccess { status = it }
+                                            .onSuccess { status = it; sentRequestUserIds = sentRequestUserIds + linkedId }
                                             .onFailure { status = it.message ?: "تعذر إرسال الطلب" }
                                     }
                                 }, modifier = Modifier.weight(1f)) {
                                     Icon(if (isFriend) Icons.Default.ChatBubble else Icons.Default.PersonAdd, null)
                                     Spacer(Modifier.width(4.dp))
-                                    Text(if (isFriend) "مراسلة" else "إضافة")
+                                    Text(if (isFriend) "مراسلة" else if (requestSent) "طلب مُرسل" else "إضافة")
                                 }
                             }
                         }
