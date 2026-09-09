@@ -12,6 +12,8 @@
         android:name=".ShnoManoApp"
         android:allowBackup="true"
         android:label="شنو منو اتصال"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.ShnoManoCall">
