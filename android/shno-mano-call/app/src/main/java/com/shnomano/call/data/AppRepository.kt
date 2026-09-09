@@ -195,7 +195,8 @@ class AppRepository(context: Context) {
         fun normalizeIraqiPhone(value: String): String {
             var phone = value.replace(Regex("[^0-9+]"), "")
             if (phone.startsWith("+964")) phone = "0" + phone.drop(4)
-            if (phone.startsWith("00964")) phone = "0" + phone.drop(5)
+            else if (phone.startsWith("00964")) phone = "0" + phone.drop(5)
+            else if (phone.startsWith("964")) phone = "0" + phone.drop(3)
             return if (Regex("^07\\d{9}$").matches(phone)) phone else ""
         }
     }
