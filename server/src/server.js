@@ -24,6 +24,7 @@ const islamicRoutes = require('./routes/islamic.routes');
 const storesRoutes = require('./routes/stores.routes');
 const consultationRoutes = require('./routes/consultations.routes');
 const astrologyRoutes = require('./routes/astrology.routes');
+const serviceProviderRoutes = require('./routes/service-providers.routes');
 const { attachSocket } = require('./socket');
 const { attachGroupCalls } = require('./group-calls');
 
@@ -50,6 +51,7 @@ app.use('/api/islamic', islamicRoutes);
 app.use('/api/stores', storesRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/astrology', astrologyRoutes);
+app.use('/api/service-providers', serviceProviderRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
