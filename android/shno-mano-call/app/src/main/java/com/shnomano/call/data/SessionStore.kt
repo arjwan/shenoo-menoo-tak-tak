@@ -4,8 +4,8 @@ import android.content.Context
 import com.shnomano.call.BackgroundRealtimeService
 
 class SessionStore(context: Context) {
-    private val app = context.applicationContext
-    private val prefs = app.getSharedPreferences("shno_mano_call_session", Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences("shno_mano_call_session", Context.MODE_PRIVATE)
 
     val token: String?
         get() = prefs.getString(KEY_TOKEN, null)
@@ -30,11 +30,12 @@ class SessionStore(context: Context) {
             .putString(KEY_FULL_NAME, user.fullName)
             .putString(KEY_USERNAME, user.username)
             .apply()
-        BackgroundRealtimeService.start(app)
     }
 
     fun clear() {
-        BackgroundRealtimeService.stop(app)
+        // Clearing credentials is also the definitive logout signal for the
+        // foreground service; it must not reconnect with an old token.
+        BackgroundRealtimeService.stop(appContext)
         prefs.edit().clear().apply()
     }
 

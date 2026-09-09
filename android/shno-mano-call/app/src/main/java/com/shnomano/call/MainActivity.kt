@@ -1,14 +1,19 @@
 package com.shnomano.call
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,9 +45,19 @@ private val Accent = Color(0xFF19D9A0)
 private val Muted = Color(0xFF91A39D)
 
 class MainActivity : ComponentActivity() {
+    private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { ShnoManoTheme { ShnoManoCallApp() } }
+    }
+
+    fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 }
 
@@ -55,6 +70,16 @@ fun ShnoManoCallApp() {
     var signedIn by remember { mutableStateOf(repo.session.isSignedIn()) }
     var selected by remember { mutableIntStateOf(0) }
     var activeChat by remember { mutableStateOf<ConversationDto?>(null) }
+    val onlineUserIds by PresenceStore.onlineUserIds.collectAsState()
+
+    LaunchedEffect(signedIn) {
+        if (signedIn) {
+            (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
+            BackgroundRealtimeService.start(context)
+        } else {
+            BackgroundRealtimeService.stop(context)
+        }
+    }
 
     if (!signedIn) {
         LoginScreen(repo, onSuccess = { signedIn = true }, onRegister = {
@@ -64,7 +89,7 @@ fun ShnoManoCallApp() {
     }
 
     activeChat?.let { conversation ->
-        ChatScreen(repo, conversation, onBack = { activeChat = null })
+        ChatScreen(repo, conversation, onlineUserIds, onBack = { activeChat = null })
         return
     }
 
@@ -103,11 +128,11 @@ fun ShnoManoCallApp() {
             )
         ) {
             when (selected) {
-                0 -> ConversationsScreen(repo) { activeChat = it }
-                1 -> CallsScreen(repo) { userId ->
+                0 -> ConversationsScreen(repo, onlineUserIds) { activeChat = it }
+                1 -> CallsScreen(repo, onlineUserIds) { userId ->
                     repoLaunchConversation(repo, userId) { activeChat = it }
                 }
-                2 -> ContactsScreen(repo) { userId ->
+                2 -> ContactsScreen(repo, onlineUserIds) { userId ->
                     repoLaunchConversation(repo, userId) { activeChat = it }
                 }
                 else -> AccountScreen(repo) {
@@ -210,7 +235,7 @@ private fun BrandHeader(title: String, subtitle: String) {
 }
 
 @Composable
-private fun ConversationsScreen(repo: AppRepository, onOpen: (ConversationDto) -> Unit) {
+private fun ConversationsScreen(repo: AppRepository, onlineUserIds: Set<String>, onOpen: (ConversationDto) -> Unit) {
     var conversations by remember { mutableStateOf<List<ConversationDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
@@ -224,10 +249,12 @@ private fun ConversationsScreen(repo: AppRepository, onOpen: (ConversationDto) -
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(conversations, key = { it.id }) { c ->
                 val other = c.otherUser
+                val online = other?.id?.let { it in onlineUserIds } == true
                 PersonRow(
                     name = other?.fullName ?: other?.username ?: "محادثة",
-                    subtitle = c.lastMessage?.text.orEmpty(),
+                    subtitle = if (online) "متصل الآن" else "غير متصل",
                     badge = c.unreadCount,
+                    online = online,
                     onClick = { onOpen(c) }
                 )
             }
@@ -237,7 +264,7 @@ private fun ConversationsScreen(repo: AppRepository, onOpen: (ConversationDto) -
 }
 
 @Composable
-private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
+private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMessage: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val contacts by repo.observeContacts().collectAsState(initial = emptyList())
@@ -334,7 +361,8 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
             }
             if (filteredFriends.isNotEmpty()) item { SectionTitle("أصدقاء شنو منو") }
             items(filteredFriends, key = { "friend-${it.userId}" }) { f ->
-                PersonRow(f.displayName, if (f.online) "متصل الآن" else "@${f.username ?: ""}", onClick = { onMessage(f.userId) })
+                val online = f.userId in onlineUserIds
+                PersonRow(f.displayName, if (online) "متصل الآن" else "غير متصل", online = online, onClick = { onMessage(f.userId) })
             }
             if (filteredContacts.isNotEmpty()) item { SectionTitle("جهات الهاتف") }
             items(filteredContacts, key = { "phone-${it.phone}" }) { c ->
@@ -373,7 +401,7 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
 }
 
 @Composable
-private fun CallsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
+private fun CallsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMessage: (String) -> Unit) {
     val context = LocalContext.current
     var friends by remember { mutableStateOf<List<FriendDto>>(emptyList()) }
     LaunchedEffect(Unit) { friends = repo.loadFriends() }
@@ -384,10 +412,11 @@ private fun CallsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
             items(friends, key = { it.userId }) { f ->
                 Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        AvatarLetter(f.displayName)
+                        val online = f.userId in onlineUserIds
+                        AvatarLetter(f.displayName, online)
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                             Text(f.displayName, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text(if (f.online) "متصل الآن" else "@${f.username ?: ""}", color = if (f.online) Accent else Muted, fontSize = 11.sp)
+                            Text(if (online) "متصل الآن" else "غير متصل", color = if (online) Accent else Muted, fontSize = 11.sp)
                         }
                         IconButton(onClick = { openShnoCall(context, f.userId, "audio") }) { Icon(Icons.Default.Call, null, tint = Accent) }
                         IconButton(onClick = { openShnoCall(context, f.userId, "video") }) { Icon(Icons.Default.Videocam, null, tint = Accent) }
@@ -401,13 +430,14 @@ private fun CallsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
 }
 
 @Composable
-private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onBack: () -> Unit) {
+private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlineUserIds: Set<String>, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var messages by remember { mutableStateOf<List<MessageDto>>(emptyList()) }
     var text by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     val other = conversation.otherUser
+    val online = other?.id?.let { it in onlineUserIds } == true
 
     LaunchedEffect(conversation.id) {
         repo.loadMessages(conversation.id).onSuccess { messages = it }
@@ -418,10 +448,10 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onBac
         topBar = {
             Row(Modifier.fillMaxWidth().background(Panel).statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
-                AvatarLetter(other?.fullName ?: other?.username ?: "ش")
+                AvatarLetter(other?.fullName ?: other?.username ?: "ش", online)
                 Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                     Text(other?.fullName ?: other?.username ?: "محادثة", color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(if (other?.online == true) "متصل الآن" else "شنو منو", color = if (other?.online == true) Accent else Muted, fontSize = 10.sp)
+                    Text(if (online) "متصل الآن" else "غير متصل", color = if (online) Accent else Muted, fontSize = 10.sp)
                 }
                 if (!other?.id.isNullOrBlank()) {
                     IconButton(onClick = { openShnoCall(context, other!!.id, "audio") }) { Icon(Icons.Default.Call, null, tint = Accent) }
@@ -482,17 +512,17 @@ private fun AccountScreen(repo: AppRepository, onLogout: () -> Unit) {
 }
 
 @Composable
-private fun PersonRow(name: String, subtitle: String, badge: Int = 0, onClick: () -> Unit) {
+private fun PersonRow(name: String, subtitle: String, badge: Int = 0, online: Boolean = false, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Panel),
         shape = RoundedCornerShape(18.dp),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            AvatarLetter(name)
+            AvatarLetter(name, online)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text(name, color = Color.White, fontWeight = FontWeight.Bold)
-                Text(subtitle, color = Muted, fontSize = 11.sp, maxLines = 1)
+                Text(subtitle, color = if (online) Accent else Muted, fontSize = 11.sp, maxLines = 1)
             }
             if (badge > 0) Badge(containerColor = Accent, contentColor = Bg) { Text(badge.toString()) }
         }
@@ -500,9 +530,23 @@ private fun PersonRow(name: String, subtitle: String, badge: Int = 0, onClick: (
 }
 
 @Composable
-private fun AvatarLetter(name: String) {
-    Box(Modifier.size(46.dp).background(Accent.copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
-        Text(name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "ش", color = Accent, fontSize = 18.sp, fontWeight = FontWeight.Black)
+private fun AvatarLetter(name: String, online: Boolean = false) {
+    Box(Modifier.size(46.dp).background(Accent.copy(alpha = .15f), CircleShape)) {
+        Text(
+            name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "ش",
+            color = Accent,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.align(Alignment.Center)
+        )
+        if (online) {
+            Box(
+                Modifier.size(12.dp)
+                    .align(Alignment.BottomEnd)
+                    .border(2.dp, Panel, CircleShape)
+                    .background(Color(0xFF31E981), CircleShape)
+            )
+        }
     }
 }
 
@@ -528,6 +572,6 @@ private fun dial(context: android.content.Context, phone: String) {
 
 private fun openShnoCall(context: android.content.Context, userId: String, type: String) {
     if (userId.isBlank()) return
-    val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(userId)}&call=$type"
+    val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(userId)}&call=$type&native=1"
     context.startActivity(Intent(context, WebCallActivity::class.java).putExtra(WebCallActivity.EXTRA_URL, url))
 }

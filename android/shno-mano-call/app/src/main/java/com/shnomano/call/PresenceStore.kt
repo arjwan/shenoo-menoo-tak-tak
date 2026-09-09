@@ -5,24 +5,65 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Process-wide realtime presence cache fed by BackgroundRealtimeService.
- * REST responses provide the initial state; Socket.IO events keep it current.
+ * Live state shared by the foreground service and the Compose screens.
+ *
+ * The set is intentionally populated only by the authenticated Socket.IO
+ * connection (or its presence snapshot). REST/Mongo values are not merged into
+ * it because they can be stale by the time a screen is rendered.
  */
+data class IncomingCall(
+    val callId: String,
+    val from: String,
+    val conversationId: String,
+    val type: String,
+    val callerName: String
+)
+
 object PresenceStore {
-    private val _online = MutableStateFlow<Map<String, Boolean>>(emptyMap())
-    val online: StateFlow<Map<String, Boolean>> = _online.asStateFlow()
+    private val _onlineUserIds = MutableStateFlow<Set<String>>(emptySet())
+    val onlineUserIds: StateFlow<Set<String>> = _onlineUserIds.asStateFlow()
 
-    fun setOnline(userId: String, isOnline: Boolean) {
-        if (userId.isBlank()) return
-        _online.value = _online.value.toMutableMap().apply { put(userId, isOnline) }
+    private val _incomingCall = MutableStateFlow<IncomingCall?>(null)
+    val incomingCall: StateFlow<IncomingCall?> = _incomingCall.asStateFlow()
+
+    fun markOnline(userId: String) {
+        val id = userId.trim()
+        if (id.isBlank()) return
+        _onlineUserIds.value = _onlineUserIds.value + id
     }
 
-    fun seed(states: Map<String, Boolean>) {
-        if (states.isEmpty()) return
-        _online.value = _online.value.toMutableMap().apply { putAll(states) }
+    fun markOffline(userId: String) {
+        val id = userId.trim()
+        if (id.isBlank()) return
+        _onlineUserIds.value = _onlineUserIds.value - id
     }
 
-    fun clear() {
-        _online.value = emptyMap()
+    fun replaceOnline(userIds: Collection<String>) {
+        _onlineUserIds.value = userIds.map(String::trim).filter(String::isNotBlank).toSet()
+    }
+
+    fun isOnline(userId: String?): Boolean = !userId.isNullOrBlank() && userId in _onlineUserIds.value
+
+    /**
+     * Returns false for a replay of an invite that is already being handled.
+     * This is the de-duplication point for a service socket plus a WebView
+     * socket receiving the same callId.
+     */
+    fun acceptIncomingCall(call: IncomingCall): Boolean {
+        val current = _incomingCall.value
+        if (current?.callId == call.callId) return false
+        _incomingCall.value = call
+        return true
+    }
+
+    fun clearIncomingCall(callId: String? = null) {
+        if (callId.isNullOrBlank() || _incomingCall.value?.callId == callId) {
+            _incomingCall.value = null
+        }
+    }
+
+    fun clearAll() {
+        _onlineUserIds.value = emptySet()
+        _incomingCall.value = null
     }
 }

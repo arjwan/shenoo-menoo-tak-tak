@@ -6,21 +6,26 @@ import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
-import com.shnomano.call.data.SessionStore
 
 class ShnoManoApp : Application() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
-        if (SessionStore(this).isSignedIn()) {
-            BackgroundRealtimeService.start(this)
-        }
     }
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = getSystemService(NotificationManager::class.java)
         val settings = SettingsStore(this)
+
+        val realtimeChannel = NotificationChannel(
+            CHANNEL_REALTIME,
+            "اتصال شنو منو اللحظي",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "تشغيل الحضور والمكالمات في الخلفية"
+            setShowBadge(false)
+        }
 
         val messageChannel = NotificationChannel(
             CHANNEL_MESSAGES,
@@ -47,25 +52,14 @@ class ShnoManoApp : Application() {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
-        val backgroundChannel = NotificationChannel(
-            CHANNEL_BACKGROUND,
-            "خدمة شنو منو في الخلفية",
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            description = "تحافظ على استقبال الرسائل والمكالمات عند عمل التطبيق في الخلفية"
-            setSound(null, null)
-            enableVibration(false)
-            lockscreenVisibility = android.app.Notification.VISIBILITY_SECRET
-        }
-
+        manager.createNotificationChannel(realtimeChannel)
         manager.createNotificationChannel(messageChannel)
         manager.createNotificationChannel(callChannel)
-        manager.createNotificationChannel(backgroundChannel)
     }
 
     companion object {
+        const val CHANNEL_REALTIME = "shno_realtime"
         const val CHANNEL_MESSAGES = "shno_messages"
         const val CHANNEL_CALLS = "shno_calls"
-        const val CHANNEL_BACKGROUND = "shno_background"
     }
 }
