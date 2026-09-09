@@ -48,6 +48,16 @@ test('call registry enforces ringing, accepted and cleanup lifecycle', () => {
   assert.equal(calls.forUser('b'), null);
 });
 
+test('call registry exposes only still-ringing calls for reconnect replay', () => {
+  const calls = new PrivateCallRegistry();
+  calls.invite({ callId: 'ringing-1', callerId: 'caller', calleeId: 'callee', conversationId: 'c1', type: 'audio' });
+  assert.equal(calls.ringingFor('callee').callId, 'ringing-1');
+  assert.equal(calls.ringingFor('caller').callId, 'ringing-1');
+  calls.accept('ringing-1', 'socket-callee');
+  assert.equal(calls.ringingFor('callee'), null);
+  assert.equal(calls.forUser('callee').state, 'accepted');
+});
+
 test('stored attachment validation checks content signature, not MIME alone', async (t) => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'shno-message-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
