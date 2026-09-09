@@ -12,6 +12,8 @@ const gameRoomSchema = new mongoose.Schema({
   gameType: { type: String, enum: ['chess', 'domino', 'tawla', 'cards'], default: 'domino', index: true },
   visibility: { type: String, enum: ['public', 'friends', 'private'], default: 'public', index: true },
   maxPlayers: { type: Number, min: 2, max: 6, default: 2 },
+  teamMode: { type: String, enum: ['solo', '2v2'], default: 'solo' },
+  scoreTarget: { type: Number, min: 1, max: 9999, default: 100 },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   players: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   reservations: { type: [reservationSchema], default: [] },
@@ -24,10 +26,12 @@ const gameRoomSchema = new mongoose.Schema({
   price: { type: Number, min: 0, default: 0 },
   currency: { type: String, trim: true, maxlength: 8, default: 'IQD' },
   isActive: { type: Boolean, default: true, index: true },
+  savedAt: { type: Date, default: null },
   gameState: {
     status: { type: String, enum: ['waiting', 'ready', 'active', 'finished'], default: 'waiting' },
     turn: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     scores: { type: Map, of: Number, default: {} },
+    teamScores: { type: Map, of: Number, default: { A: 0, B: 0 } },
     board: { type: [mongoose.Schema.Types.Mixed], default: [] },
     moveCount: { type: Number, default: 0 },
     updatedAt: { type: Date, default: Date.now }
