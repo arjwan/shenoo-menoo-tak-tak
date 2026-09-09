@@ -91,6 +91,17 @@ private fun SettingsScreen(onBack: () -> Unit) {
         }
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("البحث والإضافة", color = Color.White, fontSize = 16.sp)
+                Text("ابحث باسم المستخدم أو رقم الهاتف، وأرسل دعوة جاهزة لغير المسجلين", color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Spacer(Modifier.height(10.dp))
+                Button(
+                    onClick = { context.startActivity(Intent(context, ContactDiscoveryActivity::class.java)) },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("فتح البحث وإضافة الأصدقاء") }
+            }
+        }
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 Text("إضافة صديق عبر QR", color = Color.White, fontSize = 16.sp)
                 Text("اعرض رمز حسابك أو امسح رمز صديق لإرسال طلب الإضافة", color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(10.dp))
