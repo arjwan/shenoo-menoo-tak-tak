@@ -7,100 +7,26 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>الرئيسية | شنو منو تك تك</title>
   <link rel="stylesheet" href="taktak-feed.css?v=20260909-1">
+  <link rel="stylesheet" href="taktak-home-visual.css?v=20260910-1">
   <link rel="stylesheet" href="taktak-calls-dock.css?v=20260908-5">
 </head>
 <body>
 <script src="auth-guard.js?v=20260907-7"></script>
-<header class="home-top">
-  <nav class="home-nav">
-    <a class="home-brand" href="taktak.html">شنو منو تك تك</a>
-    <input class="home-search" data-people-search type="search" placeholder="ابحث عن أشخاص..." aria-label="البحث">
-    <div class="top-actions" aria-label="اختصارات">
-      <a class="action-reels" href="reels.html" title="الريلز" aria-label="الريلز">▶</a>
-      <a class="action-chat" href="taal-nsolf.html" title="تعال نسولف" aria-label="تعال نسولف">💬</a>
-      <a class="action-mail" href="messages.html" title="المحادثات" aria-label="المحادثات">✉</a>
-      <a class="action-call" href="calls.html" title="شنو منو اتصال" aria-label="شنو منو اتصال">☎</a>
-      <a class="action-friends" href="friends.html" title="الأصدقاء" aria-label="الأصدقاء">👥</a>
-      <a class="action-settings" href="settings.html" title="الإعدادات" aria-label="الإعدادات">⚙</a>
-      <button id="theme-toggle" class="action-theme" type="button" title="تبديل الوضع" aria-label="تبديل الوضع">🌗</button>
-      <button id="logout" class="action-logout" type="button" title="تسجيل الخروج" aria-label="تسجيل الخروج">↪</button>
-    </div>
-  </nav>
-</header>
-
+<header class="home-top"><nav class="home-nav"><a class="home-brand" href="taktak.html">شنو منو تك تك</a><input class="home-search" data-people-search type="search" placeholder="ابحث عن أشخاص..." aria-label="البحث"><div class="top-actions" aria-label="اختصارات"><a class="action-reels" href="reels.html" title="الريلز">▶</a><a class="action-chat" href="taal-nsolf.html" title="تعال نسولف">💬</a><a class="action-mail" href="messages.html" title="المحادثات">✉</a><a class="action-call" href="calls.html" title="شنو منو اتصال">☎</a><a class="action-friends" href="friends.html" title="الأصدقاء">👥</a><a class="action-settings" href="settings.html" title="الإعدادات">⚙</a><button id="theme-toggle" class="action-theme" type="button" title="ليلي / نهاري">🌗</button><button id="logout" class="action-logout" type="button" title="تسجيل الخروج">↪</button></div></nav></header>
 <main class="home-grid">
-  <aside class="left-side side-card">
-    <a href="taktak.html">🏠 الرئيسية</a>
-    <a href="profile.html">👤 صفحتي الشخصية</a>
-    <a href="taal-nsolf.html">💬 تعال نسولف</a>
-    <a href="consultations.html">🤝 الاستشارات</a>
-    <a href="umm-abbas.html">🔮 ركن أم عباس</a>
-    <a href="friends.html">👥 الأصدقاء وطلبات الإضافة</a>
-    <a href="messages.html">✉ المحادثات الخاصة</a>
-    <a href="calls.html">☎ شنو منو اتصال</a>
-    <a href="mall.html">🛍 مول العراق</a>
-    <a href="challenges.html">🏆 التحديات والبث</a>
-    <a href="game-room.html">🎲 كهوة عزاوي</a>
-    <a href="islamic.html">☪ الصفحة الإسلامية</a>
-    <a href="settings.html">⚙ الخصوصية والإعدادات</a>
-  </aside>
-
+  <aside class="left-side side-card"><a href="taktak.html">🏠 الرئيسية</a><a href="profile.html">👤 صفحتي الشخصية</a><a href="taal-nsolf.html">💬 تعال نسولف</a><a href="consultations.html">🤝 الاستشارات</a><a href="umm-abbas.html">🔮 ركن أم عباس</a><a href="friends.html">👥 الأصدقاء وطلبات الإضافة</a><a href="messages.html">✉ المحادثات الخاصة</a><a href="calls.html">☎ شنو منو اتصال</a><a href="mall.html">🛍 مول العراق</a><a href="challenges.html">🏆 التحديات والبث</a><a href="game-room.html">🎲 كهوة عزاوي</a><a href="islamic.html">☪ الصفحة الإسلامية</a><a href="settings.html">⚙ الخصوصية والإعدادات</a></aside>
   <section class="feed">
-    <section class="people-strip compact-panel">
-      <div class="people-head">
-        <h3>أشخاص على شنو منو</h3>
-        <a href="friends.html">عرض الكل</a>
-      </div>
-      <div class="people-list" data-people-list><div class="empty">جارٍ تحميل الأشخاص…</div></div>
-    </section>
-
-    <section class="stories-block compact-panel">
-      <div class="section-head"><h3>القصص</h3><a href="stories.html">عرض الكل</a></div>
-      <div class="stories-strip">
-        <a class="story-tile story-me" href="stories.html?create=1" title="أضف قصة">
-          <span class="story-avatar" data-story-me-avatar>؟</span><span class="story-plus">+</span><strong>قصتي</strong>
-        </a>
-        <div class="stories-list" data-stories-list><div class="empty inline-empty">جارٍ تحميل القصص…</div></div>
-      </div>
-    </section>
-
-    <section class="reels-block compact-panel">
-      <div class="section-head"><h3>ريلز</h3><a href="reels.html">عرض الكل</a></div>
-      <div class="reels-list" data-reels-list><div class="empty inline-empty">جارٍ تحميل الريلز…</div></div>
-    </section>
-
-    <form class="composer" data-composer>
-      <div class="composer-top"><span class="avatar" data-me-avatar>؟</span><textarea data-post-text maxlength="5000" placeholder="شنو ببالك؟"></textarea></div>
-      <input type="file" data-media accept="image/*,video/mp4,video/webm,video/quicktime,audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,.mp3,.m4a,.wav" hidden>
-      <div class="composer-tools">
-        <button class="tool-btn tool-photo" type="button" data-photo-btn title="صورة">🖼 <span>صورة</span></button>
-        <button class="tool-btn tool-video" type="button" data-video-btn title="فيديو">🎥 <span>فيديو</span></button>
-        <button class="tool-btn tool-audio" type="button" data-audio-btn title="صوت / MP3">🎵 <span>MP3</span></button>
-        <a class="tool-btn tool-reel" href="reels.html?create=1" title="إنشاء ريلز">🎬 <span>ريلز</span></a>
-        <select class="tool-btn" data-visibility><option value="everyone">🌐 الجميع</option><option value="friends">👥 الأصدقاء</option></select>
-        <button class="tool-btn publish" type="submit">نشر</button>
-      </div>
-    </form>
-
+    <section class="profile-cover" data-home-cover><div class="cover-shade"></div><div class="cover-user"><span class="cover-avatar" data-cover-avatar>؟</span><span><strong data-cover-name>حسابي</strong><small data-cover-state>شنو منو تك تك</small></span></div><a class="cover-edit" href="profile.html">✎ تعديل الصورة والغلاف</a></section>
+    <section class="compact-panel"><div class="section-head"><h3>وصول سريع</h3><span></span></div><div class="quick-apps"><a class="quick-app" href="game-room.html"><b>☕</b><span>كهوة عزاوي</span></a><a class="quick-app" href="mall.html"><b>🛍</b><span>مول العراق</span></a><a class="quick-app" href="consultations.html"><b>🤝</b><span>الاستشارات</span></a><a class="quick-app" href="friends.html"><b>👥</b><span>الأصدقاء</span></a><a class="quick-app" href="messages.html"><b>💬</b><span>الرسائل</span></a><a class="quick-app" href="calls.html"><b>☎</b><span>الاتصال</span></a></div></section>
+    <section class="people-strip compact-panel"><div class="people-head"><h3>أشخاص على شنو منو</h3><a href="friends.html">عرض الكل</a></div><div class="people-list" data-people-list><div class="empty">جارٍ تحميل الأشخاص…</div></div></section>
+    <section class="stories-block compact-panel"><div class="section-head"><h3>القصص</h3><a href="stories.html">عرض الكل</a></div><div class="stories-strip"><a class="story-tile story-me" href="stories.html?create=1" title="أضف قصة"><span class="story-avatar" data-story-me-avatar>؟</span><span class="story-plus">+</span><strong>قصتي</strong></a><div class="stories-list" data-stories-list><div class="empty inline-empty">جارٍ تحميل القصص…</div></div></div></section>
+    <section class="reels-block compact-panel"><div class="section-head"><h3>ريلز</h3><a href="reels.html">عرض الكل</a></div><div class="reels-list" data-reels-list><div class="empty inline-empty">جارٍ تحميل الريلز…</div></div></section>
+    <form class="composer" data-composer><div class="composer-top"><span class="avatar" data-me-avatar>؟</span><textarea data-post-text maxlength="5000" placeholder="شنو ببالك؟"></textarea></div><input type="file" data-media accept="image/*,video/mp4,video/webm,video/quicktime,audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,.mp3,.m4a,.wav" hidden><div class="composer-tools"><button class="tool-btn tool-photo" type="button" data-photo-btn>🖼 <span>صورة</span></button><button class="tool-btn tool-video" type="button" data-video-btn>🎥 <span>فيديو</span></button><button class="tool-btn tool-audio" type="button" data-audio-btn>🎵 <span>MP3</span></button><a class="tool-btn tool-reel" href="reels.html?create=1">🎬 <span>ريلز</span></a><select class="tool-btn" data-visibility><option value="everyone">🌐 الجميع</option><option value="friends">👥 الأصدقاء</option></select><button class="tool-btn publish" type="submit">نشر</button></div></form>
     <div data-feed><div class="post-card empty">جارٍ تحميل المنشورات…</div></div>
   </section>
-
-  <aside class="right-side">
-    <section class="paid-ads">
-      <div class="paid-ads-head"><h3>📢 الإعلانات المدفوعة</h3><span class="paid-label">ممول</span></div>
-      <div class="paid-ad-stage"><article class="paid-ad-slide ad1 is-active"><div class="ad-icon">📣</div><div><h4>ضع إعلانك هنا</h4><p>مساحة إعلانية</p></div><a href="support.html">احجز المساحة</a></article></div>
-    </section>
-    <aside class="calls-dock" data-calls-dock aria-label="شنو منو اتصال">
-      <div class="calls-dock-head"><div class="calls-dock-title"><strong>☎ شنو منو اتصال</strong><small>الأصدقاء وجهات الهاتف</small></div><button class="calls-dock-toggle" type="button" data-calls-dock-toggle aria-expanded="true" title="طي لوحة الاتصال">‹</button><span class="calls-dock-badge"></span></div>
-      <div class="calls-dock-tools"><input class="calls-dock-search" type="search" placeholder="ابحث عن اسم أو رقم" data-calls-dock-search><button class="calls-pick-button" type="button" data-calls-pick-contacts>＋ من الهاتف</button></div>
-      <div class="calls-dock-list" data-calls-dock-list><div class="calls-dock-empty">جارٍ تحميل جهات الاتصال…</div></div>
-    </aside>
-  </aside>
+  <aside class="right-side"><section class="paid-ads"><div class="paid-ads-head"><h3>📢 الإعلانات المدفوعة</h3><span class="paid-label">ممول</span></div><div class="paid-ad-stage"><article class="paid-ad-slide ad1 is-active"><div class="ad-icon">📣</div><div><h4>ضع إعلانك هنا</h4><p>مساحة إعلانية</p></div><a href="support.html">احجز المساحة</a></article></div></section><aside class="calls-dock" data-calls-dock aria-label="شنو منو اتصال"><div class="calls-dock-head"><div class="calls-dock-title"><strong>☎ شنو منو اتصال</strong><small>الأصدقاء وجهات الهاتف</small></div><button class="calls-dock-toggle" type="button" data-calls-dock-toggle aria-expanded="true">‹</button><span class="calls-dock-badge"></span></div><div class="calls-dock-tools"><input class="calls-dock-search" type="search" placeholder="ابحث عن اسم أو رقم" data-calls-dock-search><button class="calls-pick-button" type="button" data-calls-pick-contacts>＋ من الهاتف</button></div><div class="calls-dock-list" data-calls-dock-list><div class="calls-dock-empty">جارٍ تحميل جهات الاتصال…</div></div></aside></aside>
 </main>
-
-<button class="calls-mobile-launcher" type="button" data-calls-mobile-launcher aria-expanded="false" aria-label="فتح شنو منو اتصال">☎</button>
-<div class="calls-mobile-sheet" data-calls-mobile-sheet><section class="calls-mobile-card"><div class="calls-mobile-head"><strong>☎ شنو منو اتصال</strong><button class="calls-mobile-close" type="button" data-calls-mobile-close aria-label="إغلاق">×</button></div><div class="calls-mobile-tools"><input class="calls-dock-search" type="search" placeholder="ابحث عن اسم أو رقم" data-calls-mobile-search><button class="calls-pick-button" type="button" data-calls-pick-contacts>＋ جهات الهاتف</button></div><div class="calls-dock-list" data-calls-mobile-list><div class="calls-dock-empty">جارٍ تحميل جهات الاتصال…</div></div></section></div>
+<button class="calls-mobile-launcher" type="button" data-calls-mobile-launcher aria-expanded="false" aria-label="فتح شنو منو اتصال">☎</button><div class="calls-mobile-sheet" data-calls-mobile-sheet><section class="calls-mobile-card"><div class="calls-mobile-head"><strong>☎ شنو منو اتصال</strong><button class="calls-mobile-close" type="button" data-calls-mobile-close>×</button></div><div class="calls-mobile-tools"><input class="calls-dock-search" type="search" placeholder="ابحث عن اسم أو رقم" data-calls-mobile-search><button class="calls-pick-button" type="button" data-calls-pick-contacts>＋ جهات الهاتف</button></div><div class="calls-dock-list" data-calls-mobile-list><div class="calls-dock-empty">جارٍ تحميل جهات الاتصال…</div></div></section></div>
 <nav class="mobile-bar"><a href="taktak.html"><b>⌂</b>الرئيسية</a><a href="stories.html"><b>✨</b>القصص</a><a href="reels.html"><b>▶</b>الريلز</a><a href="taal-nsolf.html"><b>💬</b>نسولف</a><a href="profile.html"><b>👤</b>حسابي</a></nav>
-<script src="taktak-feed.js?v=20260909-1"></script>
-<script src="taktak-calls-dock.js?v=20260908-7"></script>
+<script src="taktak-feed.js?v=20260909-1"></script><script src="taktak-home-visual.js?v=20260910-1"></script><script src="taktak-calls-dock.js?v=20260908-7"></script>
 </body></html>
