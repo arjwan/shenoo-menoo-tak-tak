@@ -2,3 +2,4 @@
 .upload-progress{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#10201B;border:1px solid rgba(255,255,255,.1);padding:8px 16px;border-radius:12px;color:#fff;z-index:50;display:flex;align-items:center;gap:8px;font-size:13px}
 .upload-progress-bar{width:140px;height:6px;background:#132824;border-radius:3px;overflow:hidden}
 .upload-progress-bar>div{height:100%;background:var(--accent);width:0%}
+.light{--bg:#f3f4f8;--card:#ffffff;--surface:#e8e9ed;--text:#111;--muted:#555;--line:rgba(0,0,0,.1);--accent:#19D9A0}
