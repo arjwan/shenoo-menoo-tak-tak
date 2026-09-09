@@ -76,6 +76,7 @@ data class MessageDto(
     val senderId: String? = null,
     val text: String? = null,
     val type: String? = null,
+    val attachment: MediaAttachmentDto? = null,
     val createdAt: String? = null,
     val mine: Boolean = false,
     val localState: String = "sent"
