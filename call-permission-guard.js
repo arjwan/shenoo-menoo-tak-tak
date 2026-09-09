@@ -2,6 +2,7 @@
 'use strict';
 var params=new URLSearchParams(location.search);
 var requested=params.get('prepare');
+if(params.get('native')==='1')return;
 var running=false;
 function status(text,isError){
   var feedback=document.querySelector('[data-message-feedback]');
