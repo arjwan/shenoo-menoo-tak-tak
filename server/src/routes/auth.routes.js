@@ -27,18 +27,36 @@ function clearLoginAttempts(ip) { loginAttempts.delete(ip); }
 function normalizePhone(value) { return String(value || '').replace(/\s+/g, '').trim(); }
 function validPhone(value) { return /^07\d{9}$/.test(normalizePhone(value)); }
 function validEmail(value) { return !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim().toLowerCase()); }
+function normalizeBirthDate(value) {
+  if (!value) return { valid: true, value: null };
+  const input = String(value).trim();
+  let year; let month; let day;
+  let match = input.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) [, year, month, day] = match;
+  else {
+    match = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) [, day, month, year] = match;
+  }
+  if (!match) return { valid: false, value: null };
+  const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const parsed = new Date(`${iso}T00:00:00.000Z`);
+  const valid = !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso && parsed <= new Date();
+  return { valid, value: valid ? parsed : null };
+}
 
 router.post('/signup', async (req, res) => {
   try {
     const { fullName, username, phone, email, contact, birthDate, gender, password, confirmPassword, termsAccepted, privacyAccepted } = req.body;
     const normalizedPhone = normalizePhone(phone || contact);
     const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedBirthDate = normalizeBirthDate(birthDate);
 
     if (!fullName || !username || !normalizedPhone || !password) {
       return res.status(400).json({ ok: false, message: 'الاسم واسم المستخدم ورقم الهاتف وكلمة المرور حقول إلزامية' });
     }
     if (!validPhone(normalizedPhone)) return res.status(400).json({ ok: false, message: 'رقم الهاتف العراقي يجب أن يبدأ بـ 07 ويتكون من 11 رقماً' });
     if (!validEmail(normalizedEmail)) return res.status(400).json({ ok: false, message: 'البريد الإلكتروني غير صالح' });
+    if (!normalizedBirthDate.valid) return res.status(400).json({ ok: false, message: 'تاريخ الميلاد غير صحيح؛ استخدم 23/2/1965 أو 1965-02-23' });
     if (password !== confirmPassword) return res.status(400).json({ ok: false, message: 'كلمتا المرور غير متطابقتين' });
     if (password.length < 8) return res.status(400).json({ ok: false, message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' });
     if (termsAccepted !== true || privacyAccepted !== true) return res.status(400).json({ ok: false, message: 'يجب قراءة اتفاقية الخصوصية والموافقة عليها قبل إنشاء الحساب' });
@@ -54,7 +72,7 @@ router.post('/signup', async (req, res) => {
       fullName: fullName.trim(), username: normalizedUsername,
       phone: normalizedPhone, email: normalizedEmail || '',
       contact: normalizedPhone, contactType: 'phone',
-      birthDate: birthDate || null, gender: gender || 'other', passwordHash,
+      birthDate: normalizedBirthDate.value, gender: gender || 'other', passwordHash,
       termsAccepted: true, privacyAccepted: true, privacyAcceptedAt: new Date(), privacyVersion: '2026-09-07',
       role: 'user', status: 'pending'
     });
