@@ -1,15 +1,10 @@
-name: Build Shno Mano Call APK
+name: Build Signed Shno Mano Release APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'android/shno-mano-call/**'
-      - '.github/workflows/android-apk.yml'
 
 jobs:
-  build-apk:
+  build-release-apk:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,13 +25,31 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build functional debug APK
-        run: gradle clean assembleDebug --stacktrace
+      - name: Restore release signing key
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.SHNO_MANO_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$RELEASE_KEYSTORE_BASE64"
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > shno-mano-release.jks
 
-      - name: Upload APK artifact
+      - name: Build signed Release APK
+        env:
+          SHNO_MANO_KEYSTORE_FILE: ../shno-mano-release.jks
+          SHNO_MANO_KEYSTORE_PASSWORD: ${{ secrets.SHNO_MANO_KEYSTORE_PASSWORD }}
+          SHNO_MANO_KEY_ALIAS: ${{ secrets.SHNO_MANO_KEY_ALIAS }}
+          SHNO_MANO_KEY_PASSWORD: ${{ secrets.SHNO_MANO_KEY_PASSWORD }}
+        run: gradle clean assembleRelease --stacktrace
+
+      - name: Verify APK signature
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          test -f "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+
+      - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: shno-mano-call-functional-apk
-          path: android/shno-mano-call/app/build/outputs/apk/debug/app-debug.apk
+          name: shno-mano-call-release-signed
+          path: android/shno-mano-call/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
