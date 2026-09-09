@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const Message = require('../src/models/Message');
 const upload = require('../src/middleware/upload');
 const { PrivateCallRegistry } = require('../src/socket');
+const { AdHocGroupCallRegistry } = require('../src/group-calls');
 
 const id = () => new mongoose.Types.ObjectId();
 
@@ -56,6 +57,31 @@ test('call registry exposes only still-ringing calls for reconnect replay', () =
   calls.accept('ringing-1', 'socket-callee');
   assert.equal(calls.ringingFor('callee'), null);
   assert.equal(calls.forUser('callee').state, 'accepted');
+});
+
+test('group call registry adds, accepts and removes participants safely', () => {
+  const calls = new AdHocGroupCallRegistry();
+  const session = calls.create('group-1', 'host', 'base', 'video');
+  assert.ok(session);
+  assert.deepEqual(Array.from(session.participants.keys()), ['host', 'base']);
+  assert.equal(calls.invite('group-1', 'third'), true);
+  assert.equal(calls.invite('group-1', 'third'), false);
+  assert.equal(calls.pendingFor('third').groupId, 'group-1');
+  assert.equal(calls.accept('group-1', 'third', 'socket-third'), true);
+  assert.equal(calls.get('group-1').participants.get('third'), 'socket-third');
+  assert.equal(calls.pendingFor('third'), null);
+  calls.remove('group-1', 'third');
+  assert.equal(calls.hasParticipant('group-1', 'third'), false);
+  assert.ok(calls.get('group-1'));
+});
+
+test('group call registry ends when the host leaves', () => {
+  const calls = new AdHocGroupCallRegistry();
+  calls.create('group-2', 'host', 'base', 'audio');
+  calls.invite('group-2', 'third');
+  calls.remove('group-2', 'host');
+  assert.equal(calls.get('group-2'), undefined);
+  assert.equal(calls.pendingFor('third'), null);
 });
 
 test('stored attachment validation checks content signature, not MIME alone', async (t) => {
