@@ -25,6 +25,7 @@ const storesRoutes = require('./routes/stores.routes');
 const consultationRoutes = require('./routes/consultations.routes');
 const astrologyRoutes = require('./routes/astrology.routes');
 const { attachSocket } = require('./socket');
+const { attachGroupCalls } = require('./group-calls');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -53,4 +54,9 @@ app.use('/uploads', express.static(require('path').resolve(__dirname, '../../upl
 app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
 const port=Number(process.env.PORT||3000);
-connectDB().then(()=>{app.set('io',attachSocket(httpServer));httpServer.listen(port,()=>console.log(`Server running on http://localhost:${port}`));}).catch(error=>{console.error('Server startup failed:',error.message);process.exit(1);});
+connectDB().then(()=>{
+  const io = attachSocket(httpServer);
+  attachGroupCalls(io);
+  app.set('io', io);
+  httpServer.listen(port,()=>console.log(`Server running on http://localhost:${port}`));
+}).catch(error=>{console.error('Server startup failed:',error.message);process.exit(1);});
