@@ -33,6 +33,7 @@ const gameRoomSchema = new mongoose.Schema({
     scores: { type: Map, of: Number, default: {} },
     teamScores: { type: Map, of: Number, default: { A: 0, B: 0 } },
     board: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    engine: { type: mongoose.Schema.Types.Mixed, default: null, select: true },
     moveCount: { type: Number, default: 0 },
     updatedAt: { type: Date, default: Date.now }
   }
