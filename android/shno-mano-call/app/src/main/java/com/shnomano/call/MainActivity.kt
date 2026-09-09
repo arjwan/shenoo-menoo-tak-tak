@@ -242,6 +242,7 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     val contacts by repo.observeContacts().collectAsState(initial = emptyList())
     var friends by remember { mutableStateOf<List<FriendDto>>(emptyList()) }
+    var requests by remember { mutableStateOf<List<FriendRequestDto>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
 
@@ -261,6 +262,7 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
     LaunchedEffect(Unit) {
         repo.syncContacts()
         friends = repo.loadFriends()
+        requests = repo.loadFriendRequests()
     }
 
     val filteredFriends = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
@@ -288,9 +290,41 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
             Spacer(Modifier.width(8.dp))
             Text("اختيار جهة من الهاتف")
         }
+        OutlinedButton(
+            onClick = { scope.launch { requests = repo.loadFriendRequests(); friends = repo.loadFriends(); status = "تم تحديث طلبات الصداقة" } },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Refresh, null)
+            Spacer(Modifier.width(8.dp))
+            Text("تحديث طلبات الصداقة")
+        }
         status?.let { Text(it, color = Accent, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
         Spacer(Modifier.height(8.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (requests.isNotEmpty()) item { SectionTitle("طلبات الصداقة الواردة") }
+            items(requests, key = { "request-${it.id}" }) { request ->
+                Card(colors = CardDefaults.cardColors(containerColor = Panel2), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        AvatarLetter(request.user.displayName)
+                        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                            Text(request.user.displayName, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("يريد إضافتك إلى أصدقاء شنو منو", color = Muted, fontSize = 11.sp)
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                repo.respondToFriendRequest(request.id, true).onSuccess { status = it }
+                                requests = repo.loadFriendRequests(); friends = repo.loadFriends()
+                            }
+                        }) { Icon(Icons.Default.Check, "قبول", tint = Accent) }
+                        IconButton(onClick = {
+                            scope.launch {
+                                repo.respondToFriendRequest(request.id, false).onSuccess { status = it }
+                                requests = repo.loadFriendRequests()
+                            }
+                        }) { Icon(Icons.Default.Close, "رفض", tint = MaterialTheme.colorScheme.error) }
+                    }
+                }
+            }
             if (filteredFriends.isNotEmpty()) item { SectionTitle("أصدقاء شنو منو") }
             items(filteredFriends, key = { "friend-${it.userId}" }) { f ->
                 PersonRow(f.displayName, if (f.online) "متصل الآن" else "@${f.username ?: ""}", onClick = { onMessage(f.userId) })
@@ -305,7 +339,20 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = { dial(context, c.phone) }, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Phone, null); Spacer(Modifier.width(4.dp)); Text("هاتف") }
                             if (!c.linkedUserId.isNullOrBlank()) {
-                                OutlinedButton(onClick = { onMessage(c.linkedUserId) }, modifier = Modifier.weight(1f)) { Icon(Icons.Default.ChatBubble, null); Spacer(Modifier.width(4.dp)); Text("شنو منو") }
+                                val linkedId = c.linkedUserId
+                                val isFriend = friends.any { it.userId == linkedId }
+                                OutlinedButton(onClick = {
+                                    if (isFriend) onMessage(linkedId)
+                                    else scope.launch {
+                                        repo.sendFriendRequest(linkedId)
+                                            .onSuccess { status = it }
+                                            .onFailure { status = it.message ?: "تعذر إرسال الطلب" }
+                                    }
+                                }, modifier = Modifier.weight(1f)) {
+                                    Icon(if (isFriend) Icons.Default.ChatBubble else Icons.Default.PersonAdd, null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(if (isFriend) "مراسلة" else "إضافة")
+                                }
                             }
                         }
                     }
