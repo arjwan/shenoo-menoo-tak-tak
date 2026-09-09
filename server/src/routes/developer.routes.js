@@ -6,6 +6,8 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
 const Store = require('../models/Store');
 const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
+const FriendRequest = require('../models/FriendRequest');
 const GameRoom = require('../models/GameRoom');
 const Group = require('../models/Group');
 const GroupReport = require('../models/GroupReport');
@@ -79,6 +81,10 @@ const safeUser = (user) => ({
   username: user.username,
   contact: user.contact,
   contactType: user.contactType,
+  phone: user.phone || (user.contactType === 'phone' ? user.contact : ''),
+  email: user.email || (user.contactType === 'email' ? user.contact : ''),
+  birthDate: user.birthDate,
+  gender: user.gender,
   role: user.role,
   status: user.status,
   createdAt: user.createdAt,
@@ -178,6 +184,83 @@ router.get('/dashboard', async (req, res) => {
   } catch (error) {
     console.error('Developer dashboard failed:', error.message);
     return res.status(500).json({ ok: false, message: 'تعذر تحميل لوحة المطور' });
+  }
+});
+
+router.get('/users', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const status = String(req.query.status || '').trim();
+    const filter = { role: 'user' };
+    if (['pending', 'active', 'rejected', 'blocked'].includes(status)) filter.status = status;
+    if (q) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const rx = new RegExp(escaped, 'iu');
+      filter.$or = [{ fullName: rx }, { username: rx }, { phone: rx }, { email: rx }, { contact: rx }];
+    }
+    const users = await User.find(filter).select('-passwordHash -blockedUsers -phoneVisibleTo').sort({ createdAt: -1 }).limit(500);
+    return res.json({ ok: true, users: users.map(safeUser) });
+  } catch (error) {
+    console.error('Developer users failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تحميل المستخدمين' });
+  }
+});
+
+router.patch('/users/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ ok: false, message: 'معرف المستخدم غير صالح' });
+    const user = await User.findOne({ _id: req.params.id, role: 'user' });
+    if (!user) return res.status(404).json({ ok: false, message: 'المستخدم غير موجود' });
+    const fullName = String(req.body.fullName ?? user.fullName).trim();
+    const username = String(req.body.username ?? user.username).trim().toLowerCase();
+    const phone = String(req.body.phone ?? user.phone ?? '').replace(/\s+/g, '');
+    const email = String(req.body.email ?? user.email ?? '').trim().toLowerCase();
+    const gender = String(req.body.gender ?? user.gender ?? 'other');
+    const status = String(req.body.status ?? user.status);
+    if (!fullName || !/^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,99}$/u.test(fullName)) return res.status(400).json({ ok: false, message: 'الاسم الكامل غير صالح' });
+    if (!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(username)) return res.status(400).json({ ok: false, message: 'اسم المستخدم غير صالح' });
+    if (!/^07\d{9}$/.test(phone)) return res.status(400).json({ ok: false, message: 'رقم الهاتف غير صالح' });
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ ok: false, message: 'البريد الإلكتروني غير صالح' });
+    if (!['male', 'female', 'other'].includes(gender)) return res.status(400).json({ ok: false, message: 'الجنس غير صالح' });
+    if (!['pending', 'active', 'rejected', 'blocked'].includes(status)) return res.status(400).json({ ok: false, message: 'حالة الحساب غير صالحة' });
+    const duplicate = await User.findOne({ _id: { $ne: user._id }, $or: [{ username }, { phone }, { contact: phone }, ...(email ? [{ email }, { contact: email }] : [])] });
+    if (duplicate) return res.status(409).json({ ok: false, message: 'اسم المستخدم أو الهاتف أو البريد مستخدم مسبقاً' });
+    let birthDate = user.birthDate;
+    if (req.body.birthDate !== undefined) {
+      birthDate = req.body.birthDate ? new Date(`${String(req.body.birthDate).slice(0, 10)}T00:00:00.000Z`) : null;
+      if (birthDate && Number.isNaN(birthDate.getTime())) return res.status(400).json({ ok: false, message: 'تاريخ الميلاد غير صالح' });
+    }
+    Object.assign(user, { fullName, username, phone, email, contact: phone, contactType: 'phone', birthDate, gender, status });
+    if (status !== 'rejected') user.rejectionReason = '';
+    await user.save();
+    await writeAudit(req.user, 'developer.user.updated', user, `تعديل حساب ${username} — ${status}`);
+    return res.json({ ok: true, message: 'تم تحديث معلومات المستخدم', user: safeUser(user) });
+  } catch (error) {
+    console.error('Developer user update failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تحديث المستخدم' });
+  }
+});
+
+router.delete('/users/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ ok: false, message: 'معرف المستخدم غير صالح' });
+    const user = await User.findOne({ _id: req.params.id, role: 'user' });
+    if (!user) return res.status(404).json({ ok: false, message: 'المستخدم غير موجود' });
+    await writeAudit(req.user, 'developer.user.deleted', user, `حذف حساب ${user.username}`);
+    const conversations = await Conversation.find({ participants: user._id }).select('_id').lean();
+    const conversationIds = conversations.map((item) => item._id);
+    await Promise.all([
+      Message.deleteMany({ $or: [{ sender: user._id }, { conversation: { $in: conversationIds } }] }),
+      Conversation.deleteMany({ _id: { $in: conversationIds } }),
+      FriendRequest.deleteMany({ $or: [{ sender: user._id }, { receiver: user._id }] }),
+      Group.updateMany({}, { $pull: { members: user._id, admins: user._id, moderators: user._id, pendingMembers: user._id, bannedMembers: user._id } }),
+      User.updateMany({ blockedUsers: user._id }, { $pull: { blockedUsers: user._id } })
+    ]);
+    await User.deleteOne({ _id: user._id });
+    return res.json({ ok: true, message: 'تم حذف المستخدم وبيانات محادثاته' });
+  } catch (error) {
+    console.error('Developer user delete failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر حذف المستخدم' });
   }
 });
 
