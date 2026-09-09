@@ -49,6 +49,7 @@
         </receiver>
 
         <activity android:name=".QrFriendActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".ContactDiscoveryActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WebSectionActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WebCallActivity" android:exported="false" android:launchMode="singleTop" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" />
