@@ -27,6 +27,9 @@ import com.shnomano.call.data.SignUpRequest
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,7 +80,7 @@ class RegisterActivity : ComponentActivity() {
                 }
                 Field("رقم الهاتف العراقي 07xxxxxxxxx", phone) { phone = it.filter(Char::isDigit).take(11) }
                 Field("البريد الإلكتروني - اختياري", email) { email = it.trim() }
-                Field("تاريخ الميلاد YYYY-MM-DD - اختياري", birthDate) { birthDate = it.take(10) }
+                Field("تاريخ الميلاد: 23/2/1965 أو 1965-02-23 - اختياري", birthDate) { birthDate = it.take(10) }
 
                 Text("الجنس", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -104,11 +107,13 @@ class RegisterActivity : ComponentActivity() {
                         message = null
                         val validArabicName = fullName.trim().matches(Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]{1,99}$"))
                         val validUsername = username.matches(Regex("^[\\p{L}\\p{M}0-9_.]{3,30}$"))
+                        val normalizedBirthDate = normalizeBirthDate(birthDate)
                         when {
                             fullName.isBlank() || username.isBlank() || phone.isBlank() || password.isBlank() -> message = "أكمل الحقول الإلزامية"
                             !validArabicName -> message = "اكتب الاسم الكامل بالعربية أو الإنكليزية دون رموز غير صالحة"
                             !validUsername -> message = "اسم المستخدم يقبل العربية أو الإنكليزية والأرقام و _ . فقط، من 3 إلى 30 حرفاً"
                             !phone.matches(Regex("^07\\d{9}$")) -> message = "رقم الهاتف يجب أن يبدأ بـ 07 ويتكون من 11 رقماً"
+                            birthDate.isNotBlank() && normalizedBirthDate == null -> message = "تاريخ الميلاد غير صحيح؛ اكتبه مثل 23/2/1965"
                             password.length < 8 -> message = "كلمة المرور يجب أن تكون 8 أحرف على الأقل"
                             password != confirm -> message = "كلمتا المرور غير متطابقتين"
                             !accepted -> message = "يجب الموافقة على الشروط والخصوصية"
@@ -118,7 +123,7 @@ class RegisterActivity : ComponentActivity() {
                                     try {
                                         val response = api.signUp(SignUpRequest(
                                             fullName = fullName.trim(), username = username.trim(), phone = phone,
-                                            email = email.trim(), birthDate = birthDate.ifBlank { null }, gender = gender,
+                                            email = email.trim(), birthDate = normalizedBirthDate, gender = gender,
                                             password = password, confirmPassword = confirm
                                         ))
                                         success = response.ok
@@ -163,5 +168,19 @@ class RegisterActivity : ComponentActivity() {
     @Composable
     private fun PasswordField(label: String, value: String, onChange: (String) -> Unit) {
         OutlinedTextField(value, onChange, label = { Text(label) }, singleLine = true, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
+    }
+
+    private fun normalizeBirthDate(value: String): String? {
+        if (value.isBlank()) return null
+        val input = value.trim()
+        val formats = listOf(
+            DateTimeFormatter.ofPattern("d/M/uuuu"),
+            DateTimeFormatter.ISO_LOCAL_DATE
+        )
+        for (format in formats) {
+            try { return LocalDate.parse(input, format).toString() }
+            catch (_: DateTimeParseException) { }
+        }
+        return null
     }
 }
