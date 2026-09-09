@@ -5,6 +5,9 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.Ringtone
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -25,6 +28,7 @@ class BackgroundRealtimeService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var session: SessionStore
     private var socket: Socket? = null
+    private var incomingRingtone: Ringtone? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -62,8 +66,18 @@ class BackgroundRealtimeService : Service() {
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
                 showIncomingCall(payload)
             }
-            s.on("call:end") { cancelCallNotification() }
-            s.on("call:reject") { cancelCallNotification() }
+            s.on("call:end") {
+                stopIncomingRingtone()
+                cancelCallNotification()
+            }
+            s.on("call:reject") {
+                stopIncomingRingtone()
+                cancelCallNotification()
+            }
+            s.on("call:accept") {
+                stopIncomingRingtone()
+                cancelCallNotification()
+            }
             s.on("private:message") { args ->
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
                 showMessage(payload)
@@ -88,7 +102,9 @@ class BackgroundRealtimeService : Service() {
         val callId = payload.optString("callId")
         if (callerId.isBlank()) return
 
-        val targetUrl = SHNO_MANO_BASE_URL + "messages.html?user=" + Uri.encode(callerId) + "&incoming=1"
+        startIncomingRingtone()
+
+        val targetUrl = SHNO_MANO_BASE_URL + "messages.html?user=" + Uri.encode(callerId) + "&incoming=1&callId=" + Uri.encode(callId)
         val openIntent = Intent(this, WebCallActivity::class.java)
             .putExtra(WebCallActivity.EXTRA_URL, targetUrl)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -117,6 +133,27 @@ class BackgroundRealtimeService : Service() {
         runCatching {
             NotificationManagerCompat.from(this).notify(CALL_ID, notification)
         }
+    }
+
+    private fun startIncomingRingtone() {
+        val settings = SettingsStore(this)
+        if (!settings.callSoundEnabled || incomingRingtone?.isPlaying == true) return
+        val uri = settings.ringtoneUri?.let(Uri::parse)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        incomingRingtone = runCatching {
+            RingtoneManager.getRingtone(this, uri)?.apply {
+                audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                play()
+            }
+        }.getOrNull()
+    }
+
+    private fun stopIncomingRingtone() {
+        runCatching { incomingRingtone?.stop() }
+        incomingRingtone = null
     }
 
     private fun showMessage(payload: JSONObject) {
@@ -175,6 +212,7 @@ class BackgroundRealtimeService : Service() {
     }
 
     override fun onDestroy() {
+        stopIncomingRingtone()
         cancelCallNotification()
         socket?.disconnect()
         socket?.close()
