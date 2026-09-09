@@ -2,6 +2,11 @@ name: Build Signed Shno Mano Release APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'android/shno-mano-call/**'
+      - '.github/workflows/android-apk.yml'
 
 jobs:
   build-release-apk:
