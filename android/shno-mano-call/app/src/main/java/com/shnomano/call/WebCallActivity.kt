@@ -31,7 +31,10 @@ import android.app.AlertDialog
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.shnomano.call.data.AppRepository
 import com.shnomano.call.data.SessionStore
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class WebCallActivity : ComponentActivity() {
@@ -143,9 +146,7 @@ class WebCallActivity : ComponentActivity() {
             setPadding(8, 8, 8, 8)
             addView(controlButton("↔ تبديل") { webView.evaluateJavascript("window.shnoSwapVideo&&window.shnoSwapVideo()", null) })
             addView(controlButton("⛶ تكبير") { webView.evaluateJavascript("window.shnoToggleVideoSize&&window.shnoToggleVideoSize()", null) })
-            addView(controlButton("＋ مشارك") {
-                Toast.makeText(this@WebCallActivity, "واجهة إضافة المشاركين جاهزة، والربط الجماعي بالخادم هو الخطوة التالية", Toast.LENGTH_SHORT).show()
-            })
+            addView(controlButton("＋ مشارك") { showParticipantPicker() })
         }
         root.addView(tools, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
@@ -153,8 +154,6 @@ class WebCallActivity : ComponentActivity() {
         })
 
         setContentView(root)
-        // Keep the conversations page hidden while its WebRTC engine prepares
-        // the selected one-to-one call. Only the call overlay is revealed.
         webView.visibility = View.INVISIBLE
         webView.loadUrl("https://shino-mino-tak-tak.duckdns.org/signin.html")
     }
@@ -168,6 +167,43 @@ class WebCallActivity : ComponentActivity() {
         minWidth = 0
         minHeight = 0
         setPadding(18, 10, 18, 10)
+    }
+
+    private fun showParticipantPicker() {
+        if (!webPageReady) {
+            Toast.makeText(this, "انتظر حتى يتم إنشاء المكالمة", Toast.LENGTH_SHORT).show()
+            return
+        }
+        lifecycleScope.launch {
+            val friends = AppRepository(this@WebCallActivity).loadFriends().filter { it.userId.isNotBlank() }
+            if (friends.isEmpty()) {
+                Toast.makeText(this@WebCallActivity, "لا يوجد أصدقاء متاحون للإضافة", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val labels = friends.map { friend ->
+                val state = if (PresenceStore.onlineUserIds.value.contains(friend.userId)) " · متصل الآن" else " · غير متصل"
+                friend.displayName + state
+            }.toTypedArray()
+            AlertDialog.Builder(this@WebCallActivity)
+                .setTitle("إضافة مشارك إلى المكالمة")
+                .setItems(labels) { _, which ->
+                    val friend = friends[which]
+                    if (!PresenceStore.onlineUserIds.value.contains(friend.userId)) {
+                        Toast.makeText(this@WebCallActivity, "${friend.displayName} غير متصل الآن", Toast.LENGTH_SHORT).show()
+                        return@setItems
+                    }
+                    val userId = JSONObject.quote(friend.userId)
+                    webView.evaluateJavascript(
+                        "(function(){if(typeof window.shnoAddParticipant!=='function')return 'not-ready';return window.shnoAddParticipant($userId);})()"
+                    ) { result ->
+                        if (result?.contains("not-ready") == true) {
+                            Toast.makeText(this@WebCallActivity, "تعذر إضافة المشارك الآن", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                .setNegativeButton("إلغاء", null)
+                .show()
+        }
     }
 
     private fun injectCallStage() {
@@ -223,28 +259,17 @@ class WebCallActivity : ComponentActivity() {
 
         @JavascriptInterface fun onEnded(message: String) = runOnUiThread {
             stopRingback()
-            if (message.contains("غير متصل") || message.contains("مشغول")) {
-                Toast.makeText(this@WebCallActivity, message, Toast.LENGTH_LONG).show()
-            }
+            if (message.contains("غير متصل") || message.contains("مشغول")) Toast.makeText(this@WebCallActivity, message, Toast.LENGTH_LONG).show()
             if (!isFinishing) finish()
         }
     }
 
     private fun startRingback() {
-        if (!SettingsStore(this).callSoundEnabled) return
-        if (ringbackTone != null) return
-        ringbackTone = runCatching {
-            ToneGenerator(AudioManager.STREAM_VOICE_CALL, 70).also {
-                it.startTone(ToneGenerator.TONE_SUP_RINGTONE)
-            }
-        }.getOrNull()
+        if (!SettingsStore(this).callSoundEnabled || ringbackTone != null) return
+        ringbackTone = runCatching { ToneGenerator(AudioManager.STREAM_VOICE_CALL, 70).also { it.startTone(ToneGenerator.TONE_SUP_RINGTONE) } }.getOrNull()
     }
 
-    private fun stopRingback() {
-        ringbackTone?.stopTone()
-        ringbackTone?.release()
-        ringbackTone = null
-    }
+    private fun stopRingback() { ringbackTone?.stopTone(); ringbackTone?.release(); ringbackTone = null }
 
     private fun prepareCallAudio() {
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
@@ -270,10 +295,7 @@ class WebCallActivity : ComponentActivity() {
         @Suppress("DEPRECATION") runCatching { audioManager.isSpeakerphoneOn = false }
     }
 
-    private fun setAudioRoute(speaker: Boolean) {
-        SettingsStore(this).speakerphoneEnabled = speaker
-        applyAudioRoute(speaker)
-    }
+    private fun setAudioRoute(speaker: Boolean) { SettingsStore(this).speakerphoneEnabled = speaker; applyAudioRoute(speaker) }
 
     private fun applyAudioRoute(speaker: Boolean) {
         if (!::audioManager.isInitialized) return
@@ -303,67 +325,33 @@ class WebCallActivity : ComponentActivity() {
     private fun deliverPendingIncomingCall() {
         val call = pendingIncomingCall ?: return
         if (!webPageReady || !::webView.isInitialized) return
-        val payload = JSONObject().apply {
-            put("callId", call.callId)
-            put("from", call.from)
-            put("conversationId", call.conversationId)
-            put("type", call.type)
-            put("callerName", call.callerName)
-        }.toString()
-        webView.evaluateJavascript(
-            "(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);return 'ready';}return 'waiting';})()"
-        ) { result ->
-            if (result?.contains("ready") == true) {
-                BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
-                pendingIncomingCall = null
-            } else {
-                mainHandler.postDelayed({ deliverPendingIncomingCall() }, 250)
-            }
+        val payload = JSONObject().apply { put("callId", call.callId); put("from", call.from); put("conversationId", call.conversationId); put("type", call.type); put("callerName", call.callerName) }.toString()
+        webView.evaluateJavascript("(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);return 'ready';}return 'waiting';})()") { result ->
+            if (result?.contains("ready") == true) { BackgroundRealtimeService.acknowledgeIncomingCall(call.callId); pendingIncomingCall = null }
+            else mainHandler.postDelayed({ deliverPendingIncomingCall() }, 250)
         }
     }
 
     override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        incomingCallFrom(intent)?.let { call ->
-            pendingIncomingCall = call
-            targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }
-            BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
-            deliverPendingIncomingCall()
-        }
+        super.onNewIntent(intent); setIntent(intent)
+        incomingCallFrom(intent)?.let { call -> pendingIncomingCall = call; targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }; BackgroundRealtimeService.acknowledgeIncomingCall(call.callId); deliverPendingIncomingCall() }
     }
 
     override fun onResume() { super.onResume(); if (::audioManager.isInitialized) prepareCallAudio() }
 
     private fun showCallSettings() {
-        val store = SettingsStore(this)
         val choices = arrayOf("السماعة الخارجية", "سماعة المكالمات", "إعدادات النغمة والإشعارات")
-        AlertDialog.Builder(this)
-            .setTitle("إعدادات المكالمة")
-            .setItems(choices) { _, which ->
-                when (which) {
-                    0 -> setAudioRoute(true)
-                    1 -> setAudioRoute(false)
-                    2 -> startActivity(Intent(this, SettingsActivity::class.java))
-                }
-            }
-            .setNegativeButton("إلغاء", null)
-            .show()
+        AlertDialog.Builder(this).setTitle("إعدادات المكالمة").setItems(choices) { _, which ->
+            when (which) { 0 -> setAudioRoute(true); 1 -> setAudioRoute(false); 2 -> startActivity(Intent(this, SettingsActivity::class.java)) }
+        }.setNegativeButton("إلغاء", null).show()
     }
 
-    override fun onBackPressed() {
-        Toast.makeText(this, "لإنهاء المكالمة استخدم زر إنهاء المكالمة الأحمر", Toast.LENGTH_SHORT).show()
-    }
+    override fun onBackPressed() { Toast.makeText(this, "لإنهاء المكالمة استخدم زر إنهاء المكالمة الأحمر", Toast.LENGTH_SHORT).show() }
 
-    private fun minimizeCall() {
-        Toast.makeText(this, "المكالمة مستمرة في الخلفية", Toast.LENGTH_SHORT).show()
-        moveTaskToBack(true)
-    }
+    private fun minimizeCall() { Toast.makeText(this, "المكالمة مستمرة في الخلفية", Toast.LENGTH_SHORT).show(); moveTaskToBack(true) }
 
     override fun onDestroy() {
-        stopRingback()
-        mainHandler.removeCallbacksAndMessages(null)
-        pendingPermissionRequest?.deny(); pendingPermissionRequest = null
+        stopRingback(); mainHandler.removeCallbacksAndMessages(null); pendingPermissionRequest?.deny(); pendingPermissionRequest = null
         if (::webView.isInitialized) { webView.stopLoading(); webView.loadUrl("about:blank"); webView.removeAllViews(); webView.destroy() }
         if (::audioManager.isInitialized) releaseCallAudio()
         super.onDestroy()
