@@ -46,6 +46,7 @@ class WebCallActivity : ComponentActivity() {
     private var audioFocusRequest: AudioFocusRequest? = null
     private var ringbackTone: ToneGenerator? = null
     private var pendingIncomingCall: IncomingCall? = null
+    private var incomingGroupCall = false
     private var webPageReady = false
     private var speakerRouteButton: Button? = null
     private var earpieceRouteButton: Button? = null
@@ -71,6 +72,7 @@ class WebCallActivity : ComponentActivity() {
         prepareCallAudio()
 
         targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
+        incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
         pendingIncomingCall = incomingCallFrom(intent)
         if (targetUrl.isBlank()) { finish(); return }
         pendingIncomingCall?.let { BackgroundRealtimeService.acknowledgeIncomingCall(it.callId) }
@@ -100,7 +102,7 @@ class WebCallActivity : ComponentActivity() {
                         webPageReady = true
                         injectCallStage()
                         webView.visibility = View.VISIBLE
-                        deliverPendingIncomingCall()
+                        if (!incomingGroupCall) deliverPendingIncomingCall()
                     }
                 }
             }
@@ -196,9 +198,7 @@ class WebCallActivity : ComponentActivity() {
                     webView.evaluateJavascript(
                         "(function(){if(typeof window.shnoAddParticipant!=='function')return 'not-ready';return window.shnoAddParticipant($userId);})()"
                     ) { result ->
-                        if (result?.contains("not-ready") == true) {
-                            Toast.makeText(this@WebCallActivity, "تعذر إضافة المشارك الآن", Toast.LENGTH_SHORT).show()
-                        }
+                        if (result?.contains("not-ready") == true) Toast.makeText(this@WebCallActivity, "تعذر إضافة المشارك الآن", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .setNegativeButton("إلغاء", null)
@@ -256,7 +256,6 @@ class WebCallActivity : ComponentActivity() {
                 state.contains("متصل") || state.contains("واردة") || state.contains("إنشاء") -> stopRingback()
             }
         }
-
         @JavascriptInterface fun onEnded(message: String) = runOnUiThread {
             stopRingback()
             if (message.contains("غير متصل") || message.contains("مشغول")) Toast.makeText(this@WebCallActivity, message, Toast.LENGTH_LONG).show()
@@ -316,15 +315,15 @@ class WebCallActivity : ComponentActivity() {
         if (!source.getBooleanExtra(EXTRA_INCOMING, false)) return null
         val callId = source.getStringExtra(EXTRA_CALL_ID).orEmpty()
         val from = source.getStringExtra(EXTRA_FROM).orEmpty()
-        val conversationId = source.getStringExtra(EXTRA_CONVERSATION_ID).orEmpty()
+        val conversationId = source.getStringExtra(EXTRA_CONVERSATION_ID).orEmpty().ifBlank { callId }
         val type = source.getStringExtra(EXTRA_CALL_TYPE).orEmpty().takeIf { it == "audio" || it == "video" } ?: "audio"
-        if (callId.isBlank() || from.isBlank() || conversationId.isBlank()) return null
+        if (callId.isBlank() || from.isBlank()) return null
         return IncomingCall(callId, from, conversationId, type, source.getStringExtra(EXTRA_CALLER_NAME).orEmpty().ifBlank { "مستخدم شنو منو" })
     }
 
     private fun deliverPendingIncomingCall() {
         val call = pendingIncomingCall ?: return
-        if (!webPageReady || !::webView.isInitialized) return
+        if (incomingGroupCall || !webPageReady || !::webView.isInitialized) return
         val payload = JSONObject().apply { put("callId", call.callId); put("from", call.from); put("conversationId", call.conversationId); put("type", call.type); put("callerName", call.callerName) }.toString()
         webView.evaluateJavascript("(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);return 'ready';}return 'waiting';})()") { result ->
             if (result?.contains("ready") == true) { BackgroundRealtimeService.acknowledgeIncomingCall(call.callId); pendingIncomingCall = null }
@@ -333,8 +332,15 @@ class WebCallActivity : ComponentActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent); setIntent(intent)
-        incomingCallFrom(intent)?.let { call -> pendingIncomingCall = call; targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }; BackgroundRealtimeService.acknowledgeIncomingCall(call.callId); deliverPendingIncomingCall() }
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
+        incomingCallFrom(intent)?.let { call ->
+            pendingIncomingCall = call
+            targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }
+            BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
+            if (!incomingGroupCall) deliverPendingIncomingCall()
+        }
     }
 
     override fun onResume() { super.onResume(); if (::audioManager.isInitialized) prepareCallAudio() }
@@ -360,6 +366,7 @@ class WebCallActivity : ComponentActivity() {
     companion object {
         const val EXTRA_URL = "url"
         const val EXTRA_INCOMING = "incoming_call"
+        const val EXTRA_GROUP_CALL = "group_call"
         const val EXTRA_CALL_ID = "call_id"
         const val EXTRA_FROM = "from"
         const val EXTRA_CONVERSATION_ID = "conversation_id"
