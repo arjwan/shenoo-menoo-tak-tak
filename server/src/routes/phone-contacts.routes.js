@@ -7,7 +7,8 @@ const router = express.Router();
 function normalizePhone(value) {
   let phone = String(value || '').replace(/[^\d+]/g, '');
   if (phone.startsWith('+964')) phone = `0${phone.slice(4)}`;
-  if (phone.startsWith('00964')) phone = `0${phone.slice(5)}`;
+  else if (phone.startsWith('00964')) phone = `0${phone.slice(5)}`;
+  else if (phone.startsWith('964')) phone = `0${phone.slice(3)}`;
   return /^07\d{9}$/.test(phone) ? phone : '';
 }
 
