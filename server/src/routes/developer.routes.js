@@ -231,6 +231,11 @@ router.patch('/users/:id', async (req, res) => {
       if (birthDate && Number.isNaN(birthDate.getTime())) return res.status(400).json({ ok: false, message: 'تاريخ الميلاد غير صالح' });
     }
     Object.assign(user, { fullName, username, phone, email, contact: phone, contactType: 'phone', birthDate, gender, status });
+    if (req.body.password) {
+      const password = String(req.body.password);
+      if (password.length < 8) return res.status(400).json({ ok: false, message: 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل' });
+      user.passwordHash = await bcrypt.hash(password, 12);
+    }
     if (status !== 'rejected') user.rejectionReason = '';
     await user.save();
     await writeAudit(req.user, 'developer.user.updated', user, `تعديل حساب ${username} — ${status}`);
