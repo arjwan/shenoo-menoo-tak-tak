@@ -339,7 +339,7 @@ private fun ContactsScreen(repo: AppRepository, onMessage: (String) -> Unit) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = { dial(context, c.phone) }, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Phone, null); Spacer(Modifier.width(4.dp)); Text("هاتف") }
                             if (!c.linkedUserId.isNullOrBlank()) {
-                                val linkedId = c.linkedUserId
+                                val linkedId = c.linkedUserId.orEmpty()
                                 val isFriend = friends.any { it.userId == linkedId }
                                 OutlinedButton(onClick = {
                                     if (isFriend) onMessage(linkedId)
