@@ -107,7 +107,7 @@ class WebCallActivity : ComponentActivity() {
         }
         root.addView(webView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
 
-        val close = controlButton("×") { finish() }
+        val close = controlButton("×") { confirmLeaveCall() }
         root.addView(close, FrameLayout.LayoutParams(60, 60).apply { gravity = Gravity.TOP or Gravity.END; topMargin = 18; marginEnd = 18 })
 
         val settings = controlButton("⚙") { showCallSettings() }
