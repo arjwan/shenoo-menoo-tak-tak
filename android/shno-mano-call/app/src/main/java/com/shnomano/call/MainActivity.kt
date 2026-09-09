@@ -436,12 +436,15 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
     var messages by remember { mutableStateOf<List<MessageDto>>(emptyList()) }
     var text by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var mediaStatus by remember { mutableStateOf<String?>(null) }
     val other = conversation.otherUser
     val online = other?.id?.let { it in onlineUserIds } == true
 
-    LaunchedEffect(conversation.id) {
+    suspend fun reloadMessages() {
         repo.loadMessages(conversation.id).onSuccess { messages = it }
     }
+
+    LaunchedEffect(conversation.id) { reloadMessages() }
 
     Scaffold(
         containerColor = Bg,
@@ -460,26 +463,72 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
             }
         },
         bottomBar = {
-            Row(Modifier.fillMaxWidth().background(Panel).navigationBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(text, { text = it }, modifier = Modifier.weight(1f), placeholder = { Text("اكتب رسالة") }, singleLine = true)
-                IconButton(enabled = !busy && text.isNotBlank(), onClick = {
-                    val outgoing = text
-                    busy = true
-                    scope.launch {
-                        repo.sendMessage(conversation.id, outgoing)
-                            .onSuccess { message -> messages = messages + message; text = "" }
-                        busy = false
-                    }
-                }) { Icon(Icons.Default.Send, null, tint = Accent) }
+            Column(Modifier.fillMaxWidth().background(Panel).navigationBarsPadding().padding(8.dp)) {
+                mediaStatus?.let {
+                    Text(
+                        it,
+                        color = if (it.startsWith("تعذر") || it.startsWith("يجب")) MaterialTheme.colorScheme.error else Muted,
+                        fontSize = 10.sp
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ChatMediaActions(
+                        conversationId = conversation.id,
+                        session = repo.session,
+                        enabled = !busy,
+                        onBusyChanged = { busy = it },
+                        onStatus = { mediaStatus = it },
+                        onSent = { scope.launch { reloadMessages() } }
+                    )
+                    OutlinedTextField(text, { text = it }, modifier = Modifier.weight(1f), placeholder = { Text("اكتب رسالة") }, singleLine = true)
+                    IconButton(enabled = !busy && text.isNotBlank(), onClick = {
+                        val outgoing = text
+                        busy = true
+                        scope.launch {
+                            repo.sendMessage(conversation.id, outgoing)
+                                .onSuccess { message -> messages = messages + message; text = ""; mediaStatus = null }
+                                .onFailure { mediaStatus = it.message ?: "تعذر إرسال الرسالة" }
+                            busy = false
+                        }
+                    }) { Icon(Icons.Default.Send, null, tint = Accent) }
+                }
             }
         }
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            items(messages, key = { it.messageId.ifBlank { "${it.createdAt}-${it.text}" } }) { m ->
+            items(messages, key = { it.messageId.ifBlank { "${it.createdAt}-${it.text}-${it.attachment?.url}" } }) { m ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.mine) Arrangement.End else Arrangement.Start) {
                     Surface(color = if (m.mine) Accent else Panel2, shape = RoundedCornerShape(16.dp)) {
-                        Column(Modifier.padding(10.dp)) {
-                            Text(m.text.orEmpty(), color = if (m.mine) Bg else Color.White, fontSize = 13.sp)
+                        Column(Modifier.padding(10.dp).widthIn(max = 300.dp)) {
+                            m.text?.takeIf { it.isNotBlank() }?.let {
+                                Text(it, color = if (m.mine) Bg else Color.White, fontSize = 13.sp)
+                            }
+                            m.attachment?.let { attachment ->
+                                val mime = attachment.mimeType.orEmpty()
+                                val label = when {
+                                    mime.startsWith("audio/") -> "🎙️ رسالة صوتية"
+                                    mime.startsWith("video/") -> "🎬 فيديو"
+                                    mime.startsWith("image/") -> "🖼️ صورة"
+                                    else -> "📎 ${attachment.name ?: "ملف"}"
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    label,
+                                    color = if (m.mine) Bg else Accent,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        val raw = attachment.url ?: return@clickable
+                                        val url = if (raw.startsWith("http://") || raw.startsWith("https://")) raw else SHNO_MANO_BASE_URL.removeSuffix("/") + raw
+                                        runCatching {
+                                            context.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                                    attachment.mimeType?.let { setDataAndType(Uri.parse(url), it) }
+                                                }
+                                            )
+                                        }
+                                    }
+                                )
+                            }
                             if (m.localState == "pending") Text("قيد الإرسال", color = if (m.mine) Bg.copy(alpha = .7f) else Muted, fontSize = 9.sp)
                         }
                     }
