@@ -1,6 +1,7 @@
 package com.shnomano.call.data
 
 import retrofit2.HttpException
+import org.json.JSONObject
 
 class AuthRepository(
     private val sessionStore: SessionStore,
@@ -15,12 +16,15 @@ class AuthRepository(
         response.user
     }.recoverCatching { throwable ->
         if (throwable is HttpException) {
-            val message = when (throwable.code()) {
-                401 -> "بيانات تسجيل الدخول غير صحيحة"
+            val serverMessage = runCatching {
+                JSONObject(throwable.response()?.errorBody()?.string().orEmpty()).optString("message")
+            }.getOrNull().orEmpty()
+            val message = serverMessage.ifBlank { when (throwable.code()) {
+                401 -> "اسم المستخدم أو كلمة المرور غير صحيحة"
                 403 -> "الحساب غير مفعل أو بانتظار الموافقة"
                 429 -> "محاولات كثيرة، حاول بعد قليل"
                 else -> "تعذر الاتصال بالخادم (${throwable.code()})"
-            }
+            } }
             error(message)
         }
         throw throwable
