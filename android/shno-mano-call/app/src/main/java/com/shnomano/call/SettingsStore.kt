@@ -20,4 +20,8 @@ class SettingsStore(context: Context) {
     var ringtoneUri: String?
         get() = prefs.getString("ringtone_uri", null)
         set(value) = prefs.edit().putString("ringtone_uri", value).apply()
+
+    var speakerphoneEnabled: Boolean
+        get() = prefs.getBoolean("speakerphone_enabled", true)
+        set(value) = prefs.edit().putBoolean("speakerphone_enabled", value).apply()
 }
