@@ -13,8 +13,8 @@ class PrivateCallRegistry {
     this.users = new Map();
   }
   invite(call) {
-    if (!call.callId || this.calls.has(call.callId) || this.users.has(call.callerId) || this.users.has(call.calleeId)) return false;
-    this.calls.set(call.callId, { ...call, state: 'ringing' });
+    if (!call.callId || !call.callerId || !call.calleeId || this.calls.has(call.callId) || this.users.has(call.callerId) || this.users.has(call.calleeId)) return false;
+    this.calls.set(call.callId, { ...call, state: 'ringing', createdAt: new Date() });
     this.users.set(call.callerId, call.callId);
     this.users.set(call.calleeId, call.callId);
     return true;
@@ -39,6 +39,10 @@ class PrivateCallRegistry {
     const callId = this.users.get(String(userId));
     return callId ? this.calls.get(callId) : null;
   }
+  ringingFor(userId) {
+    const call = this.forUser(userId);
+    return call?.state === 'ringing' ? call : null;
+  }
 }
 
 function attachSocket(httpServer) {
@@ -46,6 +50,11 @@ function attachSocket(httpServer) {
   const voiceRooms = new Map();
   const groupVoiceRooms = new Map();
   const privateCalls = new PrivateCallRegistry();
+  const userRoom = (userId) => `user:${String(userId)}`;
+  const userSocketCount = (userId) => io.sockets.adapter.rooms.get(userRoom(userId))?.size || 0;
+  const onlineUserIds = () => Array.from(io.sockets.adapter.rooms.keys())
+    .filter((room) => room.startsWith('user:'))
+    .map((room) => room.slice('user:'.length));
   io.use(async (socket, next) => {
     try {
       const authorization = socket.handshake.headers.authorization || '';
@@ -61,10 +70,17 @@ function attachSocket(httpServer) {
   });
 
   io.on('connection', (socket) => {
-    const userRoom = `user:${socket.user._id}`;
-    socket.join(userRoom);
-    User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': true } }).catch(() => {});
-    socket.broadcast.emit('presence:online', { userId: socket.user._id });
+    const room = userRoom(socket.user._id);
+    socket.join(room);
+    const firstSocket = userSocketCount(socket.user._id) === 1;
+    const userId = String(socket.user._id);
+    if (firstSocket) {
+      User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': true } }).catch(() => {});
+      socket.broadcast.emit('presence:online', { userId });
+    }
+    // A newly connected device also needs the current live state. The room
+    // membership, rather than MongoDB's last value, is the source of truth.
+    socket.emit('presence:state', { userIds: onlineUserIds().filter((id) => id !== userId) });
 
     const emitSpectators = async (roomId) => {
       const room = await GameRoom.findById(roomId).populate('spectators', 'fullName displayName username profile');
@@ -247,7 +263,12 @@ function attachSocket(httpServer) {
       const callId = String(payload.callId || '').slice(0, 100);
       const context = await authenticatedCallContext(payload);
       if (!context) return typeof ack === 'function' && ack({ ok: false, reason: 'forbidden', message: 'لا يمكن بدء مكالمة مع هذا المستخدم' });
-      const call = { callId, callerId: String(socket.user._id), callerSocketId: socket.id, calleeId: String(context.target._id), conversationId: String(context.conversation._id), type: payload.type };
+      if (!callId) return typeof ack === 'function' && ack({ ok: false, reason: 'invalid', message: 'معرّف المكالمة غير صالح' });
+      const calleeId = String(context.target._id);
+      // Do not create a ringing registry entry when the recipient has no live
+      // authenticated socket. This keeps the client honest about offline calls.
+      if (!userSocketCount(calleeId)) return typeof ack === 'function' && ack({ ok: false, reason: 'offline', message: 'المستخدم غير متصل الآن' });
+      const call = { callId, callerId: String(socket.user._id), callerSocketId: socket.id, callerName: socket.user.displayName || socket.user.fullName || socket.user.username || '', calleeId, conversationId: String(context.conversation._id), type: payload.type };
       if (!privateCalls.invite(call)) return typeof ack === 'function' && ack({ ok: false, reason: 'busy', message: 'المستخدم مشغول بمكالمة أخرى' });
       io.to(`user:${call.calleeId}`).emit('call:invite', { callId, conversationId: call.conversationId, type: call.type, from: call.callerId, callerName: socket.user.displayName || socket.user.fullName || socket.user.username });
       setTimeout(() => {
@@ -289,7 +310,24 @@ function attachSocket(httpServer) {
     };
     ['webrtc:offer', 'webrtc:answer', 'webrtc:ice'].forEach((event) => socket.on(event, relayWebRtc(event)));
 
-    socket.on('presence:online', () => socket.broadcast.emit('presence:online', { userId: socket.user._id }));
+    // Kept for older clients that explicitly announce themselves. The room
+    // count prevents a duplicate online event when another device is active.
+    socket.on('presence:online', () => {
+      if (userSocketCount(socket.user._id) === 1) socket.broadcast.emit('presence:online', { userId });
+    });
+
+    const ringingCall = privateCalls.ringingFor(userId);
+    if (ringingCall && ringingCall.calleeId === userId) {
+      socket.emit('call:invite', {
+        callId: ringingCall.callId,
+        conversationId: ringingCall.conversationId,
+        type: ringingCall.type,
+        from: ringingCall.callerId,
+        callerName: ringingCall.callerName || '',
+        replay: true
+      });
+    }
+
     socket.on('disconnect', async () => {
       const privateCall = privateCalls.forUser(socket.user._id);
       if (privateCall && (socket.id === privateCall.callerSocketId || socket.id === privateCall.calleeSocketId)) {
@@ -309,11 +347,17 @@ function attachSocket(httpServer) {
           if (!participants.size) groupVoiceRooms.delete(groupId);
         }
       }
-      const remainingSockets = await io.in(userRoom).fetchSockets().catch(() => []);
-      if (!remainingSockets.length) {
+      // Socket.IO removes the disconnected socket from its rooms before this
+      // event. Check the authenticated user room, not the database flag, so a
+      // second device keeps the user online.
+      const remainingSockets = await io.in(room).fetchSockets().catch(() => []);
+      if (!remainingSockets.length && userSocketCount(userId) === 0) {
         const lastSeen = new Date();
         await User.findByIdAndUpdate(socket.user._id, { $set: { 'profile.online': false, 'profile.lastSeen': lastSeen } }).catch(() => {});
-        socket.broadcast.emit('presence:offline', { userId: socket.user._id, lastSeen });
+        // A new socket may have joined while the database write was pending.
+        // Re-check immediately before the event so the last-device rule stays
+        // true even during a reconnect race.
+        if (userSocketCount(userId) === 0) socket.broadcast.emit('presence:offline', { userId, lastSeen });
       }
     });
   });
