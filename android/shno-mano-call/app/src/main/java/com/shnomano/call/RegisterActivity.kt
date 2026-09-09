@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -167,7 +170,19 @@ class RegisterActivity : ComponentActivity() {
 
     @Composable
     private fun PasswordField(label: String, value: String, onChange: (String) -> Unit) {
-        OutlinedTextField(value, onChange, label = { Text(label) }, singleLine = true, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
+        var visible by remember { mutableStateOf(false) }
+        OutlinedTextField(
+            value, onChange,
+            label = { Text(label) },
+            singleLine = true,
+            visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { visible = !visible }) {
+                    Icon(if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility, if (visible) "إخفاء كلمة المرور" else "إظهار كلمة المرور")
+                }
+            },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)
+        )
     }
 
     private fun normalizeBirthDate(value: String): String? {
