@@ -3,6 +3,8 @@ package com.shnomano.call.data
 import android.content.Context
 import android.provider.ContactsContract
 import java.io.IOException
+import org.json.JSONObject
+import retrofit2.HttpException
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -76,9 +78,20 @@ class AppRepository(context: Context) {
 
     suspend fun loadFriends(): List<FriendDto> = runCatching { api.friends().all() }.getOrDefault(emptyList())
     suspend fun loadFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests().requests }.getOrDefault(emptyList())
+    suspend fun loadSentFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests("sent").requests }.getOrDefault(emptyList())
     suspend fun sendFriendRequest(userId: String): Result<String> = runCatching {
         api.sendFriendRequest(userId)
         "تم إرسال طلب الصداقة"
+    }.recoverCatching { error ->
+        if (error is HttpException) {
+            val message = runCatching {
+                JSONObject(error.response()?.errorBody()?.string().orEmpty()).optString("message")
+            }.getOrNull().orEmpty()
+            throw IllegalStateException(message.ifBlank {
+                if (error.code() == 409) "يوجد طلب صداقة قائم" else if (error.code() == 403) "لا يمكن إرسال الطلب لهذا المستخدم" else "تعذر إرسال الطلب"
+            })
+        }
+        throw error
     }
     suspend fun respondToFriendRequest(requestId: String, accept: Boolean): Result<String> = runCatching {
         api.actOnFriendRequest(requestId, if (accept) "accept" else "reject")
