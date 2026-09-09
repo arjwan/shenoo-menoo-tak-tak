@@ -3,15 +3,21 @@ package com.shnomano.call
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
+import android.view.WindowManager
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -21,6 +27,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
+import android.app.AlertDialog
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -34,6 +41,8 @@ class WebCallActivity : ComponentActivity() {
     private var bootstrapped = false
     private var pendingPermissionRequest: PermissionRequest? = null
     private var audioFocusRequest: AudioFocusRequest? = null
+    private var ringbackTone: ToneGenerator? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mediaPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         val granted = result.values.all { it }
@@ -50,6 +59,7 @@ class WebCallActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(4, 10, 8)
         window.navigationBarColor = Color.rgb(4, 10, 8)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         prepareCallAudio()
 
@@ -65,6 +75,7 @@ class WebCallActivity : ComponentActivity() {
             settings.cacheMode = WebSettings.LOAD_DEFAULT
             settings.allowFileAccess = false
             settings.allowContentAccess = false
+            addJavascriptInterface(CallStateBridge(), "ShnoAndroidCall")
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
@@ -98,6 +109,9 @@ class WebCallActivity : ComponentActivity() {
 
         val close = controlButton("×") { finish() }
         root.addView(close, FrameLayout.LayoutParams(60, 60).apply { gravity = Gravity.TOP or Gravity.END; topMargin = 18; marginEnd = 18 })
+
+        val settings = controlButton("⚙") { showCallSettings() }
+        root.addView(settings, FrameLayout.LayoutParams(68, 60).apply { gravity = Gravity.TOP or Gravity.START; topMargin = 18; marginStart = 18 })
 
         val tools = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -153,15 +167,71 @@ class WebCallActivity : ComponentActivity() {
               document.querySelectorAll('header,main,nav,aside,footer').forEach(function(el){el.style.display='none'});
               window.shnoSwapVideo=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-swap')};
               window.shnoToggleVideoSize=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-focus')};
+              var modal=document.querySelector('[data-call-modal]');
+              var status=document.querySelector('[data-call-status]');
+              var feedback=document.querySelector('[data-message-feedback]');
+              var terminal=/انتهت المكالمة|لا يوجد رد|تعذر الاتصال|رفض/;
+              var report=function(){
+                var text=(status&&status.textContent||'').trim();
+                if(text) ShnoAndroidCall.onState(text);
+                if(modal&&modal.hidden){
+                  var done=(feedback&&feedback.textContent||'').trim();
+                  if(terminal.test(done)) ShnoAndroidCall.onEnded();
+                  else modal.hidden=false;
+                }
+              };
+              if(modal||status||feedback){
+                new MutationObserver(report).observe(document.body,{subtree:true,childList:true,attributes:true,characterData:true});
+                report();
+                setTimeout(function(){
+                  var text=(status&&status.textContent||'').trim();
+                  if(modal&&!modal.hidden&&/الاتصال/.test(text)&&!/متصل/.test(text)){
+                    status.textContent='يرن…';
+                    ShnoAndroidCall.onState('يرن…');
+                  }
+                },1400);
+              }
             })();
         """.trimIndent()
         webView.evaluateJavascript(js, null)
     }
 
+    private inner class CallStateBridge {
+        @JavascriptInterface fun onState(state: String) = runOnUiThread {
+            when {
+                state.contains("يرن") -> startRingback()
+                state.contains("متصل") || state.contains("واردة") || state.contains("إنشاء") -> stopRingback()
+            }
+        }
+
+        @JavascriptInterface fun onEnded() = runOnUiThread {
+            stopRingback()
+            if (!isFinishing) finish()
+        }
+    }
+
+    private fun startRingback() {
+        if (!SettingsStore(this).callSoundEnabled) return
+        if (ringbackTone != null) return
+        ringbackTone = runCatching {
+            ToneGenerator(AudioManager.STREAM_VOICE_CALL, 70).also {
+                it.startTone(ToneGenerator.TONE_SUP_RINGTONE)
+            }
+        }.getOrNull()
+    }
+
+    private fun stopRingback() {
+        ringbackTone?.stopTone()
+        ringbackTone?.release()
+        ringbackTone = null
+    }
+
     private fun prepareCallAudio() {
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
         @Suppress("DEPRECATION")
-        if (!audioManager.isBluetoothScoOn && !audioManager.isWiredHeadsetOn) audioManager.isSpeakerphoneOn = true
+        if (!audioManager.isBluetoothScoOn && !audioManager.isWiredHeadsetOn) {
+            audioManager.isSpeakerphoneOn = SettingsStore(this).speakerphoneEnabled
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (audioFocusRequest == null) {
                 val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
@@ -184,9 +254,44 @@ class WebCallActivity : ComponentActivity() {
 
     override fun onResume() { super.onResume(); if (::audioManager.isInitialized) prepareCallAudio() }
 
-    override fun onBackPressed() { finish() }
+    private fun showCallSettings() {
+        val store = SettingsStore(this)
+        val choices = arrayOf("السماعة الخارجية", "سماعة المكالمات", "إعدادات النغمة والإشعارات")
+        AlertDialog.Builder(this)
+            .setTitle("إعدادات المكالمة")
+            .setItems(choices) { _, which ->
+                when (which) {
+                    0 -> { store.speakerphoneEnabled = true; audioManager.isSpeakerphoneOn = true }
+                    1 -> { store.speakerphoneEnabled = false; audioManager.isSpeakerphoneOn = false }
+                    2 -> startActivity(Intent(this, SettingsActivity::class.java))
+                }
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
+    }
+
+    private fun confirmLeaveCall() {
+        AlertDialog.Builder(this)
+            .setTitle("إنهاء المكالمة؟")
+            .setMessage("المكالمة ما زالت جارية. هل تريد إنهاءها والرجوع؟")
+            .setPositiveButton("إنهاء ورجوع") { _, _ ->
+                webView.evaluateJavascript("document.querySelector('[data-call-end]')?.click()", null)
+                finishToMain()
+            }
+            .setNegativeButton("البقاء", null)
+            .show()
+    }
+
+    private fun finishToMain() {
+        if (isTaskRoot) startActivity(Intent(this, MainActivity::class.java))
+        finish()
+    }
+
+    override fun onBackPressed() { confirmLeaveCall() }
 
     override fun onDestroy() {
+        stopRingback()
+        mainHandler.removeCallbacksAndMessages(null)
         pendingPermissionRequest?.deny(); pendingPermissionRequest = null
         if (::webView.isInitialized) { webView.stopLoading(); webView.loadUrl("about:blank"); webView.removeAllViews(); webView.destroy() }
         if (::audioManager.isInitialized) releaseCallAudio()
