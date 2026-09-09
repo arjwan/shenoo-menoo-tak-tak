@@ -23,10 +23,9 @@ import io.socket.emitter.Emitter
 import org.json.JSONObject
 
 /**
- * Owns the one authenticated Socket.IO connection used while a user is
- * signed in. WebViews may open a second short-lived socket for WebRTC, but the
- * app's background presence and incoming-call socket is never duplicated by
- * this service.
+ * Owns the authenticated background Socket.IO connection while the user is
+ * signed in. It keeps presence alive and wakes the call UI for private and
+ * ad-hoc group calls.
  */
 class BackgroundRealtimeService : Service() {
     private var socket: Socket? = null
@@ -43,7 +42,6 @@ class BackgroundRealtimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-
         startAsForeground()
         connectOnce()
         return START_STICKY
@@ -71,11 +69,7 @@ class BackgroundRealtimeService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                SERVICE_NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
+            startForeground(SERVICE_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
             startForeground(SERVICE_NOTIFICATION_ID, notification)
         }
@@ -87,7 +81,6 @@ class BackgroundRealtimeService : Service() {
             stopSelf()
             return
         }
-
         val current = socket
         if (current != null && socketToken == token) {
             if (!current.connected()) current.connect()
@@ -103,12 +96,8 @@ class BackgroundRealtimeService : Service() {
             reconnectionDelayMax = 10_000
             randomizationFactor = 0.25
             timeout = 20_000
-            // The server accepts this header during the Socket.IO handshake.
-            // Using headers also works with the Android client across v2/v4
-            // protocol versions without relying on a JS-only auth option.
             extraHeaders = mapOf("Authorization" to listOf("Bearer $token"))
         }
-
         val created = runCatching { IO.socket(SHNO_MANO_BASE_URL, options) }.getOrNull() ?: return
         socketToken = token
         socket = created
@@ -117,15 +106,11 @@ class BackgroundRealtimeService : Service() {
     }
 
     private fun registerSocketListeners(client: Socket) {
-        client.on(Socket.EVENT_CONNECT, Emitter.Listener {
-            Log.d(TAG, "realtime socket connected")
-        })
+        client.on(Socket.EVENT_CONNECT, Emitter.Listener { Log.d(TAG, "realtime socket connected") })
         client.on("presence:state", Emitter.Listener { args ->
             val payload = args.firstOrNull() as? JSONObject ?: return@Listener
             val ids = payload.optJSONArray("userIds") ?: return@Listener
-            val online = buildList {
-                for (index in 0 until ids.length()) add(ids.optString(index))
-            }
+            val online = buildList { for (index in 0 until ids.length()) add(ids.optString(index)) }
             PresenceStore.replaceOnline(online)
         })
         client.on("presence:online", Emitter.Listener { args ->
@@ -138,21 +123,16 @@ class BackgroundRealtimeService : Service() {
         })
         client.on("call:invite", Emitter.Listener { args ->
             val payload = args.firstOrNull() as? JSONObject ?: return@Listener
-            handleIncomingInvite(payload)
+            handleIncomingInvite(payload, false)
         })
-        client.on("call:accept", Emitter.Listener { args ->
-            clearCallAlert(callIdFrom(args))
+        client.on("call-group:invite", Emitter.Listener { args ->
+            val payload = args.firstOrNull() as? JSONObject ?: return@Listener
+            handleIncomingInvite(payload, true)
         })
-        client.on("call:reject", Emitter.Listener { args ->
-            clearCallAlert(callIdFrom(args))
-        })
-        client.on("call:end", Emitter.Listener { args ->
-            clearCallAlert(callIdFrom(args))
-        })
+        listOf("call:accept", "call:reject", "call:end", "call-group:end", "call-group:rejected").forEach { event ->
+            client.on(event, Emitter.Listener { args -> clearCallAlert(callIdFrom(args)) })
+        }
         client.on(Socket.EVENT_DISCONNECT, Emitter.Listener {
-            // Without a live socket there is no trustworthy remote presence
-            // value. The built-in Socket.IO manager reconnects and sends a new
-            // snapshot; no second timer or manual reconnect loop is started.
             PresenceStore.replaceOnline(emptySet())
             Log.d(TAG, "realtime socket disconnected; waiting for Socket.IO reconnect")
         })
@@ -161,13 +141,12 @@ class BackgroundRealtimeService : Service() {
         })
     }
 
-    private fun handleIncomingInvite(payload: JSONObject) {
-        val callId = payload.optString("callId").trim()
+    private fun handleIncomingInvite(payload: JSONObject, isGroup: Boolean) {
+        val callId = if (isGroup) payload.optString("groupId").trim() else payload.optString("callId").trim()
         val from = payload.optString("from").trim()
-        val conversationId = payload.optString("conversationId").trim()
+        val conversationId = payload.optString("conversationId").trim().ifBlank { callId }
         val type = payload.optString("type").takeIf { it == "audio" || it == "video" } ?: "audio"
-        if (callId.isBlank() || from.isBlank() || conversationId.isBlank()) return
-
+        if (callId.isBlank() || from.isBlank()) return
         val call = IncomingCall(
             callId = callId,
             from = from,
@@ -177,14 +156,15 @@ class BackgroundRealtimeService : Service() {
         )
         if (!PresenceStore.acceptIncomingCall(call)) return
         startRingtone()
-        postIncomingCallNotification(call)
+        postIncomingCallNotification(call, isGroup)
     }
 
-    private fun postIncomingCallNotification(call: IncomingCall) {
+    private fun postIncomingCallNotification(call: IncomingCall, isGroup: Boolean) {
         val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(call.from)}"
         val openCall = Intent(this, WebCallActivity::class.java).apply {
             putExtra(WebCallActivity.EXTRA_URL, url)
             putExtra(WebCallActivity.EXTRA_INCOMING, true)
+            putExtra(WebCallActivity.EXTRA_GROUP_CALL, isGroup)
             putExtra(WebCallActivity.EXTRA_CALL_ID, call.callId)
             putExtra(WebCallActivity.EXTRA_FROM, call.from)
             putExtra(WebCallActivity.EXTRA_CONVERSATION_ID, call.conversationId)
@@ -198,7 +178,12 @@ class BackgroundRealtimeService : Service() {
             openCall,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val typeLabel = if (call.type == "video") "مكالمة فيديو واردة" else "مكالمة صوتية واردة"
+        val typeLabel = when {
+            isGroup && call.type == "video" -> "دعوة لمكالمة فيديو جماعية"
+            isGroup -> "دعوة لمكالمة صوتية جماعية"
+            call.type == "video" -> "مكالمة فيديو واردة"
+            else -> "مكالمة صوتية واردة"
+        }
         val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_CALLS)
             .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle(typeLabel)
@@ -219,8 +204,7 @@ class BackgroundRealtimeService : Service() {
     private fun startRingtone() {
         stopRingtone()
         if (!SettingsStore(this).callSoundEnabled) return
-        val uri = SettingsStore(this).ringtoneUri?.let(Uri::parse)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        val uri = SettingsStore(this).ringtoneUri?.let(Uri::parse) ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
         ringtone = RingtoneManager.getRingtone(applicationContext, uri)?.also { tone ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 tone.audioAttributes = AudioAttributes.Builder()
@@ -246,8 +230,11 @@ class BackgroundRealtimeService : Service() {
         }
     }
 
-    private fun callIdFrom(args: Array<out Any?>): String? =
-        (args.firstOrNull() as? JSONObject)?.optString("callId")?.takeIf { it.isNotBlank() }
+    private fun callIdFrom(args: Array<out Any?>): String? {
+        val payload = args.firstOrNull() as? JSONObject ?: return null
+        return payload.optString("callId").takeIf { it.isNotBlank() }
+            ?: payload.optString("groupId").takeIf { it.isNotBlank() }
+    }
 
     @Synchronized
     private fun disconnectSocket() {
@@ -287,8 +274,6 @@ class BackgroundRealtimeService : Service() {
             PresenceStore.clearAll()
         }
 
-        fun acknowledgeIncomingCall(callId: String) {
-            running?.clearCallAlert(callId)
-        }
+        fun acknowledgeIncomingCall(callId: String) { running?.clearCallAlert(callId) }
     }
 }
