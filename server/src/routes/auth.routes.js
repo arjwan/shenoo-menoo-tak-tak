@@ -93,9 +93,13 @@ router.post('/signin', async (req, res) => {
     const retryAfter = checkLoginRateLimit(attemptKey);
     if (retryAfter) { res.set('Retry-After', String(retryAfter)); return res.status(429).json({ ok: false, message: `محاولات تسجيل الدخول كثيرة لهذا الحساب، حاول بعد ${Math.ceil(retryAfter / 60)} دقيقة` }); }
     const user = await User.findOne({ $or: [{ username: normalized }, { contact: normalized }, { phone: normalized }, { email: normalized }] });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    if (!user) {
       recordLoginFailure(attemptKey);
-      return res.status(401).json({ ok: false, message: 'بيانات تسجيل الدخول غير صحيحة' });
+      return res.status(401).json({ ok: false, message: 'الحساب غير موجود؛ استخدم اسم المستخدم أو رقم الهاتف المسجل' });
+    }
+    if (!(await bcrypt.compare(password, user.passwordHash))) {
+      recordLoginFailure(attemptKey);
+      return res.status(401).json({ ok: false, message: 'كلمة المرور غير صحيحة' });
     }
     if (user.status === 'pending') return res.status(403).json({ ok: false, status: 'pending', message: 'طلب التسجيل ما زال بانتظار موافقة الإدارة' });
     if (user.status === 'rejected') return res.status(403).json({ ok: false, status: 'rejected', message: user.rejectionReason ? `تم رفض التسجيل: ${user.rejectionReason}` : 'تم رفض طلب التسجيل' });
