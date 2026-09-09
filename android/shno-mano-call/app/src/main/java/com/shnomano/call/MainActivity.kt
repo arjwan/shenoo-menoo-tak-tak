@@ -455,6 +455,6 @@ private fun dial(context: android.content.Context, phone: String) {
 
 private fun openShnoCall(context: android.content.Context, userId: String, type: String) {
     if (userId.isBlank()) return
-    val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(userId)}&prepare=$type"
+    val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(userId)}&call=$type"
     context.startActivity(Intent(context, WebCallActivity::class.java).putExtra(WebCallActivity.EXTRA_URL, url))
 }
