@@ -76,7 +76,10 @@ class WebCallActivity : ComponentActivity() {
                         evaluateJavascript("localStorage.setItem('token',$tokenJs);sessionStorage.setItem('token',$tokenJs);location.replace($targetJs);", null)
                         return
                     }
-                    if (url?.contains("messages.html") == true) injectCallStage()
+                    if (url?.contains("messages.html") == true) {
+                        injectCallStage()
+                        webView.visibility = View.VISIBLE
+                    }
                 }
             }
             webChromeClient = object : WebChromeClient() {
@@ -112,7 +115,9 @@ class WebCallActivity : ComponentActivity() {
         })
 
         setContentView(root)
-        webView.visibility = View.VISIBLE
+        // Keep the conversations page hidden while its WebRTC engine prepares
+        // the selected one-to-one call. Only the call overlay is revealed.
+        webView.visibility = View.INVISIBLE
         webView.loadUrl("https://shino-mino-tak-tak.duckdns.org/signin.html")
     }
 
@@ -134,7 +139,10 @@ class WebCallActivity : ComponentActivity() {
               window.__shnoCallStageReady=true;
               var style=document.createElement('style');
               style.textContent=`
-                [data-call-modal]{background:#050b09!important;z-index:9999!important}
+                body{margin:0!important;background:#050b09!important;overflow:hidden!important}
+                body>*:not([data-call-modal]){display:none!important}
+                [data-call-modal][hidden]{display:none!important}
+                [data-call-modal]{position:fixed!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#050b09!important;z-index:9999!important}
                 [data-call-modal] [data-remote-video]{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;object-fit:cover!important;background:#050b09!important;border-radius:0!important;z-index:1!important}
                 [data-call-modal] [data-local-video]{position:fixed!important;right:18px!important;top:96px!important;width:30vw!important;max-width:170px!important;height:22vh!important;object-fit:cover!important;border-radius:18px!important;border:2px solid rgba(255,255,255,.65)!important;z-index:5!important;box-shadow:0 12px 36px rgba(0,0,0,.45)!important}
                 [data-call-modal].shno-swap [data-local-video]{inset:0!important;width:100vw!important;max-width:none!important;height:100vh!important;border:0!important;border-radius:0!important;z-index:1!important}
@@ -142,6 +150,7 @@ class WebCallActivity : ComponentActivity() {
                 [data-call-modal].shno-focus [data-local-video]{width:46vw!important;max-width:240px!important;height:34vh!important}
               `;
               document.head.appendChild(style);
+              document.querySelectorAll('header,main,nav,aside,footer').forEach(function(el){el.style.display='none'});
               window.shnoSwapVideo=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-swap')};
               window.shnoToggleVideoSize=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-focus')};
             })();
