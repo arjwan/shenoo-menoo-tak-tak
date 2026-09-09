@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.ApiFactory
 import com.shnomano.call.data.SignUpRequest
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import retrofit2.HttpException
 
 class RegisterActivity : ComponentActivity() {
@@ -71,7 +72,9 @@ class RegisterActivity : ComponentActivity() {
                 Spacer(Modifier.height(16.dp))
 
                 Field("الاسم الكامل", fullName) { fullName = it }
-                Field("اسم المستخدم", username) { username = it.lowercase().replace(" ", "") }
+                Field("اسم المستخدم بالعربي أو الإنكليزي", username) {
+                    username = it.trimStart().lowercase().replace(Regex("\\s+"), "")
+                }
                 Field("رقم الهاتف العراقي 07xxxxxxxxx", phone) { phone = it.filter(Char::isDigit).take(11) }
                 Field("البريد الإلكتروني - اختياري", email) { email = it.trim() }
                 Field("تاريخ الميلاد YYYY-MM-DD - اختياري", birthDate) { birthDate = it.take(10) }
@@ -99,8 +102,12 @@ class RegisterActivity : ComponentActivity() {
                     enabled = !busy && !success,
                     onClick = {
                         message = null
+                        val validArabicName = fullName.trim().matches(Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]{1,99}$"))
+                        val validUsername = username.matches(Regex("^[\\p{L}\\p{M}0-9_.]{3,30}$"))
                         when {
                             fullName.isBlank() || username.isBlank() || phone.isBlank() || password.isBlank() -> message = "أكمل الحقول الإلزامية"
+                            !validArabicName -> message = "اكتب الاسم الكامل بالعربية أو الإنكليزية دون رموز غير صالحة"
+                            !validUsername -> message = "اسم المستخدم يقبل العربية أو الإنكليزية والأرقام و _ . فقط، من 3 إلى 30 حرفاً"
                             !phone.matches(Regex("^07\\d{9}$")) -> message = "رقم الهاتف يجب أن يبدأ بـ 07 ويتكون من 11 رقماً"
                             password.length < 8 -> message = "كلمة المرور يجب أن تكون 8 أحرف على الأقل"
                             password != confirm -> message = "كلمتا المرور غير متطابقتين"
@@ -117,7 +124,10 @@ class RegisterActivity : ComponentActivity() {
                                         success = response.ok
                                         message = response.message ?: if (response.ok) "تم إنشاء الطلب وهو بانتظار الموافقة" else "تعذر إنشاء الحساب"
                                     } catch (e: HttpException) {
-                                        message = "تعذر إنشاء الحساب: ${e.code()}"
+                                        val serverMessage = runCatching {
+                                            JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("message")
+                                        }.getOrNull().orEmpty()
+                                        message = serverMessage.ifBlank { "تعذر إنشاء الحساب: ${e.code()}" }
                                     } catch (e: Exception) {
                                         message = e.message ?: "تعذر الاتصال بالخادم"
                                     } finally { busy = false }
