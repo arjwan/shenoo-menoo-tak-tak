@@ -42,6 +42,10 @@ class WebCallActivity : ComponentActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var audioFocusRequest: AudioFocusRequest? = null
     private var ringbackTone: ToneGenerator? = null
+    private var pendingIncomingCall: IncomingCall? = null
+    private var webPageReady = false
+    private var speakerRouteButton: Button? = null
+    private var earpieceRouteButton: Button? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mediaPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -64,7 +68,9 @@ class WebCallActivity : ComponentActivity() {
         prepareCallAudio()
 
         targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
+        pendingIncomingCall = incomingCallFrom(intent)
         if (targetUrl.isBlank()) { finish(); return }
+        pendingIncomingCall?.let { BackgroundRealtimeService.acknowledgeIncomingCall(it.callId) }
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.rgb(4, 10, 8)) }
         webView = WebView(this).apply {
@@ -88,8 +94,10 @@ class WebCallActivity : ComponentActivity() {
                         return
                     }
                     if (url?.contains("messages.html") == true) {
+                        webPageReady = true
                         injectCallStage()
                         webView.visibility = View.VISIBLE
+                        deliverPendingIncomingCall()
                     }
                 }
             }
@@ -107,11 +115,27 @@ class WebCallActivity : ComponentActivity() {
         }
         root.addView(webView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
 
-        val close = controlButton("×") { confirmLeaveCall() }
+        val close = controlButton("⌄") { minimizeCall() }
         root.addView(close, FrameLayout.LayoutParams(60, 60).apply { gravity = Gravity.TOP or Gravity.END; topMargin = 18; marginEnd = 18 })
 
         val settings = controlButton("⚙") { showCallSettings() }
         root.addView(settings, FrameLayout.LayoutParams(68, 60).apply { gravity = Gravity.TOP or Gravity.START; topMargin = 18; marginStart = 18 })
+
+        val audioRoutes = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(8, 4, 8, 4)
+            val speakerButton = controlButton("🔊 صوت عالي") { setAudioRoute(true) }
+            val earpieceButton = controlButton("📱 صوت الهاتف") { setAudioRoute(false) }
+            speakerRouteButton = speakerButton
+            earpieceRouteButton = earpieceButton
+            addView(speakerButton)
+            addView(earpieceButton)
+        }
+        root.addView(audioRoutes, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            bottomMargin = 86
+        })
 
         val tools = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -170,26 +194,19 @@ class WebCallActivity : ComponentActivity() {
               var modal=document.querySelector('[data-call-modal]');
               var status=document.querySelector('[data-call-status]');
               var feedback=document.querySelector('[data-message-feedback]');
-              var terminal=/انتهت المكالمة|لا يوجد رد|تعذر الاتصال|رفض/;
+              var terminal=/انتهت المكالمة|لا يوجد رد|تعذر الاتصال|رفض|غير متصل|مشغول/;
               var report=function(){
                 var text=(status&&status.textContent||'').trim();
                 if(text) ShnoAndroidCall.onState(text);
                 if(modal&&modal.hidden){
                   var done=(feedback&&feedback.textContent||'').trim();
-                  if(terminal.test(done)) ShnoAndroidCall.onEnded();
+                  if(terminal.test(done)) ShnoAndroidCall.onEnded(done);
                   else modal.hidden=false;
                 }
               };
               if(modal||status||feedback){
                 new MutationObserver(report).observe(document.body,{subtree:true,childList:true,attributes:true,characterData:true});
                 report();
-                setTimeout(function(){
-                  var text=(status&&status.textContent||'').trim();
-                  if(modal&&!modal.hidden&&/الاتصال/.test(text)&&!/متصل/.test(text)){
-                    status.textContent='يرن…';
-                    ShnoAndroidCall.onState('يرن…');
-                  }
-                },1400);
               }
             })();
         """.trimIndent()
@@ -204,8 +221,11 @@ class WebCallActivity : ComponentActivity() {
             }
         }
 
-        @JavascriptInterface fun onEnded() = runOnUiThread {
+        @JavascriptInterface fun onEnded(message: String) = runOnUiThread {
             stopRingback()
+            if (message.contains("غير متصل") || message.contains("مشغول")) {
+                Toast.makeText(this@WebCallActivity, message, Toast.LENGTH_LONG).show()
+            }
             if (!isFinishing) finish()
         }
     }
@@ -228,10 +248,7 @@ class WebCallActivity : ComponentActivity() {
 
     private fun prepareCallAudio() {
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
-        @Suppress("DEPRECATION")
-        if (!audioManager.isBluetoothScoOn && !audioManager.isWiredHeadsetOn) {
-            audioManager.isSpeakerphoneOn = SettingsStore(this).speakerphoneEnabled
-        }
+        applyAudioRoute(SettingsStore(this).speakerphoneEnabled)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (audioFocusRequest == null) {
                 val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
@@ -247,9 +264,73 @@ class WebCallActivity : ComponentActivity() {
     private fun releaseCallAudio() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
         else { @Suppress("DEPRECATION") audioManager.abandonAudioFocus(null) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) runCatching { audioManager.clearCommunicationDevice() }
         @Suppress("DEPRECATION") runCatching { audioManager.stopBluetoothSco() }
         audioManager.mode = AudioManager.MODE_NORMAL
         @Suppress("DEPRECATION") runCatching { audioManager.isSpeakerphoneOn = false }
+    }
+
+    private fun setAudioRoute(speaker: Boolean) {
+        SettingsStore(this).speakerphoneEnabled = speaker
+        applyAudioRoute(speaker)
+    }
+
+    private fun applyAudioRoute(speaker: Boolean) {
+        if (!::audioManager.isInitialized) return
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        var selected = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val wantedType = if (speaker) AudioManager.DEVICE_OUT_SPEAKER else AudioManager.DEVICE_OUT_EARPIECE
+            val device = audioManager.availableCommunicationDevices.firstOrNull { it.type == wantedType }
+            if (device != null) selected = audioManager.setCommunicationDevice(device)
+        }
+        @Suppress("DEPRECATION")
+        if (!selected || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) audioManager.isSpeakerphoneOn = speaker
+        speakerRouteButton?.text = if (speaker) "🔊 صوت عالي ✓" else "🔊 صوت عالي"
+        earpieceRouteButton?.text = if (!speaker) "📱 صوت الهاتف ✓" else "📱 صوت الهاتف"
+    }
+
+    private fun incomingCallFrom(source: Intent): IncomingCall? {
+        if (!source.getBooleanExtra(EXTRA_INCOMING, false)) return null
+        val callId = source.getStringExtra(EXTRA_CALL_ID).orEmpty()
+        val from = source.getStringExtra(EXTRA_FROM).orEmpty()
+        val conversationId = source.getStringExtra(EXTRA_CONVERSATION_ID).orEmpty()
+        val type = source.getStringExtra(EXTRA_CALL_TYPE).orEmpty().takeIf { it == "audio" || it == "video" } ?: "audio"
+        if (callId.isBlank() || from.isBlank() || conversationId.isBlank()) return null
+        return IncomingCall(callId, from, conversationId, type, source.getStringExtra(EXTRA_CALLER_NAME).orEmpty().ifBlank { "مستخدم شنو منو" })
+    }
+
+    private fun deliverPendingIncomingCall() {
+        val call = pendingIncomingCall ?: return
+        if (!webPageReady || !::webView.isInitialized) return
+        val payload = JSONObject().apply {
+            put("callId", call.callId)
+            put("from", call.from)
+            put("conversationId", call.conversationId)
+            put("type", call.type)
+            put("callerName", call.callerName)
+        }.toString()
+        webView.evaluateJavascript(
+            "(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);return 'ready';}return 'waiting';})()"
+        ) { result ->
+            if (result?.contains("ready") == true) {
+                BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
+                pendingIncomingCall = null
+            } else {
+                mainHandler.postDelayed({ deliverPendingIncomingCall() }, 250)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingCallFrom(intent)?.let { call ->
+            pendingIncomingCall = call
+            targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }
+            BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
+            deliverPendingIncomingCall()
+        }
     }
 
     override fun onResume() { super.onResume(); if (::audioManager.isInitialized) prepareCallAudio() }
@@ -261,8 +342,8 @@ class WebCallActivity : ComponentActivity() {
             .setTitle("إعدادات المكالمة")
             .setItems(choices) { _, which ->
                 when (which) {
-                    0 -> { store.speakerphoneEnabled = true; audioManager.isSpeakerphoneOn = true }
-                    1 -> { store.speakerphoneEnabled = false; audioManager.isSpeakerphoneOn = false }
+                    0 -> setAudioRoute(true)
+                    1 -> setAudioRoute(false)
                     2 -> startActivity(Intent(this, SettingsActivity::class.java))
                 }
             }
@@ -270,24 +351,14 @@ class WebCallActivity : ComponentActivity() {
             .show()
     }
 
-    private fun confirmLeaveCall() {
-        AlertDialog.Builder(this)
-            .setTitle("إنهاء المكالمة؟")
-            .setMessage("المكالمة ما زالت جارية. هل تريد إنهاءها والرجوع؟")
-            .setPositiveButton("إنهاء ورجوع") { _, _ ->
-                webView.evaluateJavascript("document.querySelector('[data-call-end]')?.click()", null)
-                finishToMain()
-            }
-            .setNegativeButton("البقاء", null)
-            .show()
+    override fun onBackPressed() {
+        Toast.makeText(this, "لإنهاء المكالمة استخدم زر إنهاء المكالمة الأحمر", Toast.LENGTH_SHORT).show()
     }
 
-    private fun finishToMain() {
-        if (isTaskRoot) startActivity(Intent(this, MainActivity::class.java))
-        finish()
+    private fun minimizeCall() {
+        Toast.makeText(this, "المكالمة مستمرة في الخلفية", Toast.LENGTH_SHORT).show()
+        moveTaskToBack(true)
     }
-
-    override fun onBackPressed() { confirmLeaveCall() }
 
     override fun onDestroy() {
         stopRingback()
@@ -298,5 +369,13 @@ class WebCallActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    companion object { const val EXTRA_URL = "url" }
+    companion object {
+        const val EXTRA_URL = "url"
+        const val EXTRA_INCOMING = "incoming_call"
+        const val EXTRA_CALL_ID = "call_id"
+        const val EXTRA_FROM = "from"
+        const val EXTRA_CONVERSATION_ID = "conversation_id"
+        const val EXTRA_CALL_TYPE = "call_type"
+        const val EXTRA_CALLER_NAME = "caller_name"
+    }
 }

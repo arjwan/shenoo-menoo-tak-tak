@@ -18,6 +18,15 @@ class ShnoManoApp : Application() {
         val manager = getSystemService(NotificationManager::class.java)
         val settings = SettingsStore(this)
 
+        val realtimeChannel = NotificationChannel(
+            CHANNEL_REALTIME,
+            "اتصال شنو منو اللحظي",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "تشغيل الحضور والمكالمات في الخلفية"
+            setShowBadge(false)
+        }
+
         val messageChannel = NotificationChannel(
             CHANNEL_MESSAGES,
             "رسائل شنو منو",
@@ -43,11 +52,13 @@ class ShnoManoApp : Application() {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
+        manager.createNotificationChannel(realtimeChannel)
         manager.createNotificationChannel(messageChannel)
         manager.createNotificationChannel(callChannel)
     }
 
     companion object {
+        const val CHANNEL_REALTIME = "shno_realtime"
         const val CHANNEL_MESSAGES = "shno_messages"
         const val CHANNEL_CALLS = "shno_calls"
     }

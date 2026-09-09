@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   var list = document.querySelector("[data-conversation-list]"), windowEl = document.querySelector("[data-chat-window]"), feedback = document.querySelector("[data-message-feedback]"), callModal = document.querySelector("[data-call-modal]");
-  var params = new URLSearchParams(location.search), currentId = params.get("conversation"), currentOther, recorder, localStream, peer, activeCall, pendingIce = [], callTimer, connectionTimer, typingTimer;
+  var params = new URLSearchParams(location.search), currentId = params.get("conversation"), currentOther, recorder, localStream, peer, activeCall, pendingIce = [], callTimer, connectionTimer, typingTimer, liveOnline = {};
   var socket = window.io && SocialAPI.token() ? window.io(SocialAPI.baseUrl, { auth: { token: SocialAPI.token() } }) : null;
   function esc(v) { return String(v || "").replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function url(v) { return /^https?:\/\//i.test(v || "") ? v : SocialAPI.baseUrl + (v || ""); }
@@ -28,7 +28,9 @@
     list.innerHTML = items.map(function (c) { var u = c.otherUser || c; return '<button class="social-list-item ' + (String(c.id) === String(currentId) ? "is-active" : "") + '" type="button" data-conversation-id="' + esc(c.id) + '">' + avatar(u) + '<span class="social-list-copy"><strong>' + esc(u.fullName || u.name || "محادثة") + "</strong><small>" + esc(c.lastMessage ? (c.lastMessage.text || "وسائط") : "لا توجد رسائل") + '</small></span><span class="social-list-meta">' + (c.unreadCount ? '<b class="unread">' + Number(c.unreadCount) + "</b>" : "") + "</span></button>"; }).join("");
   }
   function renderMessages(data) {
-    var items = data.messages || [], c = data.conversation || {}, u = c.otherUser || {}; currentOther = u;
+    var items = data.messages || [], c = data.conversation || {}, u = c.otherUser || {};
+    if (Object.prototype.hasOwnProperty.call(liveOnline, String(u.id))) u.online = liveOnline[String(u.id)];
+    currentOther = u;
     windowEl.innerHTML = '<header class="chat-header"><button class="icon-button" data-chat-back>رجوع</button>' + avatar(u) + '<div class="chat-header-copy"><strong>' + esc(u.fullName || "محادثة") + '</strong><small data-chat-presence data-user-id="' + esc(u.id) + '">' + (u.online ? "متصل الآن" : (u.lastSeen ? "آخر ظهور " + new Date(u.lastSeen).toLocaleString("ar-IQ") : "غير متصل")) + '</small></div><div class="chat-header-actions"><button class="icon-button" data-start-call="audio">صوت</button><button class="icon-button" data-start-call="video">فيديو</button></div></header><div class="chat-messages" data-chat-messages>' + (items.length ? items.map(messageHtml).join("") : '<div class="chat-empty"><strong>لا توجد رسائل بعد</strong></div>') + '</div><div class="typing" data-typing-line></div><form class="chat-composer" data-composer><input type="file" hidden accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,audio/webm,audio/mpeg,audio/ogg,audio/mp4,application/pdf,text/plain" data-attachment><button class="attach-button" type="button" data-attach aria-label="إرفاق ملف">＋</button><button class="attach-button" type="button" data-record aria-label="تسجيل رسالة صوتية">◉</button><textarea required maxlength="5000" placeholder="اكتب رسالة…" data-message-input></textarea><button class="send-button">إرسال</button></form>';
     var box = windowEl.querySelector("[data-chat-messages]"); if (box) box.scrollTop = box.scrollHeight;
   }
@@ -75,10 +77,37 @@
     peer.onconnectionstatechange = function () { if (!peer) return; if (peer.connectionState === "connected") { clearTimeout(connectionTimer); callStatus("متصل الآن"); } else if (["failed", "closed"].includes(peer.connectionState)) endCall(true, "تعذر الاتصال", "connection-failed"); else if (peer.connectionState === "disconnected") { clearTimeout(connectionTimer); connectionTimer = setTimeout(function () { if (peer && peer.connectionState === "disconnected") endCall(true, "تعذر الاتصال", "disconnected"); }, 8000); } };
     return peer;
   }
+  function receiveIncomingCall(payload) {
+    payload = payload || {};
+    var callId = String(payload.callId || "");
+    var from = String(payload.from || payload.userId || "");
+    var conversationId = String(payload.conversationId || "");
+    var type = payload.type === "video" ? "video" : "audio";
+    if (!callId || !from || !conversationId) return;
+    if (activeCall) {
+      if (String(activeCall.callId) === callId) {
+        callModal.hidden = false;
+        document.querySelector("[data-incoming-call-actions]").hidden = !activeCall.incoming;
+      } else if (socket) {
+        socket.emit("call:reject", { callId: callId, userId: from, conversationId: conversationId, type: type, reason: "busy" });
+      }
+      return;
+    }
+    activeCall = { callId: callId, userId: from, conversationId: conversationId, type: type, incoming: true };
+    callModal.hidden = false;
+    callName(payload.callerName || "مستخدم شنو منو", type);
+    callStatus("مكالمة واردة");
+    document.querySelector("[data-incoming-call-actions]").hidden = false;
+  }
+  // Native Android hands off an invite that was already received by its
+  // foreground service. Keeping the callId here avoids waiting for a second
+  // WebView socket event and keeps accept/reject tied to the original call.
+  window.shnoHandleIncomingCall = receiveIncomingCall;
+
   async function startCall(type) {
     if (activeCall) return show("لديك مكالمة قائمة الآن", "error");
     if (!socket || !socket.connected || !currentOther || !currentOther.id) return show("تعذر بدء المكالمة الآن", "error"); activeCall = { callId: newCallId(), userId: String(currentOther.id), conversationId: currentId, type: type, incoming: false }; callModal.hidden = false; callName(currentOther.fullName, type); callStatus("جارٍ الاتصال…");
-    try { await getMedia(type); socket.emit("call:invite", callPayload(), function (result) { if (!activeCall || !result || result.ok) return; endCall(false); show(result.message || "تعذر الاتصال", "error"); }); callTimer = setTimeout(function () { if (!activeCall || activeCall.incoming) return; socket.emit("call:end", callPayload({ reason: "no-answer" })); endCall(false, "لا يوجد رد"); }, 30000); } catch (_) { endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); }
+    try { await getMedia(type); socket.emit("call:invite", callPayload(), function (result) { if (!activeCall) return; if (result && result.ok) { callStatus("يرن…"); return; } endCall(false); show((result && result.message) || "تعذر الاتصال", "error"); }); callTimer = setTimeout(function () { if (!activeCall || activeCall.incoming) return; socket.emit("call:end", callPayload({ reason: "no-answer" })); endCall(false, "لا يوجد رد"); }, 30000); } catch (_) { endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); }
   }
   async function acceptCall() { if (!activeCall) return; try { await getMedia(activeCall.type); ensurePeer(); document.querySelector("[data-incoming-call-actions]").hidden = true; callStatus("جاري إنشاء الاتصال…"); socket.emit("call:accept", callPayload(), function (result) { if (result && !result.ok) endCall(false, "انتهت المكالمة"); }); } catch (_) { socket.emit("call:reject", callPayload({ reason: "media-denied" })); endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); } }
   async function flushIce() { while (pendingIce.length && peer && peer.remoteDescription) await peer.addIceCandidate(pendingIce.shift()).catch(function () {}); }
@@ -91,9 +120,20 @@
     socket.on("private:message", function (p) { String(p.conversationId) === String(currentId) ? openConversation(currentId) : loadList(); });
     socket.on("private:typing", function (p) { var line = windowEl.querySelector("[data-typing-line]"); if (line && String(p.conversationId) === String(currentId)) line.textContent = p.active ? "يكتب الآن…" : ""; });
     socket.on("private:read", function (p) { if (String(p.conversationId) !== String(currentId)) return; windowEl.querySelectorAll(".chat-message.mine .message-state").forEach(function (el) { el.textContent = "✓✓ مقروء"; }); loadList(); });
-    socket.on("presence:online", function (p) { var el = presenceElement(p.userId); if (el) el.textContent = "متصل الآن"; });
-    socket.on("presence:offline", function (p) { var el = presenceElement(p.userId); if (el) el.textContent = p.lastSeen ? "آخر ظهور " + new Date(p.lastSeen).toLocaleString("ar-IQ") : "غير متصل"; });
-    socket.on("call:invite", function (p) { if (activeCall) return socket.emit("call:reject", { callId: p.callId, userId: p.from, conversationId: p.conversationId, type: p.type, reason: "busy" }); activeCall = { callId: String(p.callId), userId: String(p.from), conversationId: String(p.conversationId), type: p.type, incoming: true }; callModal.hidden = false; callName(p.callerName, p.type); callStatus("مكالمة واردة"); document.querySelector("[data-incoming-call-actions]").hidden = false; });
+    function updatePresence(p, online) {
+      liveOnline[String(p.userId)] = online;
+      var el = presenceElement(p.userId);
+      if (el) el.textContent = online ? "متصل الآن" : (p.lastSeen ? "آخر ظهور " + new Date(p.lastSeen).toLocaleString("ar-IQ") : "غير متصل");
+      if (el) { var dot = el.closest(".chat-header")?.querySelector(".presence"); if (dot) dot.classList.toggle("online", online); }
+    }
+    socket.on("presence:state", function (p) {
+      liveOnline = {};
+      (p.userIds || []).forEach(function (id) { liveOnline[String(id)] = true; });
+      if (currentOther) updatePresence({ userId: currentOther.id }, Boolean(liveOnline[String(currentOther.id)]));
+    });
+    socket.on("presence:online", function (p) { updatePresence(p, true); });
+    socket.on("presence:offline", function (p) { updatePresence(p, false); });
+    socket.on("call:invite", receiveIncomingCall);
     socket.on("call:accept", async function (p) { if (!activeCall || activeCall.incoming || String(p.callId) !== activeCall.callId) return; clearTimeout(callTimer); try { var pc = ensurePeer(), offer = await pc.createOffer(); await pc.setLocalDescription(offer); socket.emit("webrtc:offer", callPayload({ data: pc.localDescription })); } catch (_) { endCall(true, "تعذر الاتصال", "offer-failed"); } });
     socket.on("call:reject", function (p) { if (activeCall && String(p.callId) === activeCall.callId) endCall(false, p.reason === "busy" ? "المستخدم مشغول بمكالمة أخرى" : "رفض المكالمة"); });
     socket.on("call:end", function (p) { if (activeCall && String(p.callId) === activeCall.callId) endCall(false, p.reason === "no-answer" ? "لا يوجد رد" : p.reason === "disconnected" ? "تعذر الاتصال" : "انتهت المكالمة"); });

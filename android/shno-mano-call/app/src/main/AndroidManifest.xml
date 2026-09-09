@@ -5,7 +5,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application
@@ -18,8 +22,23 @@
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.ShnoManoCall">
 
+        <service
+            android:name=".BackgroundRealtimeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+
+        <receiver
+            android:name=".BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <activity android:name=".WebSectionActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".WebCallActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".WebCallActivity" android:exported="false" android:launchMode="singleTop" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" />
         <activity android:name=".RegisterActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WelcomeActivity" android:exported="false" android:screenOrientation="portrait" />
