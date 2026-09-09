@@ -56,11 +56,28 @@ class BackgroundRealtimeService : Service() {
         val options = IO.Options.builder()
             .setAuth(mapOf("token" to token))
             .setReconnection(true)
+            .setReconnectionAttempts(Int.MAX_VALUE)
+            .setReconnectionDelay(1000)
+            .setReconnectionDelayMax(10000)
+            .setTimeout(20000)
             .build()
 
         socket = IO.socket(SHNO_MANO_BASE_URL, options).also { s ->
             s.on(Socket.EVENT_CONNECT) {
+                session.userId?.let { PresenceStore.setOnline(it, true) }
+                s.emit("presence:online")
                 joinConversationRooms(s)
+            }
+            s.on(Socket.EVENT_DISCONNECT) {
+                session.userId?.let { PresenceStore.setOnline(it, false) }
+            }
+            s.on("presence:online") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                PresenceStore.setOnline(payload.optString("userId"), true)
+            }
+            s.on("presence:offline") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                PresenceStore.setOnline(payload.optString("userId"), false)
             }
             s.on("call:invite") { args ->
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
@@ -212,6 +229,7 @@ class BackgroundRealtimeService : Service() {
     }
 
     override fun onDestroy() {
+        session.userId?.let { PresenceStore.setOnline(it, false) }
         stopIncomingRingtone()
         cancelCallNotification()
         socket?.disconnect()
@@ -232,6 +250,7 @@ class BackgroundRealtimeService : Service() {
 
         fun stop(context: Context) {
             context.stopService(Intent(context, BackgroundRealtimeService::class.java))
+            PresenceStore.clear()
         }
     }
 }
