@@ -398,11 +398,21 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onBac
 
 @Composable
 private fun AccountScreen(repo: AppRepository, onLogout: () -> Unit) {
+    val context = LocalContext.current
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("حسابي", repo.session.fullName ?: repo.session.username ?: "مستخدم شنو منو")
         Spacer(Modifier.height(18.dp))
         InfoRow(Icons.Default.Person, "اسم المستخدم", repo.session.username ?: "-")
         InfoRow(Icons.Default.Cloud, "الخادم", SHNO_MANO_BASE_URL.removeSuffix("/"))
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Settings, null)
+            Spacer(Modifier.width(8.dp))
+            Text("إعدادات الصوت والرنين والإشعارات")
+        }
         Spacer(Modifier.height(22.dp))
         Button(onClick = onLogout, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("تسجيل الخروج") }
     }
