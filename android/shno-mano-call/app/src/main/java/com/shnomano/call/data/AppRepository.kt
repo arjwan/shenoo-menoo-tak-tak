@@ -75,6 +75,15 @@ class AppRepository(context: Context) {
     }
 
     suspend fun loadFriends(): List<FriendDto> = runCatching { api.friends().all() }.getOrDefault(emptyList())
+    suspend fun loadFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests().requests }.getOrDefault(emptyList())
+    suspend fun sendFriendRequest(userId: String): Result<String> = runCatching {
+        api.sendFriendRequest(userId)
+        "تم إرسال طلب الصداقة"
+    }
+    suspend fun respondToFriendRequest(requestId: String, accept: Boolean): Result<String> = runCatching {
+        api.actOnFriendRequest(requestId, if (accept) "accept" else "reject")
+        if (accept) "تم قبول طلب الصداقة" else "تم رفض الطلب"
+    }
     suspend fun loadConversations(): List<ConversationDto> = runCatching { api.conversations().conversations }.getOrDefault(emptyList())
 
     suspend fun openConversation(userId: String): Result<ConversationDto> = runCatching {
