@@ -66,6 +66,7 @@ data class FriendsResponse(val friends: List<FriendDto> = emptyList(), val users
 }
 data class FriendRequestDto(val id: String, val user: FriendDto, val status: String = "pending")
 data class FriendRequestsResponse(val ok: Boolean = false, val requests: List<FriendRequestDto> = emptyList())
+data class UsersSearchResponse(val ok: Boolean = false, val users: List<FriendDto> = emptyList())
 
 data class LookupPhoneResponse(val ok: Boolean = false, val user: FriendDto? = null)
 data class OtherUserDto(val id: String, val username: String? = null, val fullName: String? = null, val avatarUrl: String? = null, val online: Boolean = false)
@@ -97,6 +98,7 @@ interface ShnoManoApi {
     @POST("api/friends/request/{userId}") suspend fun sendFriendRequest(@Path("userId") userId: String): OkResponse
     @PATCH("api/friends/requests/{requestId}/{action}") suspend fun actOnFriendRequest(@Path("requestId") requestId: String, @Path("action") action: String): OkResponse
     @DELETE("api/friends/{userId}") suspend fun removeFriend(@Path("userId") userId: String): OkResponse
+    @GET("api/users/search") suspend fun searchUsers(@Query("q") query: String): UsersSearchResponse
     @GET("api/users/lookup-phone") suspend fun lookupPhone(@Query("phone") phone: String): LookupPhoneResponse
     @GET("api/conversations") suspend fun conversations(): ConversationsResponse
     @POST("api/conversations/{userId}") suspend fun openConversation(@Path("userId") userId: String): ConversationResponse
