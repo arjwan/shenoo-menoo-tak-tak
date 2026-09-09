@@ -194,7 +194,7 @@ class WebCallActivity : ComponentActivity() {
               var modal=document.querySelector('[data-call-modal]');
               var status=document.querySelector('[data-call-status]');
               var feedback=document.querySelector('[data-message-feedback]');
-              var terminal=/انتهت المكالمة|لا يوجد رد|تعذر الاتصال|رفض|غير متصل|مشغول/;
+              var terminal=/انتهت المكالمة|لا يوجد رد|تعذر الاتصال|تعذر الوصول|رفض|غير متصل|مشغول/;
               var report=function(){
                 var text=(status&&status.textContent||'').trim();
                 if(text) ShnoAndroidCall.onState(text);
