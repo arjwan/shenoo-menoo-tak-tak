@@ -22,6 +22,16 @@
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.ShnoManoCall">
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <service
             android:name=".BackgroundRealtimeService"
             android:exported="false"
@@ -36,6 +46,7 @@
             </intent-filter>
         </receiver>
 
+        <activity android:name=".QrFriendActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WebSectionActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WebCallActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" />
