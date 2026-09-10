@@ -243,6 +243,8 @@ router.post('/:id/start', async (req, res) => {
     if (engine && engine.createGame) {
       const state = engine.createGame({ playerIds: room.players.map(String) });
       room.gameState.engineState = state;
+      room.gameState.engineState.status = 'active';
+      room.gameState.engineState.turn = String(room.players[0]);
       room.gameState.board = state.board || [];
       room.gameState.moveCount = state.moveCount || 0;
       room.gameState.status = 'active';
@@ -252,6 +254,7 @@ router.post('/:id/start', async (req, res) => {
   } else {
     room.gameState.status = 'active'; room.gameState.turn = room.players[0]; room.gameState.updatedAt = new Date();
   }
+  room.markModified('gameState.engineState');
   await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
 });
 
@@ -321,6 +324,7 @@ router.post('/:id/action', async (req, res) => {
       if (result.state.turn) room.gameState.turn = result.state.turn;
     }
     room.gameState.updatedAt = new Date();
+    room.markModified('gameState.engineState');
     await room.save();
     const decorated = await decorate(room);
     const base = publicState(decorated);
