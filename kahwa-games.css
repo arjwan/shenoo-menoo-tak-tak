@@ -135,3 +135,5 @@ body.domino-room-active .game-room{width:auto;max-width:none;margin:8px 12px 24p
 .is-domino-room .domino-chain-tile.is-vertical{width:48px!important;height:86px!important;flex-direction:column!important;margin:0 4px!important;transform:none!important}
 .is-domino-room .domino-chain-tile.is-vertical .domino-divider{width:auto!important;height:3px!important;margin:2px!important}
 @media(max-width:760px){.is-domino-room .domino-chain-tile.is-horizontal{width:66px!important;height:38px!important}.is-domino-room .domino-chain-tile.is-vertical{width:38px!important;height:66px!important}}
+
+.domino-seat-code{display:grid;place-items:center;min-width:25px;height:25px;padding:0 6px;border:2px solid #f0b85c;border-radius:8px;background:#071f19;color:#ffd98d;font-weight:900;font-size:.8rem;box-shadow:0 0 10px rgba(240,184,92,.25)}
