@@ -128,3 +128,10 @@ body.domino-room-active .game-room{width:auto;max-width:none;margin:8px 12px 24p
 .is-domino-room .domino-chain .domino-face.is-double{width:48px;height:86px;flex-direction:column}
 .is-domino-room .domino-chain .domino-face.is-double .domino-divider{width:auto;height:3px;margin:2px}
 @media(max-width:760px){.is-domino-room .domino-chain .domino-face:not(.is-double){width:66px;height:38px}.is-domino-room .domino-chain .domino-face.is-double{width:38px;height:66px}}
+
+.is-domino-room .domino-chain{gap:0!important}
+.is-domino-room .domino-chain-tile.is-horizontal{width:86px!important;height:48px!important;flex-direction:row!important;margin:0!important;transform:none!important}
+.is-domino-room .domino-chain-tile.is-horizontal .domino-divider{width:3px!important;height:auto!important;margin:2px!important}
+.is-domino-room .domino-chain-tile.is-vertical{width:48px!important;height:86px!important;flex-direction:column!important;margin:0 4px!important;transform:none!important}
+.is-domino-room .domino-chain-tile.is-vertical .domino-divider{width:auto!important;height:3px!important;margin:2px!important}
+@media(max-width:760px){.is-domino-room .domino-chain-tile.is-horizontal{width:66px!important;height:38px!important}.is-domino-room .domino-chain-tile.is-vertical{width:38px!important;height:66px!important}}
