@@ -13,7 +13,7 @@ const gameRoomSchema = new mongoose.Schema({
   visibility: { type: String, enum: ['public', 'friends', 'private'], default: 'public', index: true },
   maxPlayers: { type: Number, min: 2, max: 6, default: 2 },
   teamMode: { type: String, enum: ['solo', '2v2'], default: 'solo' },
-  scoreTarget: { type: Number, min: 1, max: 9999, default: 100 },
+  scoreTarget: { type: Number, min: 25, max: 500, default: 100 },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   players: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   reservations: { type: [reservationSchema], default: [] },
