@@ -24,6 +24,7 @@ const islamicRoutes = require('./routes/islamic.routes');
 const storesRoutes = require('./routes/stores.routes');
 const consultationRoutes = require('./routes/consultations.routes');
 const astrologyRoutes = require('./routes/astrology.routes');
+const serviceApprovalsRoutes = require('./routes/service-approvals.routes');
 const { attachSocket } = require('./socket');
 
 const app = express();
@@ -34,6 +35,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true, service: 'shno-mano-te
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/developer', developerRoutes);
+app.use('/api/service-approvals', serviceApprovalsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/friends', friendsRoutes.router);
 app.use('/api/conversations', conversationRoutes);
