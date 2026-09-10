@@ -1,6 +1,8 @@
 const mongoose=require('mongoose');
 const SmartFriendMessageSchema=new mongoose.Schema({
   user:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true,index:true},
+  friend:{type:mongoose.Schema.Types.ObjectId,ref:'SmartFriend',default:null,index:true},
+  roomId:{type:String,trim:true,maxlength:80,default:'',index:true},
   role:{type:String,enum:['user','assistant'],required:true},
   text:{type:String,trim:true,maxlength:12000,default:''},
   media:{
@@ -10,5 +12,6 @@ const SmartFriendMessageSchema=new mongoose.Schema({
     size:{type:Number,default:0}
   }
 },{timestamps:true});
-SmartFriendMessageSchema.index({user:1,createdAt:-1});
+SmartFriendMessageSchema.index({user:1,friend:1,createdAt:-1});
+SmartFriendMessageSchema.index({user:1,roomId:1,createdAt:-1});
 module.exports=mongoose.model('SmartFriendMessage',SmartFriendMessageSchema);
