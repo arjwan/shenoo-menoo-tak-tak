@@ -6,6 +6,7 @@ const SmartFriendSchema=new mongoose.Schema({
   gender:{type:String,enum:['male','female'],required:true},
   age:{type:Number,min:18,max:80,required:true},
   avatar:{type:String,default:'male-1'},
+  avatarUrl:{type:String,trim:true,default:''},
   personality:{type:String,enum:['friendly','calm','funny','serious','listener','educated'],default:'friendly'},
   interests:[{type:String,trim:true,maxlength:40}],
   dialect:{type:String,enum:['iraqi'],default:'iraqi'},
