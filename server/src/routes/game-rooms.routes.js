@@ -18,6 +18,9 @@ function cleanReservations(room) {
   room.reservations = (room.reservations || []).filter((r) => new Date(r.expiresAt).getTime() > now);
 }
 function makeCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+async function expireAbandonedRooms() {
+  await GameRoom.updateMany({ isActive: { $ne: false }, expiresAt: { $ne: null, $lte: new Date() } }, { $set: { isActive: false, 'gameState.status': 'finished', 'gameState.updatedAt': new Date() } });
+}
 function personFrom(profiles, id) {
   const user = profiles.get(String(id));
   return user ? { id: user._id, name: user.displayName || user.fullName, username: user.username, avatarUrl: user.profile?.avatarUrl || '' } : { id };
@@ -65,6 +68,7 @@ async function decorate(room) {
   return room;
 }
 async function loadRoom(id) {
+  await expireAbandonedRooms();
   if (mongoose.isValidObjectId(id)) return GameRoom.findById(id);
   return GameRoom.findOne({ roomCode: String(id), isActive: { $ne: false } });
 }
@@ -101,6 +105,7 @@ function emitRoom(req, room, event = 'game:room-updated') {
 
 router.get('/', async (req, res) => {
   try {
+    await expireAbandonedRooms();
     const query = { isActive: { $ne: false } };
     if (GAME_TYPES.includes(req.query.gameType)) query.gameType = req.query.gameType;
     if (['public', 'friends', 'private'].includes(req.query.visibility)) query.visibility = req.query.visibility;
@@ -161,6 +166,7 @@ router.get('/:id', async (req, res) => {
   const room = await loadRoom(req.params.id);
   if (!room || room.isActive === false) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
   if (!(await canSpectate(req.user, room))) return res.status(403).json({ ok: false, message: 'لا تملك صلاحية مشاهدة هذه الغرفة' });
+  if (String(room.owner) === String(req.user._id) || room.players.some((id) => String(id) === String(req.user._id))) { room.lastOpenedAt = new Date(); room.abandonedAt = null; room.expiresAt = null; await room.save(); }
   const decorated = await decorate(room);
   const base = publicState(decorated);
   const isPlayer = room.players && room.players.some((id) => String(id) === String(req.user._id));
@@ -217,6 +223,7 @@ router.post('/:id/join', async (req, res) => {
   if (playerUsers.some((player) => blocked(req.user, player))) return res.status(403).json({ ok: false, message: 'لا يمكنك الانضمام لهذه الغرفة' });
   room.reservations = room.reservations.filter((r) => String(r.user) !== String(req.user._id));
   room.players.push(req.user._id);
+  room.lastOpenedAt = new Date(); room.abandonedAt = null; room.expiresAt = null;
   room.gameState.status = room.players.length >= room.maxPlayers ? 'ready' : 'waiting';
   if (!room.gameState.turn) room.gameState.turn = room.players[0];
   room.gameState.updatedAt = new Date();
@@ -226,10 +233,11 @@ router.post('/:id/join', async (req, res) => {
 
 router.delete('/:id/join', async (req, res) => {
   const room = await loadRoom(req.params.id);
-  if (!room || String(room.owner) === String(req.user._id)) return res.status(400).json({ ok: false, message: 'مالك الغرفة يغلق الغرفة أو يبدّل اللاعب من الإدارة' });
+  if (!room || !room.players.some((id) => String(id) === String(req.user._id))) return res.status(400).json({ ok: false, message: 'أنت لست داخل الغرفة' });
   room.players = room.players.filter((id) => String(id) !== String(req.user._id));
   room.spectators = room.spectators.filter((id) => String(id) !== String(req.user._id));
   room.gameState.status = room.players.length >= room.maxPlayers ? 'ready' : 'waiting';
+  if (room.players.length === 0) { room.abandonedAt = new Date(); room.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); }
   await room.save(); emitRoom(req, room); res.json({ ok: true });
 });
 
