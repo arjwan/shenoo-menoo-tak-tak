@@ -4,8 +4,8 @@
 
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function pipPattern(value) {
-    var positions={0:[],1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]}, on=positions[Number(value)]||[], html='<span class="domino-pip-grid" aria-hidden="true">';
-    for(var i=1;i<=9;i+=1) html+='<i class="domino-pip'+(on.indexOf(i)>=0?' is-on':'')+'"></i>';
+    var positions={0:[],1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]}, on=positions[Number(value)]||[], html='<span class="domino-pip-grid domino-value-'+Number(value)+'" aria-hidden="true">';
+    on.forEach(function(position){html+='<i class="domino-pip domino-pip-'+position+'"></i>';});
     return html+'</span>';
   }
   function tileFace(tile, extraClass, attrs) {
