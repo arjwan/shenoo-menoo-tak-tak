@@ -1,0 +1,32 @@
+/* Kahwa unified game UI - mobile-first */
+:root{--kahwa-bg:#061514;--kahwa-card:#10201B;--kahwa-surface:#132824;--kahwa-text:#FFFFFF;--kahwa-muted:#91A39D;--kahwa-accent:#19D9A0;--kahwa-domino:#43E0BE;--kahwa-tawla:#E0A83F;--kahwa-chess:#D4A0E8;--kahwa-cards:#F0A0C0;--kahwa-red:#FF4D4F;--kahwa-blue:#4A90E2;--kahwa-orange:#FF9F43;}
+@media (prefers-color-scheme: light) {
+  :root{--kahwa-bg:#f3f4f8;--kahwa-card:#ffffff;--kahwa-surface:#e8e9ed;--kahwa-text:#111;--kahwa-muted:#555;--kahwa-accent:#19D9A0;}
+}
+.kahwa-board{background:linear-gradient(135deg,var(--kahwa-bg),#07100D);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;user-select:none;touch-action:manipulation;}
+.dark .kahwa-board{background:var(--kahwa-bg);}
+.light .kahwa-board{background:#f3f4f8;}
+.kahwa-hand{display:flex;gap:8px;overflow-x:auto;padding:10px 0;}
+.kahwa-tile{width:56px;height:78px;border-radius:10px;background:#fdf6e3;border:2px solid #222;box-shadow:0 2px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-family:system-ui;font-size:20px;font-weight:900;color:#111;flex-shrink:0;cursor:pointer;transition:transform .1s,box-shadow .1s;}
+.kahwa-tile:hover{transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.35);}
+.kahwa-tile.selected{outline:3px solid var(--kahwa-accent);outline-offset:2px;}
+.kahwa-tile.dragging{opacity:.7;transform:scale(1.08);}
+.kahwa-drop-zone{position:absolute;border:2px dashed var(--kahwa-accent);border-radius:12px;background:rgba(25,217,160,.1);pointer-events:none;z-index:10;}
+.kahwa-drop-zone.visible{pointer-events:auto;}
+.kahwa-status{font-size:13px;color:var(--kahwa-muted);padding:8px 0;min-height:24px;}
+.kahwa-btn{border:0;border-radius:10px;padding:10px 16px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;opacity:1;}
+.kahwa-btn:disabled{opacity:.5;cursor:wait;}
+.kahwa-btn.loading::after{content:"⌛";animation:spin 1s linear infinite;display:inline-block;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.kahwa-btn.success{background:linear-gradient(135deg,#19D9A0,#43E0BE);}
+.kahwa-btn.error{background:#FF4D4F;}
+.kahwa-btn.primary{background:linear-gradient(135deg,#19D9A0,#43E0BE);}
+.kahwa-btn.accent{background:#10201B;border:1px solid var(--kahwa-accent);color:#fff;}
+.kahwa-overlay{position:fixed;inset:0;background:rgba(6,21,20,.75);z-index:60;display:grid;place-items:center;padding:20px;}
+.kahwa-overlay-card{background:var(--kahwa-card);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.35);}
+.kahwa-overlay h2{margin:0 0 10px;font-size:22px;color:#fff;}
+.kahwa-overlay p{color:var(--kahwa-muted);margin:0 0 16px;}
+@media (max-width:760px){
+  .kahwa-board{padding:8px;border-radius:12px;}
+  .kahwa-tile{width:48px;height:66px;font-size:16px;}
+}
