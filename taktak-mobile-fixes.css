@@ -1,0 +1,28 @@
+/* Mobile feed corrections: isolated stories and correctly-sized reels */
+.stories-strip{display:flex!important;align-items:stretch!important;gap:12px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity;padding:10px 2px 4px!important;contain:layout paint}
+.stories-list{display:flex!important;align-items:stretch!important;gap:12px!important;flex:0 0 auto!important}
+.story-tile{position:relative!important;flex:0 0 82px!important;width:82px!important;min-width:82px!important;max-width:82px!important;overflow:hidden!important;isolation:isolate!important;scroll-snap-align:start;margin:0!important;transform:none!important}
+.story-tile+.story-tile{margin-inline-start:0!important}
+.story-avatar{position:relative!important;z-index:1!important;flex:0 0 auto!important}
+.story-plus{z-index:3!important}
+
+.reels-list{gap:12px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity;padding:10px 2px 4px!important}
+.reels-list>.reel-card{flex:0 0 132px!important;width:132px!important;height:auto!important;aspect-ratio:9/16!important;scroll-snap-align:start;border-radius:18px!important;overflow:hidden!important}
+.reels-list>.reel-card video{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+
+/* Full reels viewer: show the whole video instead of zooming/cropping it. */
+.reels .reel-card{width:min(94vw,520px)!important;height:auto!important;min-height:0!important;aspect-ratio:9/16!important;margin:14px auto!important;border-radius:24px!important;background:#000!important}
+.reels .reel-card video{width:100%!important;height:100%!important;object-fit:contain!important;background:#000!important}
+.reels .reel-meta{left:82px!important;right:14px!important;bottom:18px!important}
+
+/* Story gallery: keep every story as a separate card with a visible gap. */
+.story-grid{gap:16px!important;align-items:start!important}
+.story-grid>.story-card{position:relative!important;margin:0!important;isolation:isolate!important;overflow:hidden!important}
+
+@media(max-width:760px){
+  .stories-strip{gap:10px!important}
+  .stories-list{gap:10px!important}
+  .story-tile{flex-basis:78px!important;width:78px!important;min-width:78px!important;max-width:78px!important}
+  .reels-list>.reel-card{flex-basis:124px!important;width:124px!important}
+  .reels .reel-card{width:min(96vw,430px)!important;max-height:calc(100svh - 145px)!important;aspect-ratio:9/16!important}
+}
