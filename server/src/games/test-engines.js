@@ -12,9 +12,10 @@ console.log('Testing domino...');
   assert(d.status === 'waiting', 'status');
   assert(d.hands.a && d.hands.a.length === 7, 'deal 7');
   assert(d.stock.length === 14, 'deck 28');
-  const actions = domino.getLegalActions(d, 'a');
+  const starter = d.turn;
+  const actions = domino.getLegalActions(d, starter);
   assert(actions.length > 0, 'legal actions');
-  const r = domino.applyAction(d, 'a', actions[0]);
+  const r = domino.applyAction(d, starter, actions[0]);
   assert(r.ok, 'apply');
 }
 console.log('domino PASS');
