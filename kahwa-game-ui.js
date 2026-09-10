@@ -13,6 +13,8 @@
       var R = this.renderers[type] || this.renderers.domino;
       this.current = R;
       if (R && R.mount) R.mount(container, context);
+      if (R && R.bindActions) R.bindActions(container, context);
+      if (R && R.setLegalActions) R.setLegalActions(context && context.state ? (context.state.legalActions || []) : []);
     },
     render: function (container, state) {
       if (this.current && this.current.render) this.current.render(container, state);
