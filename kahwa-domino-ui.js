@@ -21,7 +21,7 @@
   function opponentSeat(player,index) {
     var count=Math.max(0,Number(player&&player.handCount)||0), backs='', shown=Math.min(count,9);
     for(var i=0;i<shown;i+=1) backs+=tileBack('domino-back-mini');
-    return '<div class="domino-opponent domino-opponent-'+(index+1)+'"><div class="domino-opponent-meta"><span class="domino-avatar">'+playerName(player,index).charAt(0)+'</span><span><b>'+playerName(player,index)+'</b><small>'+count+' أحجار</small></span></div><div class="domino-opponent-hand">'+backs+'</div></div>';
+    return '<div class="domino-opponent domino-opponent-'+(index+1)+'"><div class="domino-opponent-meta"><span class="domino-seat-code">'+esc(player.seat||index+2)+'</span><span class="domino-avatar">'+playerName(player,index).charAt(0)+'</span><span><b>'+playerName(player,index)+'</b><small>'+count+' أحجار</small></span></div><div class="domino-opponent-hand">'+backs+'</div></div>';
   }
   function canPlace(tile) { return legalActions.some(function(a){return a.type==='place'&&a.tile&&String(a.tile.id)===String(tile.id);}); }
   function statusText(m) { if(m.status==='finished')return m.winner?'انتهت الجولة — لدينا فائز':'انتهت الجولة';if(m.status==='waiting')return 'بانتظار بدء الجولة';return m.myTurn?'دورك الآن':'دور الخصم'; }
@@ -46,7 +46,7 @@
       opponents.forEach(function(p,i){html+=opponentSeat(p,i);});
       html+='<div class="domino-chain" id="domino-chain">';
       if(m.chain.length)m.chain.forEach(function(t){var doubleTile=t.a===t.b;html+=tileFace(t,'domino-chain-tile '+(doubleTile?'is-double is-vertical':'is-horizontal'),'tabindex="-1"');});else html+='<span class="domino-chain-empty">أول حجر يبدأ السلسلة</span>';
-      html+='</div><div class="domino-stock" title="المخزن">'+tileBack('domino-stock-tile')+'<b>'+m.stockCount+'</b><small>المخزن</small></div><div class="domino-player-edge"><div class="domino-player-label"><span class="domino-avatar is-me">أنت</span><b>أحجارك</b></div><div class="domino-player-hand" id="domino-hand">';
+      var myPlayer=m.players.find(function(p){return playerId(p)===String(m.privateState.userId||'');});html+='</div><div class="domino-stock" title="المخزن">'+tileBack('domino-stock-tile')+'<b>'+m.stockCount+'</b><small>المخزن</small></div><div class="domino-player-edge"><div class="domino-player-label"><span class="domino-seat-code">'+esc((myPlayer&&myPlayer.seat)||1)+'</span><span class="domino-avatar is-me">أنت</span><b>أحجارك</b></div><div class="domino-player-hand" id="domino-hand">';
       if(m.hand.length)m.hand.forEach(function(t){var playable=m.myTurn&&canPlace(t);html+=tileFace(t,playable?'is-playable':'is-locked','data-tile-id="'+esc(t.id||(t.a+'-'+t.b))+'" data-a="'+t.a+'" data-b="'+t.b+'" draggable="'+(playable?'true':'false')+'"'+(playable?'':' disabled'));});else html+='<span class="domino-hand-empty">لا توجد أحجار في يدك</span>';
       html+='</div></div></div></div><div class="domino-action-bar"><div class="domino-direction" hidden><span>ضع الحجر في:</span><button type="button" data-place-side="left">يمين السلسلة</button><button type="button" data-place-side="right">يسار السلسلة</button><button type="button" data-cancel-place>إلغاء</button></div><button type="button" id="btn-draw" class="kahwa-btn primary">سحب من المخزن</button><button type="button" id="btn-pass" class="kahwa-btn accent">مرور</button><span id="domino-status" class="kahwa-status" role="status" aria-live="polite"></span></div></section>';
       container.innerHTML=html;this.setLegalActions(legalActions);
