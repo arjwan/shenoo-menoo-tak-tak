@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shino-mino-tak-tak.duckdns.org/sitemap.xml
