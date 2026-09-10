@@ -62,3 +62,20 @@
 .domino-action-bar{position:relative;display:flex;min-height:42px;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px}.domino-action-bar [hidden],.domino-direction[hidden]{display:none!important}.domino-direction{position:absolute;z-index:10;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:8px;border:1px solid rgba(25,217,160,.45);border-radius:13px;background:#071a14;box-shadow:0 10px 26px rgba(0,0,0,.42);white-space:nowrap}.domino-direction span{font-size:.72rem;color:#bcd2c9}.domino-direction button{padding:7px 10px;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:#12382d;color:#fff;cursor:pointer}.kahwa-status.is-success{color:#19d9a0}.kahwa-status.is-error{color:#ff6b6d}
 @media(max-width:760px){.is-domino-stage{margin-inline:-9px}.domino-table-frame{padding:7px;border-radius:25px}.domino-table-felt{min-height:min(72vh,620px);border-radius:19px}.domino-round-status{top:8px}.domino-opponent-1{top:38px}.domino-opponent-meta{padding:3px 6px}.domino-opponent-2,.domino-opponent-3{top:44%}.domino-chain{inset:20% 6% 27%;padding:8px}.domino-chain .domino-tile{width:31px;height:57px}.domino-chain .domino-pip-grid{transform:scale(.82)}.domino-player-edge{padding-inline:5px}.domino-player-hand{justify-content:flex-start}.domino-player-hand .domino-tile{width:39px;height:70px}.domino-stock{left:10px;bottom:110px}.domino-direction{max-width:calc(100vw - 32px);white-space:normal;justify-content:center;flex-wrap:wrap}.domino-table-mark{width:115px;height:115px}.domino-table-mark span{font-size:50px}}
 @media(max-width:430px){.domino-opponent-2 .domino-opponent-meta span:last-child,.domino-opponent-3 .domino-opponent-meta span:last-child{display:none}.domino-opponent-2{left:3px}.domino-opponent-3{right:3px}.domino-opponent-hand{padding-inline:12px}.domino-player-hand .domino-tile{width:37px;height:67px}.domino-pip-grid{transform:scale(.9)}}
+
+/* Domino room cleanup after live visual review. */
+.is-domino-room .game-toolbar{min-height:0;margin:0 0 8px;padding:0;border:0;background:transparent;box-shadow:none;justify-content:flex-end}
+.is-domino-room .game-toolbar>div:first-child{display:none}
+.is-domino-room .game-toolbar .game-actions{justify-content:flex-end}
+.is-domino-room .play-stage{margin-top:0}
+.is-domino-room .is-domino-stage>.table-controls{position:relative;z-index:8;margin-top:8px}
+.is-domino-room .domino-table-felt{min-height:clamp(470px,62vh,650px)}
+.is-domino-room .domino-chain{inset:24% 10% 29%;gap:5px;padding:10px;overflow:visible}
+.is-domino-room .domino-chain .domino-tile{width:68px;height:38px;flex-direction:row;padding:2px}
+.is-domino-room .domino-chain .domino-divider{width:2px;height:auto;margin:2px 1px}
+.is-domino-room .domino-chain .domino-half{min-width:29px}
+.is-domino-room .domino-chain .domino-pip-grid{width:25px;height:25px;transform:none}
+.is-domino-room .domino-chain .is-double{width:38px;height:68px;flex-direction:column;transform:none;margin:0 3px}
+.is-domino-room .domino-chain .is-double .domino-divider{width:auto;height:2px;margin:1px 2px}
+.is-domino-room .domino-player-edge{bottom:7px;padding-bottom:10px}
+@media(max-width:760px){.is-domino-room .game-toolbar{padding-inline:5px}.is-domino-room .game-toolbar .game-actions{gap:5px}.is-domino-room .game-toolbar .icon-button{padding:8px;font-size:.72rem}.is-domino-room .domino-table-felt{min-height:min(67vh,560px)}.is-domino-room .domino-chain{inset:23% 5% 31%;gap:3px}.is-domino-room .domino-chain .domino-tile{width:58px;height:34px}.is-domino-room .domino-chain .is-double{width:34px;height:58px}.is-domino-room .domino-player-edge{bottom:5px}.is-domino-room .domino-stock{bottom:104px}}
