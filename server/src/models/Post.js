@@ -12,7 +12,7 @@ const postSchema = new mongoose.Schema({
   text: { type: String, trim: true, maxlength: 5000, default: '' },
   media: { type: [mediaSchema], default: [] },
   type: { type: String, enum: ['post', 'ad'], default: 'post', index: true },
-  visibility: { type: String, enum: ['everyone', 'friends'], default: 'everyone', index: true },
+  visibility: { type: String, enum: ['everyone', 'friends', 'followers', 'friends_followers'], default: 'everyone', index: true },
   adStatus: { type: String, enum: ['not_ad', 'pending', 'approved', 'rejected'], default: 'not_ad', index: true },
   adTitle: { type: String, trim: true, maxlength: 120, default: '' },
   adContact: { type: String, trim: true, maxlength: 160, default: '' },
