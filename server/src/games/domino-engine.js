@@ -20,22 +20,26 @@ function cloneState(s) { return JSON.parse(JSON.stringify(s)); }
 
 function createGame(params = {}) {
   const playersCount = Math.min(4, Math.max(2, Number(params.players) || 2));
-  const deck = shuffle(buildDeck());
-  const dealCount = 7;
-  const hands = {};
   const playerIds = params.playerIds || Array.from({ length: playersCount }, (_, i) => 'p' + i);
-  for (let i = 0; i < playersCount; i++) hands[playerIds[i]] = deck.splice(0, 7);
+  let deck, hands, openingPlayer = params.preferredStarter && playerIds.includes(String(params.preferredStarter)) ? String(params.preferredStarter) : null;
+  let openingDouble = null;
+  do {
+    deck = shuffle(buildDeck()); hands = {};
+    for (let i = 0; i < playersCount; i++) hands[playerIds[i]] = deck.splice(0, 7);
+    if (!openingPlayer) {
+      for (let value = 6; value >= 0 && !openingPlayer; value--) {
+        for (const player of playerIds) if (hands[player].some(t => t.a === value && t.b === value)) { openingPlayer = player; openingDouble = value; break; }
+      }
+    }
+  } while (!openingPlayer);
   const stock = deck;
   const chain = [];
-  const first = hands[playerIds[0]][0];
-  chain.push({ ...first, left: true, right: true });
-  // Starter stays in hand; authoritative server validates chain
-  // If double placed, rotate vertically handled by UI; state just keeps orientation optional
   return {
     engine: 'domino',
     version: 1,
     status: 'waiting',
-    turn: playerIds[0],
+    turn: openingPlayer,
+    openingDouble,
     players: playerIds,
     maxPlayers: playersCount,
     hands: hands,
@@ -43,7 +47,7 @@ function createGame(params = {}) {
     chain: chain.map(t => ({ a: t.a, b: t.b, id: t.id, left: true, right: true })),
     finished: false,
     winner: null,
-    moveCount: 1,
+    moveCount: 0,
     createdAt: new Date()
   };
 }
@@ -52,30 +56,16 @@ function legalActions(state, userId) {
   if (state.status !== 'active' && state.status !== 'waiting') return [];
   if (state.turn !== userId) return [];
   const hand = state.hands[userId] || [];
-  const left = state.chain[0];
-  const right = state.chain[state.chain.length - 1];
   const actions = [];
-  // Check if any playable
-  const leftNum = left ? (left.orientation === 'right' ? left.a : left.b) : null; // simplified: use last placed end
-  // Simpler: left end = chain[0].a if not rotated else chain[0].b; for simplicity use chain ends directly
-  // For authoritative logic, compute based on last placed tile orientation; here simplified: assume chain[0] is left end with value matching
-  // To be correct for double-six but keeping code concise: match against chain ends using first/last tile values
+  if (!state.chain.length) {
+    for (const tile of hand) if (state.openingDouble == null || (tile.a === state.openingDouble && tile.b === state.openingDouble)) actions.push({ type: 'place', tile: { ...tile }, direction: 'right' });
+    return actions;
+  }
   const leftEnd = state.chain[0];
   const rightEnd = state.chain[state.chain.length - 1];
-  const leftVal = leftEnd ? (leftEnd.orientation === 'left' ? leftEnd.b : leftEnd.a) : null; // approximate
-  // Actually for simplicity in this engine, we assume standard chain without rotation tracking beyond tile values
-  const leftMatch = leftEnd ? (leftEnd.a === leftEnd.b ? leftEnd.a : null) : null; // approximate
-  // For robust logic, compute possible moves by comparing tile numbers to ends
-  // Since UI handles rotation, server just validates match
-  const ends = [];
-  if (leftEnd) ends.push(leftEnd.a, leftEnd.b);
-  if (rightEnd && rightEnd !== leftEnd) ends.push(rightEnd.a, rightEnd.b);
-  // Unique end values
-  const endVals = [...new Set(ends)];
   for (const tile of hand) {
-    if (endVals.includes(tile.a) || endVals.includes(tile.b)) {
-      actions.push({ type: 'place', tile: { a: tile.a, b: tile.b, id: tile.id }, direction: 'right' }); // direction simplified; UI decides visual
-    }
+    if (tile.a === leftEnd.a || tile.b === leftEnd.a) actions.push({ type: 'place', tile: { ...tile }, direction: 'left' });
+    if (tile.a === rightEnd.b || tile.b === rightEnd.b) actions.push({ type: 'place', tile: { ...tile }, direction: 'right' });
   }
   if (actions.length === 0 && state.stock && state.stock.length > 0) {
     actions.push({ type: 'draw' });
@@ -107,16 +97,22 @@ function applyAction(state, userId, action) {
   if (action.type === 'place') {
     const tile = state.hands[userId].find(t => t.id === action.tile.id);
     if (!tile) return { error: 'tile not in hand' };
-    // Simplified validation: must match end value
+    if (!state.chain.length) {
+      if (state.openingDouble != null && (tile.a !== state.openingDouble || tile.b !== state.openingDouble)) return { error: 'opening double required' };
+      state.chain.push({ ...tile }); state.openingDouble = null;
+    } else {
     const leftEnd = state.chain[0];
     const rightEnd = state.chain[state.chain.length - 1];
-    const ends = [];
-    if (leftEnd) ends.push(leftEnd.a, leftEnd.b);
-    if (rightEnd && rightEnd !== leftEnd) ends.push(rightEnd.a, rightEnd.b);
-    const endVals = [...new Set(ends)];
-    if (!endVals.includes(tile.a) && !endVals.includes(tile.b)) return { error: 'illegal placement' };
-    // Place on right by default (UI handles left/right rotation visually)
-    state.chain.push({ a: tile.a, b: tile.b, id: tile.id, left: false, right: true });
+    if (action.direction === 'left') {
+      if (tile.b === leftEnd.a) state.chain.unshift({ ...tile });
+      else if (tile.a === leftEnd.a) state.chain.unshift({ a: tile.b, b: tile.a, id: tile.id });
+      else return { error: 'illegal placement' };
+    } else {
+      if (tile.a === rightEnd.b) state.chain.push({ ...tile });
+      else if (tile.b === rightEnd.b) state.chain.push({ a: tile.b, b: tile.a, id: tile.id });
+      else return { error: 'illegal placement' };
+    }
+    }
     state.hands[userId] = state.hands[userId].filter(t => t.id !== tile.id);
     state.moveCount += 1;
     // Handle double rotation: if double placed at end, rotate for visual
