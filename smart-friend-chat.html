@@ -5,52 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#070910">
   <title>صديقي الذكي | شنو منو تك تك</title>
-  <link rel="stylesheet" href="taktak-feed.css?v=20260909-1">
-  <link rel="stylesheet" href="smart-friend-chat.css?v=20260911-1">
+  <link rel="stylesheet" href="taktak-feed.css?v=20260911-1">
+  <link rel="stylesheet" href="smart-friend-chat.css?v=20260911-2">
 </head>
 <body>
-<script src="auth-guard.js?v=20260907-7"></script>
+<script src="auth-guard.js?v=20260911-2"></script>
 <header class="home-top"><nav class="home-nav"><a class="home-brand" href="taktak.html">شنو منو تك تك</a><div class="top-actions"><a href="taal-nsolf.html" title="تعال نسولف">💬</a><a href="taktak.html" title="الرئيسية">⌂</a></div></nav></header>
-<main class="sf-page">
-  <section class="sf-hero-card">
-    <div class="sf-character" data-character data-emotion="idle" aria-label="الصديق الذكي المتحرك">
-      <div class="sf-head"><span class="sf-eye e1"></span><span class="sf-eye e2"></span><span class="sf-mouth"></span></div>
-      <div class="sf-body"></div><div class="sf-shadow"></div>
-    </div>
-    <div class="sf-hero-copy"><span class="sf-kicker">✨ صديقك داخل شنو منو</span><h1 data-friend-name>صديقي الذكي</h1><p data-friend-status>جاهز للسوالف والكتابة والصوت والفيديو.</p></div>
-    <button class="sf-settings-button" type="button" data-open-settings>⚙ إعدادات الصديق</button>
-  </section>
-
-  <section class="sf-chat-card">
-    <div class="sf-chat-head"><div><strong>الحوار</strong><small>كتابي • صوتي • فيديو</small></div><button type="button" data-clear-chat>🗑 مسح المحادثة</button></div>
-    <div class="sf-messages" data-messages><div class="sf-empty">جارٍ تحميل محادثتك…</div></div>
+<main class="sf-studio">
+  <aside class="sf-panel sf-personas"><div class="sf-title-row"><h2>شخصياتي</h2><button type="button" data-new-persona>＋</button></div><div data-persona-list></div><p class="sf-note">يمكن إنشاء حتى 10 شخصيات مستقلة، لكل واحدة اسم وعمر ومزاج وأسلوب حوار.</p></aside>
+  <section class="sf-panel sf-chat">
+    <div class="sf-chat-head"><div class="sf-character" data-character data-emotion="idle"><span class="sf-face">✨</span></div><div><h1 data-friend-name>صديقي الذكي</h1><p data-friend-status>اختر شخصية أو أنشئ واحدة.</p></div></div>
+    <div class="sf-messages" data-messages><div class="sf-empty">اختر شخصية وابدأ الحوار.</div></div>
     <div class="sf-preview" data-preview hidden></div>
-    <form class="sf-composer" data-form>
-      <textarea name="text" rows="2" maxlength="4000" placeholder="احچي ويا صديقك الذكي…"></textarea>
-      <input type="file" data-media accept="audio/*,video/*" hidden>
-      <div class="sf-compose-actions">
-        <button type="button" data-voice-record title="تسجيل صوتي">🎙 صوت</button>
-        <button type="button" data-video-record title="تسجيل فيديو">🎥 فيديو</button>
-        <button type="button" data-attach title="إرفاق صوت أو فيديو">📎 ملف</button>
-        <button type="button" data-speech title="إملاء صوتي">🗣 إملاء</button>
-        <button class="send" type="submit">إرسال</button>
-      </div>
-    </form>
-    <div class="sf-status" data-status>آني هنا وياك داخل شنو منو ✨</div>
+    <form class="sf-composer" data-chat-form><textarea name="text" maxlength="4000" placeholder="احچي ويا صديقك الذكي…"></textarea><input type="file" data-media accept="audio/*,video/*" hidden><div class="sf-tools"><button type="button" data-record-audio>🎙 صوت</button><button type="button" data-attach>🎥 فيديو/ملف</button><button type="button" data-read-last>🔊 قراءة الرد</button><button class="primary" type="submit">إرسال</button></div></form>
   </section>
+  <aside class="sf-panel sf-settings"><h2>إعدادات الشخصية</h2><form data-persona-form><input type="hidden" name="slot"><label>الاسم<input name="name" maxlength="40" required></label><div class="sf-two"><label>الجنس<select name="gender"><option value="male">ذكر</option><option value="female">أنثى</option></select></label><label>العمر<input name="age" type="number" min="18" max="80" value="25"></label></div><label>الشخصية<select name="personality"><option value="friendly">ودود</option><option value="calm">هادئ</option><option value="funny">مرح</option><option value="serious">جدي</option><option value="listener">مستمع</option><option value="educated">مثقف</option></select></label><label>أسلوب الحوار<select name="conversationStyle"><option value="casual">عفوي</option><option value="balanced">متوازن</option><option value="advice">نصيحة ومساعدة</option></select></label><label>الاهتمامات<input name="interests" placeholder="تقنية، شعر، رياضة..."></label><button class="primary full" type="submit">حفظ الشخصية</button></form><hr><h2>حوار جماعي</h2><div data-group-list class="sf-group-list"></div><textarea data-group-text maxlength="4000" placeholder="اكتب موضوع الجولة الجماعية..."></textarea><button class="primary full" type="button" data-group-send>👥 ابدأ الجولة</button><p class="sf-note">اختر شخصيتين أو أكثر. كل شخصية ترد بأسلوبها وترى ردود الشخصيات التي سبقتها في الجولة.</p></aside>
 </main>
-
-<dialog class="sf-settings" data-settings>
-  <form method="dialog" class="sf-settings-shell" data-settings-form>
-    <div class="sf-settings-head"><h2>إعدادات صديقي الذكي</h2><button value="cancel" aria-label="إغلاق">×</button></div>
-    <label>اسم الصديق<input name="name" maxlength="40" value="صديقي"></label>
-    <div class="sf-grid2"><label>الجنس<select name="gender"><option value="male">ذكر</option><option value="female">أنثى</option></select></label><label>العمر<input name="age" type="number" min="18" max="80" value="25"></label></div>
-    <label>الشخصية<select name="personality"><option value="friendly">ودود</option><option value="calm">هادئ</option><option value="funny">مرح</option><option value="serious">جدي</option><option value="listener">مستمع</option><option value="educated">مثقف</option></select></label>
-    <label>أسلوب الحوار<select name="conversationStyle"><option value="casual">عفوي</option><option value="balanced">متوازن</option><option value="advice">نصيحة ومساعدة</option></select></label>
-    <label>الصورة الرمزية<select name="avatar"><option value="male-1">شخصية 1</option><option value="male-2">شخصية 2</option><option value="male-3">شخصية 3</option><option value="male-4">شخصية 4</option></select></label>
-    <label>الاهتمامات<input name="interests" placeholder="مثال: تقنية، رياضة، أفلام"></label>
-    <div class="sf-settings-actions"><button value="cancel">إلغاء</button><button class="primary" value="default" data-save-settings>حفظ</button></div>
-  </form>
-</dialog>
-<script src="smart-friend-chat.js?v=20260911-1"></script>
+<script src="smart-friend-chat.js?v=20260911-2"></script>
 </body></html>
