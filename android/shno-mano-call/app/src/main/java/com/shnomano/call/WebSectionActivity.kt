@@ -29,7 +29,7 @@ class WebSectionActivity : ComponentActivity() {
         }
         setContentView(FrameLayout(this).apply { addView(webView, FrameLayout.LayoutParams(-1, -1)) })
 
-        val target = intent.getStringExtra(EXTRA_URL)?.takeIf { it.startsWith(BASE) } ?: "${BASE}mall.html"
+        val target = intent.getStringExtra(EXTRA_URL)?.takeIf { it.startsWith(BASE) } ?: BASE
         val token = SessionStore(this).token.orEmpty()
         val escapedToken = token.replace("\\", "\\\\").replace("'", "\\'")
         val escapedTarget = target.replace("'", "%27")
