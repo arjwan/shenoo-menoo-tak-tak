@@ -13,6 +13,11 @@
   }
 
   if (/\bprofile\.html$/i.test(location.pathname)) {
+    var profilePostsCss = document.createElement('link');
+    profilePostsCss.rel = 'stylesheet';
+    profilePostsCss.href = 'profile-posts.css?v=20260910-1';
+    document.head.appendChild(profilePostsCss);
+
     var profilePosts = document.createElement('script');
     profilePosts.src = 'profile-posts.js?v=20260910-1';
     profilePosts.defer = true;
