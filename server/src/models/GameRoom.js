@@ -26,6 +26,9 @@ const gameRoomSchema = new mongoose.Schema({
   price: { type: Number, min: 0, default: 0 },
   currency: { type: String, trim: true, maxlength: 8, default: 'IQD' },
   isActive: { type: Boolean, default: true, index: true },
+  lastOpenedAt: { type: Date, default: Date.now, index: true },
+  abandonedAt: { type: Date, default: null },
+  expiresAt: { type: Date, default: null, index: true },
   savedAt: { type: Date, default: null },
   gameState: {
     status: { type: String, enum: ['waiting', 'ready', 'active', 'finished'], default: 'waiting' },
