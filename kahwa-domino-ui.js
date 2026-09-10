@@ -63,7 +63,7 @@
         '</div>';
 
       // Opponent
-      html += '<div style="margin-top:8px;padding:10px;background:#0d1814;border-radius:10px;color:#fff;font-size:13px;"><strong>الخصم</strong>: <span style="color:#91A39D;">' + (state.public ? (state.public.players ? state.public.players.length + ' لاعب' : '') : '') + ' — ' + (state.public && state.public.turn ? 'دور: ' + state.public.turn : '') + '</span> — <span style="color:#19D9A0;">أحجار: ' + (state.public ? (state.public.players ? state.public.players.filter(function(p){return p.id!==currentUserId;}).map(function(p){return (handCount(p)||'?');}).join(',') || '?') : '?') + '</span></div>';
+      html += '<div style="margin-top:8px;padding:10px;background:#0d1814;border-radius:10px;color:#fff;font-size:13px;"><strong>الخصم</strong>: <span style="color:#91A39D;">' + (state.public ? (state.public.players ? state.public.players.length + ' لاعب' : '') : '') + ' — ' + (state.public && state.public.turn ? 'دور: ' + state.public.turn : '') + '</span> — <span style="color:#19D9A0;">أحجار: ' + '—' + '</span></div>';
 
       html += '<div style="margin-top:6px;text-align:center;color:var(--kahwa-muted);font-size:11px;">اسحب الحجر إلى يسار أو يمين السلسلة</div>';
 

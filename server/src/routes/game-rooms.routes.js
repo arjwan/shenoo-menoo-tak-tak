@@ -159,7 +159,20 @@ router.get('/:id', async (req, res) => {
   const room = await loadRoom(req.params.id);
   if (!room || room.isActive === false) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
   if (!(await canSpectate(req.user, room))) return res.status(403).json({ ok: false, message: 'لا تملك صلاحية مشاهدة هذه الغرفة' });
-  res.json({ ok: true, room: publicState(await decorate(room)) });
+  const decorated = await decorate(room);
+  const base = publicState(decorated);
+  const isPlayer = room.players && room.players.some((id) => String(id) === String(req.user._id));
+  let extra = {};
+  if (isPlayer && decorated.gameState && decorated.gameState.engineState) {
+    const reg = require('../games/game-engine-registry');
+    const engine = reg.getEngine(room.gameType || 'domino');
+    const engineState = decorated.gameState.engineState;
+    const privateState = (engine && engine.getPrivateState) ? engine.getPrivateState(engineState, String(req.user._id)) : null;
+    const legalActions = (engine && engine.getLegalActions) ? engine.getLegalActions(engineState, String(req.user._id)) : [];
+    const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(engineState) : (engineState && engineState.public ? engineState.public : engineState);
+    extra.engineState = { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] };
+  }
+  res.json({ ok: true, room: { ...base, ...extra } });
 });
 
 router.post('/:id/reserve', async (req, res) => {
@@ -222,7 +235,24 @@ router.post('/:id/start', async (req, res) => {
   const room = await loadRoom(req.params.id);
   if (!room || String(room.owner) !== String(req.user._id)) return res.status(403).json({ ok: false, message: 'مالك الغرفة فقط يستطيع بدء اللعبة' });
   if (room.players.length < 2) return res.status(409).json({ ok: false, message: 'تحتاج لاعبين على الأقل' });
-  room.gameState.status = 'active'; room.gameState.turn = room.players[0]; room.gameState.updatedAt = new Date(); await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
+  const gameType = room.gameType || 'domino';
+  const supported = ['domino', 'tawla', 'chess', 'cards'];
+  if (supported.includes(gameType)) {
+    const reg = require('../games/game-engine-registry');
+    const engine = reg.getEngine(gameType);
+    if (engine && engine.createGame) {
+      const state = engine.createGame({ playerIds: room.players.map(String) });
+      room.gameState.engineState = state;
+      room.gameState.board = state.board || [];
+      room.gameState.moveCount = state.moveCount || 0;
+      room.gameState.status = 'active';
+      room.gameState.turn = room.players[0];
+      room.gameState.updatedAt = new Date();
+    }
+  } else {
+    room.gameState.status = 'active'; room.gameState.turn = room.players[0]; room.gameState.updatedAt = new Date();
+  }
+  await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
 });
 
 router.post('/:id/replace-player', async (req, res) => {
@@ -265,6 +295,43 @@ router.post('/:id/spectator-invites', async (req, res) => {
   if (!invitee || String(invitee._id) === String(req.user._id) || blocked(req.user, invitee) || !(await friends(req.user._id, invitee._id))) return res.status(400).json({ ok: false, message: 'يمكن دعوة الأصدقاء فقط' });
   const invite = await GameSpectatorInvite.findOneAndUpdate({ room: room._id, inviter: req.user._id, invitee: invitee._id }, { $set: { status: 'pending' } }, { upsert: true, new: true, setDefaultsOnInsert: true });
   res.status(201).json({ ok: true, invite: { id: invite._id, roomId: room._id, invitee: invitee._id, message: `${req.user.displayName || req.user.fullName} دعاك لمشاهدة تحدي ${GAME_NAMES[room.gameType || 'domino']}` } });
+});
+
+
+router.post('/:id/action', async (req, res) => {
+  const room = await loadRoom(req.params.id);
+  if (!room || room.isActive === false) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
+  if (!room.players.some((id) => String(id) === String(req.user._id))) return res.status(403).json({ ok: false, message: 'ليس أنت لاعباً في هذه الغرفة' });
+  const gameType = room.gameType || 'domino';
+  const supported = ['domino', 'tawla', 'chess', 'cards'];
+  if (!supported.includes(gameType)) return res.status(400).json({ ok: false, message: 'نوع اللعبة غير مدعوم' });
+  const reg = require('../games/game-engine-registry');
+  const engine = reg.getEngine(gameType);
+  if (!engine || !engine.applyAction) return res.status(500).json({ ok: false, message: 'محرك اللعبة غير متاح' });
+  const engineState = room.gameState && room.gameState.engineState ? room.gameState.engineState : null;
+  if (!engineState) return res.status(409).json({ ok: false, message: 'لم تبدأ اللعبة بعد' });
+  try {
+    const result = engine.applyAction(engineState, String(req.user._id), req.body || {});
+    if (result && result.error) return res.status(400).json({ ok: false, message: result.error, error: result.error });
+    room.gameState.engineState = result && result.state ? result.state : engineState;
+    if (result && result.state) {
+      room.gameState.board = result.state.board || engineState.board || [];
+      room.gameState.moveCount = (result.state.moveCount || engineState.moveCount || 0);
+      room.gameState.status = result.state.status || engineState.status || 'active';
+      if (result.state.turn) room.gameState.turn = result.state.turn;
+    }
+    room.gameState.updatedAt = new Date();
+    await room.save();
+    const decorated = await decorate(room);
+    const base = publicState(decorated);
+    const privateState = (engine && engine.getPrivateState) ? engine.getPrivateState(room.gameState.engineState, String(req.user._id)) : null;
+    const legalActions = (engine && engine.getLegalActions) ? engine.getLegalActions(room.gameState.engineState, String(req.user._id)) : [];
+    const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(room.gameState.engineState) : (room.gameState.engineState && room.gameState.engineState.public ? room.gameState.engineState.public : room.gameState.engineState);
+    emitRoom(req, room);
+    res.json({ ok: true, room: { ...base, engineState: { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] } } });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message || 'خطأ في تنفيذ الحركة' });
+  }
 });
 
 module.exports = { router, publicState, canSpectate, canVoice, decorate };
