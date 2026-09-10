@@ -18,6 +18,9 @@ function cleanReservations(room) {
   room.reservations = (room.reservations || []).filter((r) => new Date(r.expiresAt).getTime() > now);
 }
 function makeCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+async function expireAbandonedRooms() {
+  await GameRoom.updateMany({ isActive: { $ne: false }, expiresAt: { $ne: null, $lte: new Date() } }, { $set: { isActive: false, 'gameState.status': 'finished', 'gameState.updatedAt': new Date() } });
+}
 function personFrom(profiles, id) {
   const user = profiles.get(String(id));
   return user ? { id: user._id, name: user.displayName || user.fullName, username: user.username, avatarUrl: user.profile?.avatarUrl || '' } : { id };
@@ -34,6 +37,7 @@ function publicState(room) {
     gameIcon: GAME_ICONS[room.gameType || 'domino'],
     visibility: room.visibility || 'public',
     maxPlayers: room.maxPlayers || 2,
+    scoreTarget: Math.min(500, Math.max(25, Number(room.scoreTarget) || 100)),
     liveEnabled: room.liveEnabled !== false,
     owner: person(room.owner),
     players: (room.players || []).map(person),
@@ -64,6 +68,7 @@ async function decorate(room) {
   return room;
 }
 async function loadRoom(id) {
+  await expireAbandonedRooms();
   if (mongoose.isValidObjectId(id)) return GameRoom.findById(id);
   return GameRoom.findOne({ roomCode: String(id), isActive: { $ne: false } });
 }
@@ -100,6 +105,7 @@ function emitRoom(req, room, event = 'game:room-updated') {
 
 router.get('/', async (req, res) => {
   try {
+    await expireAbandonedRooms();
     const query = { isActive: { $ne: false } };
     if (GAME_TYPES.includes(req.query.gameType)) query.gameType = req.query.gameType;
     if (['public', 'friends', 'private'].includes(req.query.visibility)) query.visibility = req.query.visibility;
@@ -128,6 +134,7 @@ router.post('/', async (req, res) => {
       gameType,
       visibility,
       maxPlayers,
+      scoreTarget: Math.min(500, Math.max(25, Number(req.body.scoreTarget) || 100)),
       owner: req.user._id,
       players: [req.user._id],
       spectatorsPolicy: visibility === 'public' ? 'public' : 'friends',
@@ -159,7 +166,21 @@ router.get('/:id', async (req, res) => {
   const room = await loadRoom(req.params.id);
   if (!room || room.isActive === false) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
   if (!(await canSpectate(req.user, room))) return res.status(403).json({ ok: false, message: 'لا تملك صلاحية مشاهدة هذه الغرفة' });
-  res.json({ ok: true, room: publicState(await decorate(room)) });
+  if (String(room.owner) === String(req.user._id) || room.players.some((id) => String(id) === String(req.user._id))) { room.lastOpenedAt = new Date(); room.abandonedAt = null; room.expiresAt = null; await room.save(); }
+  const decorated = await decorate(room);
+  const base = publicState(decorated);
+  const isPlayer = room.players && room.players.some((id) => String(id) === String(req.user._id));
+  let extra = {};
+  if (isPlayer && decorated.gameState && decorated.gameState.engineState) {
+    const reg = require('../games/game-engine-registry');
+    const engine = reg.getEngine(room.gameType || 'domino');
+    const engineState = decorated.gameState.engineState;
+    const privateState = (engine && engine.getPrivateState) ? engine.getPrivateState(engineState, String(req.user._id)) : null;
+    const legalActions = (engine && engine.getLegalActions) ? engine.getLegalActions(engineState, String(req.user._id)) : [];
+    const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(engineState) : (engineState && engineState.public ? engineState.public : engineState);
+    extra.engineState = { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] };
+  }
+  res.json({ ok: true, room: { ...base, ...extra } });
 });
 
 router.post('/:id/reserve', async (req, res) => {
@@ -202,6 +223,7 @@ router.post('/:id/join', async (req, res) => {
   if (playerUsers.some((player) => blocked(req.user, player))) return res.status(403).json({ ok: false, message: 'لا يمكنك الانضمام لهذه الغرفة' });
   room.reservations = room.reservations.filter((r) => String(r.user) !== String(req.user._id));
   room.players.push(req.user._id);
+  room.lastOpenedAt = new Date(); room.abandonedAt = null; room.expiresAt = null;
   room.gameState.status = room.players.length >= room.maxPlayers ? 'ready' : 'waiting';
   if (!room.gameState.turn) room.gameState.turn = room.players[0];
   room.gameState.updatedAt = new Date();
@@ -211,10 +233,11 @@ router.post('/:id/join', async (req, res) => {
 
 router.delete('/:id/join', async (req, res) => {
   const room = await loadRoom(req.params.id);
-  if (!room || String(room.owner) === String(req.user._id)) return res.status(400).json({ ok: false, message: 'مالك الغرفة يغلق الغرفة أو يبدّل اللاعب من الإدارة' });
+  if (!room || !room.players.some((id) => String(id) === String(req.user._id))) return res.status(400).json({ ok: false, message: 'أنت لست داخل الغرفة' });
   room.players = room.players.filter((id) => String(id) !== String(req.user._id));
   room.spectators = room.spectators.filter((id) => String(id) !== String(req.user._id));
   room.gameState.status = room.players.length >= room.maxPlayers ? 'ready' : 'waiting';
+  if (room.players.length === 0) { room.abandonedAt = new Date(); room.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); }
   await room.save(); emitRoom(req, room); res.json({ ok: true });
 });
 
@@ -222,7 +245,27 @@ router.post('/:id/start', async (req, res) => {
   const room = await loadRoom(req.params.id);
   if (!room || String(room.owner) !== String(req.user._id)) return res.status(403).json({ ok: false, message: 'مالك الغرفة فقط يستطيع بدء اللعبة' });
   if (room.players.length < 2) return res.status(409).json({ ok: false, message: 'تحتاج لاعبين على الأقل' });
-  room.gameState.status = 'active'; room.gameState.turn = room.players[0]; room.gameState.updatedAt = new Date(); await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
+  const gameType = room.gameType || 'domino';
+  const supported = ['domino', 'tawla', 'chess', 'cards'];
+  if (supported.includes(gameType)) {
+    const reg = require('../games/game-engine-registry');
+    const engine = reg.getEngine(gameType);
+    if (engine && engine.createGame) {
+      const previousWinner = room.gameState?.engineState?.winner || null;
+      const state = engine.createGame({ playerIds: room.players.map(String), preferredStarter: gameType === 'domino' ? previousWinner : null });
+      room.gameState.engineState = state;
+      room.gameState.engineState.status = 'active';
+      room.gameState.board = state.board || [];
+      room.gameState.moveCount = state.moveCount || 0;
+      room.gameState.status = 'active';
+      room.gameState.turn = state.turn;
+      room.gameState.updatedAt = new Date();
+    }
+  } else {
+    room.gameState.status = 'active'; room.gameState.turn = room.players[0]; room.gameState.updatedAt = new Date();
+  }
+  room.markModified('gameState.engineState');
+  await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
 });
 
 router.post('/:id/replace-player', async (req, res) => {
@@ -245,6 +288,11 @@ router.patch('/:id/settings', async (req, res) => {
   if (['open', 'players_friends', 'players_only'].includes(req.body.voicePolicy)) room.voicePolicy = req.body.voicePolicy;
   if (req.body.voiceEnabled !== undefined) room.voiceEnabled = Boolean(req.body.voiceEnabled);
   if (req.body.liveEnabled !== undefined) room.liveEnabled = Boolean(req.body.liveEnabled);
+  if (req.body.scoreTarget !== undefined) {
+    const target = Number(req.body.scoreTarget);
+    if (!Number.isInteger(target) || target < 25 || target > 500) return res.status(400).json({ ok: false, message: 'نقاط الفوز يجب أن تكون بين 25 و500' });
+    room.scoreTarget = target;
+  }
   await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
 });
 
@@ -265,6 +313,44 @@ router.post('/:id/spectator-invites', async (req, res) => {
   if (!invitee || String(invitee._id) === String(req.user._id) || blocked(req.user, invitee) || !(await friends(req.user._id, invitee._id))) return res.status(400).json({ ok: false, message: 'يمكن دعوة الأصدقاء فقط' });
   const invite = await GameSpectatorInvite.findOneAndUpdate({ room: room._id, inviter: req.user._id, invitee: invitee._id }, { $set: { status: 'pending' } }, { upsert: true, new: true, setDefaultsOnInsert: true });
   res.status(201).json({ ok: true, invite: { id: invite._id, roomId: room._id, invitee: invitee._id, message: `${req.user.displayName || req.user.fullName} دعاك لمشاهدة تحدي ${GAME_NAMES[room.gameType || 'domino']}` } });
+});
+
+
+router.post('/:id/action', async (req, res) => {
+  const room = await loadRoom(req.params.id);
+  if (!room || room.isActive === false) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
+  if (!room.players.some((id) => String(id) === String(req.user._id))) return res.status(403).json({ ok: false, message: 'ليس أنت لاعباً في هذه الغرفة' });
+  const gameType = room.gameType || 'domino';
+  const supported = ['domino', 'tawla', 'chess', 'cards'];
+  if (!supported.includes(gameType)) return res.status(400).json({ ok: false, message: 'نوع اللعبة غير مدعوم' });
+  const reg = require('../games/game-engine-registry');
+  const engine = reg.getEngine(gameType);
+  if (!engine || !engine.applyAction) return res.status(500).json({ ok: false, message: 'محرك اللعبة غير متاح' });
+  const engineState = room.gameState && room.gameState.engineState ? room.gameState.engineState : null;
+  if (!engineState) return res.status(409).json({ ok: false, message: 'لم تبدأ اللعبة بعد' });
+  try {
+    const result = engine.applyAction(engineState, String(req.user._id), req.body || {});
+    if (result && result.error) return res.status(400).json({ ok: false, message: result.error, error: result.error });
+    room.gameState.engineState = result && result.state ? result.state : engineState;
+    if (result && result.state) {
+      room.gameState.board = result.state.board || engineState.board || [];
+      room.gameState.moveCount = (result.state.moveCount || engineState.moveCount || 0);
+      room.gameState.status = result.state.status || engineState.status || 'active';
+      if (result.state.turn) room.gameState.turn = result.state.turn;
+    }
+    room.gameState.updatedAt = new Date();
+    room.markModified('gameState.engineState');
+    await room.save();
+    const decorated = await decorate(room);
+    const base = publicState(decorated);
+    const privateState = (engine && engine.getPrivateState) ? engine.getPrivateState(room.gameState.engineState, String(req.user._id)) : null;
+    const legalActions = (engine && engine.getLegalActions) ? engine.getLegalActions(room.gameState.engineState, String(req.user._id)) : [];
+    const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(room.gameState.engineState) : (room.gameState.engineState && room.gameState.engineState.public ? room.gameState.engineState.public : room.gameState.engineState);
+    emitRoom(req, room);
+    res.json({ ok: true, room: { ...base, engineState: { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] } } });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message || 'خطأ في تنفيذ الحركة' });
+  }
 });
 
 module.exports = { router, publicState, canSpectate, canVoice, decorate };
