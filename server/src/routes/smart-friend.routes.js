@@ -6,58 +6,28 @@ const {requireAuth}=require('../middleware/auth');
 const SmartFriend=require('../models/SmartFriend');
 const Message=require('../models/SmartFriendMessage');
 const router=express.Router();
-
-const uploadDir=path.resolve(__dirname,'../../../uploads/smart-friend');
-fs.mkdirSync(uploadDir,{recursive:true});
-const allowed=new Map([
-  ['audio/webm','.webm'],['audio/ogg','.ogg'],['audio/mpeg','.mp3'],['audio/mp4','.m4a'],['audio/wav','.wav'],
-  ['video/webm','.webm'],['video/mp4','.mp4'],['video/quicktime','.mov']
-]);
-const upload=multer({
-  storage:multer.diskStorage({
-    destination:(_r,_f,cb)=>cb(null,uploadDir),
-    filename:(_r,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${allowed.get(f.mimetype)||''}`)
-  }),
-  limits:{fileSize:80*1024*1024,files:1},
-  fileFilter:(_r,f,cb)=>allowed.has(f.mimetype)?cb(null,true):cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))
-});
-
+const uploadDir=path.resolve(__dirname,'../../../uploads/smart-friend');fs.mkdirSync(uploadDir,{recursive:true});
+const allowed=new Map([['audio/webm','.webm'],['audio/ogg','.ogg'],['audio/mpeg','.mp3'],['audio/mp4','.m4a'],['audio/wav','.wav'],['video/webm','.webm'],['video/mp4','.mp4'],['video/quicktime','.mov']]);
+const upload=multer({storage:multer.diskStorage({destination:(_r,_f,cb)=>cb(null,uploadDir),filename:(_r,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${allowed.get(f.mimetype)||''}`)}),limits:{fileSize:80*1024*1024,files:1},fileFilter:(_r,f,cb)=>allowed.has(f.mimetype)?cb(null,true):cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))});
 router.use(requireAuth);
 const avatars={male:['male-1','male-2','male-3','male-4'],female:['female-1','female-2','female-3','female-4']};
+const personalities=['friendly','calm','funny','serious','listener','educated'];
+const styles=['casual','balanced','advice'];
 const emotions=['idle','listening','thinking','happy','funny','serious','sad','supportive','surprised','talking'];
-function view(p){return p?{id:p._id,name:p.name,gender:p.gender,age:p.age,avatar:p.avatar,personality:p.personality,interests:p.interests||[],dialect:p.dialect,conversationStyle:p.conversationStyle}:null;}
-function inferEmotion(text){const t=String(text||'').toLowerCase();if(/هههه|😂|🤣|نكت|ضحك|مضحك/.test(t))return'funny';if(/حزين|زعلان|ضايج|تعبان|مكتئب|ابچي|بكاء|فقدت|وفاة|مات/.test(t))return'sad';if(/ساعدني|نصيحة|انصحني|محتاجك|احتاجك|مشكلة/.test(t))return'supportive';if(/واو|معقولة|صدگ|صدق|غريبة|ما توقعت/.test(t))return'surprised';if(/مبروك|نجحت|فرحان|حلو|ممتاز|تمام/.test(t))return'happy';if(/قانون|طبيب|دكتور|مرض|علاج|دواء|فلوس|دين|محكمة|قضية|خطر/.test(t))return'serious';return'talking';}
-function messageView(m){return {id:m._id,role:m.role,text:m.text||'',media:m.media&&m.media.url?m.media:null,createdAt:m.createdAt};}
-function mediaFromFile(f){if(!f)return null;return {url:`/uploads/smart-friend/${f.filename}`,type:f.mimetype.startsWith('video/')?'video':'audio',mimeType:f.mimetype,size:f.size};}
-
-router.get('/options',(req,res)=>res.json({ok:true,ages:{min:18,max:80},avatars,personalities:['friendly','calm','funny','serious','listener','educated'],styles:['casual','balanced','advice'],dialect:'iraqi',emotions}));
-router.get('/me',async(req,res)=>{const friend=await SmartFriend.findOne({user:req.user._id});res.json({ok:true,friend:view(friend)});});
-router.put('/me',async(req,res)=>{const gender=req.body.gender==='female'?'female':'male',age=Math.max(18,Math.min(80,Number(req.body.age)||18)),allowedList=avatars[gender],avatar=allowedList.includes(req.body.avatar)?req.body.avatar:allowedList[0],personalities=['friendly','calm','funny','serious','listener','educated'],styles=['casual','balanced','advice'];const data={name:String(req.body.name||'صديقي').trim().slice(0,40),gender,age,avatar,personality:personalities.includes(req.body.personality)?req.body.personality:'friendly',interests:Array.isArray(req.body.interests)?req.body.interests.slice(0,8).map(x=>String(x).trim().slice(0,40)).filter(Boolean):[],dialect:'iraqi',conversationStyle:styles.includes(req.body.conversationStyle)?req.body.conversationStyle:'balanced'};const friend=await SmartFriend.findOneAndUpdate({user:req.user._id},{$set:data},{new:true,upsert:true,setDefaultsOnInsert:true});res.json({ok:true,friend:view(friend)});});
-router.get('/messages',async(req,res)=>{const items=await Message.find({user:req.user._id}).sort({createdAt:-1}).limit(100).lean();res.json({ok:true,messages:items.reverse().map(messageView)});});
-router.delete('/messages',async(req,res)=>{await Message.deleteMany({user:req.user._id});res.json({ok:true});});
-
-router.post('/messages',upload.single('media'),async(req,res)=>{
-  const text=String(req.body.text||'').trim();
-  const media=mediaFromFile(req.file);
-  if((!text&&!media)||text.length>4000)return res.status(400).json({ok:false,message:'اكتب رسالة أو أرسل تسجيلًا صوتيًا/فيديو'});
-  const friend=await SmartFriend.findOne({user:req.user._id});
-  if(!friend)return res.status(409).json({ok:false,message:'اختر صديقك الذكي أولاً'});
-  const userMessage=await Message.create({user:req.user._id,role:'user',text,media:media||undefined});
-  const provider=process.env.SMART_FRIEND_API_URL;
-  if(!provider)return res.status(503).json({ok:false,saved:messageView(userMessage),message:'تم حفظ رسالتك، لكن خدمة الذكاء الاصطناعي لم تُربط بالخادم بعد. لن نعرض رداً وهمياً.'});
-  try{
-    const recent=await Message.find({user:req.user._id}).sort({createdAt:-1}).limit(20).lean();
-    const response=await fetch(provider,{method:'POST',headers:{'Content-Type':'application/json',...(process.env.SMART_FRIEND_API_KEY?{Authorization:'Bearer '+process.env.SMART_FRIEND_API_KEY}:{})},body:JSON.stringify({friend:view(friend),language:'ar-IQ',instructions:'تكلم باللهجة العراقية الطبيعية. أنت مساعد افتراضي واضح الهوية ولست إنساناً. قدم محادثة ومساعدة عامة، وفي الطب والقانون والمال وضّح حدودك ولا تدّعِ أنك مختص مرخّص. إذا وجدت رسالة صوتية أو فيديو ولم يكن المزود يدعم فهم الوسائط، صرّح بذلك ولا تخمّن محتواها. أعد أيضاً emotion واحدة من: '+emotions.join(', ')+' بما يناسب نبرة الرد.',messages:recent.reverse().map(m=>({role:m.role,content:m.text||'',media:m.media&&m.media.url?{type:m.media.type,url:m.media.url,mimeType:m.media.mimeType}:undefined}))})});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw Error(data.message||'تعذر الحصول على الرد');
-    const answer=String(data.reply||data.message||data.output||'').trim();
-    if(!answer)throw Error('لم يصل رد صالح من خدمة الذكاء الاصطناعي');
-    const emotion=emotions.includes(data.emotion)?data.emotion:inferEmotion(answer);
-    const saved=await Message.create({user:req.user._id,role:'assistant',text:answer.slice(0,12000)});
-    res.status(201).json({ok:true,emotion,userMessage:messageView(userMessage),message:messageView(saved)});
-  }catch(e){
-    res.status(502).json({ok:false,saved:messageView(userMessage),message:'حُفظت رسالتك لكن تعذر الاتصال بخدمة الذكاء الاصطناعي: '+e.message});
-  }
-});
-
+function view(p){return p?{id:p._id,slot:p.slot||1,name:p.name,gender:p.gender,age:p.age,avatar:p.avatar,personality:p.personality,interests:p.interests||[],dialect:p.dialect,conversationStyle:p.conversationStyle}:null;}
+function messageView(m){return {id:m._id,friend:m.friend||null,roomId:m.roomId||'',role:m.role,text:m.text||'',media:m.media&&m.media.url?m.media:null,createdAt:m.createdAt};}
+function mediaFromFile(f){return f?{url:`/uploads/smart-friend/${f.filename}`,type:f.mimetype.startsWith('video/')?'video':'audio',mimeType:f.mimetype,size:f.size}:null;}
+function normalize(body,slot){const gender=body.gender==='female'?'female':'male',age=Math.max(18,Math.min(80,Number(body.age)||18)),list=avatars[gender];return {slot,name:String(body.name||`صديقي ${slot}`).trim().slice(0,40),gender,age,avatar:list.includes(body.avatar)?body.avatar:list[0],personality:personalities.includes(body.personality)?body.personality:'friendly',interests:Array.isArray(body.interests)?body.interests.slice(0,8).map(x=>String(x).trim().slice(0,40)).filter(Boolean):[],dialect:'iraqi',conversationStyle:styles.includes(body.conversationStyle)?body.conversationStyle:'balanced'};}
+function inferEmotion(text){const t=String(text||'').toLowerCase();if(/هههه|😂|🤣|نكت|ضحك/.test(t))return'funny';if(/حزين|زعلان|ضايج|تعبان|فقدت/.test(t))return'sad';if(/ساعدني|نصيحة|محتاجك|احتاجك|مشكلة/.test(t))return'supportive';if(/مبروك|نجحت|فرحان|ممتاز|تمام/.test(t))return'happy';if(/قانون|طبيب|مرض|دواء|محكمة|خطر/.test(t))return'serious';return'talking';}
+async function askProvider(friend,messages){const provider=process.env.SMART_FRIEND_API_URL;if(!provider)throw Object.assign(new Error('خدمة الذكاء الاصطناعي غير مربوطة بالخادم بعد'),{status:503});const r=await fetch(provider,{method:'POST',headers:{'Content-Type':'application/json',...(process.env.SMART_FRIEND_API_KEY?{Authorization:'Bearer '+process.env.SMART_FRIEND_API_KEY}:{})},body:JSON.stringify({friend:view(friend),language:'ar-IQ',instructions:'تكلم باللهجة العراقية الطبيعية وابقَ واضحاً أنك شخصية ذكاء اصطناعي. التزم بالشخصية والأسلوب المختارين. في المحادثة الجماعية خاطب المستخدم والشخصيات الأخرى بصورة طبيعية ولا تنتحل إنساناً حقيقياً. أعد emotion مناسبة.',messages})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||'تعذر الحصول على الرد');const answer=String(d.reply||d.message||d.output||'').trim();if(!answer)throw new Error('لم يصل رد صالح');return {answer:answer.slice(0,12000),emotion:emotions.includes(d.emotion)?d.emotion:inferEmotion(answer)};}
+router.get('/options',(_req,res)=>res.json({ok:true,ages:{min:18,max:80},avatars,personalities,styles,dialect:'iraqi',emotions,maxFriends:10}));
+router.get('/friends',async(req,res)=>{const friends=await SmartFriend.find({user:req.user._id}).sort({slot:1});res.json({ok:true,friends:friends.map(view),max:10});});
+router.put('/friends/:slot',async(req,res)=>{const slot=Math.max(1,Math.min(10,Number(req.params.slot)||1)),data=normalize(req.body,slot);const friend=await SmartFriend.findOneAndUpdate({user:req.user._id,slot},{$set:data},{new:true,upsert:true,setDefaultsOnInsert:true});res.json({ok:true,friend:view(friend)});});
+router.delete('/friends/:slot',async(req,res)=>{const slot=Number(req.params.slot);const f=await SmartFriend.findOne({user:req.user._id,slot});if(f){await Message.deleteMany({user:req.user._id,friend:f._id});await f.deleteOne();}res.json({ok:true});});
+router.get('/me',async(req,res)=>{const friend=await SmartFriend.findOne({user:req.user._id,slot:1});res.json({ok:true,friend:view(friend)});});
+router.put('/me',async(req,res)=>{const data=normalize(req.body,1),friend=await SmartFriend.findOneAndUpdate({user:req.user._id,slot:1},{$set:data},{new:true,upsert:true,setDefaultsOnInsert:true});res.json({ok:true,friend:view(friend)});});
+router.get('/messages',async(req,res)=>{const q={user:req.user._id};if(req.query.friend)q.friend=req.query.friend;if(req.query.roomId)q.roomId=String(req.query.roomId);const items=await Message.find(q).sort({createdAt:-1}).limit(120).lean();res.json({ok:true,messages:items.reverse().map(messageView)});});
+router.delete('/messages',async(req,res)=>{const q={user:req.user._id};if(req.query.friend)q.friend=req.query.friend;if(req.query.roomId)q.roomId=String(req.query.roomId);await Message.deleteMany(q);res.json({ok:true});});
+router.post('/messages',upload.single('media'),async(req,res)=>{const text=String(req.body.text||'').trim(),media=mediaFromFile(req.file);if((!text&&!media)||text.length>4000)return res.status(400).json({ok:false,message:'اكتب رسالة أو أرسل تسجيلًا صوتيًا/فيديو'});let friend=null;if(req.body.friendId)friend=await SmartFriend.findOne({_id:req.body.friendId,user:req.user._id});if(!friend)friend=await SmartFriend.findOne({user:req.user._id,slot:1});if(!friend)return res.status(409).json({ok:false,message:'أنشئ شخصية صديق ذكي أولاً'});const userMessage=await Message.create({user:req.user._id,friend:friend._id,role:'user',text,media:media||undefined});try{const recent=await Message.find({user:req.user._id,friend:friend._id}).sort({createdAt:-1}).limit(20).lean();const out=await askProvider(friend,recent.reverse().map(m=>({role:m.role,content:m.text||'',media:m.media&&m.media.url?{type:m.media.type,url:m.media.url,mimeType:m.media.mimeType}:undefined})));const saved=await Message.create({user:req.user._id,friend:friend._id,role:'assistant',text:out.answer});res.status(201).json({ok:true,emotion:out.emotion,userMessage:messageView(userMessage),message:messageView(saved)});}catch(e){res.status(e.status||502).json({ok:false,saved:messageView(userMessage),message:'حُفظت رسالتك لكن تعذر الرد: '+e.message});}});
+router.post('/group',async(req,res)=>{const text=String(req.body.text||'').trim();if(!text||text.length>4000)return res.status(400).json({ok:false,message:'اكتب رسالة للمجموعة'});const ids=Array.isArray(req.body.friendIds)?req.body.friendIds.slice(0,10):[];const friends=await SmartFriend.find({user:req.user._id,_id:{$in:ids}}).sort({slot:1});if(friends.length<2)return res.status(400).json({ok:false,message:'اختر شخصيتين على الأقل للحوار الجماعي'});const roomId=String(req.body.roomId||`group-${Date.now()}`).slice(0,80);await Message.create({user:req.user._id,roomId,role:'user',text});const transcript=[{role:'user',content:text}],replies=[];try{for(const friend of friends){const out=await askProvider(friend,transcript);const saved=await Message.create({user:req.user._id,friend:friend._id,roomId,role:'assistant',text:out.answer});replies.push({...messageView(saved),friend:view(friend),emotion:out.emotion});transcript.push({role:'assistant',name:friend.name,content:out.answer});}res.status(201).json({ok:true,roomId,replies});}catch(e){res.status(e.status||502).json({ok:false,roomId,replies,message:'توقفت الجولة لأن خدمة الذكاء الاصطناعي لم تكمل الرد: '+e.message});}});
 module.exports=router;
