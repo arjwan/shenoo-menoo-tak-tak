@@ -30,20 +30,18 @@ function boardFromChess(chess) {
   const parts = fen.split(' ');
   const rows = parts[0].split('/');
   for (let r = 0; r < 8; r++) {
-    const row = [];
     const rowStr = rows[r] || '';
     let file = 0;
     for (const ch of rowStr) {
-      if (/'\d+/.test(ch)) {
+      if (/\d+/.test(ch)) {
         const count = parseInt(ch, 10);
-        for (let i = 0; i < count; i++) row.push(null);
+        for (let i = 0; i < count; i++) board.push(null);
         file += count;
       } else {
-        row.push({ type: ch.toLowerCase(), color: ch === ch.toUpperCase() ? 'white' : 'black', moved: true });
+        board.push({ type: ch.toLowerCase(), color: ch === ch.toUpperCase() ? 'white' : 'black', moved: true, file: file, rank: 7 - r });
         file += 1;
       }
     }
-    board.push(row);
   }
   return board;
 }

@@ -7,7 +7,7 @@
     render: function(c,state){
       var b=state.public && state.public.board ? state.public.board : [];
       var html='';
-      for(var r=0;r<8;r++){html+='<div style="display:flex;">'; for(var f=0;f<8;f++){var cell=b[r]&&b[r][f]; var piece=cell?'<span style="font-size:22px;color:#fff;">'+(cell.t==='k'?'♔':cell.t==='q'?'♕':cell.t==='r'?'♖':cell.t==='b'?'♗':cell.t==='n'?'♘':cell.t==='p'?'♙':'?')+'</span>':'<span style="font-size:22px;color:#333;">·</span>'; html+='<div style="flex:1;aspect-ratio:1;background:#1a1a2e;border:1px solid #333;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="window.chessMoveEvent && window.chessMoveEvent('+f+','+r+')">'+piece+'</div>'; } html+='</div>';}
+      for(var r=0;r<8;r++){html+='<div style="display:flex;">'; for(var f=0;f<8;f++){var idx=r*8+f; var cell=b && b[idx] ? b[idx] : null; var piece=cell?(cell.type==='k'?'♔':cell.type==='q'?'♕':cell.type==='r'?'♖':cell.type==='b'?'♗':cell.type==='n'?'♘':cell.type==='p'?'♙':'?'):'·'; html+='<div style="flex:1;aspect-ratio:1;background:#1a1a2e;border:1px solid #333;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="window.chessMoveEvent && window.chessMoveEvent('+f+','+r+')">'+(cell?'<span style="font-size:22px;color:#'+(cell.color==='white'?'fff':'333')+';">'+piece+'</span>':'<span style="font-size:22px;color:#333;">·</span>')+'</div>'; } html+='</div>';}
       document.getElementById('chess-board').innerHTML=html;
       document.getElementById('chess-status').textContent=(state.public && state.public.turn ? 'دور: '+state.public.turn : 'جارٍ التحميل');
     },

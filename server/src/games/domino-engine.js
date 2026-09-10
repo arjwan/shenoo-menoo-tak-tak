@@ -29,7 +29,7 @@ function createGame(params = {}) {
   const chain = [];
   const first = hands[playerIds[0]][0];
   chain.push({ ...first, left: true, right: true });
-  hands[playerIds[0]] = hands[playerIds[0]].filter(t => !(t.a === first.a && t.b === first.b));
+  // Starter stays in hand; authoritative server validates chain
   // If double placed, rotate vertically handled by UI; state just keeps orientation optional
   return {
     engine: 'domino',
