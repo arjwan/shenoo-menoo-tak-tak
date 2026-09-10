@@ -34,6 +34,7 @@ function publicState(room) {
     gameIcon: GAME_ICONS[room.gameType || 'domino'],
     visibility: room.visibility || 'public',
     maxPlayers: room.maxPlayers || 2,
+    scoreTarget: Math.min(500, Math.max(25, Number(room.scoreTarget) || 100)),
     liveEnabled: room.liveEnabled !== false,
     owner: person(room.owner),
     players: (room.players || []).map(person),
@@ -128,6 +129,7 @@ router.post('/', async (req, res) => {
       gameType,
       visibility,
       maxPlayers,
+      scoreTarget: Math.min(500, Math.max(25, Number(req.body.scoreTarget) || 100)),
       owner: req.user._id,
       players: [req.user._id],
       spectatorsPolicy: visibility === 'public' ? 'public' : 'friends',
@@ -241,14 +243,14 @@ router.post('/:id/start', async (req, res) => {
     const reg = require('../games/game-engine-registry');
     const engine = reg.getEngine(gameType);
     if (engine && engine.createGame) {
-      const state = engine.createGame({ playerIds: room.players.map(String) });
+      const previousWinner = room.gameState?.engineState?.winner || null;
+      const state = engine.createGame({ playerIds: room.players.map(String), preferredStarter: gameType === 'domino' ? previousWinner : null });
       room.gameState.engineState = state;
       room.gameState.engineState.status = 'active';
-      room.gameState.engineState.turn = String(room.players[0]);
       room.gameState.board = state.board || [];
       room.gameState.moveCount = state.moveCount || 0;
       room.gameState.status = 'active';
-      room.gameState.turn = room.players[0];
+      room.gameState.turn = state.turn;
       room.gameState.updatedAt = new Date();
     }
   } else {
@@ -278,6 +280,11 @@ router.patch('/:id/settings', async (req, res) => {
   if (['open', 'players_friends', 'players_only'].includes(req.body.voicePolicy)) room.voicePolicy = req.body.voicePolicy;
   if (req.body.voiceEnabled !== undefined) room.voiceEnabled = Boolean(req.body.voiceEnabled);
   if (req.body.liveEnabled !== undefined) room.liveEnabled = Boolean(req.body.liveEnabled);
+  if (req.body.scoreTarget !== undefined) {
+    const target = Number(req.body.scoreTarget);
+    if (!Number.isInteger(target) || target < 25 || target > 500) return res.status(400).json({ ok: false, message: 'نقاط الفوز يجب أن تكون بين 25 و500' });
+    room.scoreTarget = target;
+  }
   await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
 });
 
