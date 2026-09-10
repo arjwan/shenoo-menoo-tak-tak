@@ -1,4 +1,6 @@
 /* Mobile feed corrections: isolated stories and correctly-sized reels */
+.action-ads{background:linear-gradient(135deg,#ff9f43,#ff5d69)}
+.tool-ad{color:#ffb15f}
 .stories-strip{display:flex!important;align-items:stretch!important;gap:12px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity;padding:10px 2px 4px!important;contain:layout paint}
 .stories-list{display:flex!important;align-items:stretch!important;gap:12px!important;flex:0 0 auto!important}
 .story-tile{position:relative!important;flex:0 0 82px!important;width:82px!important;min-width:82px!important;max-width:82px!important;overflow:hidden!important;isolation:isolate!important;scroll-snap-align:start;margin:0!important;transform:none!important}
