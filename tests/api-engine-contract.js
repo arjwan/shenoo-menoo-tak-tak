@@ -25,15 +25,17 @@ assert(pub.players && pub.players.length === 2, '2 players public');
 assert(pub.players.every(p => typeof p.handCount === 'number'), 'only handCount exposed');
 assert(!pub.hands, 'hands hidden from public');
 
-console.log('5) legal actions for current turn');
-const legals = domino.getLegalActions(s, 'pA');
+console.log('5) highest dealt double owns opening turn');
+const starter = s.turn;
+const legals = domino.getLegalActions(s, starter);
 assert(Array.isArray(legals) && legals.length > 0, 'legal actions non-empty');
+assert(legals[0].tile.a === legals[0].tile.b, 'opening action is a double');
 
 console.log('6) apply action updates turn');
 const firstAction = legals[0];
-const res = domino.applyAction(s, 'pA', firstAction);
+const res = domino.applyAction(s, starter, firstAction);
 assert(res && !res.error, 'apply ok');
-assert(s.turn === 'pB', 'turn switched to pB');
+assert(s.turn !== starter, 'turn switched after opening');
 
 console.log('7) start route sets active');
 s.status = 'active';
