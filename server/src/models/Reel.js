@@ -4,6 +4,7 @@ const reelSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   media: { type: [mediaSchema], default: [] },
   text: { type: String, trim: true, default: '' },
+  visibility: { type: String, enum: ['everyone','friends','followers','friends_followers'], default: 'everyone', index: true },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
