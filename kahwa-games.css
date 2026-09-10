@@ -120,3 +120,11 @@ body.domino-room-active .game-room{width:auto;max-width:none;margin:8px 12px 24p
 .is-domino-room .game-toolbar .domino-control-menu.is-open .domino-menu-toggle{top:6px;left:6px}
 .is-domino-room .table-controls{display:none!important}
 @media(max-width:760px){.is-domino-room .game-toolbar .domino-control-menu.is-open{width:calc(100vw - 22px);max-height:36vh;overflow:auto;padding-top:42px}.is-domino-room .game-toolbar .domino-control-menu.is-open .icon-button{flex:1 1 42%;justify-content:center}}
+
+.domino-chain.is-drag-target{outline:3px dashed rgba(25,217,160,.9);outline-offset:-8px;border-radius:22px;background:rgba(25,217,160,.08)}
+.domino-player-hand .is-dragging{opacity:.58;transform:translateY(-16px) scale(1.06)!important;cursor:grabbing}
+.is-domino-room .domino-chain .domino-face:not(.is-double){width:86px;height:48px;flex-direction:row}
+.is-domino-room .domino-chain .domino-face:not(.is-double) .domino-divider{width:3px;height:auto;margin:2px}
+.is-domino-room .domino-chain .domino-face.is-double{width:48px;height:86px;flex-direction:column}
+.is-domino-room .domino-chain .domino-face.is-double .domino-divider{width:auto;height:3px;margin:2px}
+@media(max-width:760px){.is-domino-room .domino-chain .domino-face:not(.is-double){width:66px;height:38px}.is-domino-room .domino-chain .domino-face.is-double{width:38px;height:66px}}
