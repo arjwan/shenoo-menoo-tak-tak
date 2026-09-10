@@ -5,7 +5,6 @@ const Group = require('../models/Group');
 const GroupMessage = require('../models/GroupMessage');
 const GroupReport = require('../models/GroupReport');
 const AuditLog = require('../models/AuditLog');
-const User = require('../models/User');
 const upload = require('../middleware/upload');
 
 const router = express.Router();
@@ -16,6 +15,7 @@ function member(group, userId) { return group.members.some(x => id(x) === id(use
 function admin(group, userId) { return id(group.owner) === id(userId) || group.admins.some(x => id(x) === id(userId)); }
 function manager(group, user) { return user?.role === 'developer' || admin(group, user); }
 function moderator(group, user) { return manager(group, user) || group.moderators.some(x => id(x) === id(user)); }
+function needsApproval(group) { return group.privacy === 'private' || group.joinApproval === 'owner_approval'; }
 async function audit(user, action, group, details='') { await AuditLog.create({ actor: user._id, action, details: `room:${group._id} ${details}`.slice(0, 500) }); }
 function attachment(file) {
   if (!file) return undefined;
@@ -34,7 +34,8 @@ async function requireMessagePermission(req, res, next) {
 }
 function view(group, me) {
   return {
-    id: group._id, name: group.name, description: group.description, privacy: group.privacy, roomType: group.roomType,
+    id: group._id, name: group.name, description: group.description, privacy: group.privacy,
+    joinApproval: group.privacy === 'private' ? 'owner_approval' : (group.joinApproval || 'open'), roomType: group.roomType,
     isOfficial: group.isOfficial, isLive: group.isLive, isLocked: group.isLocked,
     allowMemberAudio: group.allowMemberAudio, allowMemberVideo: group.allowMemberVideo, maxSpeakers: group.maxSpeakers,
     coverUrl: group.coverUrl || '', owner: group.owner, admins: group.admins, moderators: group.moderators,
@@ -54,8 +55,10 @@ router.post('/', async (req, res) => {
   if (name.length < 3) return res.status(400).json({ ok: false, message: 'اسم المجموعة قصير' });
   if (req.body.communityConsent !== 'accepted') return res.status(400).json({ ok: false, message: 'يجب الموافقة على قواعد المجتمع والبث' });
   const roomType = ['text', 'voice', 'challenge'].includes(req.body.roomType) ? req.body.roomType : 'text';
-  const group = await Group.create({ name, description: String(req.body.description || '').trim(), privacy: req.body.privacy === 'private' ? 'private' : 'public', roomType, maxSpeakers: roomType === 'challenge' ? 2 : 8, isOfficial: ['admin','developer'].includes(req.user.role) && req.body.isOfficial === true, owner: req.user._id, admins: [req.user._id], members: [req.user._id] });
-  await audit(req.user, 'room.created', group, name);
+  const privacy = req.body.privacy === 'private' ? 'private' : 'public';
+  const joinApproval = privacy === 'private' ? 'owner_approval' : (req.body.joinApproval === 'owner_approval' ? 'owner_approval' : 'open');
+  const group = await Group.create({ name, description: String(req.body.description || '').trim(), privacy, joinApproval, roomType, maxSpeakers: roomType === 'challenge' ? 2 : 8, isOfficial: ['admin','developer'].includes(req.user.role) && req.body.isOfficial === true, owner: req.user._id, admins: [req.user._id], members: [req.user._id] });
+  await audit(req.user, 'room.created', group, `${name} join:${joinApproval}`);
   res.status(201).json({ ok: true, group: view(group, req.user) });
 });
 
@@ -72,25 +75,32 @@ router.post('/:id/join', async (req, res) => {
   if (!group || !group.isActive) return res.status(404).json({ ok: false, message: 'المجموعة غير موجودة' });
   if (group.bannedMembers.some(x => id(x) === id(req.user._id))) return res.status(403).json({ ok: false, message: 'أنت محظور من هذه الغرفة' });
   if (group.isLocked && !manager(group, req.user)) return res.status(423).json({ ok: false, message: 'الغرفة مقفلة حالياً' });
-  if (member(group, req.user._id)) return res.json({ ok: true, group: view(group, req.user) });
-  if (group.privacy === 'private') {
+  if (member(group, req.user._id)) return res.json({ ok: true, group: view(group, req.user), message: 'أنت عضو بالفعل' });
+  if (needsApproval(group)) {
     if (!group.pendingMembers.some(x => id(x) === id(req.user._id))) group.pendingMembers.push(req.user._id);
-  } else group.members.push(req.user._id);
+    await group.save();
+    await audit(req.user, 'room.join.requested', group);
+    return res.json({ ok: true, pending: true, group: view(group, req.user), message: 'تم إرسال طلب الانضمام إلى صاحب المجموعة' });
+  }
+  group.members.push(req.user._id);
   await group.save();
-  res.json({ ok: true, group: view(group, req.user), message: group.privacy === 'private' ? 'تم إرسال طلب الانضمام' : 'تم الانضمام' });
+  await audit(req.user, 'room.joined', group);
+  res.json({ ok: true, pending: false, group: view(group, req.user), message: 'تم الانضمام' });
 });
 
 router.patch('/:id/requests/:userId/:action', async (req, res) => {
   const group = await Group.findById(req.params.id);
-  if (!group || !manager(group, req.user)) return res.status(403).json({ ok: false, message: 'صلاحية مدير المجموعة مطلوبة' });
+  if (!group || !manager(group, req.user)) return res.status(403).json({ ok: false, message: 'صلاحية صاحب المجموعة أو مديرها مطلوبة' });
   const userId = req.params.userId;
-  if (!group.pendingMembers.some(x => id(x) === id(userId))) return res.status(404).json({ ok: false, message: 'الطلب غير موجود' });
+  if (!mongoose.isValidObjectId(userId) || !group.pendingMembers.some(x => id(x) === id(userId))) return res.status(404).json({ ok: false, message: 'الطلب غير موجود' });
   group.pendingMembers = group.pendingMembers.filter(x => id(x) !== id(userId));
-  if (req.params.action === 'accept' && !member(group, userId)) group.members.push(userId);
-  else if (req.params.action !== 'reject') return res.status(400).json({ ok: false, message: 'إجراء غير صالح' });
+  if (req.params.action === 'accept') {
+    if (!member(group, userId)) group.members.push(userId);
+  } else if (req.params.action !== 'reject') return res.status(400).json({ ok: false, message: 'إجراء غير صالح' });
   await group.save();
   await audit(req.user, `room.request.${req.params.action}`, group, userId);
-  res.json({ ok: true });
+  req.app.get('io')?.to(`user:${userId}`).emit('group:join-review', { groupId: String(group._id), action: req.params.action });
+  res.json({ ok: true, message: req.params.action === 'accept' ? 'تم قبول العضو' : 'تم رفض الطلب' });
 });
 
 router.patch('/:id/live', async (req, res) => {
@@ -113,7 +123,7 @@ router.patch('/:id/admins/:userId', async (req, res) => {
 
 router.get('/:id/messages', async (req, res) => {
   const group = await Group.findById(req.params.id);
-  if (!group || (group.privacy === 'private' && !member(group, req.user._id) && !manager(group, req.user))) return res.status(403).json({ ok: false, message: 'لا يمكنك دخول هذه الغرفة' });
+  if (!group || !member(group, req.user._id)) return res.status(403).json({ ok: false, message: 'يجب أن تكون عضواً مقبولاً لدخول هذه الغرفة' });
   const messages = await GroupMessage.find({ group: group._id }).populate('sender', 'fullName displayName username profile').sort({ createdAt: -1 }).limit(100).lean();
   res.json({ ok: true, group: view(group, req.user), messages: messages.reverse().map(m => messageView(m, req.user._id)) });
 });
@@ -141,6 +151,9 @@ router.patch('/:id/settings', async (req, res) => {
   if (!group || !manager(group, req.user)) return res.status(403).json({ ok: false, message: 'صلاحية مدير الغرفة مطلوبة' });
   if (req.body.name !== undefined) { const name = String(req.body.name).trim(); if (name.length < 3 || name.length > 120) return res.status(400).json({ ok: false, message: 'اسم الغرفة غير صالح' }); group.name = name; }
   if (req.body.description !== undefined) group.description = String(req.body.description).trim().slice(0, 3000);
+  if (req.body.privacy !== undefined) group.privacy = req.body.privacy === 'private' ? 'private' : 'public';
+  if (req.body.joinApproval !== undefined) group.joinApproval = group.privacy === 'private' ? 'owner_approval' : (req.body.joinApproval === 'owner_approval' ? 'owner_approval' : 'open');
+  if (group.privacy === 'private') group.joinApproval = 'owner_approval';
   if (req.body.isLocked !== undefined) group.isLocked = Boolean(req.body.isLocked);
   if (req.body.allowMemberAudio !== undefined) group.allowMemberAudio = Boolean(req.body.allowMemberAudio);
   if (req.body.allowMemberVideo !== undefined) group.allowMemberVideo = Boolean(req.body.allowMemberVideo);
@@ -195,10 +208,14 @@ router.delete('/:id/join', async (req, res) => {
   const group = await Group.findById(req.params.id);
   if (!group) return res.status(404).json({ ok: false, message: 'المجموعة غير موجودة' });
   if (id(group.owner) === id(req.user._id)) return res.status(400).json({ ok: false, message: 'مالك المجموعة لا يستطيع المغادرة قبل نقل الملكية' });
+  const wasPending = group.pendingMembers.some(x => id(x) === id(req.user._id));
+  group.pendingMembers = group.pendingMembers.filter(x => id(x) !== id(req.user._id));
   group.members = group.members.filter(x => id(x) !== id(req.user._id));
   group.admins = group.admins.filter(x => id(x) !== id(req.user._id));
+  group.moderators = group.moderators.filter(x => id(x) !== id(req.user._id));
   await group.save();
-  res.json({ ok: true });
+  await audit(req.user, wasPending ? 'room.join.cancelled' : 'room.left', group);
+  res.json({ ok: true, message: wasPending ? 'تم إلغاء طلب الانضمام' : 'تمت مغادرة المجموعة' });
 });
 
 module.exports = router;
