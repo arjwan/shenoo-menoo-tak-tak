@@ -5,16 +5,19 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true, minlength: 3, maxlength: 30 },
   contact: { type: String, required: true, unique: true, lowercase: true, trim: true },
   contactType: { type: String, enum: ['email', 'phone'], required: true },
-  // New registrations require a phone at the route level. Keep it optional in the
-  // schema so older users can still be loaded and saved safely during migration.
   phone: { type: String, trim: true, default: '', match: /^$|^07\d{9}$/ },
   email: { type: String, lowercase: true, trim: true, default: '' },
+  contactVerified: { type: Boolean, default: false, index: true },
+  contactVerifiedAt: { type: Date, default: null },
+  contactVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  verificationCodeHash: { type: String, default: '' },
+  verificationCodeExpiresAt: { type: Date, default: null },
+  verificationAttempts: { type: Number, default: 0 },
+  verificationLastSentAt: { type: Date, default: null },
   birthDate: { type: Date, default: null },
   gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
   passwordHash: { type: String, required: true },
   termsAccepted: { type: Boolean, required: true },
-  // Privacy consent remains mandatory for new signup requests, but older records
-  // may predate the consent fields and must remain writable.
   privacyAccepted: { type: Boolean, default: false },
   privacyAcceptedAt: { type: Date, default: null },
   privacyVersion: { type: String, default: '2026-09-07' },

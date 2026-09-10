@@ -26,7 +26,8 @@ function recordLoginFailure(key) {
 function clearLoginAttempts(key) { loginAttempts.delete(key); }
 function normalizePhone(value) { return String(value || '').replace(/\s+/g, '').trim(); }
 function validPhone(value) { return /^07\d{9}$/.test(normalizePhone(value)); }
-function validEmail(value) { return !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim().toLowerCase()); }
+function normalizeEmail(value) { return String(value || '').trim().toLowerCase(); }
+function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value)); }
 function normalizeBirthDate(value) {
   if (!value) return { valid: true, value: null };
   const input = String(value).trim();
@@ -46,37 +47,65 @@ function normalizeBirthDate(value) {
 
 router.post('/signup', async (req, res) => {
   try {
-    const { fullName, username, phone, email, contact, birthDate, gender, password, confirmPassword, termsAccepted, privacyAccepted } = req.body;
-    const normalizedPhone = normalizePhone(phone || contact);
-    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const { fullName, username, phone, email, birthDate, gender, password, confirmPassword, termsAccepted, privacyAccepted } = req.body;
+    const normalizedPhone = normalizePhone(phone);
+    const normalizedEmail = normalizeEmail(email);
+    const hasPhone = validPhone(normalizedPhone);
+    const hasEmail = validEmail(normalizedEmail);
     const normalizedBirthDate = normalizeBirthDate(birthDate);
 
-    if (!fullName || !username || !normalizedPhone || !password) {
-      return res.status(400).json({ ok: false, message: 'الاسم واسم المستخدم ورقم الهاتف وكلمة المرور حقول إلزامية' });
+    if (!fullName || !username || !password) {
+      return res.status(400).json({ ok: false, message: 'الاسم واسم المستخدم وكلمة المرور حقول إلزامية' });
     }
-    if (!validPhone(normalizedPhone)) return res.status(400).json({ ok: false, message: 'رقم الهاتف العراقي يجب أن يبدأ بـ 07 ويتكون من 11 رقماً' });
-    if (!validEmail(normalizedEmail)) return res.status(400).json({ ok: false, message: 'البريد الإلكتروني غير صالح' });
-    if (!normalizedBirthDate.valid) return res.status(400).json({ ok: false, message: 'تاريخ الميلاد غير صحيح؛ استخدم 23/2/1965 أو 1965-02-23' });
+    if (!hasPhone && !hasEmail) {
+      return res.status(400).json({ ok: false, message: 'أدخل رقم هاتف عراقي صحيح أو بريداً إلكترونياً صحيحاً' });
+    }
+    if (normalizedPhone && !hasPhone) return res.status(400).json({ ok: false, message: 'رقم الهاتف العراقي يجب أن يبدأ بـ 07 ويتكون من 11 رقماً' });
+    if (normalizedEmail && !hasEmail) return res.status(400).json({ ok: false, message: 'البريد الإلكتروني غير صالح' });
+    if (!normalizedBirthDate.valid) return res.status(400).json({ ok: false, message: 'تاريخ الميلاد غير صحيح' });
     if (password !== confirmPassword) return res.status(400).json({ ok: false, message: 'كلمتا المرور غير متطابقتين' });
     if (password.length < 8) return res.status(400).json({ ok: false, message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' });
     if (termsAccepted !== true || privacyAccepted !== true) return res.status(400).json({ ok: false, message: 'يجب قراءة اتفاقية الخصوصية والموافقة عليها قبل إنشاء الحساب' });
 
-    const normalizedUsername = username.trim().toLowerCase();
-    const duplicateChecks = [{ username: normalizedUsername }, { phone: normalizedPhone }, { contact: normalizedPhone }];
-    if (normalizedEmail) duplicateChecks.push({ email: normalizedEmail }, { contact: normalizedEmail });
+    const normalizedUsername = String(username).trim().toLowerCase();
+    const contactType = hasPhone ? 'phone' : 'email';
+    const contact = contactType === 'phone' ? normalizedPhone : normalizedEmail;
+    const duplicateChecks = [{ username: normalizedUsername }, { contact }];
+    if (hasPhone) duplicateChecks.push({ phone: normalizedPhone });
+    if (hasEmail) duplicateChecks.push({ email: normalizedEmail });
     const existing = await User.findOne({ $or: duplicateChecks });
     if (existing) return res.status(409).json({ ok: false, message: 'اسم المستخدم أو رقم الهاتف أو البريد مستخدم مسبقاً' });
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
-      fullName: fullName.trim(), username: normalizedUsername,
-      phone: normalizedPhone, email: normalizedEmail || '',
-      contact: normalizedPhone, contactType: 'phone',
-      birthDate: normalizedBirthDate.value, gender: gender || 'other', passwordHash,
-      termsAccepted: true, privacyAccepted: true, privacyAcceptedAt: new Date(), privacyVersion: '2026-09-07',
-      role: 'user', status: 'pending'
+      fullName: String(fullName).trim(),
+      username: normalizedUsername,
+      phone: hasPhone ? normalizedPhone : '',
+      email: hasEmail ? normalizedEmail : '',
+      contact,
+      contactType,
+      contactVerified: false,
+      contactVerifiedAt: null,
+      birthDate: normalizedBirthDate.value,
+      gender: gender || 'other',
+      passwordHash,
+      termsAccepted: true,
+      privacyAccepted: true,
+      privacyAcceptedAt: new Date(),
+      privacyVersion: '2026-09-10',
+      role: 'user',
+      status: 'pending'
     });
-    return res.status(201).json({ ok: true, status: 'pending', message: 'تم استلام طلب التسجيل وهو بانتظار مراجعة الإدارة', userId: user._id });
+
+    return res.status(201).json({
+      ok: true,
+      status: 'pending',
+      contactType,
+      contact,
+      contactVerified: false,
+      message: 'تم استلام طلب التسجيل. يجب تأكيد رقم الهاتف أو البريد المسجل قبل أن يستطيع المطور الموافقة على الحساب.',
+      userId: user._id
+    });
   } catch (error) {
     console.error('Signup failed:', error.message);
     return res.status(500).json({ ok: false, message: 'حدث خطأ في الخادم' });
@@ -86,29 +115,55 @@ router.post('/signup', async (req, res) => {
 router.post('/signin', async (req, res) => {
   try {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    const { identifier, password } = req.body;
-    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'أدخل بيانات تسجيل الدخول' });
-    const normalized = identifier.trim().toLowerCase();
-    const attemptKey = `${ip}:${normalized}`;
+    const identifier = String(req.body.identifier || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'أدخل رقم الهاتف أو البريد الإلكتروني وكلمة المرور' });
+
+    const isPhone = validPhone(identifier);
+    const isEmail = validEmail(identifier);
+    if (!isPhone && !isEmail) return res.status(400).json({ ok: false, message: 'استخدم رقم الهاتف أو البريد الإلكتروني المسجل بالحساب' });
+
+    const attemptKey = `${ip}:${identifier}`;
     const retryAfter = checkLoginRateLimit(attemptKey);
-    if (retryAfter) { res.set('Retry-After', String(retryAfter)); return res.status(429).json({ ok: false, message: `محاولات تسجيل الدخول كثيرة لهذا الحساب، حاول بعد ${Math.ceil(retryAfter / 60)} دقيقة` }); }
-    const user = await User.findOne({ $or: [{ username: normalized }, { contact: normalized }, { phone: normalized }, { email: normalized }] });
+    if (retryAfter) {
+      res.set('Retry-After', String(retryAfter));
+      return res.status(429).json({ ok: false, message: `محاولات تسجيل الدخول كثيرة لهذا الحساب، حاول بعد ${Math.ceil(retryAfter / 60)} دقيقة` });
+    }
+
+    const user = await User.findOne(isPhone
+      ? { $or: [{ contact: normalizePhone(identifier), contactType: 'phone' }, { phone: normalizePhone(identifier) }] }
+      : { $or: [{ contact: normalizeEmail(identifier), contactType: 'email' }, { email: normalizeEmail(identifier) }] });
+
     if (!user) {
       recordLoginFailure(attemptKey);
-      return res.status(401).json({ ok: false, message: 'الحساب غير موجود؛ استخدم اسم المستخدم أو رقم الهاتف المسجل' });
+      return res.status(401).json({ ok: false, message: 'الحساب غير موجود بهذا الهاتف أو البريد' });
     }
     if (!(await bcrypt.compare(password, user.passwordHash))) {
       recordLoginFailure(attemptKey);
       return res.status(401).json({ ok: false, message: 'كلمة المرور غير صحيحة' });
     }
-    if (user.status === 'pending') return res.status(403).json({ ok: false, status: 'pending', message: 'طلب التسجيل ما زال بانتظار موافقة الإدارة' });
+
+    if (user.status === 'pending') {
+      return res.status(403).json({
+        ok: false,
+        status: 'pending',
+        contactVerified: Boolean(user.contactVerified),
+        message: user.contactVerified ? 'وسيلة الاتصال مؤكدة، والحساب بانتظار موافقة المطور' : 'يجب تأكيد رقم الهاتف أو البريد أولاً، ثم ينتظر الحساب موافقة المطور'
+      });
+    }
     if (user.status === 'rejected') return res.status(403).json({ ok: false, status: 'rejected', message: user.rejectionReason ? `تم رفض التسجيل: ${user.rejectionReason}` : 'تم رفض طلب التسجيل' });
     if (user.status === 'blocked') return res.status(403).json({ ok: false, status: 'blocked', message: 'الحساب محظور' });
     if (user.status !== 'active') return res.status(403).json({ ok: false, message: 'الحساب غير فعال' });
 
+    /* Existing active accounts stay usable during migration. New accounts cannot become active until contactVerified=true. */
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     clearLoginAttempts(attemptKey);
-    return res.json({ ok: true, message: 'تم تسجيل الدخول', token, user: { id: user._id, fullName: user.fullName, username: user.username, role: user.role } });
+    return res.json({
+      ok: true,
+      message: 'تم تسجيل الدخول',
+      token,
+      user: { id: user._id, fullName: user.fullName, username: user.username, role: user.role, contactType: user.contactType }
+    });
   } catch (error) {
     console.error('Signin failed:', error.message);
     return res.status(500).json({ ok: false, message: 'حدث خطأ في الخادم' });

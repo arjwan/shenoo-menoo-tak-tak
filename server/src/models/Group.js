@@ -4,6 +4,7 @@ const GroupSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 120 },
   description: { type: String, default: '', trim: true, maxlength: 3000 },
   privacy: { type: String, enum: ['public', 'private'], default: 'public', index: true },
+  joinApproval: { type: String, enum: ['open', 'owner_approval'], default: 'open', index: true },
   roomType: { type: String, enum: ['text', 'voice', 'challenge'], default: 'text', index: true },
   isOfficial: { type: Boolean, default: false, index: true },
   isLive: { type: Boolean, default: false, index: true },

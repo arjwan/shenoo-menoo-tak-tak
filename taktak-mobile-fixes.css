@@ -1,0 +1,114 @@
+/* Mobile/WebView corrections: preserve desktop design, optimize phone rendering. */
+.action-ads{background:linear-gradient(135deg,#ff9f43,#ff5d69)}
+.tool-ad{color:#ffb15f}
+
+html,body{max-width:100%;overflow-x:hidden}
+body{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-x:none}
+img,video,canvas,iframe{max-width:100%}
+button,a,input,textarea,select{-webkit-tap-highlight-color:transparent}
+
+.stories-strip{display:flex!important;align-items:stretch!important;gap:12px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity;padding:10px 2px 4px!important;contain:layout paint;-webkit-overflow-scrolling:touch}
+.stories-list{display:flex!important;align-items:stretch!important;gap:12px!important;flex:0 0 auto!important}
+.story-tile{position:relative!important;flex:0 0 82px!important;width:82px!important;min-width:82px!important;max-width:82px!important;overflow:hidden!important;isolation:isolate!important;scroll-snap-align:start;margin:0!important;transform:none!important}
+.story-tile+.story-tile{margin-inline-start:0!important}
+.story-avatar{position:relative!important;z-index:1!important;flex:0 0 auto!important}
+.story-plus{z-index:3!important}
+
+.reels-list{gap:12px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity;padding:10px 2px 4px!important;-webkit-overflow-scrolling:touch}
+.reels-list>.reel-card{flex:0 0 132px!important;width:132px!important;height:auto!important;aspect-ratio:9/16!important;scroll-snap-align:start;border-radius:18px!important;overflow:hidden!important}
+.reels-list>.reel-card video{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+
+/* Full reels viewer: show the whole video instead of zooming/cropping it. */
+.reels .reel-card{width:min(94vw,520px)!important;height:auto!important;min-height:0!important;aspect-ratio:9/16!important;margin:14px auto!important;border-radius:24px!important;background:#000!important}
+.reels .reel-card video{width:100%!important;height:100%!important;object-fit:contain!important;background:#000!important}
+.reels .reel-meta{left:82px!important;right:14px!important;bottom:18px!important}
+
+/* Story gallery: keep every story as a separate card with a visible gap. */
+.story-grid{gap:16px!important;align-items:start!important}
+.story-grid>.story-card{position:relative!important;margin:0!important;isolation:isolate!important;overflow:hidden!important}
+
+@media(max-width:760px){
+  html,body{width:100%;min-width:0}
+  body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
+
+  .home-top{top:0!important}
+  .home-nav{width:100%!important;max-width:none!important;padding:8px 8px!important;gap:7px!important}
+  .home-brand{font-size:14px!important;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+  .home-search{display:none!important}
+  .top-actions{margin-inline-start:auto!important;gap:4px!important;overflow-x:auto;max-width:calc(100vw - 135px);scrollbar-width:none}
+  .top-actions::-webkit-scrollbar{display:none}
+  .top-actions a,.top-actions button{flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;border-radius:11px!important}
+
+  .home-grid{display:block!important;width:100%!important;max-width:none!important;margin:6px 0 0!important;padding:0 6px calc(76px + env(safe-area-inset-bottom))!important}
+  .left-side,.right-side{display:none!important}
+  .feed{display:grid!important;width:100%!important;min-width:0!important;gap:8px!important}
+  .compact-panel,.composer,.post-card{width:100%!important;max-width:100%!important;border-radius:14px!important}
+  .compact-panel{padding:10px!important}
+
+  .people-list,.stories-strip,.reels-list{scrollbar-width:none}
+  .people-list::-webkit-scrollbar,.stories-strip::-webkit-scrollbar,.reels-list::-webkit-scrollbar{display:none}
+  .person-card{flex-basis:72px!important;min-width:72px!important}
+
+  .stories-strip{gap:8px!important;padding:8px 0 2px!important}
+  .stories-list{gap:8px!important}
+  .story-tile{flex-basis:72px!important;width:72px!important;min-width:72px!important;max-width:72px!important;min-height:90px!important;border-radius:14px!important}
+  .story-avatar{width:52px!important;height:52px!important}
+  .story-tile strong{max-width:64px!important;font-size:10px!important}
+
+  .reels-list{gap:9px!important;padding:8px 0 2px!important}
+  .reels-list>.reel-card{flex-basis:112px!important;width:112px!important;border-radius:15px!important}
+  .reels .reel-card{width:min(96vw,430px)!important;max-height:calc(100svh - 118px)!important;aspect-ratio:9/16!important;margin:8px auto!important;border-radius:18px!important}
+
+  .composer{padding:10px!important}
+  .composer-top{gap:8px!important;align-items:flex-start}
+  .composer .avatar{width:42px!important;height:42px!important}
+  .composer textarea{min-height:64px!important;max-height:150px!important;padding:11px!important;font-size:16px!important;resize:none!important}
+  .composer-tools{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+  .composer-tools .tool-btn{min-width:0!important;padding:9px 5px!important;text-align:center!important;font-size:12px!important}
+  .composer-tools .tool-btn span{display:none!important}
+  .composer-tools select.tool-btn{grid-column:span 2!important;font-size:12px!important}
+  .composer-tools .publish{grid-column:span 2!important;margin:0!important;min-height:40px!important}
+
+  .post-head{padding:11px!important}
+  .post-text{padding:0 12px 11px!important;font-size:15px!important;line-height:1.8!important;overflow-wrap:anywhere}
+  .post-media img,.post-media video{width:100%!important;max-height:70svh!important;object-fit:contain!important}
+  .post-media audio{width:calc(100% - 20px)!important;margin:10px!important}
+  .post-stats{padding:8px 11px!important;font-size:12px!important}
+  .post-actions button{min-height:44px!important;font-size:12px!important;padding:10px 3px!important}
+  .comment-form input{font-size:16px!important}
+
+  .mobile-bar{display:grid!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;padding-bottom:env(safe-area-inset-bottom)!important;z-index:100!important}
+  .mobile-bar a{min-height:54px!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;touch-action:manipulation}
+
+  .calls-mobile-launcher{bottom:calc(66px + env(safe-area-inset-bottom))!important}
+  .calls-mobile-sheet{padding-bottom:env(safe-area-inset-bottom)!important}
+
+  /* Profile and chat pages loaded inside Android WebView. */
+  .social-page{width:100%!important;max-width:100%!important;padding:12px 8px calc(70px + env(safe-area-inset-bottom))!important}
+  .social-card{max-width:100%!important}
+  .profile-cover{height:165px!important}
+  .profile-head{padding-inline:12px!important}
+  .profile-avatar{width:92px!important;height:92px!important;border-radius:26px!important}
+  .profile-grid{padding-inline:8px!important;gap:10px!important}
+  .profile-section{padding:14px!important}
+  .profile-actions .icon-button{min-height:44px!important}
+
+  .chat-shell{width:100%!important;max-width:100%!important;margin:0!important;min-height:calc(100svh - 65px)!important}
+  .chat-window{min-width:0!important;min-height:calc(100svh - 65px)!important}
+  .chat-header{padding:10px!important}
+  .chat-messages{padding:12px!important;min-height:0!important}
+  .chat-message{max-width:88%!important}
+  .chat-composer{position:sticky;bottom:0;padding:8px!important;padding-bottom:calc(8px + env(safe-area-inset-bottom))!important;background:var(--panel,#111728)}
+  .chat-composer textarea{font-size:16px!important;min-height:44px!important}
+
+  input,textarea,select{font-size:16px}
+  button,a,[role="button"]{touch-action:manipulation}
+}
+
+@media(max-width:390px){
+  .home-brand{max-width:98px!important;font-size:13px!important}
+  .top-actions{max-width:calc(100vw - 108px)!important}
+  .top-actions a,.top-actions button{flex-basis:34px!important;width:34px!important;height:34px!important;min-width:34px!important}
+  .composer-tools{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .composer-tools select.tool-btn,.composer-tools .publish{grid-column:span 3!important}
+}

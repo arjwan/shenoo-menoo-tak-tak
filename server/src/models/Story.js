@@ -19,6 +19,7 @@ const storySchema = new mongoose.Schema({
   text: { type: String, trim: true, maxlength: 1000, default: '' },
   overlays: { type: [overlaySchema], default: [] },
   music: { type: musicSchema, default: () => ({}) },
+  visibility: { type: String, enum: ['everyone','friends','followers','friends_followers'], default: 'everyone', index: true },
   expiresAt: { type: Date, default: () => new Date(Date.now() + 24*60*60*1000), index: true },
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });

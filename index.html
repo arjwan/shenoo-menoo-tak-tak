@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#080b14" />
 
+  <meta name="description" content="جرّب شنو منو تك تك، منصة اجتماعية عراقية تحت التطوير للتواصل والألعاب والمتاجر والكسبة. أنشئ حسابك وحمّل نسخة Android التجريبية." />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <link rel="canonical" href="https://shino-mino-tak-tak.duckdns.org/" />
+  <meta property="og:locale" content="ar_IQ" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="شنو منو تك تك — جرّب المنصة العراقية" />
+  <meta property="og:description" content="الموقع تحت التطوير والتجربة متاحة الآن للأفراد وأصحاب المتاجر والكسبة." />
+  <meta property="og:url" content="https://shino-mino-tak-tak.duckdns.org/" />
+
   <title>شنو منو تك تك</title>
 
   <style>
@@ -220,6 +229,33 @@
       border-color:transparent;
       box-shadow:0 12px 30px rgba(124,92,255,.26);
     }
+
+    .trial-notice{
+      background:linear-gradient(90deg,rgba(255,177,66,.14),rgba(124,92,255,.14));
+      border-bottom:1px solid rgba(255,196,107,.22);
+      color:#fff1d8;
+      padding:11px 16px;
+      text-align:center;
+      line-height:1.8;
+      font-size:.92rem;
+    }
+
+    .trial-notice strong{color:#ffd38b}
+
+    .download-card{
+      max-width:880px;
+      margin:auto;
+      padding:42px;
+      border-radius:30px;
+      background:linear-gradient(145deg,rgba(39,216,196,.10),rgba(124,92,255,.10));
+      border:1px solid rgba(255,255,255,.10);
+      text-align:center;
+      box-shadow:var(--shadow);
+    }
+
+    .download-card h2{font-size:clamp(1.8rem,4vw,2.8rem);margin-bottom:14px}
+    .download-card p{color:var(--muted);line-height:1.9;margin:0 auto 22px;max-width:700px}
+    .download-card .warning{font-size:.88rem;color:#ffd9a0;margin-top:18px}
 
     /* Hero */
     .hero{
@@ -825,6 +861,8 @@
         border-radius:27px;
       }
 
+      .download-card{padding:34px 20px;border-radius:24px}
+
       .footer-row{
         justify-content:center;
         text-align:center;
@@ -867,6 +905,11 @@
       </nav>
     </div>
   </header>
+
+  <div class="trial-notice" role="status">
+    <strong>جرّب الموقع — المنصة تحت التطوير.</strong>
+    التسجيل متاح الآن للأفراد، وأصحاب المتاجر والكسبة مدعوون لإنشاء حساب وتجربة عرض أعمالهم.
+  </div>
 
   <main>
 
@@ -1181,6 +1224,27 @@
 
         </div>
 
+      </div>
+    </section>
+
+    <section class="section" id="download">
+      <div class="container">
+        <div class="download-card reveal">
+          <div class="section-kicker">تجربة Android</div>
+          <h2>حمّل آخر إصدار تجريبي</h2>
+          <p>
+            تطبيق شنو منو تك تك صادر من مستودع المشروع الرسمي وموقّع رقميًا.
+            هذه نسخة تجريبية للاختبار، وقد تتغير بعض المزايا أثناء التطوير.
+          </p>
+          <a class="btn btn-primary" href="downloads/shno-mano-1.2.9.apk" download>
+            تحميل APK إصدار 1.2.9
+            <span>↓</span>
+          </a>
+          <p class="warning">
+            تنبيه: التطبيق غير منشور حاليًا على Google Play؛ لذلك قد يطلب Android السماح بالتثبيت من مصدر خارجي.
+            نزّله فقط من هذا الموقع الرسمي.
+          </p>
+        </div>
       </div>
     </section>
 
