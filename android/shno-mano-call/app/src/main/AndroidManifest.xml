@@ -11,23 +11,15 @@
     <application
         android:name=".ShnoManoApp"
         android:allowBackup="true"
-        android:label="شنو منو اتصال"
+        android:label="شنو منو تك تك"
         android:icon="@drawable/ic_launcher"
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.ShnoManoCall">
 
-        <activity android:name=".WebSectionActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".WebCallActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".SettingsActivity" android:exported="false" />
-        <activity android:name=".RegisterActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".WelcomeActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".HomeActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".SafeMainActivity" android:exported="false" android:screenOrientation="portrait" />
-
         <activity
-            android:name=".MainActivity"
+            android:name=".WebSectionActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -35,5 +27,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".WebCallActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".RegisterActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".WelcomeActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".HomeActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".SafeMainActivity" android:exported="false" android:screenOrientation="portrait" />
+
+        <activity android:name=".MainActivity" android:exported="false" android:screenOrientation="portrait" />
     </application>
 </manifest>
