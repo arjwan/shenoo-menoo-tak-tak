@@ -10,6 +10,7 @@ android {
         applicationId 'com.shinomeno.taktak'
         minSdk 23
         targetSdk 35
+        // Rebuild 2.0.0 after the September web and store updates.
         versionCode 20
         versionName '2.0.0'
     }
