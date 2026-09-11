@@ -1,0 +1,3 @@
+const mongoose=require('mongoose');
+const schema=new mongoose.Schema({guardian:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true,index:true},student:{type:mongoose.Schema.Types.ObjectId,ref:'SchoolStudent',required:true,index:true},mode:{type:String,enum:['individual','group'],default:'individual'},subject:String,lesson:String,status:{type:String,enum:['active','completed'],default:'active'},startedAt:{type:Date,default:Date.now},endedAt:Date,attention:{responses:{type:Number,default:0},unanswered:{type:Number,default:0},activeMinutes:{type:Number,default:0}},score:{type:Number,default:0},maxScore:{type:Number,default:0},teacherNote:{type:String,maxlength:2000}},{timestamps:true});
+module.exports=mongoose.model('SchoolSession',schema);

@@ -1,0 +1,3 @@
+const mongoose=require('mongoose');
+const schema=new mongoose.Schema({guardian:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true,index:true},student:{type:mongoose.Schema.Types.ObjectId,ref:'SchoolStudent',required:true,index:true},subject:{type:String,required:true},title:{type:String,default:'وقت الدراسة'},scheduledAt:{type:Date,required:true,index:true},durationMinutes:{type:Number,default:45,min:10,max:240},reminderMinutes:{type:Number,default:15,min:0,max:1440},status:{type:String,enum:['scheduled','started','completed','missed','cancelled'],default:'scheduled'},startedAt:Date,completedAt:Date,parentMessage:{type:String,maxlength:1000}},{timestamps:true});
+module.exports=mongoose.model('SchoolSchedule',schema);
