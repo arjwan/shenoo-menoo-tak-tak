@@ -1,4 +1,20 @@
 User-agent: *
 Allow: /
 
+# Public discovery pages stay crawlable. Keep account, private messaging,
+# developer/admin and authenticated app areas out of search results.
+Disallow: /taktak.html
+Disallow: /profile.html
+Disallow: /messages.html
+Disallow: /calls.html
+Disallow: /friends.html
+Disallow: /notifications.html
+Disallow: /settings.html
+Disallow: /pending.html
+Disallow: /developer.html
+Disallow: /developer-rooms.html
+Disallow: /group-room.html
+Disallow: /room-admin.html
+Disallow: /phone-privacy.html
+
 Sitemap: https://shino-mino-tak-tak.duckdns.org/sitemap.xml
