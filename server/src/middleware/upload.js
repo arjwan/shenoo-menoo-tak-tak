@@ -5,13 +5,14 @@ const uploadDir = path.resolve(__dirname, '../../../uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 const allowed = new Set([
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'video/mp4', 'video/webm',
+  'video/mp4', 'video/x-m4v', 'video/webm', 'video/quicktime', 'video/ogg',
+  'video/3gpp', 'video/3gpp2', 'video/x-matroska', 'video/x-msvideo',
   'application/pdf', 'text/plain', 'audio/webm', 'audio/mpeg', 'audio/ogg', 'audio/mp4'
 ]);
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
-    const extensions = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/gif': '.gif', 'image/webp': '.webp', 'video/mp4': '.mp4', 'video/webm': '.webm', 'application/pdf': '.pdf', 'text/plain': '.txt', 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/ogg': '.ogg', 'audio/mp4': '.m4a' };
+    const extensions = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/gif': '.gif', 'image/webp': '.webp', 'video/mp4': '.mp4', 'video/x-m4v': '.m4v', 'video/webm': '.webm', 'video/quicktime': '.mov', 'video/ogg': '.ogv', 'video/3gpp': '.3gp', 'video/3gpp2': '.3g2', 'video/x-matroska': '.mkv', 'video/x-msvideo': '.avi', 'application/pdf': '.pdf', 'text/plain': '.txt', 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/ogg': '.ogg', 'audio/mp4': '.m4a' };
     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${extensions[file.mimetype]}`);
   }
 });

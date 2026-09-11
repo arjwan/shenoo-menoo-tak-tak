@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   displayName: { type: String, trim: true, maxlength: 100, default: '' },
   profile: {
     bio: { type: String, maxlength: 500, default: '' }, avatarUrl: { type: String, default: '' }, coverUrl: { type: String, default: '' },
+    coverPositionX: { type: Number, min: 0, max: 100, default: 50 }, coverPositionY: { type: Number, min: 0, max: 100, default: 50 },
     online: { type: Boolean, default: false }, lastSeen: { type: Date, default: null }, governorate: { type: String, maxlength: 80, default: '' },
     city: { type: String, maxlength: 80, default: '' }, profession: { type: String, maxlength: 120, default: '' }, workplace: { type: String, maxlength: 120, default: '' },
     education: { type: String, maxlength: 120, default: '' }, website: { type: String, maxlength: 240, default: '' }, socialLinks: { type: [String], default: [] }

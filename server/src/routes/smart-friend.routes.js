@@ -7,7 +7,7 @@ const SmartFriend=require('../models/SmartFriend');
 const Message=require('../models/SmartFriendMessage');
 const router=express.Router();
 const uploadDir=path.resolve(__dirname,'../../../uploads/smart-friend');fs.mkdirSync(uploadDir,{recursive:true});
-const allowed=new Map([['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp'],['audio/webm','.webm'],['audio/ogg','.ogg'],['audio/mpeg','.mp3'],['audio/mp4','.m4a'],['audio/wav','.wav'],['video/webm','.webm'],['video/mp4','.mp4'],['video/quicktime','.mov']]);
+const allowed=new Map([['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp'],['audio/webm','.webm'],['audio/ogg','.ogg'],['audio/mpeg','.mp3'],['audio/mp4','.m4a'],['audio/wav','.wav'],['video/mp4','.mp4'],['video/x-m4v','.m4v'],['video/webm','.webm'],['video/quicktime','.mov'],['video/ogg','.ogv'],['video/3gpp','.3gp'],['video/3gpp2','.3g2'],['video/x-matroska','.mkv'],['video/x-msvideo','.avi']]);
 const upload=multer({storage:multer.diskStorage({destination:(_r,_f,cb)=>cb(null,uploadDir),filename:(_r,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${allowed.get(f.mimetype)||''}`)}),limits:{fileSize:80*1024*1024,files:1},fileFilter:(_r,f,cb)=>allowed.has(f.mimetype)?cb(null,true):cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))});
 router.use(requireAuth);
 const avatars={male:['male-1','male-2','male-3','male-4'],female:['female-1','female-2','female-3','female-4']};

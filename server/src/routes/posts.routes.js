@@ -14,7 +14,7 @@ const uploadDir = path.resolve(__dirname, '../../../uploads/posts');
 fs.mkdirSync(uploadDir, { recursive: true });
 const allowed = new Map([
   ['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp'],['image/gif','.gif'],
-  ['video/mp4','.mp4'],['video/x-m4v','.m4v'],['video/webm','.webm'],['video/quicktime','.mov'],
+  ['video/mp4','.mp4'],['video/x-m4v','.m4v'],['video/webm','.webm'],['video/quicktime','.mov'],['video/ogg','.ogv'],
   ['video/3gpp','.3gp'],['video/3gpp2','.3g2'],['video/x-matroska','.mkv'],['video/x-msvideo','.avi'],
   ['audio/mpeg','.mp3'],['audio/mp3','.mp3']
 ]);
