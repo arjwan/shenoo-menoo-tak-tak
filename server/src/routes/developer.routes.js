@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
 const Store = require('../models/Store');
@@ -210,13 +211,18 @@ router.get('/users', async (req, res) => {
 
 router.post('/users', async (req, res) => {
   try {
-    const fullName=String(req.body.fullName||'').trim(),username=String(req.body.username||'').trim().toLowerCase();
+    const fullName=String(req.body.fullName||'').trim();let username=String(req.body.username||'').trim().toLowerCase();
     const phone=String(req.body.phone||'').replace(/\s+/g,''),email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||'');
-    if(!fullName||!/^[a-z0-9_]{3,30}$/.test(username)) return res.status(400).json({ok:false,message:'الاسم أو اسم المستخدم غير صالح'});
-    if(!/^07\d{9}$/.test(phone)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ok:false,message:'الهاتف والبريد الإلكتروني الصحيحان مطلوبان'});
+    if(!fullName) return res.status(400).json({ok:false,message:'الاسم الكامل مطلوب'});
+    if(username&&!/^[a-z0-9_]{3,30}$/.test(username))return res.status(400).json({ok:false,message:'اسم المستخدم غير صالح'});
+    if(phone&&!/^07\d{9}$/.test(phone))return res.status(400).json({ok:false,message:'رقم الهاتف غير صالح'});
+    if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({ok:false,message:'البريد الإلكتروني غير صالح'});
     if(password.length<8)return res.status(400).json({ok:false,message:'كلمة المرور يجب أن تكون 8 أحرف على الأقل'});
-    if(await User.exists({$or:[{username},{phone},{email},{contact:phone},{contact:email}]}))return res.status(409).json({ok:false,message:'اسم المستخدم أو الهاتف أو البريد مستخدم مسبقاً'});
-    const user=await User.create({fullName,username,phone,email,contact:phone,contactType:'phone',passwordHash:await bcrypt.hash(password,12),termsAccepted:true,privacyAccepted:true,privacyAcceptedAt:new Date(),privacyVersion:'2026-09-11',contactVerified:true,contactVerifiedAt:new Date(),contactVerifiedBy:req.user._id,notificationPreferences:{inApp:true,phone:true,email:true},role:'user',status:'active',approvalSource:'developer',reviewedBy:req.user._id,reviewedAt:new Date()});
+    const duplicateChecks=[];if(username)duplicateChecks.push({username});if(phone)duplicateChecks.push({phone},{contact:phone});if(email)duplicateChecks.push({email},{contact:email});
+    if(duplicateChecks.length&&await User.exists({$or:duplicateChecks}))return res.status(409).json({ok:false,message:'اسم المستخدم أو الهاتف أو البريد مستخدم مسبقاً'});
+    if(!username){do{username='user_'+Math.random().toString(36).slice(2,10);}while(await User.exists({username}));}
+    const internalContact=phone||email||`developer-created-${crypto.randomUUID()}@local.invalid`,internalType=phone?'phone':'email';
+    const user=await User.create({fullName,username,phone,email,contact:internalContact,contactType:internalType,passwordHash:await bcrypt.hash(password,12),termsAccepted:true,privacyAccepted:true,privacyAcceptedAt:new Date(),privacyVersion:'2026-09-11',contactVerified:Boolean(phone||email),contactVerifiedAt:phone||email?new Date():null,contactVerifiedBy:phone||email?req.user._id:null,notificationPreferences:{inApp:true,phone:Boolean(phone),email:Boolean(email)},role:'user',status:'active',approvalSource:'developer',reviewedBy:req.user._id,reviewedAt:new Date()});
     await writeAudit(req.user,'user.created',user,`أنشأ حساب ${user.username}`);
     return res.status(201).json({ok:true,message:'تم إنشاء الحساب وتفعيله',user:safeUser(user)});
   } catch(error){console.error('Developer create user failed:',error.message);return res.status(500).json({ok:false,message:'تعذر إنشاء الحساب'});}
@@ -235,18 +241,18 @@ router.patch('/users/:id', async (req, res) => {
     const status = String(req.body.status ?? user.status);
     if (!fullName || !/^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,99}$/u.test(fullName)) return res.status(400).json({ ok: false, message: 'الاسم الكامل غير صالح' });
     if (!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(username)) return res.status(400).json({ ok: false, message: 'اسم المستخدم غير صالح' });
-    if (!/^07\d{9}$/.test(phone)) return res.status(400).json({ ok: false, message: 'رقم الهاتف غير صالح' });
+    if (phone && !/^07\d{9}$/.test(phone)) return res.status(400).json({ ok: false, message: 'رقم الهاتف غير صالح' });
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ ok: false, message: 'البريد الإلكتروني غير صالح' });
     if (!['male', 'female', 'other'].includes(gender)) return res.status(400).json({ ok: false, message: 'الجنس غير صالح' });
     if (!['pending', 'active', 'rejected', 'blocked'].includes(status)) return res.status(400).json({ ok: false, message: 'حالة الحساب غير صالحة' });
-    const duplicate = await User.findOne({ _id: { $ne: user._id }, $or: [{ username }, { phone }, { contact: phone }, ...(email ? [{ email }, { contact: email }] : [])] });
+    const checks=[{username}];if(phone)checks.push({phone},{contact:phone});if(email)checks.push({email},{contact:email});const duplicate = await User.findOne({ _id: { $ne: user._id }, $or:checks });
     if (duplicate) return res.status(409).json({ ok: false, message: 'اسم المستخدم أو الهاتف أو البريد مستخدم مسبقاً' });
     let birthDate = user.birthDate;
     if (req.body.birthDate !== undefined) {
       birthDate = req.body.birthDate ? new Date(`${String(req.body.birthDate).slice(0, 10)}T00:00:00.000Z`) : null;
       if (birthDate && Number.isNaN(birthDate.getTime())) return res.status(400).json({ ok: false, message: 'تاريخ الميلاد غير صالح' });
     }
-    Object.assign(user, { fullName, username, phone, email, contact: phone, contactType: 'phone', birthDate, gender, status });
+    const contact=phone||email||user.contact,contactType=phone?'phone':'email';Object.assign(user, { fullName, username, phone, email, contact, contactType, birthDate, gender, status });
     if (req.body.password) {
       const password = String(req.body.password);
       if (password.length < 8) return res.status(400).json({ ok: false, message: 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل' });
