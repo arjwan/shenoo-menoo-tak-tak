@@ -11,6 +11,8 @@
 
   function text(selector, value) { var element = document.querySelector(selector); if (element) element.textContent = value; }
   function renderStore(store) {
+    document.body.dataset.storeTemplate = store.template || "elegant";
+    document.body.dataset.storeSpace = store.spaceSize || "small";
     text(".store-title h1", store.name || "متجر محفوظ");
     text(".store-title p", store.description || "تم تحميل بيانات هذا المتجر وحفظها على جهازك.");
     var meta = document.querySelector(".store-meta");

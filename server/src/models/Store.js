@@ -22,6 +22,8 @@ const storeSchema = new mongoose.Schema({
   instagram: { type: String, trim: true, maxlength: 220, default: '' },
   website: { type: String, trim: true, maxlength: 220, default: '' },
   plan: { type: String, enum: ['basic', 'plus', 'featured'], required: true },
+  template: { type: String, enum: ['elegant', 'tech', 'market'], default: 'elegant' },
+  spaceSize: { type: String, enum: ['small', 'medium', 'large'], default: 'small' },
   logoUrl: { type: String, default: '' },
   coverUrl: { type: String, default: '' },
   status: { type: String, enum: ['pending', 'approved', 'rejected', 'suspended'], default: 'pending', index: true },
