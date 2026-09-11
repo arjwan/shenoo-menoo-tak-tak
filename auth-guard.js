@@ -13,7 +13,7 @@
   }
 
   var smartFriendPolish = document.createElement('script');
-  smartFriendPolish.src = 'smart-friend-ui-polish.js?v=20260911-1';
+  smartFriendPolish.src = 'smart-friend-ui-polish.js?v=20260911-2';
   smartFriendPolish.defer = true;
   document.head.appendChild(smartFriendPolish);
 
