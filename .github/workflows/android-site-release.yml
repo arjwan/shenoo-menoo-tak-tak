@@ -33,17 +33,17 @@ jobs:
 
       - name: Restore release keystore
         env:
-          SITE_KEYSTORE_BASE64: ${{ secrets.SITE_KEYSTORE_BASE64 }}
+          SHNO_MANO_KEYSTORE_BASE64: ${{ secrets.SHNO_MANO_KEYSTORE_BASE64 }}
         run: |
-          test -n "$SITE_KEYSTORE_BASE64"
-          printf '%s' "$SITE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shno-mano-release.jks"
+          test -n "$SHNO_MANO_KEYSTORE_BASE64"
+          printf '%s' "$SHNO_MANO_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shno-mano-release.jks"
           test -s "$RUNNER_TEMP/shno-mano-release.jks"
 
       - name: Build signed Release APK
         env:
-          SITE_KEYSTORE_PASSWORD: ${{ secrets.SITE_KEYSTORE_PASSWORD }}
-          SITE_KEY_ALIAS: ${{ secrets.SITE_KEY_ALIAS }}
-          SITE_KEY_PASSWORD: ${{ secrets.SITE_KEY_PASSWORD }}
+          SITE_KEYSTORE_PASSWORD: ${{ secrets.SHNO_MANO_KEYSTORE_PASSWORD }}
+          SITE_KEY_ALIAS: ${{ secrets.SHNO_MANO_KEY_ALIAS }}
+          SITE_KEY_PASSWORD: ${{ secrets.SHNO_MANO_KEY_PASSWORD }}
         run: |
           test -n "$SITE_KEYSTORE_PASSWORD"
           test -n "$SITE_KEY_ALIAS"
