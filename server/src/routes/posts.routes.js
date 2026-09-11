@@ -1,136 +1,42 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const mongoose = require('mongoose');
-const { execFile } = require('child_process');
-const { promisify } = require('util');
-const { requireAuth } = require('../middleware/auth');
-const FriendRequest = require('../models/FriendRequest');
-const Post = require('../models/Post');
-const PostComment = require('../models/PostComment');
-const { normalizeVisibility, createPublishNotifications } = require('../lib/social-audience');
-
-const router = express.Router();
-const run = promisify(execFile);
-const uploadDir = path.resolve(__dirname, '../../../uploads/posts');
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const MAX_POST_BYTES = 1024 * 1024 * 1024;
-const mimeExt = new Map([
-  ['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp'],['image/gif','.gif'],['image/heic','.heic'],['image/heif','.heif'],
-  ['video/mp4','.mp4'],['video/x-m4v','.m4v'],['video/webm','.webm'],['video/quicktime','.mov'],['video/ogg','.ogv'],
-  ['video/3gpp','.3gp'],['video/3gpp2','.3g2'],['video/x-matroska','.mkv'],['video/x-msvideo','.avi'],['video/mpeg','.mpeg'],
-  ['video/mp2t','.ts'],['video/x-flv','.flv'],['video/x-ms-wmv','.wmv'],['video/x-ms-asf','.asf'],['video/x-f4v','.f4v'],
-  ['audio/mpeg','.mp3'],['audio/mp3','.mp3'],['audio/mp4','.m4a'],['audio/x-m4a','.m4a'],['audio/aac','.aac'],
-  ['audio/wav','.wav'],['audio/x-wav','.wav'],['audio/flac','.flac'],['audio/x-flac','.flac'],['audio/ogg','.ogg'],
-  ['audio/opus','.opus'],['audio/amr','.amr'],['audio/webm','.webm']
-]);
-const imageExt = new Set(['.jpg','.jpeg','.png','.webp','.gif','.heic','.heif']);
-const videoExt = new Set(['.mp4','.m4v','.mov','.webm','.ogv','.ogg','.3gp','.3g2','.mkv','.avi','.mpeg','.mpg','.ts','.mts','.m2ts','.flv','.wmv','.asf','.vob','.f4v','.ogm']);
-const audioExt = new Set(['.mp3','.m4a','.aac','.wav','.flac','.opus','.oga','.ogg','.amr']);
-const allowedExt = new Set([...imageExt, ...videoExt, ...audioExt]);
-
-function originalExt(file) {
-  return path.extname(file.originalname || '').toLowerCase();
-}
-function mediaExt(file) {
-  const ext = originalExt(file);
-  return mimeExt.get(String(file.mimetype || '').toLowerCase()) || (allowedExt.has(ext) ? ext : '');
-}
-function mediaKind(file) {
-  const mime = String(file.mimetype || '').toLowerCase();
-  const ext = originalExt(file);
-  if (mime.startsWith('image/') || imageExt.has(ext)) return 'image';
-  if (mime.startsWith('audio/') || audioExt.has(ext)) return 'audio';
-  if (mime.startsWith('video/') || videoExt.has(ext)) return 'video';
-  return '';
-}
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_r,_f,cb) => cb(null, uploadDir),
-    filename: (_r,f,cb) => cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${mediaExt(f)}`)
-  }),
-  limits: { fileSize: MAX_POST_BYTES, files: 1 },
-  fileFilter: (_r,f,cb) => mediaKind(f) ? cb(null,true) : cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))
-});
-
+const express=require('express');
+const multer=require('multer');
+const path=require('path');
+const fs=require('fs');
+const mongoose=require('mongoose');
+const {execFile}=require('child_process');
+const {promisify}=require('util');
+const {requireAuth}=require('../middleware/auth');
+const FriendRequest=require('../models/FriendRequest');
+const Post=require('../models/Post');
+const PostComment=require('../models/PostComment');
+const mediaStorage=require('../services/media-storage');
+const {normalizeVisibility,createPublishNotifications}=require('../lib/social-audience');
+const router=express.Router(),run=promisify(execFile),uploadDir=path.resolve(__dirname,'../../../uploads/posts');fs.mkdirSync(uploadDir,{recursive:true});
+const MAX_POST_BYTES=1024*1024*1024;
+const mimeExt=new Map([['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp'],['image/gif','.gif'],['image/heic','.heic'],['image/heif','.heif'],['video/mp4','.mp4'],['video/x-m4v','.m4v'],['video/webm','.webm'],['video/quicktime','.mov'],['video/ogg','.ogv'],['video/3gpp','.3gp'],['video/3gpp2','.3g2'],['video/x-matroska','.mkv'],['video/x-msvideo','.avi'],['video/mpeg','.mpeg'],['video/mp2t','.ts'],['video/x-flv','.flv'],['video/x-ms-wmv','.wmv'],['video/x-ms-asf','.asf'],['video/x-f4v','.f4v'],['audio/mpeg','.mp3'],['audio/mp3','.mp3'],['audio/mp4','.m4a'],['audio/x-m4a','.m4a'],['audio/aac','.aac'],['audio/wav','.wav'],['audio/x-wav','.wav'],['audio/flac','.flac'],['audio/x-flac','.flac'],['audio/ogg','.ogg'],['audio/opus','.opus'],['audio/amr','.amr'],['audio/webm','.webm']]);
+const imageExt=new Set(['.jpg','.jpeg','.png','.webp','.gif','.heic','.heif']),videoExt=new Set(['.mp4','.m4v','.mov','.webm','.ogv','.ogg','.3gp','.3g2','.mkv','.avi','.mpeg','.mpg','.ts','.mts','.m2ts','.flv','.wmv','.asf','.vob','.f4v','.ogm']),audioExt=new Set(['.mp3','.m4a','.aac','.wav','.flac','.opus','.oga','.ogg','.amr']),allowedExt=new Set([...imageExt,...videoExt,...audioExt]);
+const originalExt=f=>path.extname(f.originalname||'').toLowerCase();
+function mediaExt(f){const ext=originalExt(f);return mimeExt.get(String(f.mimetype||'').toLowerCase())||(allowedExt.has(ext)?ext:'')}
+function mediaKind(f){const mime=String(f.mimetype||'').toLowerCase(),ext=originalExt(f);if(mime.startsWith('image/'))return'image';if(mime.startsWith('video/'))return'video';if(mime.startsWith('audio/'))return'audio';if(imageExt.has(ext))return'image';if(videoExt.has(ext))return'video';if(audioExt.has(ext))return'audio';return''}
+const upload=multer({storage:multer.diskStorage({destination:(_r,_f,cb)=>cb(null,uploadDir),filename:(_r,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${mediaExt(f)}`)}),limits:{fileSize:MAX_POST_BYTES,files:1},fileFilter:(_r,f,cb)=>mediaKind(f)?cb(null,true):cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))});
 router.use(requireAuth);
-function userView(u){return u?{id:u._id,fullName:u.displayName||u.fullName,username:u.username,avatarUrl:u.profile?.avatarUrl||''}:{id:'',fullName:'حساب محذوف',username:'',avatarUrl:''};}
-function canManagePost(p,u){return String(p.author?._id||p.author)===String(u._id)||['admin','developer'].includes(u.role);}
-
-async function normalizeUploadedMedia(file) {
-  if (!file) return file;
-  const kind = mediaKind(file);
-  if (kind === 'image') return { ...file, mediaType: 'image' };
-  if (kind === 'audio' && file.mimetype === 'audio/mpeg') return { ...file, mediaType: 'audio' };
-  if (kind === 'video' && ['video/mp4','video/webm'].includes(file.mimetype)) return { ...file, mediaType: 'video' };
-
-  const output = file.path.replace(/\.[^.]+$/, '') + (kind === 'audio' ? '-converted.mp3' : '-converted.mp4');
-  const args = kind === 'audio'
-    ? ['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output]
-    : ['-y','-i',file.path,'-vf','scale=min(1920\\,iw):-2','-c:v','libx264','-preset','veryfast','-crf','23','-c:a','aac','-b:a','160k','-movflags','+faststart',output];
-  try {
-    await run('ffmpeg', args, { timeout: 60 * 60 * 1000, maxBuffer: 4 * 1024 * 1024 });
-    const stat = await fs.promises.stat(output);
-    await fs.promises.unlink(file.path);
-    return {
-      ...file,
-      path: output,
-      filename: path.basename(output),
-      mimetype: kind === 'audio' ? 'audio/mpeg' : 'video/mp4',
-      mediaType: kind,
-      size: stat.size
-    };
-  } catch (e) {
-    await fs.promises.unlink(output).catch(()=>{});
-    throw Error('تعذر تحويل الملف. تأكد من سلامة الفيديو أو الصوت ومن توفر FFmpeg على الخادم.');
-  }
-}
-
-function mediaFromFile(f){if(!f)return[];const type=f.mediaType||mediaKind(f);return[{url:`/uploads/posts/${f.filename}`,type,mimeType:f.mimetype,size:f.size}];}
-function deleteStoredMedia(media){for(const item of media||[]){if(item?.url?.startsWith('/uploads/posts/'))fs.unlink(path.join(uploadDir,path.basename(item.url)),()=>{});}}
-function postView(p,u){return {id:p._id,author:userView(p.author),text:p.text,media:p.media,type:p.type,visibility:p.visibility,adStatus:p.adStatus,adTitle:p.adTitle||'',adContact:p.adContact||'',adCategory:p.adCategory||'',adReviewNote:p.adReviewNote||'',likesCount:p.likes.length,liked:p.likes.some(id=>String(id)===String(u._id)),commentsCount:p.commentsCount,createdAt:p.createdAt,updatedAt:p.updatedAt,canEdit:canManagePost(p,u),canDelete:canManagePost(p,u)};}
-async function friendIds(userId){const rows=await FriendRequest.find({$or:[{sender:userId},{receiver:userId}],status:'accepted'}).select('sender receiver');return rows.map(r=>String(r.sender)===String(userId)?r.receiver:r.sender);}
-
-router.get('/',async(req,res)=>{const friends=await friendIds(req.user._id);const page=Math.max(1,Number(req.query.page)||1),limit=Math.min(30,Math.max(1,Number(req.query.limit)||15));const query={active:true,$and:[{$or:[{type:'post'},{type:'ad',adStatus:'approved'}]},{$or:[{visibility:'everyone'},{author:req.user._id},{visibility:'friends',author:{$in:friends}}]}]};const posts=await Post.find(query).populate('author','fullName displayName username profile').sort({createdAt:-1}).skip((page-1)*limit).limit(limit);res.json({ok:true,posts:posts.map(p=>postView(p,req.user))});});
-router.get('/ads',async(req,res)=>{const page=Math.max(1,Number(req.query.page)||1),limit=Math.min(30,Math.max(1,Number(req.query.limit)||20));const ads=await Post.find({active:true,type:'ad',adStatus:'approved'}).populate('author','fullName displayName username profile').sort({createdAt:-1}).skip((page-1)*limit).limit(limit);res.json({ok:true,ads:ads.map(p=>postView(p,req.user))});});
-router.get('/ads/mine',async(req,res)=>{const ads=await Post.find({active:true,type:'ad',author:req.user._id}).populate('author','fullName displayName username profile').sort({createdAt:-1});res.json({ok:true,ads:ads.map(p=>postView(p,req.user))});});
-router.get('/ads/pending',async(req,res)=>{if(!['admin','developer'].includes(req.user.role))return res.status(403).json({ok:false,message:'هذه الصفحة للمطور والإدارة فقط'});const ads=await Post.find({active:true,type:'ad',adStatus:'pending'}).populate('author','fullName displayName username profile').sort({createdAt:1});res.json({ok:true,ads:ads.map(p=>postView(p,req.user))});});
-
-router.post('/',upload.single('media'),async(req,res)=>{
-  let file=req.file;
-  try{
-    const text=String(req.body.text||'').trim();if(!text&&!file)return res.status(400).json({ok:false,message:'اكتب منشوراً أو أرفق صورة/فيديو/صوت'});if(text.length>5000)return res.status(400).json({ok:false,message:'المنشور طويل جداً'});
-    file=await normalizeUploadedMedia(file);
-    const requestedType=req.body.type==='ad'?'ad':'post',visibility=normalizeVisibility(req.body.visibility),isModerator=['admin','developer'].includes(req.user.role);
-    const adTitle=String(req.body.adTitle||'').trim(),adContact=String(req.body.adContact||'').trim(),adCategory=String(req.body.adCategory||'').trim();if(requestedType==='ad'&&!adTitle)return res.status(400).json({ok:false,message:'أدخل عنوان الإعلان'});
-    const post=await Post.create({author:req.user._id,text,media:mediaFromFile(file),type:requestedType,visibility:requestedType==='ad'?'everyone':visibility,adStatus:requestedType==='ad'?(isModerator?'approved':'pending'):'not_ad',adTitle:requestedType==='ad'?adTitle:'',adContact:requestedType==='ad'?adContact:'',adCategory:requestedType==='ad'?adCategory:'',adReviewedBy:requestedType==='ad'&&isModerator?req.user._id:null,adReviewedAt:requestedType==='ad'&&isModerator?new Date():null});
-    await post.populate('author','fullName displayName username profile');
-    if(requestedType==='post') await createPublishNotifications({authorId:req.user._id,type:'post',targetId:post._id,visibility,text:`${req.user.displayName||req.user.fullName||'صديقك'} نشر منشوراً جديداً`}).catch(()=>{});
-    res.status(201).json({ok:true,message:requestedType==='ad'&&!isModerator?'تم إرسال الإعلان إلى المطور للمراجعة قبل النشر':'تم النشر',post:postView(post,req.user)});
-  }catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message});}
-});
-
-router.patch('/ads/:id/review',async(req,res)=>{if(!['admin','developer'].includes(req.user.role))return res.status(403).json({ok:false,message:'هذه العملية للمطور والإدارة فقط'});if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'إعلان غير صالح'});const decision=String(req.body.decision||'').toLowerCase();if(!['approved','rejected'].includes(decision))return res.status(400).json({ok:false,message:'قرار المراجعة غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true,type:'ad'});if(!post)return res.status(404).json({ok:false,message:'الإعلان غير موجود'});post.adStatus=decision;post.adReviewedBy=req.user._id;post.adReviewedAt=new Date();post.adReviewNote=String(req.body.note||'').trim().slice(0,500);await post.save();await post.populate('author','fullName displayName username profile');res.json({ok:true,message:decision==='approved'?'تمت الموافقة على الإعلان ونشره':'تم رفض الإعلان',post:postView(post,req.user)});});
-
-router.patch('/:id',upload.single('media'),async(req,res)=>{
-  let file=req.file;
-  try{
-    if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'منشور غير صالح'});
-    const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});if(!canManagePost(post,req.user))return res.status(403).json({ok:false,message:'لا يمكنك تعديل هذا المنشور'});
-    if(req.body.text!==undefined){const text=String(req.body.text||'').trim();if(text.length>5000)return res.status(400).json({ok:false,message:'المنشور طويل جداً'});post.text=text;}
-    if(req.body.visibility!==undefined&&post.type!=='ad')post.visibility=normalizeVisibility(req.body.visibility);
-    if(post.type==='ad'){if(req.body.adTitle!==undefined)post.adTitle=String(req.body.adTitle||'').trim().slice(0,120);if(req.body.adContact!==undefined)post.adContact=String(req.body.adContact||'').trim().slice(0,160);if(req.body.adCategory!==undefined)post.adCategory=String(req.body.adCategory||'').trim().slice(0,80);if(!['admin','developer'].includes(req.user.role)){post.adStatus='pending';post.adReviewedBy=null;post.adReviewedAt=null;post.adReviewNote='';}}
-    if(file){file=await normalizeUploadedMedia(file);deleteStoredMedia(post.media);post.media=mediaFromFile(file);}else if(String(req.body.removeMedia||'').toLowerCase()==='true'){deleteStoredMedia(post.media);post.media=[];}
-    if(!post.text&&(!post.media||!post.media.length))return res.status(400).json({ok:false,message:'لا يمكن حفظ منشور فارغ'});
-    await post.save();await post.populate('author','fullName displayName username profile');res.json({ok:true,message:post.type==='ad'&&post.adStatus==='pending'?'تم حفظ التعديل وإعادة الإعلان للمراجعة':'تم تعديل المنشور',post:postView(post,req.user)});
-  }catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message});}
-});
-
-router.delete('/:id',async(req,res)=>{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'منشور غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});if(!canManagePost(post,req.user))return res.status(403).json({ok:false,message:'لا يمكنك حذف هذا المنشور'});deleteStoredMedia(post.media);await PostComment.deleteMany({post:post._id});await Post.deleteOne({_id:post._id});res.json({ok:true,message:'تم حذف المنشور'});});
-router.post('/:id/like',async(req,res)=>{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'منشور غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});const index=post.likes.findIndex(id=>String(id)===String(req.user._id));if(index>=0)post.likes.splice(index,1);else post.likes.push(req.user._id);await post.save();res.json({ok:true,liked:index<0,likesCount:post.likes.length});});
-router.get('/:id/comments',async(req,res)=>{const comments=await PostComment.find({post:req.params.id}).populate('author','fullName displayName username profile').sort({createdAt:1}).limit(100);res.json({ok:true,comments:comments.map(c=>({id:c._id,text:c.text,author:userView(c.author),createdAt:c.createdAt}))});});
-router.post('/:id/comments',async(req,res)=>{const text=String(req.body.text||'').trim();if(!text||text.length>2000)return res.status(400).json({ok:false,message:'التعليق غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});const comment=await PostComment.create({post:post._id,author:req.user._id,text});post.commentsCount+=1;await post.save();await comment.populate('author','fullName displayName username profile');res.status(201).json({ok:true,comment:{id:comment._id,text:comment.text,author:userView(comment.author),createdAt:comment.createdAt},commentsCount:post.commentsCount});});
+function userView(u){return u?{id:u._id,fullName:u.displayName||u.fullName,username:u.username,avatarUrl:u.profile?.avatarUrl||''}:{id:'',fullName:'حساب محذوف',username:'',avatarUrl:''}}
+function canManagePost(p,u){return String(p.author?._id||p.author)===String(u._id)||['admin','developer'].includes(u.role)}
+async function probeMedia(filePath){const {stdout}=await run('ffprobe',['-v','error','-print_format','json','-show_streams','-show_format',filePath],{timeout:120000,maxBuffer:4*1024*1024});try{return JSON.parse(stdout||'{}')}catch{return{streams:[],format:{}}}}
+async function normalizeUploadedMedia(file){if(!file)return file;const kind=mediaKind(file);if(kind==='image')return{...file,mediaType:'image'};let output=file.path.replace(/\.[^.]+$/,'')+(kind==='audio'?'-converted.mp3':'-converted.mp4'),args,mediaType=kind,outMime=kind==='audio'?'audio/mpeg':'video/mp4';if(kind==='audio'){args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output]}else{const probe=await probeMedia(file.path),streams=Array.isArray(probe.streams)?probe.streams:[],videos=streams.filter(s=>s.codec_type==='video'),normalVideo=videos.find(s=>!(s.disposition&&Number(s.disposition.attached_pic)===1)),cover=videos.find(s=>s.disposition&&Number(s.disposition.attached_pic)===1)||videos[0],hasAudio=streams.some(s=>s.codec_type==='audio');if(normalVideo){args=['-y','-i',file.path,'-map',`0:${normalVideo.index}`,'-map','0:a:0?','-vf','scale=min(1280\\,iw):-2','-r','30','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart',output]}else if(cover&&hasAudio){const filter=`[0:${cover.index}]scale='min(1280,iw)':-2,format=yuv420p,loop=loop=-1:size=1:start=0,fps=30[v]`;args=['-y','-i',file.path,'-filter_complex',filter,'-map','[v]','-map','0:a:0','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output]}else if(hasAudio){output=file.path.replace(/\.[^.]+$/,'')+'-converted.mp3';mediaType='audio';outMime='audio/mpeg';args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output]}else throw Error('الملف لا يحتوي مسار فيديو أو صوت قابل للتشغيل')}try{await run('ffmpeg',args,{timeout:60*60*1000,maxBuffer:8*1024*1024});const stat=await fs.promises.stat(output);await fs.promises.unlink(file.path);return{...file,path:output,filename:path.basename(output),mimetype:outMime,mediaType,size:stat.size}}catch(e){await fs.promises.unlink(output).catch(()=>{});throw Error('تعذر تحويل الملف إلى صيغة تشغيل متوافقة. تأكد من سلامة الفيديو أو الصوت ومن توفر FFmpeg على الخادم.')}}
+async function mediaFromFile(f){if(!f)return[];const type=f.mediaType||mediaKind(f),fallbackUrl=`/uploads/posts/${f.filename}`,published=await mediaStorage.publishFile(f,{category:'posts',fallbackUrl});return[{url:published.url,fallbackUrl:published.fallbackUrl,storageKey:published.storageKey,storage:published.storage,type,mimeType:f.mimetype,size:f.size}]}
+async function deleteStoredMedia(media){for(const item of media||[]){const local=item?.fallbackUrl||item?.url;if(local?.startsWith('/uploads/posts/'))fs.unlink(path.join(uploadDir,path.basename(local)),()=>{});if(item?.storageKey)await mediaStorage.deleteObject(item.storageKey).catch(()=>{})}}
+function postView(p,u){return{id:p._id,author:userView(p.author),text:p.text,media:p.media,type:p.type,visibility:p.visibility,adStatus:p.adStatus,adTitle:p.adTitle||'',adContact:p.adContact||'',adCategory:p.adCategory||'',adReviewNote:p.adReviewNote||'',likesCount:p.likes.length,liked:p.likes.some(id=>String(id)===String(u._id)),commentsCount:p.commentsCount,createdAt:p.createdAt,updatedAt:p.updatedAt,canEdit:canManagePost(p,u),canDelete:canManagePost(p,u)}}
+async function friendIds(userId){const rows=await FriendRequest.find({$or:[{sender:userId},{receiver:userId}],status:'accepted'}).select('sender receiver');return rows.map(r=>String(r.sender)===String(userId)?r.receiver:r.sender)}
+router.get('/',async(req,res)=>{const friends=await friendIds(req.user._id),page=Math.max(1,Number(req.query.page)||1),limit=Math.min(30,Math.max(1,Number(req.query.limit)||15)),query={active:true,$and:[{$or:[{type:'post'},{type:'ad',adStatus:'approved'}]},{$or:[{visibility:'everyone'},{author:req.user._id},{visibility:'friends',author:{$in:friends}}]}]},posts=await Post.find(query).populate('author','fullName displayName username profile').sort({createdAt:-1}).skip((page-1)*limit).limit(limit);res.json({ok:true,posts:posts.map(p=>postView(p,req.user))})});
+router.get('/ads',async(req,res)=>{const page=Math.max(1,Number(req.query.page)||1),limit=Math.min(30,Math.max(1,Number(req.query.limit)||20)),ads=await Post.find({active:true,type:'ad',adStatus:'approved'}).populate('author','fullName displayName username profile').sort({createdAt:-1}).skip((page-1)*limit).limit(limit);res.json({ok:true,ads:ads.map(p=>postView(p,req.user))})});
+router.get('/ads/mine',async(req,res)=>{const ads=await Post.find({active:true,type:'ad',author:req.user._id}).populate('author','fullName displayName username profile').sort({createdAt:-1});res.json({ok:true,ads:ads.map(p=>postView(p,req.user))})});
+router.get('/ads/pending',async(req,res)=>{if(!['admin','developer'].includes(req.user.role))return res.status(403).json({ok:false,message:'هذه الصفحة للمطور والإدارة فقط'});const ads=await Post.find({active:true,type:'ad',adStatus:'pending'}).populate('author','fullName displayName username profile').sort({createdAt:1});res.json({ok:true,ads:ads.map(p=>postView(p,req.user))})});
+router.post('/',upload.single('media'),async(req,res)=>{let file=req.file;try{const text=String(req.body.text||'').trim();if(!text&&!file)return res.status(400).json({ok:false,message:'اكتب منشوراً أو أرفق صورة/فيديو/صوت'});if(text.length>5000)return res.status(400).json({ok:false,message:'المنشور طويل جداً'});file=await normalizeUploadedMedia(file);const requestedType=req.body.type==='ad'?'ad':'post',visibility=normalizeVisibility(req.body.visibility),isModerator=['admin','developer'].includes(req.user.role),adTitle=String(req.body.adTitle||'').trim(),adContact=String(req.body.adContact||'').trim(),adCategory=String(req.body.adCategory||'').trim();if(requestedType==='ad'&&!adTitle)return res.status(400).json({ok:false,message:'أدخل عنوان الإعلان'});const post=await Post.create({author:req.user._id,text,media:await mediaFromFile(file),type:requestedType,visibility:requestedType==='ad'?'everyone':visibility,adStatus:requestedType==='ad'?(isModerator?'approved':'pending'):'not_ad',adTitle:requestedType==='ad'?adTitle:'',adContact:requestedType==='ad'?adContact:'',adCategory:requestedType==='ad'?adCategory:'',adReviewedBy:requestedType==='ad'&&isModerator?req.user._id:null,adReviewedAt:requestedType==='ad'&&isModerator?new Date():null});await post.populate('author','fullName displayName username profile');if(requestedType==='post')await createPublishNotifications({authorId:req.user._id,type:'post',targetId:post._id,visibility,text:`${req.user.displayName||req.user.fullName||'صديقك'} نشر منشوراً جديداً`}).catch(()=>{});res.status(201).json({ok:true,message:requestedType==='ad'&&!isModerator?'تم إرسال الإعلان إلى المطور للمراجعة قبل النشر':'تم النشر',post:postView(post,req.user)})}catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message})}});
+router.patch('/ads/:id/review',async(req,res)=>{if(!['admin','developer'].includes(req.user.role))return res.status(403).json({ok:false,message:'هذه العملية للمطور والإدارة فقط'});if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'إعلان غير صالح'});const decision=String(req.body.decision||'').toLowerCase();if(!['approved','rejected'].includes(decision))return res.status(400).json({ok:false,message:'قرار المراجعة غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true,type:'ad'});if(!post)return res.status(404).json({ok:false,message:'الإعلان غير موجود'});post.adStatus=decision;post.adReviewedBy=req.user._id;post.adReviewedAt=new Date();post.adReviewNote=String(req.body.note||'').trim().slice(0,500);await post.save();await post.populate('author','fullName displayName username profile');res.json({ok:true,message:decision==='approved'?'تمت الموافقة على الإعلان ونشره':'تم رفض الإعلان',post:postView(post,req.user)})});
+router.patch('/:id',upload.single('media'),async(req,res)=>{let file=req.file;try{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'منشور غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});if(!canManagePost(post,req.user))return res.status(403).json({ok:false,message:'لا يمكنك تعديل هذا المنشور'});if(req.body.text!==undefined){const text=String(req.body.text||'').trim();if(text.length>5000)return res.status(400).json({ok:false,message:'المنشور طويل جداً'});post.text=text}if(req.body.visibility!==undefined&&post.type!=='ad')post.visibility=normalizeVisibility(req.body.visibility);if(post.type==='ad'){if(req.body.adTitle!==undefined)post.adTitle=String(req.body.adTitle||'').trim().slice(0,120);if(req.body.adContact!==undefined)post.adContact=String(req.body.adContact||'').trim().slice(0,160);if(req.body.adCategory!==undefined)post.adCategory=String(req.body.adCategory||'').trim().slice(0,80);if(!['admin','developer'].includes(req.user.role)){post.adStatus='pending';post.adReviewedBy=null;post.adReviewedAt=null;post.adReviewNote=''}}if(file){file=await normalizeUploadedMedia(file);await deleteStoredMedia(post.media);post.media=await mediaFromFile(file)}else if(String(req.body.removeMedia||'').toLowerCase()==='true'){await deleteStoredMedia(post.media);post.media=[]}if(!post.text&&(!post.media||!post.media.length))return res.status(400).json({ok:false,message:'لا يمكن حفظ منشور فارغ'});await post.save();await post.populate('author','fullName displayName username profile');res.json({ok:true,message:post.type==='ad'&&post.adStatus==='pending'?'تم حفظ التعديل وإعادة الإعلان للمراجعة':'تم تعديل المنشور',post:postView(post,req.user)})}catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message})}});
+router.delete('/:id',async(req,res)=>{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'منشور غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});if(!canManagePost(post,req.user))return res.status(403).json({ok:false,message:'لا يمكنك حذف هذا المنشور'});await deleteStoredMedia(post.media);await PostComment.deleteMany({post:post._id});await Post.deleteOne({_id:post._id});res.json({ok:true,message:'تم حذف المنشور'})});
+router.post('/:id/like',async(req,res)=>{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({ok:false,message:'منشور غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});const index=post.likes.findIndex(id=>String(id)===String(req.user._id));if(index>=0)post.likes.splice(index,1);else post.likes.push(req.user._id);await post.save();res.json({ok:true,liked:index<0,likesCount:post.likes.length})});
+router.get('/:id/comments',async(req,res)=>{const comments=await PostComment.find({post:req.params.id}).populate('author','fullName displayName username profile').sort({createdAt:1}).limit(100);res.json({ok:true,comments:comments.map(c=>({id:c._id,text:c.text,author:userView(c.author),createdAt:c.createdAt}))})});
+router.post('/:id/comments',async(req,res)=>{const text=String(req.body.text||'').trim();if(!text||text.length>2000)return res.status(400).json({ok:false,message:'التعليق غير صالح'});const post=await Post.findOne({_id:req.params.id,active:true});if(!post)return res.status(404).json({ok:false,message:'المنشور غير موجود'});const comment=await PostComment.create({post:post._id,author:req.user._id,text});post.commentsCount+=1;await post.save();await comment.populate('author','fullName displayName username profile');res.status(201).json({ok:true,comment:{id:comment._id,text:comment.text,author:userView(comment.author),createdAt:comment.createdAt},commentsCount:post.commentsCount})});
 module.exports=router;
