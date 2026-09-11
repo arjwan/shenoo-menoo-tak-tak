@@ -4,6 +4,14 @@
   themeScript.defer = true;
   document.head.appendChild(themeScript);
 
+  if (!document.querySelector('script[data-shno-media-cache]')) {
+    var mediaCache = document.createElement('script');
+    mediaCache.src = 'media-cache.js?v=20260912-2';
+    mediaCache.defer = true;
+    mediaCache.setAttribute('data-shno-media-cache', '1');
+    document.head.appendChild(mediaCache);
+  }
+
   if (!document.querySelector('link[data-taktak-mobile-fixes]')) {
     var fixes = document.createElement('link');
     fixes.rel = 'stylesheet';
