@@ -19,7 +19,24 @@ function signedHeaders({method,key,payloadHash,contentType=''}){
  headers.authorization=`AWS4-HMAC-SHA256 Credential=${access}/${scope}, SignedHeaders=${signed}, Signature=${hmac(signingKey(secret,date),toSign,'hex')}`;
  return{host,uri,headers};
 }
+function awsEncode(v){return encodeURIComponent(String(v)).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase());}
+function presignPut({key,expires=900}){
+ if(!configured())throw Error('R2 غير مهيأ');
+ const account=process.env.R2_ACCOUNT_ID,bucket=process.env.R2_BUCKET,access=process.env.R2_ACCESS_KEY_ID,secret=process.env.R2_SECRET_ACCESS_KEY;
+ const host=`${account}.r2.cloudflarestorage.com`,uri=`/${encodeURIComponent(bucket)}/${encKey(key)}`,stamp=amzDate(),date=stamp.slice(0,8),scope=`${date}/auto/s3/aws4_request`;
+ const q={"X-Amz-Algorithm":'AWS4-HMAC-SHA256',"X-Amz-Credential":`${access}/${scope}`,"X-Amz-Date":stamp,"X-Amz-Expires":String(Math.min(3600,Math.max(60,Number(expires)||900))),"X-Amz-SignedHeaders":'host'};
+ const query=Object.keys(q).sort().map(k=>`${awsEncode(k)}=${awsEncode(q[k])}`).join('&');
+ const canonical=['PUT',uri,query,`host:${host}\n`,'host','UNSIGNED-PAYLOAD'].join('\n');
+ const toSign=['AWS4-HMAC-SHA256',stamp,scope,crypto.createHash('sha256').update(canonical).digest('hex')].join('\n');
+ const signature=hmac(signingKey(secret,date),toSign,'hex');
+ return{uploadUrl:`https://${host}${uri}?${query}&X-Amz-Signature=${signature}`,url:`${cleanBase()}/${encKey(key)}`,storageKey:key,storage:'r2',expiresIn:Number(q['X-Amz-Expires'])};
+}
+function directKey(category,originalName='media.bin'){
+ const ext=path.extname(String(originalName)).toLowerCase().replace(/[^.a-z0-9]/g,'').slice(0,10);
+ const safeCategory=String(category||'media').replace(/[^a-z0-9_-]/gi,'')||'media';
+ return `${safeCategory}/${Date.now()}-${crypto.randomBytes(9).toString('hex')}${ext}`;
+}
 async function putFile(filePath,key,contentType){if(!configured())return false;const payloadHash=await sha256File(filePath),stat=await fs.promises.stat(filePath),sig=signedHeaders({method:'PUT',key,payloadHash,contentType});return new Promise((resolve,reject)=>{const req=https.request({hostname:sig.host,path:sig.uri,method:'PUT',headers:{...sig.headers,'content-length':stat.size}},res=>{res.resume();res.on('end',()=>res.statusCode>=200&&res.statusCode<300?resolve(true):reject(Error(`R2 upload failed: HTTP ${res.statusCode}`)))});req.on('error',reject);fs.createReadStream(filePath).on('error',reject).pipe(req)});}
 async function deleteObject(key){if(!configured()||!key)return false;const empty=crypto.createHash('sha256').update('').digest('hex'),sig=signedHeaders({method:'DELETE',key,payloadHash:empty});return new Promise((resolve,reject)=>{const req=https.request({hostname:sig.host,path:sig.uri,method:'DELETE',headers:sig.headers},res=>{res.resume();res.on('end',()=>res.statusCode>=200&&res.statusCode<300||res.statusCode===404?resolve(true):reject(Error(`R2 delete failed: HTTP ${res.statusCode}`)))});req.on('error',reject);req.end()});}
-async function publishFile(file,{category,fallbackUrl}){if(!file)return null;const key=`${String(category||'media').replace(/[^a-z0-9_-]/gi,'')}/${path.basename(file.filename||file.path)}`;if(!configured())return{url:fallbackUrl,fallbackUrl,storageKey:'',storage:'local'};await putFile(file.path,key,file.mimetype||'application/octet-stream');return{url:`${cleanBase()}/${encKey(key)}`,fallbackUrl,storageKey:key,storage:'r2'};}
-module.exports={configured,publishFile,deleteObject};
+async function publishFile(file,{category,fallbackUrl}){if(!file)return null;const filePath=typeof file==='string'?file:(file.path||file.filename);if(!filePath)throw Error('مسار ملف الميديا غير صالح');const key=`${String(category||'media').replace(/[^a-z0-9_-]/gi,'')}/${path.basename((typeof file==='object'&&(file.filename||file.path))||filePath)}`;if(!configured())return{url:fallbackUrl,fallbackUrl,storageKey:'',storage:'local'};await putFile(filePath,key,(typeof file==='object'&&file.mimetype)||'application/octet-stream');return{url:`${cleanBase()}/${encKey(key)}`,fallbackUrl,storageKey:key,storage:'r2'};}
+module.exports={configured,publishFile,deleteObject,presignPut,directKey};
