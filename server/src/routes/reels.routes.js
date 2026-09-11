@@ -6,6 +6,7 @@ const {execFile}=require('child_process');
 const {promisify}=require('util');
 const {requireAuth}=require('../middleware/auth');
 const Reel=require('../models/Reel');
+const mediaStorage=require('../services/media-storage');
 const {normalizeVisibility,friendIds,followingIds,createPublishNotifications}=require('../lib/social-audience');
 const router=express.Router(),run=promisify(execFile);
 const uploadDir=path.resolve(__dirname,'../../../uploads/reels');fs.mkdirSync(uploadDir,{recursive:true});
@@ -21,44 +22,13 @@ router.use(requireAuth);
 function userView(u){return u?{id:u._id,fullName:u.displayName||u.fullName,username:u.username,avatarUrl:u.profile?.avatarUrl||''}:null;}
 function ownerId(author){return author&&author._id?author._id:author;}
 function view(r,u){return{id:r._id,author:userView(r.author),text:r.text,media:r.media,visibility:r.visibility,likes:r.likes?.length||0,liked:r.likes?.some(id=>String(id)===String(u._id))||false,commentsCount:r.comments?.length||0,saved:r.savedBy?.some(id=>String(id)===String(u._id))||false,canDelete:String(ownerId(r.author))===String(u._id),createdAt:r.createdAt};}
-function removeFile(url){if(url&&url.startsWith('/uploads/reels/'))fs.unlink(path.join(uploadDir,path.basename(url)),()=>{});}
-async function probeMedia(filePath){
- const {stdout}=await run('ffprobe',['-v','error','-print_format','json','-show_streams','-show_format',filePath],{timeout:120000,maxBuffer:4*1024*1024});
- try{return JSON.parse(stdout||'{}')}catch{return{streams:[],format:{}}}
-}
-async function normalizeMedia(file){
- if(!file)return file;
- const ext=path.extname(file.originalname||'').toLowerCase();
- const mime=String(file.mimetype||'').toLowerCase();
- const declaredAudio=mime.startsWith('audio/')||['.mp3','.m4a','.aac','.wav','.flac','.opus','.oga','.amr'].includes(ext);
- let output=file.path.replace(/\.[^.]+$/, '')+(declaredAudio?'-converted.mp3':'-converted.mp4');
- let args,mediaType=declaredAudio?'audio':'video',outMime=declaredAudio?'audio/mpeg':'video/mp4';
- if(declaredAudio){
-   args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output];
- }else{
-   const probe=await probeMedia(file.path);
-   const streams=Array.isArray(probe.streams)?probe.streams:[];
-   const videos=streams.filter(s=>s.codec_type==='video');
-   const normalVideo=videos.find(s=>!(s.disposition&&Number(s.disposition.attached_pic)===1));
-   const cover=videos.find(s=>s.disposition&&Number(s.disposition.attached_pic)===1)||videos[0];
-   const hasAudio=streams.some(s=>s.codec_type==='audio');
-   if(normalVideo){
-     args=['-y','-i',file.path,'-map',`0:${normalVideo.index}`,'-map','0:a:0?','-vf','scale=min(1280\\,iw):-2','-r','30','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart',output];
-   }else if(cover&&hasAudio){
-     const filter=`[0:${cover.index}]scale='min(1280,iw)':-2,format=yuv420p,loop=loop=-1:size=1:start=0,fps=30[v]`;
-     args=['-y','-i',file.path,'-filter_complex',filter,'-map','[v]','-map','0:a:0','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output];
-   }else if(hasAudio){
-     output=file.path.replace(/\.[^.]+$/, '')+'-converted.mp3';mediaType='audio';outMime='audio/mpeg';
-     args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output];
-   }else{
-     throw Error('الملف لا يحتوي مسار فيديو أو صوت قابل للتشغيل');
-   }
- }
- try{await run('ffmpeg',args,{timeout:60*60*1000,maxBuffer:8*1024*1024});const stat=await fs.promises.stat(output);await fs.promises.unlink(file.path);return{...file,path:output,filename:path.basename(output),mimetype:outMime,mediaType,size:stat.size};}catch(e){await fs.promises.unlink(output).catch(()=>{});throw Error('تعذر تحويل الملف إلى صيغة تشغيل متوافقة. تأكد من سلامة الفيديو أو الصوت ومن توفر FFmpeg على الخادم.');}
-}
+function removeLocal(url){if(url&&url.startsWith('/uploads/reels/'))fs.unlink(path.join(uploadDir,path.basename(url)),()=>{});}
+async function removeMedia(item){removeLocal(item?.fallbackUrl||item?.url);if(item?.storageKey)await mediaStorage.deleteObject(item.storageKey).catch(()=>{});}
+async function probeMedia(filePath){const {stdout}=await run('ffprobe',['-v','error','-print_format','json','-show_streams','-show_format',filePath],{timeout:120000,maxBuffer:4*1024*1024});try{return JSON.parse(stdout||'{}')}catch{return{streams:[],format:{}}}}
+async function normalizeMedia(file){if(!file)return file;const ext=path.extname(file.originalname||'').toLowerCase(),mime=String(file.mimetype||'').toLowerCase(),declaredAudio=mime.startsWith('audio/')||['.mp3','.m4a','.aac','.wav','.flac','.opus','.oga','.amr'].includes(ext);let output=file.path.replace(/\.[^.]+$/,'')+(declaredAudio?'-converted.mp3':'-converted.mp4'),args,mediaType=declaredAudio?'audio':'video',outMime=declaredAudio?'audio/mpeg':'video/mp4';if(declaredAudio){args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output]}else{const probe=await probeMedia(file.path),streams=Array.isArray(probe.streams)?probe.streams:[],videos=streams.filter(s=>s.codec_type==='video'),normalVideo=videos.find(s=>!(s.disposition&&Number(s.disposition.attached_pic)===1)),cover=videos.find(s=>s.disposition&&Number(s.disposition.attached_pic)===1)||videos[0],hasAudio=streams.some(s=>s.codec_type==='audio');if(normalVideo){args=['-y','-i',file.path,'-map',`0:${normalVideo.index}`,'-map','0:a:0?','-vf','scale=min(1280\\,iw):-2','-r','30','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart',output]}else if(cover&&hasAudio){const filter=`[0:${cover.index}]scale='min(1280,iw)':-2,format=yuv420p,loop=loop=-1:size=1:start=0,fps=30[v]`;args=['-y','-i',file.path,'-filter_complex',filter,'-map','[v]','-map','0:a:0','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output]}else if(hasAudio){output=file.path.replace(/\.[^.]+$/,'')+'-converted.mp3';mediaType='audio';outMime='audio/mpeg';args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output]}else throw Error('الملف لا يحتوي مسار فيديو أو صوت قابل للتشغيل')}try{await run('ffmpeg',args,{timeout:60*60*1000,maxBuffer:8*1024*1024});const stat=await fs.promises.stat(output);await fs.promises.unlink(file.path);return{...file,path:output,filename:path.basename(output),mimetype:outMime,mediaType,size:stat.size}}catch(e){await fs.promises.unlink(output).catch(()=>{});throw Error('تعذر تحويل الملف إلى صيغة تشغيل متوافقة. تأكد من سلامة الفيديو أو الصوت ومن توفر FFmpeg على الخادم.')}}
 router.get('/',async(req,res)=>{try{const[friends,following]=await Promise.all([friendIds(req.user._id),followingIds(req.user._id)]),combined=[...new Map([...friends,...following].map(id=>[String(id),id])).values()],reels=await Reel.find({active:true,$or:[{visibility:'everyone'},{author:req.user._id},{visibility:'friends',author:{$in:friends}},{visibility:'followers',author:{$in:following}},{visibility:'friends_followers',author:{$in:combined}}]}).populate('author','fullName displayName username profile').sort({createdAt:-1}).limit(30);res.json({ok:true,reels:reels.map(r=>view(r,req.user))});}catch(e){res.status(500).json({ok:false,message:e.message});}});
-router.post('/',upload.single('media'),async(req,res)=>{let file=req.file;try{const text=String(req.body.text||'').trim();if(!text&&!file)return res.status(400).json({ok:false,message:'أضف نصاً أو فيديو أو ملفاً صوتياً'});file=await normalizeMedia(file);const visibility=normalizeVisibility(req.body.visibility),media=file?[{url:`/uploads/reels/${file.filename}`,type:file.mediaType||'video',mimeType:file.mimetype,size:file.size}]:[],reel=await Reel.create({author:req.user._id,text,media,visibility,likes:[],comments:[],savedBy:[]});await reel.populate('author','fullName displayName username profile');await createPublishNotifications({authorId:req.user._id,type:'reel',targetId:reel._id,visibility,text:`${req.user.displayName||req.user.fullName||'صديقك'} نشر ريل جديداً`}).catch(()=>{});res.status(201).json({ok:true,reel:view(reel,req.user)});}catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message});}});
-router.delete('/:id',async(req,res)=>{try{const reel=await Reel.findOne({_id:req.params.id,author:req.user._id});if(!reel)return res.status(404).json({ok:false,message:'الريل غير موجود أو لا تملك صلاحية حذفه'});for(const item of reel.media||[])removeFile(item.url);await Reel.deleteOne({_id:reel._id});res.json({ok:true,message:'تم حذف الريل'});}catch(e){res.status(500).json({ok:false,message:e.message});}});
+router.post('/',upload.single('media'),async(req,res)=>{let file=req.file;try{const text=String(req.body.text||'').trim();if(!text&&!file)return res.status(400).json({ok:false,message:'أضف نصاً أو فيديو أو ملفاً صوتياً'});file=await normalizeMedia(file);const visibility=normalizeVisibility(req.body.visibility);let media=[];if(file){const fallbackUrl=`/uploads/reels/${file.filename}`,published=await mediaStorage.publishFile(file,{category:'reels',fallbackUrl});media=[{url:published.url,fallbackUrl:published.fallbackUrl,storageKey:published.storageKey,storage:published.storage,type:file.mediaType||'video',mimeType:file.mimetype,size:file.size}]}const reel=await Reel.create({author:req.user._id,text,media,visibility,likes:[],comments:[],savedBy:[]});await reel.populate('author','fullName displayName username profile');await createPublishNotifications({authorId:req.user._id,type:'reel',targetId:reel._id,visibility,text:`${req.user.displayName||req.user.fullName||'صديقك'} نشر ريل جديداً`}).catch(()=>{});res.status(201).json({ok:true,reel:view(reel,req.user)});}catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message});}});
+router.delete('/:id',async(req,res)=>{try{const reel=await Reel.findOne({_id:req.params.id,author:req.user._id});if(!reel)return res.status(404).json({ok:false,message:'الريل غير موجود أو لا تملك صلاحية حذفه'});for(const item of reel.media||[])await removeMedia(item);await Reel.deleteOne({_id:reel._id});res.json({ok:true,message:'تم حذف الريل'});}catch(e){res.status(500).json({ok:false,message:e.message});}});
 router.post('/:id/like',async(req,res)=>{try{const reel=await Reel.findOne({_id:req.params.id,active:true});if(!reel)return res.status(404).json({ok:false,message:'الريل غير موجود'});const i=reel.likes.findIndex(id=>String(id)===String(req.user._id));if(i>=0)reel.likes.splice(i,1);else reel.likes.push(req.user._id);await reel.save();res.json({ok:true,liked:i<0,likesCount:reel.likes.length});}catch(e){res.status(500).json({ok:false,message:e.message});}});
 router.post('/:id/save',async(req,res)=>{try{const reel=await Reel.findOne({_id:req.params.id,active:true});if(!reel)return res.status(404).json({ok:false,message:'الريل غير موجود'});const i=reel.savedBy.findIndex(id=>String(id)===String(req.user._id));if(i>=0)reel.savedBy.splice(i,1);else reel.savedBy.push(req.user._id);await reel.save();res.json({ok:true,saved:i<0});}catch(e){res.status(500).json({ok:false,message:e.message});}});
 router.get('/:id/comments',async(req,res)=>{try{const reel=await Reel.findOne({_id:req.params.id,active:true}).populate('comments.author','fullName displayName username profile');if(!reel)return res.status(404).json({ok:false,message:'الريل غير موجود'});res.json({ok:true,comments:reel.comments.map(c=>({id:c._id,text:c.text,createdAt:c.createdAt,author:userView(c.author)}))});}catch(e){res.status(500).json({ok:false,message:e.message});}});
