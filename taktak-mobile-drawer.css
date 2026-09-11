@@ -1,0 +1,20 @@
+.post-video{display:grid;place-items:center;background:#05070b}
+.post-video video{width:auto;max-width:100%;height:auto;max-height:min(70vh,720px);object-fit:contain}
+.video-fallback{display:block;width:100%;padding:9px 12px;color:var(--muted);background:var(--panel2);text-align:center;text-decoration:none;font-size:12px}
+.mobile-services-backdrop,.mobile-services-drawer{display:none}
+@media(max-width:760px){
+  .post-video video{width:auto!important;max-width:100%!important;height:auto!important;max-height:58svh!important;margin:auto!important}
+  .mobile-bar a,.mobile-bar button{min-height:54px;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:9px 2px;border:0;background:transparent;color:var(--text);font:inherit;font-size:11px;touch-action:manipulation}
+  .mobile-services-backdrop{display:block;position:fixed;inset:0;z-index:139;background:#000a;backdrop-filter:blur(4px)}
+  .mobile-services-backdrop[hidden]{display:none}
+  .mobile-services-drawer{display:flex;position:fixed;z-index:140;top:0;right:0;bottom:0;width:min(88vw,390px);padding:calc(14px + env(safe-area-inset-top)) 12px calc(72px + env(safe-area-inset-bottom));flex-direction:column;overflow:auto;background:linear-gradient(160deg,#12182a,#090d18);border-left:1px solid var(--line);box-shadow:-24px 0 70px #0009;transform:translateX(105%);transition:transform .24s ease}
+  .mobile-services-drawer.is-open{transform:translateX(0)}
+  .mobile-services-drawer header{display:flex;align-items:center;justify-content:space-between;padding:7px 5px 14px}
+  .mobile-services-drawer header strong,.mobile-services-drawer header small{display:block}
+  .mobile-services-drawer header small{margin-top:4px;color:var(--muted);font-size:11px}
+  .mobile-services-drawer header button{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:var(--panel2);color:var(--text);font-size:25px}
+  .mobile-services-drawer nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .mobile-services-drawer nav a{min-height:84px;padding:11px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);color:var(--text);text-decoration:none;text-align:center;font-size:12px}
+  .mobile-services-drawer nav b{font-size:25px}
+  body.mobile-menu-open{overflow:hidden}
+}

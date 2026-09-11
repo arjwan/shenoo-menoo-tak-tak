@@ -14,7 +14,9 @@ const uploadDir = path.resolve(__dirname, '../../../uploads/posts');
 fs.mkdirSync(uploadDir, { recursive: true });
 const allowed = new Map([
   ['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp'],['image/gif','.gif'],
-  ['video/mp4','.mp4'],['video/webm','.webm'],['video/quicktime','.mov'],['audio/mpeg','.mp3'],['audio/mp3','.mp3']
+  ['video/mp4','.mp4'],['video/x-m4v','.m4v'],['video/webm','.webm'],['video/quicktime','.mov'],
+  ['video/3gpp','.3gp'],['video/3gpp2','.3g2'],['video/x-matroska','.mkv'],['video/x-msvideo','.avi'],
+  ['audio/mpeg','.mp3'],['audio/mp3','.mp3']
 ]);
 const upload = multer({storage:multer.diskStorage({destination:(_r,_f,cb)=>cb(null,uploadDir),filename:(_r,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${allowed.get(f.mimetype)||''}`)}),limits:{fileSize:100*1024*1024,files:1},fileFilter:(_r,f,cb)=>allowed.has(f.mimetype)?cb(null,true):cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))});
 router.use(requireAuth);
