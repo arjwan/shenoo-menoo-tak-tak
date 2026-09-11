@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 
 const mediaSchema = new mongoose.Schema({
   url: { type: String, required: true },
+  fallbackUrl: { type: String, default: '' },
+  storageKey: { type: String, default: '' },
+  storage: { type: String, enum: ['local','r2'], default: 'local' },
   type: { type: String, enum: ['image', 'video', 'audio'], required: true },
   mimeType: { type: String, default: '' },
   size: { type: Number, default: 0 }
