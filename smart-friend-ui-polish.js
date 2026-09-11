@@ -1,53 +1,14 @@
 (function(){'use strict';
-function cleanReply(value){
-  let text=String(value||'');
-  text=text.replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi,'')
-           .replace(/<analysis\b[^>]*>[\s\S]*?<\/analysis>/gi,'')
-           .replace(/<reasoning\b[^>]*>[\s\S]*?<\/reasoning>/gi,'');
-  text=text.replace(/(?:أنا\s+[^،,.!؟\n]{0,45}[،,]\s*)?ذكاء\s+اصطناعي[^.!؟\n]*(?:[.!؟]|$)/gi,'')
-           .replace(/أنا\s+ذكاء\s+اصطناعي[^.!؟\n]*(?:[.!؟]|$)/gi,'')
-           .replace(/(?:مو|مش|لست)\s+إنسان(?:اً|ا)?\s+حقيقي[^.!؟\n]*(?:[.!؟]|$)/gi,'')
-           .replace(/\s{2,}/g,' ')
-           .replace(/^\s*[،,.؛:!؟-]+\s*/,'')
-           .trim();
-  return text;
-}
-function cleanChatMessages(){
-  document.querySelectorAll('.sf-msg.ai > div').forEach(function(el){
-    const t=cleanReply(el.textContent);
-    if(t!==el.textContent)el.textContent=t;
-  });
-}
-function polishDock(){
-  const result=document.querySelector('[data-sf-result]');
-  if(!result)return;
-  result.style.whiteSpace='pre-wrap';
-  result.style.maxHeight='45vh';
-  result.style.overflowY='auto';
-  result.style.overflowX='hidden';
-  result.style.wordBreak='break-word';
-  const apply=function(){const t=cleanReply(result.textContent);if(t&&t!==result.textContent)result.textContent=t;};
-  apply();
-  new MutationObserver(apply).observe(result,{childList:true,subtree:true,characterData:true});
-}
-function enableEnterSend(){
-  const form=document.querySelector('[data-chat-form]');
-  const input=form&&form.querySelector('textarea[name="text"]');
-  if(!form||!input||input.dataset.enterSendReady)return;
-  input.dataset.enterSendReady='1';
-  input.addEventListener('keydown',function(e){
-    if(e.key!=='Enter'||e.shiftKey||e.isComposing)return;
-    e.preventDefault();
-    if(typeof form.requestSubmit==='function')form.requestSubmit();
-    else form.querySelector('button[type="submit"]')?.click();
-  });
-}
-function init(){
-  polishDock();
-  enableEnterSend();
-  cleanChatMessages();
-  const messages=document.querySelector('[data-messages]');
-  if(messages)new MutationObserver(cleanChatMessages).observe(messages,{childList:true,subtree:true,characterData:true});
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+const API='https://shino-mino-tak-tak.duckdns.org';
+const token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';
+function cleanReply(value){let text=String(value||'');for(const tag of ['think','analysis','reasoning']){const re=new RegExp('<'+tag+'\\b[^>]*>[\\s\\S]*?<\\/'+tag+'>','gi'),open=new RegExp('<'+tag+'\\b[^>]*>[\\s\\S]*$','gi');text=text.replace(re,'').replace(open,'');}text=text.replace(/(?:here(?:'s| is) a thinking process|thinking process|analysis|reasoning)\s*:?\s*[\s\S]*/gi,'').replace(/(?:أنا|اني)\s+(?:مجرد\s+)?(?:شخصية\s+)?(?:ذكاء\s+اصطناعي|نموذج\s+ذكاء\s+اصطناعي)[^.!؟\n]*(?:[.!؟]|$)/gi,' ').replace(/(?:جالس|موجود|عايش)\s+داخل\s+شنو\s+منو\s+تك\s+تك[^.!؟\n]*(?:[.!؟]|$)/gi,' ').replace(/(?:مو|مش|لست)\s+(?:إنسان(?:اً|ا)?|بشر(?:اً|ا)?|إنسان\s+حقيقي|انسان\s+حقيقي)[^.!؟\n]*(?:[.!؟]|$)/gi,' ').replace(/\s{2,}/g,' ').replace(/^\s*[،,.؛:!؟-]+\s*/,'').trim();return text;}
+window.smartFriendCleanReply=cleanReply;
+function cleanAll(){document.querySelectorAll('.sf-msg.ai > div,[data-sf-result]').forEach(el=>{const t=cleanReply(el.textContent);if(t!==el.textContent)el.textContent=t||'…';});}
+function forceEnter(){document.querySelectorAll('[data-chat-form] textarea[name="text"],[data-sf-chat-form] textarea[name="text"]').forEach(input=>{if(input.dataset.sfEnterFixed==='1')return;input.dataset.sfEnterFixed='1';input.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.isComposing)return;e.preventDefault();e.stopImmediatePropagation();const form=input.closest('form'),btn=form&&form.querySelector('button[type="submit"],button:not([type])');if(btn)btn.click();else if(form)form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));},true);});}
+function imageData(file){return new Promise((resolve,reject)=>{if(!file||!file.type.startsWith('image/'))return reject(Error('اختار صورة أولاً'));const reader=new FileReader();reader.onerror=()=>reject(Error('تعذر قراءة الصورة'));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(Error('تعذر فتح الصورة'));img.onload=()=>{const max=900,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))};img.src=reader.result};reader.readAsDataURL(file)})}
+async function req(path,opt={}){opt.headers=Object.assign({Authorization:'Bearer '+token,'Content-Type':'application/json'},opt.headers||{});const r=await fetch(API+path,opt),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||'تعذر تنفيذ الطلب');return d;}
+function enhanceReview(){const panel=document.querySelector('[data-sf-panel="review"]'),result=document.querySelector('[data-sf-result]');if(!panel||panel.dataset.reviewEnhanced==='1')return;panel.dataset.reviewEnhanced='1';const textarea=document.createElement('textarea');textarea.setAttribute('data-sf-review-text','1');textarea.placeholder='الصق نص المنشور هنا أو اتركه فارغاً لاستخدام منشور الصفحة الحالية';textarea.style.cssText='width:100%;min-height:120px;margin:8px 0;box-sizing:border-box';const file=document.createElement('input');file.type='file';file.accept='image/*';file.hidden=true;const pick=document.createElement('button');pick.type='button';pick.textContent='🖼 اختيار صورة للمراجعة';const chosen=document.createElement('div');chosen.style.cssText='font-size:12px;opacity:.8;margin:6px 0';pick.onclick=()=>file.click();file.onchange=()=>{chosen.textContent=file.files?.[0]?'تم اختيار: '+file.files[0].name:''};const reviewBtn=panel.querySelector('[data-sf-review]'),anchor=reviewBtn?.parentNode||panel.firstChild;panel.insertBefore(textarea,anchor);panel.insertBefore(file,anchor);panel.insertBefore(pick,anchor);panel.insertBefore(chosen,anchor);if(reviewBtn){reviewBtn.textContent='راجع النص أو الصورة';reviewBtn.addEventListener('click',async e=>{e.preventDefault();e.stopImmediatePropagation();const pasted=textarea.value.trim(),pageText=document.querySelector('[data-post-text]')?.value.trim()||'',text=pasted||pageText,image=file.files?.[0]||document.querySelector('[data-media]')?.files?.[0]||null;if(!text&&!image){result.textContent='الصق نص المنشور أو اختر صورة أولاً';return;}result.textContent='دا أراجع…';try{let body;if(image&&image.type.startsWith('image/'))body={mode:'image',text,imageData:await imageData(image)};else body={mode:document.querySelector('[data-sf-review-mode]')?.value||'opinion',text};const d=await req('/api/smart-friend/tools/review',{method:'POST',body:JSON.stringify(body)});result.textContent=cleanReply(d.reply||d.message||'تمت المراجعة');}catch(err){result.textContent=err.message}},true);}}
+function polishResult(){const result=document.querySelector('[data-sf-result]');if(!result)return;result.style.whiteSpace='pre-wrap';result.style.maxHeight='45vh';result.style.overflowY='auto';result.style.wordBreak='break-word';}
+function init(){forceEnter();enhanceReview();polishResult();cleanAll();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();new MutationObserver(init).observe(document.documentElement,{subtree:true,childList:true,characterData:true});
 })();
