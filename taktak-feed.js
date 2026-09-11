@@ -23,5 +23,6 @@ document.querySelector('[data-photo-btn]')?.addEventListener('click',()=>{fileIn
 document.getElementById('logout')?.addEventListener('click',()=>{localStorage.removeItem('token');localStorage.removeItem('user');sessionStorage.removeItem('token');sessionStorage.removeItem('user');location.replace('signin.html');});
 loadMe();loadPeople('');loadStories();loadReels();loadFeed();
 const mobileNav=document.createElement('script');mobileNav.src='taktak-mobile-nav.js?v=20260911-1';document.body.appendChild(mobileNav);
+const liveAds=document.createElement('script');liveAds.src='taktak-live-ads.js?v=20260911-1';document.body.appendChild(liveAds);
 })();
 (function(){const btn=document.getElementById('theme-toggle');if(!btn)return;const saved=localStorage.getItem('taktak-theme');const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;const dark=(saved==='dark')||(saved===null&&prefersDark);document.documentElement.setAttribute('data-theme',dark?'dark':'light');document.body.classList.toggle('light',!dark);btn.addEventListener('click',()=>{const isLight=document.documentElement.getAttribute('data-theme')==='light';const next=isLight?'dark':'light';document.documentElement.setAttribute('data-theme',next);document.body.classList.toggle('light',next==='light');localStorage.setItem('taktak-theme',next);});})();
