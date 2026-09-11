@@ -49,6 +49,16 @@
     notificationsScript.src = 'home-notifications.js?v=20260911-1';
     notificationsScript.defer = true;
     document.head.appendChild(notificationsScript);
+
+    /* Capture media composer submits before the legacy multipart handler so
+       images/audio/video go browser -> R2 -> finalize, never through Oracle FFmpeg. */
+    if (!document.querySelector('script[data-direct-post-upload]')) {
+      var directPostUpload = document.createElement('script');
+      directPostUpload.src = 'taktak-direct-upload.js?v=20260912-1';
+      directPostUpload.defer = true;
+      directPostUpload.setAttribute('data-direct-post-upload', '1');
+      document.head.appendChild(directPostUpload);
+    }
   }
 
   var token = localStorage.getItem('token') || sessionStorage.getItem('token');
