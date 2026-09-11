@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
   verificationCodeExpiresAt: { type: Date, default: null },
   verificationAttempts: { type: Number, default: 0 },
   verificationLastSentAt: { type: Date, default: null },
+  notificationPreferences: {
+    inApp: { type: Boolean, default: true },
+    phone: { type: Boolean, default: true },
+    email: { type: Boolean, default: true }
+  },
   birthDate: { type: Date, default: null },
   gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
   passwordHash: { type: String, required: true },

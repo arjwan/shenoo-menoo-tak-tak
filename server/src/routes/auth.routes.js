@@ -57,8 +57,8 @@ router.post('/signup', async (req, res) => {
     if (!fullName || !username || !password) {
       return res.status(400).json({ ok: false, message: 'الاسم واسم المستخدم وكلمة المرور حقول إلزامية' });
     }
-    if (!hasPhone && !hasEmail) {
-      return res.status(400).json({ ok: false, message: 'أدخل رقم هاتف عراقي صحيح أو بريداً إلكترونياً صحيحاً' });
+    if (!hasPhone || !hasEmail) {
+      return res.status(400).json({ ok: false, message: 'رقم الهاتف العراقي والبريد الإلكتروني كلاهما مطلوبان لتسجيل الحساب واستلام الإشعارات' });
     }
     if (normalizedPhone && !hasPhone) return res.status(400).json({ ok: false, message: 'رقم الهاتف العراقي يجب أن يبدأ بـ 07 ويتكون من 11 رقماً' });
     if (normalizedEmail && !hasEmail) return res.status(400).json({ ok: false, message: 'البريد الإلكتروني غير صالح' });
@@ -68,8 +68,8 @@ router.post('/signup', async (req, res) => {
     if (termsAccepted !== true || privacyAccepted !== true) return res.status(400).json({ ok: false, message: 'يجب قراءة اتفاقية الخصوصية والموافقة عليها قبل إنشاء الحساب' });
 
     const normalizedUsername = String(username).trim().toLowerCase();
-    const contactType = hasPhone ? 'phone' : 'email';
-    const contact = contactType === 'phone' ? normalizedPhone : normalizedEmail;
+    const contactType = 'phone';
+    const contact = normalizedPhone;
     const duplicateChecks = [{ username: normalizedUsername }, { contact }];
     if (hasPhone) duplicateChecks.push({ phone: normalizedPhone });
     if (hasEmail) duplicateChecks.push({ email: normalizedEmail });
@@ -86,6 +86,7 @@ router.post('/signup', async (req, res) => {
       contactType,
       contactVerified: false,
       contactVerifiedAt: null,
+      notificationPreferences: { inApp: true, phone: true, email: true },
       birthDate: normalizedBirthDate.value,
       gender: gender || 'other',
       passwordHash,
@@ -103,7 +104,7 @@ router.post('/signup', async (req, res) => {
       contactType,
       contact,
       contactVerified: false,
-      message: 'تم استلام طلب التسجيل. يجب تأكيد رقم الهاتف أو البريد المسجل قبل أن يستطيع المطور الموافقة على الحساب.',
+      message: 'تم استلام طلب التسجيل وحفظ الهاتف والبريد للإشعارات. يجب تأكيد وسيلة الاتصال قبل موافقة المطور على الحساب.',
       userId: user._id
     });
   } catch (error) {

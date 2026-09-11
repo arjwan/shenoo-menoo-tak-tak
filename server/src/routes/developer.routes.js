@@ -206,6 +206,20 @@ router.get('/users', async (req, res) => {
   }
 });
 
+router.post('/users', async (req, res) => {
+  try {
+    const fullName=String(req.body.fullName||'').trim(),username=String(req.body.username||'').trim().toLowerCase();
+    const phone=String(req.body.phone||'').replace(/\s+/g,''),email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||'');
+    if(!fullName||!/^[a-z0-9_]{3,30}$/.test(username)) return res.status(400).json({ok:false,message:'الاسم أو اسم المستخدم غير صالح'});
+    if(!/^07\d{9}$/.test(phone)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ok:false,message:'الهاتف والبريد الإلكتروني الصحيحان مطلوبان'});
+    if(password.length<8)return res.status(400).json({ok:false,message:'كلمة المرور يجب أن تكون 8 أحرف على الأقل'});
+    if(await User.exists({$or:[{username},{phone},{email},{contact:phone},{contact:email}]}))return res.status(409).json({ok:false,message:'اسم المستخدم أو الهاتف أو البريد مستخدم مسبقاً'});
+    const user=await User.create({fullName,username,phone,email,contact:phone,contactType:'phone',passwordHash:await bcrypt.hash(password,12),termsAccepted:true,privacyAccepted:true,privacyAcceptedAt:new Date(),privacyVersion:'2026-09-11',contactVerified:true,contactVerifiedAt:new Date(),contactVerifiedBy:req.user._id,notificationPreferences:{inApp:true,phone:true,email:true},role:'user',status:'active'});
+    await writeAudit(req.user,'user.created',user,`أنشأ حساب ${user.username}`);
+    return res.status(201).json({ok:true,message:'تم إنشاء الحساب وتفعيله',user:safeUser(user)});
+  } catch(error){console.error('Developer create user failed:',error.message);return res.status(500).json({ok:false,message:'تعذر إنشاء الحساب'});}
+});
+
 router.patch('/users/:id', async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ ok: false, message: 'معرف المستخدم غير صالح' });
