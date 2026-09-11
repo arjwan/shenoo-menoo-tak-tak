@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const mediaSchema = new mongoose.Schema({ url: String, type: { type: String, enum: ['image','video'] }, mimeType: String, size: Number }, { _id: false });
+const mediaSchema = new mongoose.Schema({ url: String, fallbackUrl:{type:String,default:''}, storageKey:{type:String,default:''}, storage:{type:String,enum:['local','r2'],default:'local'}, type: { type: String, enum: ['image','video'] }, mimeType: String, size: Number }, { _id: false });
 const overlaySchema = new mongoose.Schema({
   kind: { type: String, enum: ['text','emoji'], required: true },
   value: { type: String, trim: true, maxlength: 300, required: true },
@@ -9,6 +9,9 @@ const overlaySchema = new mongoose.Schema({
 }, { _id: false });
 const musicSchema = new mongoose.Schema({
   url: { type: String, default: '' },
+  fallbackUrl: { type: String, default: '' },
+  storageKey: { type: String, default: '' },
+  storage: { type: String, enum: ['local','r2'], default: 'local' },
   mimeType: { type: String, default: '' },
   size: { type: Number, default: 0 },
   name: { type: String, trim: true, maxlength: 180, default: '' }
