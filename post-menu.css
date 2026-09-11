@@ -7,3 +7,5 @@
 .post-more-menu button:hover,.post-more-menu a:hover{background:var(--panel2)}
 .post-more-menu [data-action="delete"]{color:var(--red)}
 @media(max-width:760px){.post-more-menu{position:fixed;right:12px;left:12px;bottom:76px;min-width:0;padding:10px;border-radius:16px}.post-more-menu button,.post-more-menu a{padding:14px;font-size:15px}}
+.pull-refresh{display:none}
+@media(max-width:760px){.pull-refresh{position:fixed;z-index:90;top:6px;left:50%;transform:translate(-50%,calc(-58px + min(var(--pull,0px),58px)));padding:9px 15px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);box-shadow:var(--shadow);font-size:12px;opacity:0;transition:opacity .14s}.pull-refresh.show{display:block;opacity:1}.pull-refresh.ready{color:var(--green)}.pull-refresh.loading{display:block;opacity:1;animation:pullPulse .8s ease-in-out infinite alternate}}@keyframes pullPulse{to{filter:brightness(1.35)}}
