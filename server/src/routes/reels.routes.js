@@ -22,16 +22,39 @@ function userView(u){return u?{id:u._id,fullName:u.displayName||u.fullName,usern
 function ownerId(author){return author&&author._id?author._id:author;}
 function view(r,u){return{id:r._id,author:userView(r.author),text:r.text,media:r.media,visibility:r.visibility,likes:r.likes?.length||0,liked:r.likes?.some(id=>String(id)===String(u._id))||false,commentsCount:r.comments?.length||0,saved:r.savedBy?.some(id=>String(id)===String(u._id))||false,canDelete:String(ownerId(r.author))===String(u._id),createdAt:r.createdAt};}
 function removeFile(url){if(url&&url.startsWith('/uploads/reels/'))fs.unlink(path.join(uploadDir,path.basename(url)),()=>{});}
+async function probeMedia(filePath){
+ const {stdout}=await run('ffprobe',['-v','error','-print_format','json','-show_streams','-show_format',filePath],{timeout:120000,maxBuffer:4*1024*1024});
+ try{return JSON.parse(stdout||'{}')}catch{return{streams:[],format:{}}}
+}
 async function normalizeMedia(file){
  if(!file)return file;
  const ext=path.extname(file.originalname||'').toLowerCase();
  const mime=String(file.mimetype||'').toLowerCase();
- const isAudio=mime.startsWith('audio/')||['.mp3','.m4a','.aac','.wav','.flac','.opus','.oga','.amr'].includes(ext);
- const output=file.path.replace(/\.[^.]+$/, '')+(isAudio?'-converted.mp3':'-converted.mp4');
- const args=isAudio
-   ?['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output]
-   :['-y','-i',file.path,'-map','0:v:0','-map','0:a?','-vf','scale=min(1280\\,iw):-2','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart',output];
- try{await run('ffmpeg',args,{timeout:60*60*1000,maxBuffer:8*1024*1024});const stat=await fs.promises.stat(output);await fs.promises.unlink(file.path);return{...file,path:output,filename:path.basename(output),mimetype:isAudio?'audio/mpeg':'video/mp4',mediaType:isAudio?'audio':'video',size:stat.size};}catch(e){await fs.promises.unlink(output).catch(()=>{});throw Error('تعذر تحويل الملف إلى صيغة تشغيل متوافقة. تأكد من سلامة الفيديو أو الصوت ومن توفر FFmpeg على الخادم.');}
+ const declaredAudio=mime.startsWith('audio/')||['.mp3','.m4a','.aac','.wav','.flac','.opus','.oga','.amr'].includes(ext);
+ let output=file.path.replace(/\.[^.]+$/, '')+(declaredAudio?'-converted.mp3':'-converted.mp4');
+ let args,mediaType=declaredAudio?'audio':'video',outMime=declaredAudio?'audio/mpeg':'video/mp4';
+ if(declaredAudio){
+   args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output];
+ }else{
+   const probe=await probeMedia(file.path);
+   const streams=Array.isArray(probe.streams)?probe.streams:[];
+   const videos=streams.filter(s=>s.codec_type==='video');
+   const normalVideo=videos.find(s=>!(s.disposition&&Number(s.disposition.attached_pic)===1));
+   const cover=videos.find(s=>s.disposition&&Number(s.disposition.attached_pic)===1)||videos[0];
+   const hasAudio=streams.some(s=>s.codec_type==='audio');
+   if(normalVideo){
+     args=['-y','-i',file.path,'-map',`0:${normalVideo.index}`,'-map','0:a:0?','-vf','scale=min(1280\\,iw):-2','-r','30','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart',output];
+   }else if(cover&&hasAudio){
+     const filter=`[0:${cover.index}]scale='min(1280,iw)':-2,format=yuv420p,loop=loop=-1:size=1:start=0,fps=30[v]`;
+     args=['-y','-i',file.path,'-filter_complex',filter,'-map','[v]','-map','0:a:0','-c:v','libx264','-pix_fmt','yuv420p','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output];
+   }else if(hasAudio){
+     output=file.path.replace(/\.[^.]+$/, '')+'-converted.mp3';mediaType='audio';outMime='audio/mpeg';
+     args=['-y','-i',file.path,'-vn','-c:a','libmp3lame','-b:a','192k',output];
+   }else{
+     throw Error('الملف لا يحتوي مسار فيديو أو صوت قابل للتشغيل');
+   }
+ }
+ try{await run('ffmpeg',args,{timeout:60*60*1000,maxBuffer:8*1024*1024});const stat=await fs.promises.stat(output);await fs.promises.unlink(file.path);return{...file,path:output,filename:path.basename(output),mimetype:outMime,mediaType,size:stat.size};}catch(e){await fs.promises.unlink(output).catch(()=>{});throw Error('تعذر تحويل الملف إلى صيغة تشغيل متوافقة. تأكد من سلامة الفيديو أو الصوت ومن توفر FFmpeg على الخادم.');}
 }
 router.get('/',async(req,res)=>{try{const[friends,following]=await Promise.all([friendIds(req.user._id),followingIds(req.user._id)]),combined=[...new Map([...friends,...following].map(id=>[String(id),id])).values()],reels=await Reel.find({active:true,$or:[{visibility:'everyone'},{author:req.user._id},{visibility:'friends',author:{$in:friends}},{visibility:'followers',author:{$in:following}},{visibility:'friends_followers',author:{$in:combined}}]}).populate('author','fullName displayName username profile').sort({createdAt:-1}).limit(30);res.json({ok:true,reels:reels.map(r=>view(r,req.user))});}catch(e){res.status(500).json({ok:false,message:e.message});}});
 router.post('/',upload.single('media'),async(req,res)=>{let file=req.file;try{const text=String(req.body.text||'').trim();if(!text&&!file)return res.status(400).json({ok:false,message:'أضف نصاً أو فيديو أو ملفاً صوتياً'});file=await normalizeMedia(file);const visibility=normalizeVisibility(req.body.visibility),media=file?[{url:`/uploads/reels/${file.filename}`,type:file.mediaType||'video',mimeType:file.mimetype,size:file.size}]:[],reel=await Reel.create({author:req.user._id,text,media,visibility,likes:[],comments:[],savedBy:[]});await reel.populate('author','fullName displayName username profile');await createPublishNotifications({authorId:req.user._id,type:'reel',targetId:reel._id,visibility,text:`${req.user.displayName||req.user.fullName||'صديقك'} نشر ريل جديداً`}).catch(()=>{});res.status(201).json({ok:true,reel:view(reel,req.user)});}catch(e){if(file?.path)fs.unlink(file.path,()=>{});res.status(400).json({ok:false,message:e.message});}});
