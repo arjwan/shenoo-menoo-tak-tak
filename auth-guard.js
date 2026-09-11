@@ -12,6 +12,11 @@
     document.head.appendChild(fixes);
   }
 
+  var smartFriendPolish = document.createElement('script');
+  smartFriendPolish.src = 'smart-friend-ui-polish.js?v=20260911-1';
+  smartFriendPolish.defer = true;
+  document.head.appendChild(smartFriendPolish);
+
   if (/\bprofile\.html$/i.test(location.pathname)) {
     var profilePostsCss = document.createElement('link');
     profilePostsCss.rel = 'stylesheet';
