@@ -9,10 +9,12 @@
     "dev": "nodemon server/src/server.js",
     "test": "node --test server/test/*.test.js",
     "seed:developer": "node server/src/scripts/createDeveloper.js",
-    "seed:rooms": "node server/src/scripts/seedOfficialRooms.js"
-    ,"games:close-all": "node server/src/scripts/closeAllGameRooms.js"
+    "seed:rooms": "node server/src/scripts/seedOfficialRooms.js",
+    "games:close-all": "node server/src/scripts/closeAllGameRooms.js"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.2.2",
+    "@simplewebauthn/server": "^13.2.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
@@ -21,6 +23,7 @@
     "mongodb": "^7.6.0",
     "mongoose": "^8.18.0",
     "multer": "^2.3.0",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {

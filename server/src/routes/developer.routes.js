@@ -12,6 +12,7 @@ const GameRoom = require('../models/GameRoom');
 const Group = require('../models/Group');
 const GroupReport = require('../models/GroupReport');
 const AuditLog = require('../models/AuditLog');
+const DeveloperMfa = require('../models/DeveloperMfa');
 
 const router = express.Router();
 
@@ -59,12 +60,9 @@ router.post('/login', async (req, res) => {
     }
 
     loginAttempts.delete(ip);
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    return res.json({ ok: true, message: 'تم تسجيل دخول المطور', token, user: safeUser(user) });
+    const security=await DeveloperMfa.findOne({user:user._id});
+    const preAuthToken=jwt.sign({userId:user._id,role:user.role,scope:'developer-mfa'},process.env.JWT_SECRET,{expiresIn:'5m'});
+    return res.json({ok:true,message:'تم قبول كلمة المرور. أكمل التحقق بالهاتف أو مفتاح FIDO',preAuthToken,mfa:{phone:Boolean(security?.phoneSecretHash),fido:Boolean(security?.credentials?.length),setupRequired:!security?.phoneSecretHash&&!security?.credentials?.length},user:safeUser(user)});
   } catch (error) {
     console.error('Developer login failed:', error.message);
     return res.status(500).json({ ok: false, message: 'تعذر تسجيل دخول المطور' });
@@ -87,6 +85,7 @@ const safeUser = (user) => ({
   gender: user.gender,
   role: user.role,
   status: user.status,
+  approvalSource: user.approvalSource || 'pending',
   createdAt: user.createdAt,
   updatedAt: user.updatedAt
 });
@@ -100,6 +99,9 @@ function contactType(contact) {
 async function writeAudit(actor, action, target, details = '') {
   await AuditLog.create({ actor: actor._id, action, target: target?._id || null, details });
 }
+
+router.get('/me',async(req,res)=>{const security=await DeveloperMfa.findOne({user:req.user._id});res.json({ok:true,user:safeUser(req.user),security:{phonePaired:Boolean(security?.phoneSecretHash),fidoKeys:security?.credentials?.length||0,pairedPhone:security?.pairedPhone||''}});});
+router.patch('/me',async(req,res)=>{try{const fullName=String(req.body.fullName||req.user.fullName).trim(),phone=String(req.body.phone||req.user.phone||'').replace(/\s+/g,''),email=String(req.body.email||req.user.email||'').trim().toLowerCase();if(!fullName||!/^07\d{9}$/.test(phone)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({ok:false,message:'الاسم والهاتف والبريد الصحيح مطلوبة'});const duplicate=await User.findOne({_id:{$ne:req.user._id},$or:[{phone},{email},{contact:phone},{contact:email}]});if(duplicate)return res.status(409).json({ok:false,message:'الهاتف أو البريد مستخدم بحساب آخر'});req.user.fullName=fullName;req.user.phone=phone;req.user.email=email;req.user.contact=phone;req.user.contactType='phone';if(req.body.password){if(String(req.body.password).length<8)return res.status(400).json({ok:false,message:'كلمة المرور 8 أحرف على الأقل'});req.user.passwordHash=await bcrypt.hash(String(req.body.password),12);}await req.user.save();await writeAudit(req.user,'developer.profile.updated',req.user,'حدّث بيانات حساب المطور');res.json({ok:true,message:'تم تحديث حساب المطور',user:safeUser(req.user)});}catch(e){res.status(500).json({ok:false,message:'تعذر تحديث حساب المطور'});}});
 
 async function countOptionalCollection(names) {
   const collections = await mongoose.connection.db.listCollections({}, { nameOnly: true }).toArray();
@@ -214,7 +216,7 @@ router.post('/users', async (req, res) => {
     if(!/^07\d{9}$/.test(phone)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ok:false,message:'الهاتف والبريد الإلكتروني الصحيحان مطلوبان'});
     if(password.length<8)return res.status(400).json({ok:false,message:'كلمة المرور يجب أن تكون 8 أحرف على الأقل'});
     if(await User.exists({$or:[{username},{phone},{email},{contact:phone},{contact:email}]}))return res.status(409).json({ok:false,message:'اسم المستخدم أو الهاتف أو البريد مستخدم مسبقاً'});
-    const user=await User.create({fullName,username,phone,email,contact:phone,contactType:'phone',passwordHash:await bcrypt.hash(password,12),termsAccepted:true,privacyAccepted:true,privacyAcceptedAt:new Date(),privacyVersion:'2026-09-11',contactVerified:true,contactVerifiedAt:new Date(),contactVerifiedBy:req.user._id,notificationPreferences:{inApp:true,phone:true,email:true},role:'user',status:'active'});
+    const user=await User.create({fullName,username,phone,email,contact:phone,contactType:'phone',passwordHash:await bcrypt.hash(password,12),termsAccepted:true,privacyAccepted:true,privacyAcceptedAt:new Date(),privacyVersion:'2026-09-11',contactVerified:true,contactVerifiedAt:new Date(),contactVerifiedBy:req.user._id,notificationPreferences:{inApp:true,phone:true,email:true},role:'user',status:'active',approvalSource:'developer',reviewedBy:req.user._id,reviewedAt:new Date()});
     await writeAudit(req.user,'user.created',user,`أنشأ حساب ${user.username}`);
     return res.status(201).json({ok:true,message:'تم إنشاء الحساب وتفعيله',user:safeUser(user)});
   } catch(error){console.error('Developer create user failed:',error.message);return res.status(500).json({ok:false,message:'تعذر إنشاء الحساب'});}

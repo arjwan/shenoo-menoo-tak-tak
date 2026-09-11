@@ -349,7 +349,7 @@
       <form id="signinForm" novalidate>
 
         <div class="field">
-          <label for="identity">اسم المستخدم / الهاتف / البريد</label>
+          <label for="identity">رقم الهاتف أو اسم المستخدم</label>
           <input
             id="identity"
             autocomplete="username"
@@ -441,7 +441,7 @@
 
     if (identity.value.trim().length < 3) {
       document.getElementById('identityError').textContent =
-        'يرجى إدخال اسم المستخدم أو الهاتف أو البريد الإلكتروني.';
+        'يرجى إدخال رقم الهاتف أو اسم المستخدم.';
       valid = false;
     }
 

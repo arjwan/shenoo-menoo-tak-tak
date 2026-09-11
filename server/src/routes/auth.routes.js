@@ -95,16 +95,18 @@ router.post('/signup', async (req, res) => {
       privacyAcceptedAt: new Date(),
       privacyVersion: '2026-09-10',
       role: 'user',
-      status: 'pending'
+      status: 'active',
+      approvalSource: 'automatic',
+      reviewedAt: new Date()
     });
 
     return res.status(201).json({
       ok: true,
-      status: 'pending',
+      status: 'active',
       contactType,
       contact,
       contactVerified: false,
-      message: 'تم استلام طلب التسجيل وحفظ الهاتف والبريد للإشعارات. يجب تأكيد وسيلة الاتصال قبل موافقة المطور على الحساب.',
+      message: 'تم إنشاء الحساب وقبوله تلقائياً بعد اجتياز شروط التسجيل. يمكنك تسجيل الدخول الآن.',
       userId: user._id
     });
   } catch (error) {
@@ -118,11 +120,12 @@ router.post('/signin', async (req, res) => {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const identifier = String(req.body.identifier || '').trim().toLowerCase();
     const password = String(req.body.password || '');
-    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'أدخل رقم الهاتف أو البريد الإلكتروني وكلمة المرور' });
+    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'أدخل اسم المستخدم أو الهاتف أو البريد وكلمة المرور' });
 
     const isPhone = validPhone(identifier);
     const isEmail = validEmail(identifier);
-    if (!isPhone && !isEmail) return res.status(400).json({ ok: false, message: 'استخدم رقم الهاتف أو البريد الإلكتروني المسجل بالحساب' });
+    const isUsername = /^[\p{L}\p{N}_.]{3,30}$/u.test(identifier);
+    if (!isPhone && !isEmail && !isUsername) return res.status(400).json({ ok: false, message: 'استخدم اسم المستخدم أو رقم الهاتف أو البريد المسجل بالحساب' });
 
     const attemptKey = `${ip}:${identifier}`;
     const retryAfter = checkLoginRateLimit(attemptKey);
@@ -133,11 +136,12 @@ router.post('/signin', async (req, res) => {
 
     const user = await User.findOne(isPhone
       ? { $or: [{ contact: normalizePhone(identifier), contactType: 'phone' }, { phone: normalizePhone(identifier) }] }
-      : { $or: [{ contact: normalizeEmail(identifier), contactType: 'email' }, { email: normalizeEmail(identifier) }] });
+      : isEmail ? { $or: [{ contact: normalizeEmail(identifier), contactType: 'email' }, { email: normalizeEmail(identifier) }] }
+      : { username: identifier });
 
     if (!user) {
       recordLoginFailure(attemptKey);
-      return res.status(401).json({ ok: false, message: 'الحساب غير موجود بهذا الهاتف أو البريد' });
+      return res.status(401).json({ ok: false, message: 'الحساب غير موجود باسم المستخدم أو الهاتف أو البريد المدخل' });
     }
     if (!(await bcrypt.compare(password, user.passwordHash))) {
       recordLoginFailure(attemptKey);

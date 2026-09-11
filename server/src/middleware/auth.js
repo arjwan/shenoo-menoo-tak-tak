@@ -15,6 +15,10 @@ async function requireAuth(req, res, next) {
     const token = header.slice(7);
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (payload.scope) {
+      return res.status(401).json({ ok: false, message: 'رمز التحقق المؤقت لا يمنح صلاحية دخول التطبيق' });
+    }
+
     const user = await User.findById(payload.userId);
 
     if (!user || user.status !== 'active') {

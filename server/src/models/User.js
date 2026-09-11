@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'moderator', 'admin', 'developer'], default: 'user' },
   status: { type: String, enum: ['pending', 'active', 'rejected', 'blocked'], default: 'pending' },
   rejectionReason: { type: String, default: '' },
+  approvalSource: { type: String, enum: ['pending', 'automatic', 'developer'], default: 'pending' },
   displayName: { type: String, trim: true, maxlength: 100, default: '' },
   profile: {
     bio: { type: String, maxlength: 500, default: '' }, avatarUrl: { type: String, default: '' }, coverUrl: { type: String, default: '' },

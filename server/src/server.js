@@ -11,6 +11,7 @@ const SmartFriend = require('./models/SmartFriend');
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const developerRoutes = require('./routes/developer.routes');
+const developerMfaRoutes = require('./routes/developer-mfa.routes');
 const userRoutes = require('./routes/user.routes');
 const friendsRoutes = require('./routes/friends.routes');
 const socialRoutes = require('./routes/social.routes');
@@ -42,6 +43,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true, service: 'shno-mano-te
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/developer', developerRoutes);
+app.use('/api/developer-mfa', developerMfaRoutes);
 app.use('/api/service-approvals', serviceApprovalsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/friends', friendsRoutes.router);
