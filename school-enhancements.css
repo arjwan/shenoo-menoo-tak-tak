@@ -1,0 +1,4 @@
+.today-board{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 18px}
+.today-board article{min-height:92px;padding:17px;border:1px solid #293454;border-radius:18px;background:linear-gradient(145deg,#131b31,#10162a);display:flex;flex-direction:column;justify-content:space-between;gap:9px}
+.today-board span{color:#bfc9e8;font-size:13px}.today-board b{font-size:20px;color:#fff;line-height:1.45}
+@media(max-width:700px){.today-board{grid-template-columns:repeat(2,1fr);gap:8px}.today-board article:last-child{grid-column:1/-1}.today-board article{min-height:80px;padding:14px}.today-board b{font-size:16px}}
