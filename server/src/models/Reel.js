@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const mediaSchema = new mongoose.Schema({ url: String, type: { type: String, enum: ['video','audio'] }, mimeType: String, size: Number }, { _id: false });
+const mediaSchema = new mongoose.Schema({ url: String, fallbackUrl: {type:String,default:''}, storageKey:{type:String,default:''}, storage:{type:String,enum:['local','r2'],default:'local'}, type: { type: String, enum: ['video','audio'] }, mimeType: String, size: Number }, { _id: false });
 const commentSchema = new mongoose.Schema({ author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, text: { type: String, trim: true, maxlength: 2000, required: true } }, { timestamps: true });
 const reelSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
