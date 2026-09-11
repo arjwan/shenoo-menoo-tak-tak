@@ -1,0 +1,5 @@
+const mongoose=require('mongoose');
+const schema=new mongoose.Schema({title:{type:String,required:true,trim:true},sourceType:{type:String,enum:['official_textbook','ministerial_question','licensed_booklet','teacher_material'],required:true,index:true},stage:{type:String,required:true,index:true},grade:{type:String,required:true,index:true},subject:{type:String,required:true,index:true},chapter:{type:String,default:''},lesson:{type:String,default:'',index:true},year:{type:Number},page:{type:String,default:''},question:{type:String,default:''},modelAnswer:{type:String,default:''},content:{type:String,required:true},sourceUrl:{type:String,default:''},license:{type:String,default:''},verified:{type:Boolean,default:false,index:true},keywords:[{type:String,trim:true}]},{timestamps:true});
+schema.index({stage:1,grade:1,subject:1,lesson:1,verified:1});
+schema.index({title:'text',content:'text',question:'text',keywords:'text'});
+module.exports=mongoose.model('SchoolKnowledgeSource',schema);
