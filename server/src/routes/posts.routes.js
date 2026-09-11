@@ -20,7 +20,7 @@ const allowed = new Map([
 ]);
 const upload = multer({storage:multer.diskStorage({destination:(_r,_f,cb)=>cb(null,uploadDir),filename:(_r,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${allowed.get(f.mimetype)||''}`)}),limits:{fileSize:100*1024*1024,files:1},fileFilter:(_r,f,cb)=>allowed.has(f.mimetype)?cb(null,true):cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE',f.fieldname))});
 router.use(requireAuth);
-function userView(u){return {id:u._id,fullName:u.displayName||u.fullName,username:u.username,avatarUrl:u.profile?.avatarUrl||''};}
+function userView(u){return u?{id:u._id,fullName:u.displayName||u.fullName,username:u.username,avatarUrl:u.profile?.avatarUrl||''}:{id:'',fullName:'حساب محذوف',username:'',avatarUrl:''};}
 function canManagePost(p,u){return String(p.author?._id||p.author)===String(u._id)||['admin','developer'].includes(u.role);}
 function mediaFromFile(f){if(!f)return[];const type=f.mimetype.startsWith('video/')?'video':f.mimetype.startsWith('audio/')?'audio':'image';return[{url:`/uploads/posts/${f.filename}`,type,mimeType:f.mimetype,size:f.size}];}
 function deleteStoredMedia(media){for(const item of media||[]){if(item?.url?.startsWith('/uploads/posts/'))fs.unlink(path.join(uploadDir,path.basename(item.url)),()=>{});}}
