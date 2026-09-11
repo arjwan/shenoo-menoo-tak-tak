@@ -9,7 +9,9 @@ const OWN_HOME_WINDOW_MS = 2 * 60 * 60 * 1000;
 router.use(requireAuth);
 
 function userView(user) {
-  return { id:user._id, fullName:user.displayName||user.fullName, username:user.username, avatarUrl:user.profile?.avatarUrl||'' };
+  return user
+    ? { id:user._id, fullName:user.displayName||user.fullName, username:user.username, avatarUrl:user.profile?.avatarUrl||'' }
+    : { id:'', fullName:'حساب محذوف', username:'', avatarUrl:'' };
 }
 function postView(post,user){
   const authorId=post.author?._id||post.author;
