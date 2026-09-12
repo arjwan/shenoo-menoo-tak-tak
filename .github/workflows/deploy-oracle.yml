@@ -1,0 +1,113 @@
+name: Deploy verified OTP to Oracle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy-oracle.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shno-mano-oracle-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      OTP_FROM_EMAIL: ${{ secrets.OTP_FROM_EMAIL }}
+      OTP_PEPPER: ${{ secrets.OTP_PEPPER }}
+    steps:
+      - name: Verify required deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY RESEND_API_KEY OTP_FROM_EMAIL OTP_PEPPER; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "Missing required GitHub Actions secrets: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required Oracle and OTP secret names are configured."
+
+      - name: Checkout exact main revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare SSH identity and OTP environment fragment
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$RUNNER_TEMP/ssh/oracle_key"
+          chmod 600 "$RUNNER_TEMP/ssh/oracle_key"
+          ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/ssh/known_hosts"
+          umask 077
+          {
+            printf 'OTP_DELIVERY_MODE=email\n'
+            printf 'OTP_TTL_MINUTES=10\n'
+            printf 'OTP_RESEND_SECONDS=60\n'
+            printf 'OTP_MAX_ATTEMPTS=5\n'
+            printf 'OTP_PEPPER=%s\n' "$OTP_PEPPER"
+            printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
+            printf 'OTP_FROM_EMAIL=%s\n' "$OTP_FROM_EMAIL"
+            printf 'CORS_ORIGINS=https://shino-mino-tak-tak.duckdns.org\n'
+          } > "$RUNNER_TEMP/otp.env"
+
+      - name: Copy protected OTP configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          scp -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts"             "$RUNNER_TEMP/otp.env" "$ORACLE_USER@$ORACLE_HOST:/tmp/shno-mano-otp.env"
+
+      - name: Deploy server and web registration page
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts"             "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          project=/home/opc/shenoo-menoo-tak-tak
+          test -d "$project/.git"
+          cd "$project"
+          git fetch origin main
+          git pull --ff-only origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          npm ci --omit=dev
+
+          umask 077
+          test -f .env
+          cp .env ".env.backup-$(date -u +%Y%m%dT%H%M%SZ)"
+          filtered="$(mktemp)"
+          grep -Ev '^(OTP_DELIVERY_MODE|OTP_TTL_MINUTES|OTP_RESEND_SECONDS|OTP_MAX_ATTEMPTS|OTP_PEPPER|RESEND_API_KEY|OTP_FROM_EMAIL|CORS_ORIGINS)=' .env > "$filtered" || true
+          cat /tmp/shno-mano-otp.env >> "$filtered"
+          mv "$filtered" .env
+          chmod 600 .env
+          rm -f /tmp/shno-mano-otp.env
+
+          sudo install -m 0644 signup.html /usr/share/nginx/html/shno-mano/signup.html
+          sudo install -m 0644 signin.html /usr/share/nginx/html/shno-mano/signin.html
+          sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html || true
+          sudo systemctl restart shno-mano-tech.service
+          sudo systemctl is-active --quiet shno-mano-tech.service
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health
+          REMOTE
+
+      - name: Verify public health and OTP page
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verify-registration'
+          echo "Oracle deployment and public OTP page checks passed."
