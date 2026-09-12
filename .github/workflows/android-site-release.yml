@@ -17,20 +17,16 @@ jobs:
     defaults:
       run:
         working-directory: android-app
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Make Gradle executable
         run: chmod +x gradlew
-
       - name: Restore release keystore
         env:
           SHNO_MANO_KEYSTORE_BASE64: ${{ secrets.SHNO_MANO_KEYSTORE_BASE64 }}
@@ -38,7 +34,6 @@ jobs:
           test -n "$SHNO_MANO_KEYSTORE_BASE64"
           printf '%s' "$SHNO_MANO_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shno-mano-release.jks"
           test -s "$RUNNER_TEMP/shno-mano-release.jks"
-
       - name: Build signed Release APK
         env:
           SITE_KEYSTORE_PASSWORD: ${{ secrets.SHNO_MANO_KEYSTORE_PASSWORD }}
@@ -54,7 +49,6 @@ jobs:
             -Pandroid.injected.signing.key.alias="$SITE_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$SITE_KEY_PASSWORD" \
             --stacktrace
-
       - name: Verify and rename signed APK
         run: |
           APK="app/build/outputs/apk/release/app-release.apk"
@@ -64,7 +58,6 @@ jobs:
           "$APKSIGNER" verify --verbose --print-certs "$APK"
           cp "$APK" app/build/outputs/apk/release/Shno-Mano-TakTak-2.0.0-release-signed.apk
           sha256sum app/build/outputs/apk/release/Shno-Mano-TakTak-2.0.0-release-signed.apk
-
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
@@ -72,3 +65,24 @@ jobs:
           path: android-app/app/build/outputs/apk/release/Shno-Mano-TakTak-2.0.0-release-signed.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Publish direct download on Oracle
+        working-directory: ${{ github.workspace }}
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
+          : "${ORACLE_USER:?Missing ORACLE_USER secret}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
+          APK="android-app/app/build/outputs/apk/release/Shno-Mano-TakTak-2.0.0-release-signed.apk"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+          scp -i ~/.ssh/oracle_key "$APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/Shno-Mano-TakTak-2.0.0.apk"
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'sudo mkdir -p /usr/share/nginx/html/alarjwan/downloads && sudo install -m 0644 /tmp/Shno-Mano-TakTak-2.0.0.apk /usr/share/nginx/html/alarjwan/downloads/Shno-Mano-TakTak-2.0.0.apk && sudo restorecon -F /usr/share/nginx/html/alarjwan/downloads/Shno-Mano-TakTak-2.0.0.apk 2>/dev/null || true'
+          curl --fail --location --silent --show-error --range 0-15 https://alarjwan.duckdns.org/downloads/Shno-Mano-TakTak-2.0.0.apk >/dev/null
+          echo 'TAKTAK_APK_READY=1'
+          rm -f ~/.ssh/oracle_key
