@@ -37,7 +37,21 @@ data class SignUpResponse(
     val ok: Boolean = false,
     val status: String? = null,
     val message: String? = null,
-    val userId: String? = null
+    val userId: String? = null,
+    val verificationRequired: Boolean = false,
+    val verificationToken: String? = null,
+    val destination: String? = null,
+    val expiresInSeconds: Int? = null
+)
+data class VerifyRegistrationRequest(val verificationToken: String, val code: String)
+data class ResendVerificationRequest(val verificationToken: String)
+data class VerificationResponse(
+    val ok: Boolean = false,
+    val status: String? = null,
+    val message: String? = null,
+    val verificationToken: String? = null,
+    val destination: String? = null,
+    val expiresInSeconds: Int? = null
 )
 
 data class PhoneContactDto(val id: String? = null, val name: String, val phone: String)
@@ -91,6 +105,8 @@ data class OkResponse(val ok: Boolean = false, val message: String? = null)
 
 interface ShnoManoApi {
     @POST("api/auth/signup") suspend fun signUp(@Body body: SignUpRequest): SignUpResponse
+    @POST("api/auth/verify-registration") suspend fun verifyRegistration(@Body body: VerifyRegistrationRequest): VerificationResponse
+    @POST("api/auth/resend-verification") suspend fun resendVerification(@Body body: ResendVerificationRequest): VerificationResponse
     @POST("api/auth/signin") suspend fun signIn(@Body body: SignInRequest): SignInResponse
     @GET("api/phone-contacts") suspend fun phoneContacts(): PhoneContactsResponse
     @PUT("api/phone-contacts") suspend fun savePhoneContacts(@Body body: SavePhoneContactsRequest): PhoneContactsResponse

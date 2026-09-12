@@ -26,7 +26,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.ApiFactory
+import com.shnomano.call.data.ResendVerificationRequest
 import com.shnomano.call.data.SignUpRequest
+import com.shnomano.call.data.VerifyRegistrationRequest
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -57,6 +59,9 @@ class RegisterActivity : ComponentActivity() {
         var busy by remember { mutableStateOf(false) }
         var message by remember { mutableStateOf<String?>(null) }
         var success by remember { mutableStateOf(false) }
+        var verified by remember { mutableStateOf(false) }
+        var verificationToken by remember { mutableStateOf("") }
+        var otpCode by remember { mutableStateOf("") }
 
         Scaffold(
             containerColor = Color(0xFF070910),
@@ -74,7 +79,7 @@ class RegisterActivity : ComponentActivity() {
                 ).verticalScroll(rememberScrollState()).padding(18.dp)
             ) {
                 Text("حساب موحّد لكل شنو منو", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                Text("سيعمل نفس الحساب في التطبيق والويب ومول العراق والريلز والخدمات بعد موافقة الإدارة.", color = Color(0xFF98A2B3), fontSize = 12.sp, lineHeight = 18.sp)
+                Text("سيعمل نفس الحساب في التطبيق والويب بعد تأكيد رمز البريد الإلكتروني.", color = Color(0xFF98A2B3), fontSize = 12.sp, lineHeight = 18.sp)
                 Spacer(Modifier.height(16.dp))
 
                 Field("الاسم الكامل", fullName) { fullName = it }
@@ -82,7 +87,7 @@ class RegisterActivity : ComponentActivity() {
                     username = it.trimStart().lowercase().replace(Regex("\\s+"), "")
                 }
                 Field("رقم الهاتف العراقي 07xxxxxxxxx", phone) { phone = it.filter(Char::isDigit).take(11) }
-                Field("البريد الإلكتروني - اختياري", email) { email = it.trim() }
+                Field("البريد الإلكتروني - مطلوب لاستلام رمز التأكيد", email) { email = it.trim() }
                 Field("تاريخ الميلاد: 23/2/1965 أو 1965-02-23 - اختياري", birthDate) { birthDate = it.take(10) }
 
                 Text("الجنس", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
@@ -105,7 +110,7 @@ class RegisterActivity : ComponentActivity() {
                 }
 
                 Button(
-                    enabled = !busy && !success,
+                    enabled = !busy && verificationToken.isBlank() && !verified,
                     onClick = {
                         message = null
                         val validArabicName = fullName.trim().matches(Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]{1,99}$"))
@@ -116,6 +121,7 @@ class RegisterActivity : ComponentActivity() {
                             !validArabicName -> message = "اكتب الاسم الكامل بالعربية أو الإنكليزية دون رموز غير صالحة"
                             !validUsername -> message = "اسم المستخدم يقبل العربية أو الإنكليزية والأرقام و _ . فقط، من 3 إلى 30 حرفاً"
                             !phone.matches(Regex("^07\\d{9}$")) -> message = "رقم الهاتف يجب أن يبدأ بـ 07 ويتكون من 11 رقماً"
+                            !email.matches(Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) -> message = "البريد الإلكتروني الصحيح مطلوب لاستلام رمز التأكيد"
                             birthDate.isNotBlank() && normalizedBirthDate == null -> message = "تاريخ الميلاد غير صحيح؛ اكتبه مثل 23/2/1965"
                             password.length < 8 -> message = "كلمة المرور يجب أن تكون 8 أحرف على الأقل"
                             password != confirm -> message = "كلمتا المرور غير متطابقتين"
@@ -130,7 +136,8 @@ class RegisterActivity : ComponentActivity() {
                                             password = password, confirmPassword = confirm
                                         ))
                                         success = response.ok
-                                        message = response.message ?: if (response.ok) "تم إنشاء الطلب وهو بانتظار الموافقة" else "تعذر إنشاء الحساب"
+                                        verificationToken = response.verificationToken.orEmpty()
+                                        message = response.message ?: if (response.ok) "أرسلنا رمز التأكيد إلى بريدك الإلكتروني" else "تعذر إنشاء الحساب"
                                     } catch (e: HttpException) {
                                         val serverMessage = runCatching {
                                             JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("message")
@@ -150,7 +157,70 @@ class RegisterActivity : ComponentActivity() {
                     else Text("إنشاء الحساب")
                 }
 
-                if (success) {
+                if (verificationToken.isNotBlank() && !verified) {
+                    Spacer(Modifier.height(14.dp))
+                    Text("تأكيد البريد الإلكتروني", color = Color.White, fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = otpCode,
+                        onValueChange = { otpCode = it.filter(Char::isDigit).take(6) },
+                        label = { Text("رمز التأكيد المكوّن من 6 أرقام") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)
+                    )
+                    Button(
+                        enabled = !busy && otpCode.length == 6,
+                        onClick = {
+                            busy = true
+                            message = null
+                            scope.launch {
+                                try {
+                                    val response = api.verifyRegistration(VerifyRegistrationRequest(verificationToken, otpCode))
+                                    verified = response.ok
+                                    success = response.ok
+                                    message = response.message ?: if (response.ok) "تم تفعيل الحساب" else "رمز التأكيد غير صحيح"
+                                    if (response.ok) verificationToken = ""
+                                } catch (e: HttpException) {
+                                    success = false
+                                    message = runCatching {
+                                        JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("message")
+                                    }.getOrNull().orEmpty().ifBlank { "تعذر تأكيد الرمز: ${e.code()}" }
+                                } catch (e: Exception) {
+                                    success = false
+                                    message = e.message ?: "تعذر الاتصال بالخادم"
+                                } finally { busy = false }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF27A88F))
+                    ) { Text("تأكيد وتفعيل الحساب") }
+
+                    OutlinedButton(
+                        enabled = !busy,
+                        onClick = {
+                            busy = true
+                            scope.launch {
+                                try {
+                                    val response = api.resendVerification(ResendVerificationRequest(verificationToken))
+                                    verificationToken = response.verificationToken ?: verificationToken
+                                    otpCode = ""
+                                    success = response.ok
+                                    message = response.message ?: "تم إرسال رمز جديد"
+                                } catch (e: HttpException) {
+                                    success = false
+                                    message = runCatching {
+                                        JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("message")
+                                    }.getOrNull().orEmpty().ifBlank { "تعذر إعادة الإرسال: ${e.code()}" }
+                                } catch (e: Exception) {
+                                    success = false
+                                    message = e.message ?: "تعذر الاتصال بالخادم"
+                                } finally { busy = false }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("إعادة إرسال الرمز") }
+                }
+
+                if (verified) {
                     Spacer(Modifier.height(10.dp))
                     OutlinedButton(
                         onClick = { startActivity(Intent(this@RegisterActivity, MainActivity::class.java)); finish() },
@@ -158,7 +228,7 @@ class RegisterActivity : ComponentActivity() {
                     ) { Text("العودة لتسجيل الدخول") }
                 }
                 Spacer(Modifier.height(20.dp))
-                Text("لن يتم تسجيل دخول الحساب تلقائياً قبل موافقة الإدارة.", color = Color(0xFF98A2B3), fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Text("لن يُفعّل التسجيل العادي قبل تأكيد رمز البريد. حساب المطور له مسار إداري مستقل.", color = Color(0xFF98A2B3), fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             }
         }
     }
