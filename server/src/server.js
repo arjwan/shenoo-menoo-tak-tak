@@ -38,7 +38,23 @@ const { attachSocket } = require('./socket');
 
 const app = express();
 const httpServer = http.createServer(app);
-app.use(cors());
+app.set('trust proxy', 1);
+const allowedOrigins = String(process.env.CORS_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin is not allowed'));
+  }
+}));
+app.use((_req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=(self)'
+  });
+  next();
+});
 app.use(express.json({ limit: '8mb' }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'shno-mano-tech-api' }));
 app.use('/api/auth', authRoutes);
