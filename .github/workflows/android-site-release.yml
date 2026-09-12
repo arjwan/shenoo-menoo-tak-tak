@@ -65,24 +65,3 @@ jobs:
           path: android-app/app/build/outputs/apk/release/Shno-Mano-TakTak-2.0.0-release-signed.apk
           if-no-files-found: error
           retention-days: 30
-      - name: Publish direct download on Oracle
-        working-directory: ${{ github.workspace }}
-        env:
-          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          ORACLE_USER: ${{ secrets.ORACLE_USER }}
-          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
-        run: |
-          set -euo pipefail
-          : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
-          : "${ORACLE_USER:?Missing ORACLE_USER secret}"
-          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
-          APK="android-app/app/build/outputs/apk/release/Shno-Mano-TakTak-2.0.0-release-signed.apk"
-          mkdir -p ~/.ssh
-          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
-          chmod 600 ~/.ssh/oracle_key
-          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
-          scp -i ~/.ssh/oracle_key "$APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/Shno-Mano-TakTak-2.0.0.apk"
-          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'sudo mkdir -p /usr/share/nginx/html/alarjwan/downloads && sudo install -m 0644 /tmp/Shno-Mano-TakTak-2.0.0.apk /usr/share/nginx/html/alarjwan/downloads/Shno-Mano-TakTak-2.0.0.apk && sudo restorecon -F /usr/share/nginx/html/alarjwan/downloads/Shno-Mano-TakTak-2.0.0.apk 2>/dev/null || true'
-          curl --fail --location --silent --show-error --range 0-15 https://alarjwan.duckdns.org/downloads/Shno-Mano-TakTak-2.0.0.apk >/dev/null
-          echo 'TAKTAK_APK_READY=1'
-          rm -f ~/.ssh/oracle_key
