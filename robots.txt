@@ -1,8 +1,12 @@
 User-agent: *
 Allow: /
 
-# Public discovery pages stay crawlable. Keep account, private messaging,
-# developer/admin and authenticated app areas out of search results.
+# Public discovery pages stay crawlable. Account/authentication, private messaging,
+# developer/admin, old backups and authenticated app areas stay out of search results.
+Disallow: /signin.html
+Disallow: /signup.html
+Disallow: /backups/
+Disallow: /legacy-prototype/
 Disallow: /taktak.html
 Disallow: /profile.html
 Disallow: /messages.html
