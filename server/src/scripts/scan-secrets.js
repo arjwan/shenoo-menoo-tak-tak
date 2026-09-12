@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '../../..');
 const ignoredDirectories = new Set(['.git', 'node_modules', 'build', '.gradle', '.idea', 'dist', 'coverage']);
@@ -38,9 +39,26 @@ for (const file of filesIn(root)) {
   }
 }
 
+if (process.argv.includes('--history')) {
+  try {
+    const history = execFileSync('git', ['log', '--all', '-p', '--no-ext-diff', '--format=commit:%H'], {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 128 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    for (const [name, pattern] of rules) {
+      if (pattern.test(history)) findings.push({ file: 'git-history', rule: name });
+    }
+  } catch (error) {
+    console.error('Secret history scan could not inspect the complete Git history.');
+    process.exit(2);
+  }
+}
+
 if (findings.length) {
   console.error('Secret scan failed. Potential credentials were found (values are intentionally hidden):');
   for (const finding of findings) console.error('- ' + finding.file + ' [' + finding.rule + ']');
   process.exit(1);
 }
-console.log('Secret scan passed: no known credential patterns found.');
+console.log('Secret scan passed: no known credential patterns found' + (process.argv.includes('--history') ? ' in files or Git history.' : '.'));

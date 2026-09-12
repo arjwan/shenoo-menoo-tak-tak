@@ -7,11 +7,11 @@
   "scripts": {
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
-    "test": "node server/src/scripts/scan-secrets.js && node --test server/test/*.test.js",
+    "test": "node server/src/scripts/scan-secrets.js --history && node --test server/test/*.test.js",
     "seed:developer": "node server/src/scripts/createDeveloper.js",
     "seed:rooms": "node server/src/scripts/seedOfficialRooms.js",
     "games:close-all": "node server/src/scripts/closeAllGameRooms.js",
-    "security:secrets": "node server/src/scripts/scan-secrets.js"
+    "security:secrets": "node server/src/scripts/scan-secrets.js --history"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",
