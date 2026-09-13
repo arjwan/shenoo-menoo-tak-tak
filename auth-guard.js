@@ -49,8 +49,8 @@
     var notificationsScript=document.createElement('script'); notificationsScript.src='home-notifications.js?v=20260913-2'; notificationsScript.defer=true; document.head.appendChild(notificationsScript);
     if (!document.querySelector('script[data-direct-post-upload]')) { var directPostUpload=document.createElement('script'); directPostUpload.src='taktak-direct-upload.js?v=20260912-1'; directPostUpload.defer=true; directPostUpload.setAttribute('data-direct-post-upload','1'); document.head.appendChild(directPostUpload); }
     if (!document.querySelector('script[data-home-rooms-link]')) { var roomsLink=document.createElement('script'); roomsLink.src='home-rooms-link.js?v=20260913-1'; roomsLink.defer=true; roomsLink.setAttribute('data-home-rooms-link','1'); document.head.appendChild(roomsLink); }
-    if (!document.querySelector('link[data-home-mini-tv]')) { var miniTvCss=document.createElement('link'); miniTvCss.rel='stylesheet'; miniTvCss.href='home-mini-tv.css?v=20260913-1'; miniTvCss.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTvCss); }
-    if (!document.querySelector('script[data-home-mini-tv]')) { var miniTv=document.createElement('script'); miniTv.src='home-mini-tv.js?v=20260913-1'; miniTv.defer=true; miniTv.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTv); }
+    if (!document.querySelector('link[data-home-mini-tv]')) { var miniTvCss=document.createElement('link'); miniTvCss.rel='stylesheet'; miniTvCss.href='home-mini-tv.css?v=20260913-mobile-2'; miniTvCss.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTvCss); }
+    if (!document.querySelector('script[data-home-mini-tv]')) { var miniTv=document.createElement('script'); miniTv.src='home-mini-tv.js?v=20260913-mobile-2'; miniTv.defer=true; miniTv.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTv); }
   }
 
   if (!document.querySelector('script[data-platform-upgrades]')) { var upgrades=document.createElement('script'); upgrades.src='platform-upgrades.js?v=20260913-3'; upgrades.defer=true; upgrades.setAttribute('data-platform-upgrades','1'); document.head.appendChild(upgrades); }
