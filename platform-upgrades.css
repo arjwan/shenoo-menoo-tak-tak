@@ -1,0 +1,14 @@
+/* Consolidated UI fixes: notifications + stories. Keeps the existing visual identity. */
+.home-notification-menu{width:min(430px,calc(100vw - 24px))!important;direction:rtl}
+.home-notification-list{width:100%!important;overflow-x:hidden!important;overflow-y:auto!important}
+.home-notification-item{box-sizing:border-box!important;width:100%!important;max-width:none!important;min-width:0!important;display:grid!important;grid-template-columns:48px minmax(0,1fr)!important;align-items:start!important;gap:11px!important;white-space:normal!important}
+.home-notification-avatar{width:44px!important;height:44px!important;min-width:44px!important}
+.home-notification-copy{width:100%!important;min-width:0!important;max-width:none!important;overflow:visible!important;word-break:normal!important;overflow-wrap:anywhere!important;white-space:normal!important}
+.home-notification-copy strong,.home-notification-copy span,.home-notification-copy small{width:100%!important;white-space:normal!important;word-break:normal!important;writing-mode:horizontal-tb!important}
+.home-notification-copy span{font-size:13px!important;line-height:1.65!important}
+@media(max-width:760px){.home-notification-menu{left:8px!important;right:8px!important;width:auto!important}.home-notification-item{grid-template-columns:44px minmax(0,1fr)!important}}
+/* Story viewer: vertical card only; creation/editor and the rest of the page stay unchanged. */
+body:has(.story-shell) .story-grid{grid-template-columns:repeat(auto-fit,minmax(270px,360px))!important;justify-content:center!important;align-items:start!important}
+body:has(.story-shell) .story-card{width:min(360px,100%)!important;aspect-ratio:9/16!important;min-height:0!important;margin-inline:auto!important}
+body:has(.story-shell) .story-card>img,body:has(.story-shell) .story-card>video,body:has(.story-shell) .story-card>.fallback{width:100%!important;height:100%!important;min-height:0!important;object-fit:cover!important}
+.story-share-button{position:absolute;left:12px;bottom:12px;z-index:8;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(0,0,0,.62);color:#fff;padding:8px 11px;cursor:pointer;font:inherit}
