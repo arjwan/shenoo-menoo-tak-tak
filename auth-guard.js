@@ -41,6 +41,7 @@
   if (/\bsettings\.html$/i.test(location.pathname)) {
     var notificationSettingsCss=document.createElement('link'); notificationSettingsCss.rel='stylesheet'; notificationSettingsCss.href='notification-settings.css?v=20260913-1'; document.head.appendChild(notificationSettingsCss);
     var notificationSettings=document.createElement('script'); notificationSettings.src='notification-settings.js?v=20260913-1'; notificationSettings.defer=true; document.head.appendChild(notificationSettings);
+    var devicePanel=document.createElement('script'); devicePanel.src='settings-device-panel.js?v=20260913-1'; devicePanel.defer=true; document.head.appendChild(devicePanel);
   }
 
   if (/\/(?:taktak\.html)?$/i.test(location.pathname)) {
