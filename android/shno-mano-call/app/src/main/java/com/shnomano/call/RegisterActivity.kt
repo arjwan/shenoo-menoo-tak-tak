@@ -137,7 +137,8 @@ class RegisterActivity : ComponentActivity() {
                                         ))
                                         success = response.ok
                                         verificationToken = response.verificationToken.orEmpty()
-                                        message = response.message ?: if (response.ok) "أرسلنا رمز التأكيد إلى بريدك الإلكتروني" else "تعذر إنشاء الحساب"
+                                        verified = response.ok && !response.verificationRequired
+                                        message = response.message ?: if (response.verificationRequired) "أرسلنا رمز التأكيد إلى بريدك الإلكتروني" else if (response.ok) "تم إنشاء الحساب وتفعيله" else "تعذر إنشاء الحساب"
                                     } catch (e: HttpException) {
                                         val serverMessage = runCatching {
                                             JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("message")

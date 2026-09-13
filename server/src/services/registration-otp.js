@@ -10,6 +10,10 @@ function integerEnv(name, fallback, minimum, maximum) {
   return Number.isInteger(value) && value >= minimum && value <= maximum ? value : fallback;
 }
 
+function registrationOtpRequired() {
+  return String(process.env.REGISTRATION_OTP_REQUIRED || 'true').toLowerCase() !== 'false';
+}
+
 function otpPolicy() {
   return {
     ttlMs: integerEnv('OTP_TTL_MINUTES', DEFAULT_TTL_MINUTES, 2, 30) * 60 * 1000,
@@ -147,5 +151,6 @@ module.exports = {
   maskDestination,
   matchesOtp,
   otpPolicy,
-  readVerificationToken
+  readVerificationToken,
+  registrationOtpRequired
 };

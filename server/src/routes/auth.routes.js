@@ -9,7 +9,8 @@ const {
   issueOtp,
   maskDestination,
   otpPolicy,
-  readVerificationToken
+  readVerificationToken,
+  registrationOtpRequired
 } = require('../services/registration-otp');
 
 const router = express.Router();
@@ -107,9 +108,20 @@ router.post('/signup', async (req, res) => {
       privacyAcceptedAt: new Date(),
       privacyVersion: '2026-09-12',
       role: 'user',
-      status: 'pending',
-      approvalSource: 'pending'
+      status: registrationOtpRequired() ? 'pending' : 'active',
+      approvalSource: registrationOtpRequired() ? 'pending' : 'automatic',
+      reviewedAt: registrationOtpRequired() ? null : new Date()
     });
+
+    if (!registrationOtpRequired()) {
+      await user.save();
+      return res.status(201).json({
+        ok: true,
+        status: 'active',
+        verificationRequired: false,
+        message: 'تم إنشاء الحساب وتفعيله. يمكنك تسجيل الدخول الآن.'
+      });
+    }
 
     const code = issueOtp(user);
     try {

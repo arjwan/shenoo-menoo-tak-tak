@@ -6,6 +6,7 @@ process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'integration-jwt-secret-long-enough-2026';
 process.env.OTP_PEPPER = 'integration-otp-pepper-long-enough-2026';
 process.env.OTP_DELIVERY_MODE = 'email';
+process.env.REGISTRATION_OTP_REQUIRED = 'true';
 
 const realOtp = require('../src/services/registration-otp');
 let deliveredCode = '';
@@ -135,5 +136,56 @@ test('registration stays disabled until a valid OTP then permits sign in', async
   });
   assert.equal(signin.response.status, 200);
   assert.equal(signin.data.ok, true);
+  assert.ok(signin.data.token);
+});
+
+
+test('registration can be temporarily activated without OTP while phone stays mandatory', async (t) => {
+  users.length = 0;
+  deliveredCode = '';
+  process.env.REGISTRATION_OTP_REQUIRED = 'false';
+  t.after(() => { process.env.REGISTRATION_OTP_REQUIRED = 'true'; });
+
+  const app = express();
+  app.use(express.json());
+  app.use('/api/auth', authRouter);
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const baseUrl = 'http://127.0.0.1:' + server.address().port;
+
+  const missingPhone = await post(baseUrl, '/api/auth/signup', {
+    fullName: 'مستخدم بلا هاتف',
+    username: 'no_phone_user',
+    phone: '',
+    email: 'no-phone@example.com',
+    password: 'StrongPass123!',
+    confirmPassword: 'StrongPass123!',
+    termsAccepted: true,
+    privacyAccepted: true
+  });
+  assert.equal(missingPhone.response.status, 400);
+
+  const signup = await post(baseUrl, '/api/auth/signup', {
+    fullName: 'مستخدم أولي',
+    username: 'early_user',
+    phone: '07801112233',
+    email: 'early@example.com',
+    password: 'StrongPass123!',
+    confirmPassword: 'StrongPass123!',
+    termsAccepted: true,
+    privacyAccepted: true
+  });
+  assert.equal(signup.response.status, 201);
+  assert.equal(signup.data.verificationRequired, false);
+  assert.equal(signup.data.status, 'active');
+  assert.equal(users[0].status, 'active');
+  assert.equal(deliveredCode, '');
+
+  const signin = await post(baseUrl, '/api/auth/signin', {
+    identifier: '07801112233',
+    password: 'StrongPass123!'
+  });
+  assert.equal(signin.response.status, 200);
   assert.ok(signin.data.token);
 });
