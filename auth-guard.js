@@ -57,6 +57,7 @@
 
   if (!document.querySelector('script[data-shno-presence]')) { var presence=document.createElement('script'); presence.src='presence-client.js?v=20260913-1'; presence.defer=true; presence.setAttribute('data-shno-presence','1'); document.head.appendChild(presence); }
 
-  if (!document.querySelector('link[data-shno-communication-dock]')) { var commCss=document.createElement('link'); commCss.rel='stylesheet'; commCss.href='communication-dock.css?v=20260913-1'; commCss.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(commCss); }
-  if (!document.querySelector('script[data-shno-communication-dock]')) { var comm=document.createElement('script'); comm.src='communication-dock.js?v=20260913-2'; comm.defer=true; comm.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(comm); }
+  if (!document.querySelector('link[data-shno-communication-dock]')) { var commCss=document.createElement('link'); commCss.rel='stylesheet'; commCss.href='communication-dock.css?v=20260913-3'; commCss.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(commCss); }
+  if (!document.querySelector('script[data-shno-communication-dock]')) { var comm=document.createElement('script'); comm.src='communication-dock.js?v=20260913-3'; comm.defer=true; comm.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(comm); }
+  if (!document.querySelector('script[data-shno-messages-link]')) { var messagesLink=document.createElement('script'); messagesLink.src='communication-messages-link.js?v=20260913-1'; messagesLink.defer=true; messagesLink.setAttribute('data-shno-messages-link','1'); document.head.appendChild(messagesLink); }
 })();
