@@ -108,5 +108,16 @@
   }
 
   var token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  if (!token) window.location.replace('signin.html');
+  if (!token) {
+    window.location.replace('signin.html');
+    return;
+  }
+
+  if (!document.querySelector('script[data-shno-presence]')) {
+    var presence = document.createElement('script');
+    presence.src = 'presence-client.js?v=20260913-1';
+    presence.defer = true;
+    presence.setAttribute('data-shno-presence', '1');
+    document.head.appendChild(presence);
+  }
 })();
