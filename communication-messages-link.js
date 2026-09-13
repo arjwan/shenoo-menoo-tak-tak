@@ -14,6 +14,19 @@
       else card.appendChild(button);
     });
   }
+
+  document.addEventListener('click',function(e){
+    var launcher=e.target.closest&&e.target.closest('.shno-comm-launcher');
+    if(!launcher) return;
+    var card=document.querySelector('.shno-comm-card.is-contacts');
+    if(!card) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    card.remove();
+    var rail=document.querySelector('.shno-comm-rail');
+    if(rail&&!rail.children.length) rail.hidden=true;
+  },true);
+
   addMessagesButton();
   var observer=new MutationObserver(addMessagesButton);
   observer.observe(document.documentElement,{childList:true,subtree:true});
