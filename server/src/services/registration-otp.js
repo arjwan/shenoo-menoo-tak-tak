@@ -120,32 +120,10 @@ async function sendEmailOtp(email, code) {
   if (!response.ok) throw new Error('Email OTP provider rejected the request');
 }
 
-async function sendSmsOtp(phone, code) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM_NUMBER;
-  if (!accountSid || !authToken || !from) throw new Error('SMS OTP provider is not configured');
-  const to = phone.startsWith('07') ? '+964' + phone.slice(1) : phone;
-  const body = new URLSearchParams({ To: to, From: from, Body: 'Shno Mano verification code: ' + code });
-  const response = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + accountSid + '/Messages.json', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Basic ' + Buffer.from(accountSid + ':' + authToken).toString('base64'),
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body
-  });
-  if (!response.ok) throw new Error('SMS OTP provider rejected the request');
-}
-
 async function deliverOtp(user, code) {
   const mode = String(process.env.OTP_DELIVERY_MODE || 'email').toLowerCase();
   if (process.env.NODE_ENV === 'test' && mode === 'test') return { mode: 'test' };
-  if (mode === 'sms') {
-    await sendSmsOtp(user.phone || user.contact, code);
-    return { mode: 'sms' };
-  }
-  if (mode !== 'email') throw new Error('Unsupported OTP delivery mode');
+  if (mode !== 'email') throw new Error('Only email OTP delivery is enabled; SMS is intentionally disabled');
   await sendEmailOtp(user.email || user.contact, code);
   return { mode: 'email' };
 }
