@@ -84,6 +84,30 @@ html[data-theme="dark"] .chat-message.mine{background:#292047!important;color:#f
 html[data-theme="light"] :is(.modal-content,.dialog,.sheet,.privacy-card,.call-card){background:#f8fafc!important;color:#20242b!important;border-color:#cbd4df!important}
 html[data-theme="dark"] :is(.modal-content,.dialog,.sheet,.privacy-card,.call-card){background:#141c29!important;color:#f3f6fb!important;border-color:#2a3547!important}
 
+/* Consultations page: override legacy inline dark theme. */
+html[data-theme="light"] .consult :is(.hero,.apply,.provider){background:#f8fafc!important;color:#20242b!important;border-color:#cbd4df!important;box-shadow:0 14px 38px rgba(31,41,55,.07)!important}
+html[data-theme="light"] .consult .hero{background:linear-gradient(145deg,#f8fbff,#eaf3ff)!important}
+html[data-theme="light"] .consult .apply{background:linear-gradient(145deg,#fffaf4,#fff1e1)!important}
+html[data-theme="light"] .consult .provider{background:linear-gradient(145deg,#f7fcfa,#e8f7f0)!important}
+html[data-theme="light"] .consult :is(h1,h2,h3,p,small,.back,.msg){color:#20242b!important;opacity:1!important}
+html[data-theme="light"] .consult p,html[data-theme="light"] .consult small{color:#596579!important}
+html[data-theme="light"] .consult .cat{color:#20242b!important;border-color:#cbd4df!important;box-shadow:none!important}
+html[data-theme="light"] .consult .cat:nth-child(1){background:#eaf3ff!important;color:#23619a!important}
+html[data-theme="light"] .consult .cat:nth-child(2){background:#f0eaff!important;color:#5d45b8!important}
+html[data-theme="light"] .consult .cat:nth-child(3){background:#e7f7ef!important;color:#217052!important}
+html[data-theme="light"] .consult .cat:nth-child(4){background:#fff0df!important;color:#9a641c!important}
+html[data-theme="light"] .consult .cat.active{outline:2px solid #56cdbb!important;border-color:#56cdbb!important}
+html[data-theme="light"] .consult :is(input,select,textarea){background:#fbfcfd!important;color:#20242b!important;border-color:#b8c4d1!important}
+html[data-theme="light"] .consult .price{background:#eee9ff!important;color:#5d45b8!important}
+html[data-theme="light"] .consult .price.free{background:#e6f7ef!important;color:#217052!important}
+html[data-theme="light"] .consult .provider-actions a{background:#eef3f8!important;color:#2a3850!important;border-color:#cbd4df!important}
+html[data-theme="dark"] .consult :is(.hero,.apply,.provider){background:#141c29!important;color:#f3f6fb!important;border-color:#2a3547!important}
+html[data-theme="dark"] .consult :is(h1,h2,h3,.back){color:#f3f6fb!important}
+html[data-theme="dark"] .consult :is(p,small){color:#aeb8c8!important}
+html[data-theme="dark"] .consult .cat{background:#192334!important;color:#e9eef7!important;border-color:#354256!important}
+html[data-theme="dark"] .consult .cat.active{outline:2px solid #58c79b!important;border-color:#58c79b!important}
+html[data-theme="dark"] .consult :is(input,select,textarea){background:#192334!important;color:#f3f6fb!important;border-color:#354256!important}
+
 @media(max-width:720px){
   html[data-theme] :is(.settings-section,.social-card,.store-card,.service-card,.room-card,.group-card,.game-card,.school-card,.tv-card,.developer-card,.admin-card,.notification-card){border-radius:15px!important}
   html[data-theme] :is(button,.btn,.button,.action,.tool-btn,.icon-button,.small-button,.settings-nav a){min-height:44px!important}
