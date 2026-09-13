@@ -1,0 +1,25 @@
+(function(){'use strict';
+if(!/\/(?:taktak\.html)?$/i.test(location.pathname))return;
+function esc(v){return String(v||'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
+function playlists(){try{return JSON.parse(localStorage.getItem('taktak_tv_playlists')||'{}')}catch(_){return {}}}
+function channels(){const out=[];for(const [playlist,groups] of Object.entries(playlists()))for(const [group,rows] of Object.entries(groups||{}))for(const [name,url] of Object.entries(rows||{}))out.push({playlist,group,name,url});return out;}
+function current(){try{return JSON.parse(localStorage.getItem('taktak_tv_current_channel')||'null')}catch(_){return null}}
+function save(c){localStorage.setItem('taktak_tv_current_channel',JSON.stringify({...c,updatedAt:Date.now()}));}
+function inject(){if(document.querySelector('[data-home-mini-tv]'))return;const anchor=document.querySelector('.home-quick-panel')||document.querySelector('.people-strip')||document.querySelector('.feed');if(!anchor)return;const sec=document.createElement('section');sec.className='home-mini-tv compact-panel';sec.dataset.homeMiniTv='1';sec.innerHTML='<div class="home-mini-tv-head"><div><strong>📺 القناة التي تشاهدها الآن</strong><br><small data-mini-tv-name>لم يتم اختيار قناة</small></div></div><div class="home-mini-tv-screen"><video playsinline preload="metadata" data-mini-tv-video></video><div class="home-mini-tv-empty" data-mini-tv-empty>اختر قناة لبدء المشاهدة</div></div><div class="home-mini-tv-controls"><button type="button" data-mini-tv-play>▶</button><button type="button" data-mini-tv-mute>🔊</button><input type="range" min="0" max="100" value="70" data-mini-tv-volume aria-label="مستوى الصوت"><select data-mini-tv-channel><option value="">اختر قناة</option></select><button type="button" data-mini-tv-refresh>↻ تحديث القنوات</button></div><div class="home-mini-tv-status" data-mini-tv-status>بطاقة مصغرة فقط — لا يوجد تكبير أو ملء شاشة.</div>';
+anchor.insertAdjacentElement('afterend',sec);wire(sec);}
+function loadHls(done){if(window.Hls)return done();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/hls.js@latest';s.onload=done;s.onerror=done;document.head.appendChild(s);}
+function wire(root){const video=root.querySelector('[data-mini-tv-video]'),nameBox=root.querySelector('[data-mini-tv-name]'),empty=root.querySelector('[data-mini-tv-empty]'),select=root.querySelector('[data-mini-tv-channel]'),play=root.querySelector('[data-mini-tv-play]'),mute=root.querySelector('[data-mini-tv-mute]'),volume=root.querySelector('[data-mini-tv-volume]'),refresh=root.querySelector('[data-mini-tv-refresh]'),status=root.querySelector('[data-mini-tv-status]');let hls=null,list=[];
+function fill(){list=channels();const cur=current();select.innerHTML='<option value="">اختر قناة</option>'+list.map((c,i)=>'<option value="'+i+'">'+esc(c.name)+' — '+esc(c.group)+'</option>').join('');if(cur){const idx=list.findIndex(c=>c.url===cur.url&&c.name===cur.name);if(idx>=0)select.value=String(idx);}if(!list.length)status.textContent='لا توجد قنوات محفوظة بعد. أضف القنوات من صفحة TV.';}
+function setSource(c,autoplay){if(!c||!c.url)return;save(c);nameBox.textContent=c.name||'قناة';empty.hidden=true;if(hls){hls.destroy();hls=null;}video.pause();video.removeAttribute('src');if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=c.url;if(autoplay)video.play().catch(()=>{});}else if(/\.m3u8(?:\?|$)/i.test(c.url)){loadHls(()=>{if(window.Hls&&Hls.isSupported()){hls=new Hls();hls.loadSource(c.url);hls.attachMedia(video);if(autoplay)video.addEventListener('canplay',()=>video.play().catch(()=>{}),{once:true});}else{video.src=c.url;if(autoplay)video.play().catch(()=>{});}});}else{video.src=c.url;if(autoplay)video.play().catch(()=>{});} }
+fill();const cur=current();if(cur)setSource(cur,false);
+select.addEventListener('change',()=>{const c=list[Number(select.value)];if(c)setSource(c,true);});
+play.addEventListener('click',()=>{if(video.paused){video.play().catch(()=>{});play.textContent='⏸';}else{video.pause();play.textContent='▶';}});video.addEventListener('play',()=>play.textContent='⏸');video.addEventListener('pause',()=>play.textContent='▶');
+mute.addEventListener('click',()=>{video.muted=!video.muted;mute.textContent=video.muted?'🔇':'🔊';});
+volume.addEventListener('input',()=>{video.volume=Number(volume.value)/100;if(video.volume>0)video.muted=false;mute.textContent=video.muted?'🔇':'🔊';});video.volume=.7;
+refresh.addEventListener('click',()=>{fill();status.textContent='تم تحديث قائمة القنوات.';});
+window.addEventListener('storage',e=>{if(e.key==='taktak_tv_current_channel'){const c=current();fill();if(c)setSource(c,false);}});
+window.addEventListener('taktak-tv-channel-change',e=>{const c=e.detail;if(c){fill();setSource(c,false);}});
+video.addEventListener('dblclick',e=>e.preventDefault());video.removeAttribute('controls');
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',inject,{once:true});else inject();
+})();
