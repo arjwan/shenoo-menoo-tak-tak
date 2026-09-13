@@ -74,20 +74,49 @@ function maskDestination(value, type) {
   return text.length > 4 ? text.slice(0, 3) + '****' + text.slice(-4) : '***';
 }
 
+function emailHtml(code) {
+  return '<div dir="rtl" style="font-family:Arial,sans-serif"><h2>تأكيد حساب شنو منو اتصال</h2><p>رمز التأكيد هو:</p><p style="font-size:30px;font-weight:bold;letter-spacing:8px">' + code + '</p><p>ينتهي الرمز خلال دقائق. لا تشاركه مع أي شخص.</p></div>';
+}
+
+function senderIdentity() {
+  const email = String(process.env.OTP_FROM_EMAIL || '').trim();
+  const name = String(process.env.OTP_FROM_NAME || 'شنو منو اتصال').trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('OTP sender email is not configured');
+  return { email, name };
+}
+
 async function sendEmailOtp(email, code) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.OTP_FROM_EMAIL;
-  if (!apiKey || !from) throw new Error('Email OTP provider is not configured');
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from,
-      to: [email],
-      subject: 'رمز تأكيد حساب شنو منو',
-      html: '<div dir="rtl" style="font-family:Arial,sans-serif"><h2>تأكيد حساب شنو منو</h2><p>رمز التأكيد هو:</p><p style="font-size:30px;font-weight:bold;letter-spacing:8px">' + code + '</p><p>ينتهي الرمز خلال دقائق. لا تشاركه مع أي شخص.</p></div>'
-    })
-  });
+  const brevoKey = process.env.BREVO_API_KEY;
+  const resendKey = process.env.RESEND_API_KEY;
+  const sender = senderIdentity();
+  let response;
+
+  if (brevoKey) {
+    response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': brevoKey, Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender,
+        to: [{ email }],
+        subject: 'رمز تأكيد حساب شنو منو اتصال',
+        htmlContent: emailHtml(code)
+      })
+    });
+  } else if (resendKey) {
+    response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: sender.name + ' <' + sender.email + '>',
+        to: [email],
+        subject: 'رمز تأكيد حساب شنو منو اتصال',
+        html: emailHtml(code)
+      })
+    });
+  } else {
+    throw new Error('Free email OTP provider is not configured');
+  }
+
   if (!response.ok) throw new Error('Email OTP provider rejected the request');
 }
 

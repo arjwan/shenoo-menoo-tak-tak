@@ -10,6 +10,7 @@ const rules = [
   ['private-key', new RegExp('-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----')],
   ['github-token', new RegExp('gh' + '[pousr]_[A-Za-z0-9]{30,}')],
   ['openai-key', new RegExp('sk' + '-[A-Za-z0-9_-]{30,}')],
+  ['brevo-key', new RegExp('xkey' + 'sib-[A-Za-z0-9_-]{20,}')],
   ['aws-access-key', new RegExp('AK' + 'IA[0-9A-Z]{16}')],
   ['credentialed-mongodb-uri', new RegExp('mongodb(?:\\+srv)?:\\/\\/[^\\s:/]+:[^\\s@/]+@', 'i')],
   ['jwt-bearer-token', new RegExp('eyJ' + '[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{10,}')]

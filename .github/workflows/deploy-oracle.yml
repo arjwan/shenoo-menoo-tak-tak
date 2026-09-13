@@ -22,8 +22,10 @@ jobs:
       ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
       ORACLE_USER: ${{ secrets.ORACLE_USER }}
       ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       OTP_FROM_EMAIL: ${{ secrets.OTP_FROM_EMAIL }}
+      OTP_FROM_NAME: ${{ secrets.OTP_FROM_NAME }}
       OTP_PEPPER: ${{ secrets.OTP_PEPPER }}
     steps:
       - name: Verify required deployment secrets
@@ -31,9 +33,12 @@ jobs:
         run: |
           set -euo pipefail
           missing=()
-          for name in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY RESEND_API_KEY OTP_FROM_EMAIL OTP_PEPPER; do
+          for name in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY OTP_FROM_EMAIL OTP_PEPPER; do
             if [ -z "${!name:-}" ]; then missing+=("$name"); fi
           done
+          if [ -z "${BREVO_API_KEY:-}" ] && [ -z "${RESEND_API_KEY:-}" ]; then
+            missing+=("BREVO_API_KEY_or_RESEND_API_KEY")
+          fi
           if [ "${#missing[@]}" -ne 0 ]; then
             echo "Missing required GitHub Actions secrets: ${missing[*]}"
             exit 1
@@ -61,8 +66,10 @@ jobs:
             printf 'OTP_RESEND_SECONDS=60\n'
             printf 'OTP_MAX_ATTEMPTS=5\n'
             printf 'OTP_PEPPER=%s\n' "$OTP_PEPPER"
+            printf 'BREVO_API_KEY=%s\n' "$BREVO_API_KEY"
             printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
             printf 'OTP_FROM_EMAIL=%s\n' "$OTP_FROM_EMAIL"
+            printf 'OTP_FROM_NAME=%s\n' "${OTP_FROM_NAME:-شنو منو اتصال}"
             printf 'CORS_ORIGINS=https://shino-mino-tak-tak.duckdns.org\n'
           } > "$RUNNER_TEMP/otp.env"
 
@@ -90,7 +97,7 @@ jobs:
           test -f .env
           cp .env ".env.backup-$(date -u +%Y%m%dT%H%M%SZ)"
           filtered="$(mktemp)"
-          grep -Ev '^(OTP_DELIVERY_MODE|OTP_TTL_MINUTES|OTP_RESEND_SECONDS|OTP_MAX_ATTEMPTS|OTP_PEPPER|RESEND_API_KEY|OTP_FROM_EMAIL|CORS_ORIGINS)=' .env > "$filtered" || true
+          grep -Ev '^(OTP_DELIVERY_MODE|OTP_TTL_MINUTES|OTP_RESEND_SECONDS|OTP_MAX_ATTEMPTS|OTP_PEPPER|BREVO_API_KEY|RESEND_API_KEY|OTP_FROM_EMAIL|OTP_FROM_NAME|CORS_ORIGINS)=' .env > "$filtered" || true
           cat /tmp/shno-mano-otp.env >> "$filtered"
           mv "$filtered" .env
           chmod 600 .env
