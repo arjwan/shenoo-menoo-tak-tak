@@ -3,6 +3,8 @@ package com.shinomeno.taktak;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,6 +12,7 @@ import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -33,6 +36,10 @@ public final class MainActivity extends Activity {
     private static final String HOME_URL = "https://shino-mino-tak-tak.duckdns.org/taktak.html";
     private static final int FILE_PICKER = 41;
     private static final int MEDIA_PERMISSIONS = 42;
+    private static final int NOTIFICATION_PERMISSION = 43;
+    private static final String CHANNEL_MESSAGES = "shno_messages";
+    private static final String CHANNEL_CALLS = "shno_calls";
+    private static final String CHANNEL_MISSED = "shno_missed_calls";
     private WebView webView;
     private TextView offlineBanner;
     private ValueCallback<Uri[]> fileCallback;
@@ -43,9 +50,45 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(17, 24, 39));
+        createNotificationChannels();
         buildView();
         if (state == null) webView.loadUrl(HOME_URL);
         else webView.restoreState(state);
+    }
+
+    private void createNotificationChannels() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager == null) return;
+
+        NotificationChannel messages = new NotificationChannel(
+            CHANNEL_MESSAGES,
+            "رسائل شنو منو",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        messages.setDescription("تنبيهات الرسائل الجديدة");
+        messages.enableVibration(true);
+
+        NotificationChannel calls = new NotificationChannel(
+            CHANNEL_CALLS,
+            "مكالمات شنو منو",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        calls.setDescription("المكالمات الصوتية ومكالمات الفيديو الواردة");
+        calls.enableVibration(true);
+        calls.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+
+        NotificationChannel missed = new NotificationChannel(
+            CHANNEL_MISSED,
+            "المكالمات الفائتة",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        missed.setDescription("تنبيهات المكالمات التي لم يتم الرد عليها");
+        missed.enableVibration(true);
+
+        manager.createNotificationChannel(messages);
+        manager.createNotificationChannel(calls);
+        manager.createNotificationChannel(missed);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -93,13 +136,11 @@ public final class MainActivity extends Activity {
 
                 if (url != null && url.contains("signin.html")) {
                     signinSeen = true;
-                    // Inside the Android app we always keep the session on this device.
                     view.evaluateJavascript(
                         "(function(){var r=document.getElementById('remember');if(r){r.checked=true;}})();",
                         null
                     );
                 } else if (url != null && url.contains("taktak.html") && signinSeen) {
-                    // Do not let Android Back return to the sign-in screen after a successful login.
                     view.clearHistory();
                     signinSeen = false;
                 }
@@ -145,10 +186,16 @@ public final class MainActivity extends Activity {
     }
 
     private void requestMediaPermissions() {
-        if (android.os.Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= 23) {
             requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, MEDIA_PERMISSIONS);
         } else {
             grantWebPermission();
+        }
+    }
+
+    private void requestNotificationPermissionNative() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION);
         }
     }
 
@@ -201,6 +248,11 @@ public final class MainActivity extends Activity {
                 .setBeepEnabled(false)
                 .setOrientationLocked(false)
                 .initiateScan());
+        }
+
+        @JavascriptInterface
+        public void requestNotificationPermission() {
+            runOnUiThread(MainActivity.this::requestNotificationPermissionNative);
         }
     }
 
