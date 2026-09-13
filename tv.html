@@ -7,6 +7,7 @@
   <title>شنو منو TV</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="tv.css?v=20260913-5">
+  <link rel="stylesheet" href="tv-edge-controls.css?v=20260913-1">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
@@ -31,5 +32,5 @@
 <div class="channel-menu-overlay" data-menu-overlay><aside class="channel-menu"><div class="menu-header"><span>📺 قائمة القنوات</span><div><button type="button" class="manage-btn" data-edit>🛠️ إدارة</button><button type="button" data-close-menu><i class="fas fa-times"></i></button></div></div><div class="playlist-selector"><select data-playlist-select></select></div><input class="channel-search" type="search" placeholder="ابحث عن قناة" data-search><div data-channel-list></div><div class="add-channel-form" data-inline-add><input type="text" placeholder="اسم القناة" data-inline-name><input type="url" placeholder="رابط القناة" data-inline-url><button type="button" data-inline-save>➕ إضافة القناة</button></div></aside></div>
 <div class="modal-overlay" data-url-overlay><div class="modal-box"><h3><i class="fas fa-link"></i> إضافة رابط M3U/M3U8</h3><input type="text" placeholder="اسم القناة" data-direct-name><input type="url" placeholder="رابط البث" data-direct-url><p class="safety-note">يتم رفض الروابط غير الصالحة أو غير المناسبة قبل اعتمادها في النظام.</p><button type="button" data-direct-save>➕ إضافة القناة</button><button type="button" class="btn btn-outline" data-close-url>إلغاء</button></div></div>
 <div class="modal-overlay" data-playlist-name-overlay><div class="modal-box"><h3><i class="fas fa-file-import"></i> اسم ملف القنوات</h3><input type="text" placeholder="مثال: قنوات عراقية" data-playlist-name><button type="button" data-playlist-import>استيراد الملف</button><button type="button" class="btn btn-outline" data-playlist-cancel>إلغاء</button></div></div>
-<script src="social-api.js"></script><script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script><script src="tv.js?v=20260913-3"></script><script src="tv-chat-popup.js?v=20260913-1"></script><script src="broadcast-ticker-client.js?v=20260913-1"></script>
+<script src="social-api.js"></script><script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script><script src="tv.js?v=20260913-3"></script><script src="tv-chat-popup.js?v=20260913-1"></script><script src="broadcast-ticker-client.js?v=20260913-1"></script><script src="tv-controls-autohide.js?v=20260913-1"></script>
 </body></html>
