@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, trim: true, default: '', match: /^$|^07\d{9}$/ },
   email: { type: String, lowercase: true, trim: true, default: '' },
   contactVerified: { type: Boolean, default: false, index: true },
+  friendCode: { type: String, unique: true, sparse: true, trim: true, minlength: 20, maxlength: 40 },
   contactVerifiedAt: { type: Date, default: null },
   contactVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   verificationCodeHash: { type: String, default: '' },
