@@ -229,9 +229,18 @@ router.patch('/requests/:id/:action', async (req, res) => {
   }
 });
 
-router.post('/requests/:id/accept', (req, res) => {
-  req.params.action = 'accept';
-  return router.handle(req, res);
+router.post('/requests/:id/accept', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ ok: false, message: 'معرف الطلب غير صالح' });
+    const request = await FriendRequest.findOne({ _id: req.params.id, receiver: req.user._id, status: 'pending' });
+    if (!request) return res.status(404).json({ ok: false, message: 'الطلب غير موجود أو عولج سابقاً' });
+    request.status = 'accepted';
+    request.pairKey = canonicalPair(request.sender, request.receiver);
+    await request.save();
+    return res.json({ ok: true, status: request.status, requestId: request._id });
+  } catch {
+    return res.status(500).json({ ok: false, message: 'تعذر قبول الطلب' });
+  }
 });
 router.post('/requests/:id/reject', async (req, res) => {
   try {
