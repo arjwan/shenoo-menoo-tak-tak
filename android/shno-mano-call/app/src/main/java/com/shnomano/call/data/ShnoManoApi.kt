@@ -101,7 +101,21 @@ data class ConversationResponse(val ok: Boolean = false, val conversation: Conve
 data class MessagesResponse(val ok: Boolean = false, val conversation: ConversationDto? = null, val messages: List<MessageDto> = emptyList())
 data class SendMessageRequest(val text: String)
 data class SendMessageResponse(val ok: Boolean = false, val message: MessageDto? = null)
-data class OkResponse(val ok: Boolean = false, val message: String? = null)
+data class OkResponse(
+    val ok: Boolean = false,
+    val message: String? = null,
+    val status: String? = null,
+    val outcome: String? = null,
+    val requestId: String? = null
+)
+data class FriendQrResponse(
+    val ok: Boolean = false,
+    val payload: String? = null,
+    val imageDataUrl: String? = null,
+    val expiresInSeconds: Int? = null,
+    val message: String? = null
+)
+data class FriendQrRequest(val token: String)
 
 interface ShnoManoApi {
     @POST("api/auth/signup") suspend fun signUp(@Body body: SignUpRequest): SignUpResponse
@@ -113,6 +127,8 @@ interface ShnoManoApi {
     @GET("api/friends") suspend fun friends(): FriendsResponse
     @GET("api/friends/requests") suspend fun friendRequests(@Query("type") type: String = "incoming"): FriendRequestsResponse
     @POST("api/friends/request/{userId}") suspend fun sendFriendRequest(@Path("userId") userId: String): OkResponse
+    @GET("api/friends/qr") suspend fun friendQr(): FriendQrResponse
+    @POST("api/friends/qr/request") suspend fun sendQrFriendRequest(@Body body: FriendQrRequest): OkResponse
     @PATCH("api/friends/requests/{requestId}/{action}") suspend fun actOnFriendRequest(@Path("requestId") requestId: String, @Path("action") action: String): OkResponse
     @DELETE("api/friends/{userId}") suspend fun removeFriend(@Path("userId") userId: String): OkResponse
     @GET("api/users/search") suspend fun searchUsers(@Query("q") query: String): UsersSearchResponse
