@@ -38,6 +38,11 @@
     var profilePosts=document.createElement('script'); profilePosts.src='profile-posts.js?v=20260910-1'; profilePosts.defer=true; document.head.appendChild(profilePosts);
   }
 
+  if (/\bsettings\.html$/i.test(location.pathname)) {
+    var notificationSettingsCss=document.createElement('link'); notificationSettingsCss.rel='stylesheet'; notificationSettingsCss.href='notification-settings.css?v=20260913-1'; document.head.appendChild(notificationSettingsCss);
+    var notificationSettings=document.createElement('script'); notificationSettings.src='notification-settings.js?v=20260913-1'; notificationSettings.defer=true; document.head.appendChild(notificationSettings);
+  }
+
   if (/\/(?:taktak\.html)?$/i.test(location.pathname)) {
     if (!document.querySelector('link[data-home-notifications]')) { var notificationsCss=document.createElement('link'); notificationsCss.rel='stylesheet'; notificationsCss.href='home-notifications.css?v=20260913-2'; notificationsCss.setAttribute('data-home-notifications','1'); document.head.appendChild(notificationsCss); }
     var notificationsScript=document.createElement('script'); notificationsScript.src='home-notifications.js?v=20260911-1'; notificationsScript.defer=true; document.head.appendChild(notificationsScript);
