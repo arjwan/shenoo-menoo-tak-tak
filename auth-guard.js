@@ -15,7 +15,7 @@
   if (!document.querySelector('link[data-theme-pages]')) {
     var themePages = document.createElement('link');
     themePages.rel = 'stylesheet';
-    themePages.href = 'theme-pages.css?v=20260913-1';
+    themePages.href = 'theme-pages.css?v=20260913-2';
     themePages.setAttribute('data-theme-pages', '1');
     document.head.appendChild(themePages);
   }
