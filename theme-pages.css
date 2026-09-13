@@ -1,0 +1,90 @@
+/* Cross-page visual harmonization for authenticated Shenoo Menoo pages. */
+html[data-theme="light"] body{background:radial-gradient(circle at 0 96%,rgba(61,207,191,.14),transparent 24%),radial-gradient(circle at 100% 15%,rgba(124,92,255,.13),transparent 28%),#e9eef4!important;color:#20242b!important}
+html[data-theme="dark"] body{background:radial-gradient(circle at 0 96%,rgba(39,216,196,.06),transparent 24%),radial-gradient(circle at 100% 12%,rgba(124,92,255,.11),transparent 28%),#0c111b!important;color:#f3f6fb!important}
+
+/* Common surfaces used across friends, messages, settings, stores, ads, rooms, services, school, TV and developer pages. */
+html[data-theme="light"] :is(
+  .settings-section,.settings-nav,.settings-field,.settings-offline,.blocked-list,
+  .social-sidebar,.social-main,.social-empty,.conversation-list,.chat-window,.chat-header,.chat-composer,.chat-empty,
+  .friend-card,.friend-row,.friend-item,.person-card,.user-card,.contact-card,.request-card,
+  .store-card,.store-panel,.store-section,.store-item,.store-dashboard-card,.mall-card,.mall-section,.mall-hero,
+  .ad-card,.ads-card,.ad-panel,.ad-preview,.ad-form-card,
+  .service-card,.service-panel,.provider-card,.request-panel,.consultation-card,
+  .room-card,.room-panel,.room-shell,.room-tools,.group-card,.group-panel,.group-room,
+  .game-card,.game-panel,.game-shell,.game-board,.challenge-card,.challenge-panel,
+  .reel-card,.reel-panel,.story-card,.story-panel,.feed-card,.feed-panel,
+  .school-card,.school-panel,.lesson-card,.schedule-card,.teacher-card,
+  .tv-card,.tv-panel,.tv-room,.transport-card,.transport-panel,
+  .developer-card,.developer-panel,.admin-card,.admin-panel,.approval-card,.approval-panel,
+  .support-card,.support-panel,.notification-card,.notification-panel,
+  .phone-card,.qr-card,.invite-card,.smart-card,.smart-panel,.kahwa-card,
+  [class$="-card"],[class$="-panel"]
+){background:#f8fafc!important;color:#20242b!important;border-color:#cbd4df!important;box-shadow:0 14px 38px rgba(31,41,55,.07)!important}
+
+html[data-theme="dark"] :is(
+  .settings-section,.settings-nav,.settings-field,.settings-offline,.blocked-list,
+  .social-sidebar,.social-main,.social-empty,.conversation-list,.chat-window,.chat-header,.chat-composer,.chat-empty,
+  .friend-card,.friend-row,.friend-item,.person-card,.user-card,.contact-card,.request-card,
+  .store-card,.store-panel,.store-section,.store-item,.store-dashboard-card,.mall-card,.mall-section,.mall-hero,
+  .ad-card,.ads-card,.ad-panel,.ad-preview,.ad-form-card,
+  .service-card,.service-panel,.provider-card,.request-panel,.consultation-card,
+  .room-card,.room-panel,.room-shell,.room-tools,.group-card,.group-panel,.group-room,
+  .game-card,.game-panel,.game-shell,.game-board,.challenge-card,.challenge-panel,
+  .reel-card,.reel-panel,.story-card,.story-panel,.feed-card,.feed-panel,
+  .school-card,.school-panel,.lesson-card,.schedule-card,.teacher-card,
+  .tv-card,.tv-panel,.tv-room,.transport-card,.transport-panel,
+  .developer-card,.developer-panel,.admin-card,.admin-panel,.approval-card,.approval-panel,
+  .support-card,.support-panel,.notification-card,.notification-panel,
+  .phone-card,.qr-card,.invite-card,.smart-card,.smart-panel,.kahwa-card,
+  [class$="-card"],[class$="-panel"]
+){background:#141c29!important;color:#f3f6fb!important;border-color:#2a3547!important;box-shadow:0 16px 42px rgba(0,0,0,.22)!important}
+
+/* Calm pastel hierarchy like the approved profile direction. */
+html[data-theme="light"] :is(.settings-section,.store-card,.service-card,.room-card,.friend-card,.user-card,.provider-card,.school-card,.tv-card,.developer-card,.notification-card):nth-of-type(4n+1){background:linear-gradient(145deg,#f8fbff,#e9f3ff)!important}
+html[data-theme="light"] :is(.settings-section,.store-card,.service-card,.room-card,.friend-card,.user-card,.provider-card,.school-card,.tv-card,.developer-card,.notification-card):nth-of-type(4n+2){background:linear-gradient(145deg,#fbf9ff,#f0eaff)!important}
+html[data-theme="light"] :is(.settings-section,.store-card,.service-card,.room-card,.friend-card,.user-card,.provider-card,.school-card,.tv-card,.developer-card,.notification-card):nth-of-type(4n+3){background:linear-gradient(145deg,#f8fcfa,#e7f7ef)!important}
+html[data-theme="light"] :is(.settings-section,.store-card,.service-card,.room-card,.friend-card,.user-card,.provider-card,.school-card,.tv-card,.developer-card,.notification-card):nth-of-type(4n){background:linear-gradient(145deg,#fffaf4,#fff0df)!important}
+
+/* High-contrast charcoal text in daylight, soft white at night. */
+html[data-theme="light"] :is(.settings-section,.settings-nav,.social-card,.conversation-list,.chat-window,.store-card,.service-card,.room-card,.group-card,.game-card,.school-card,.tv-card,.developer-card,.admin-card,.notification-card) :is(h1,h2,h3,h4,strong,b,label,.title,.name){color:#20242b!important;opacity:1!important}
+html[data-theme="light"] :is(.settings-section,.settings-nav,.social-card,.conversation-list,.chat-window,.store-card,.service-card,.room-card,.group-card,.game-card,.school-card,.tv-card,.developer-card,.admin-card,.notification-card) :is(p,small,.muted,.meta,.hint,.subtitle,.description,.status,.empty-text){color:#596579!important;opacity:1!important}
+html[data-theme="dark"] :is(.settings-section,.settings-nav,.social-card,.conversation-list,.chat-window,.store-card,.service-card,.room-card,.group-card,.game-card,.school-card,.tv-card,.developer-card,.admin-card,.notification-card) :is(h1,h2,h3,h4,strong,b,label,.title,.name){color:#f3f6fb!important}
+html[data-theme="dark"] :is(.settings-section,.settings-nav,.social-card,.conversation-list,.chat-window,.store-card,.service-card,.room-card,.group-card,.game-card,.school-card,.tv-card,.developer-card,.admin-card,.notification-card) :is(p,small,.muted,.meta,.hint,.subtitle,.description,.status,.empty-text){color:#aeb8c8!important}
+
+/* Navigation and tabs. */
+html[data-theme="light"] :is(.social-tab,.tab,.tabs button,.settings-nav a,.nav-link,.mobile-menu a,.filter-btn,.chip,.meta-chip){background:#eef3f8!important;color:#2a3850!important;border-color:#cbd4df!important}
+html[data-theme="light"] :is(.social-tab.is-active,.tab.is-active,.tabs .active,.settings-nav .is-active,.filter-btn.active,.chip.active){background:#eee9ff!important;color:#5d45b8!important;border-color:#d2c7f8!important}
+html[data-theme="dark"] :is(.social-tab,.tab,.tabs button,.settings-nav a,.nav-link,.mobile-menu a,.filter-btn,.chip,.meta-chip){background:#192334!important;color:#dfe7f3!important;border-color:#354256!important}
+html[data-theme="dark"] :is(.social-tab.is-active,.tab.is-active,.tabs .active,.settings-nav .is-active,.filter-btn.active,.chip.active){background:#292047!important;color:#d9d0ff!important;border-color:#4a3f78!important}
+
+/* Forms across all app pages. */
+html[data-theme="light"] :is(input,textarea,select,.social-search,.search-box,.field,.form-control){background:#fbfcfd!important;color:#20242b!important;border-color:#b8c4d1!important}
+html[data-theme="dark"] :is(input,textarea,select,.social-search,.search-box,.field,.form-control){background:#192334!important;color:#f3f6fb!important;border-color:#354256!important}
+
+/* Readable calm actions, with varied accents only for secondary controls. */
+html[data-theme="light"] :is(.icon-button,.tool-btn,.small-button,.action,.secondary,.ghost,.outline,.password-toggle,.attach-button,.call-control,.menu-toggle){background:#e8f2ff!important;color:#275b91!important;border-color:#bdd7f5!important}
+html[data-theme="light"] :is(.icon-button,.tool-btn,.small-button,.action,.secondary,.ghost,.outline):nth-of-type(3n+2){background:#eee9ff!important;color:#5d45b8!important;border-color:#d2c7f8!important}
+html[data-theme="light"] :is(.icon-button,.tool-btn,.small-button,.action,.secondary,.ghost,.outline):nth-of-type(3n){background:#e6f7ef!important;color:#217052!important;border-color:#bfe6d3!important}
+html[data-theme="dark"] :is(.icon-button,.tool-btn,.small-button,.action,.secondary,.ghost,.outline,.password-toggle,.attach-button,.call-control,.menu-toggle){background:#1d293a!important;color:#e9eef7!important;border-color:#354256!important}
+
+/* Preserve semantic actions. */
+html[data-theme] :is(.primary,.button-primary,.btn-primary,.publish,.send-button,[data-primary="true"],button[type="submit"]){background:linear-gradient(135deg,#745ce8,#6655d9)!important;color:#fff!important;border-color:transparent!important}
+html[data-theme] :is(.danger,.btn-danger,[data-danger="true"],.call-control.end){background:#c43d4f!important;color:#fff!important;border-color:transparent!important}
+html[data-theme] :is(.success,.btn-success,[data-success="true"]){background:#218a65!important;color:#fff!important;border-color:transparent!important}
+
+/* Tables, rows and messages. */
+html[data-theme="light"] :is(.social-list-item,.conversation-item,.friend-row,.request-row,.settings-row,.privacy-row,.table-row,td,th){color:#20242b!important;border-color:#d3dbe4!important}
+html[data-theme="dark"] :is(.social-list-item,.conversation-item,.friend-row,.request-row,.settings-row,.privacy-row,.table-row,td,th){color:#edf2f8!important;border-color:#2a3547!important}
+html[data-theme="light"] .chat-message{background:#f2f6fa!important;color:#20242b!important;border-color:#cad5e1!important}
+html[data-theme="light"] .chat-message.mine{background:#eee9ff!important;color:#3e3278!important;border-color:#d2c7f8!important}
+html[data-theme="dark"] .chat-message{background:#1b2637!important;color:#eef3f9!important;border-color:#334155!important}
+html[data-theme="dark"] .chat-message.mine{background:#292047!important;color:#f3efff!important;border-color:#4a3f78!important}
+
+/* Modals and sheets. */
+html[data-theme="light"] :is(.modal-content,.dialog,.sheet,.privacy-card,.call-card){background:#f8fafc!important;color:#20242b!important;border-color:#cbd4df!important}
+html[data-theme="dark"] :is(.modal-content,.dialog,.sheet,.privacy-card,.call-card){background:#141c29!important;color:#f3f6fb!important;border-color:#2a3547!important}
+
+@media(max-width:720px){
+  html[data-theme] :is(.settings-section,.social-card,.store-card,.service-card,.room-card,.group-card,.game-card,.school-card,.tv-card,.developer-card,.admin-card,.notification-card){border-radius:15px!important}
+  html[data-theme] :is(button,.btn,.button,.action,.tool-btn,.icon-button,.small-button,.settings-nav a){min-height:44px!important}
+}
