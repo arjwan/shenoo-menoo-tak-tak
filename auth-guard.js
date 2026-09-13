@@ -7,7 +7,7 @@
   if (!document.querySelector('link[data-theme-light-fixes]')) {
     var themeFixes = document.createElement('link');
     themeFixes.rel = 'stylesheet';
-    themeFixes.href = 'theme-light-fixes.css?v=20260913-1';
+    themeFixes.href = 'theme-light-fixes.css?v=20260913-2';
     themeFixes.setAttribute('data-theme-light-fixes', '1');
     document.head.appendChild(themeFixes);
   }
