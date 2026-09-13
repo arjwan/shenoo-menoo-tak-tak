@@ -62,7 +62,8 @@ async function requestFriend(actor, target, source = 'direct') {
   if (blocked(actor, target)) {
     return { httpStatus: 403, ok: false, message: 'لا يمكن التواصل مع هذا المستخدم' };
   }
-  if (privacyValue(target, 'friendRequests') !== 'everyone') {
+  const friendRequestPrivacy = privacyValue(target, 'friendRequests');
+  if (friendRequestPrivacy && friendRequestPrivacy !== 'everyone') {
     return { httpStatus: 403, ok: false, message: 'هذا المستخدم لا يستقبل طلبات صداقة حالياً' };
   }
 
