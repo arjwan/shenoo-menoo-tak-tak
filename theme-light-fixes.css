@@ -1,0 +1,178 @@
+/* Global readability and light-theme corrections for authenticated Shenoo Menoo pages. */
+html[data-theme="light"] {
+  --social-card: rgba(255,255,255,.96) !important;
+  --social-line: rgba(15,23,42,.16) !important;
+  --social-muted: #526079 !important;
+}
+
+/* Typography: keep Arabic UI comfortable without changing visual identity. */
+.social-page,
+.social-card,
+.profile-section,
+.privacy-card,
+.chat-window {
+  font-size: 16px;
+}
+.profile-section h2,
+.privacy-card h2 { font-size: 1.06rem !important; line-height: 1.5; }
+.profile-section p,
+.profile-summary p,
+.privacy-row,
+.form-message { font-size: .86rem !important; line-height: 1.85; }
+.profile-stat small { font-size: .72rem !important; }
+.icon-button { font-size: .78rem !important; font-weight: 800; }
+
+/* General light mode contrast. */
+html[data-theme="light"] body,
+html[data-theme="light"] .social-page,
+html[data-theme="light"] .social-card,
+html[data-theme="light"] .profile-section,
+html[data-theme="light"] .privacy-card,
+html[data-theme="light"] .chat-window,
+html[data-theme="light"] .conversation-list,
+html[data-theme="light"] .social-sidebar {
+  color: #172033 !important;
+}
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] label,
+html[data-theme="light"] strong,
+html[data-theme="light"] .privacy-row,
+html[data-theme="light"] .profile-stat strong {
+  color: #172033 !important;
+}
+html[data-theme="light"] p,
+html[data-theme="light"] small,
+html[data-theme="light"] .profile-summary p,
+html[data-theme="light"] .profile-section p,
+html[data-theme="light"] .social-list-copy small,
+html[data-theme="light"] .social-list-meta,
+html[data-theme="light"] .form-message,
+html[data-theme="light"] .profile-media-name,
+html[data-theme="light"] .profile-media-note {
+  color: #526079 !important;
+}
+html[data-theme="light"] .nav-link,
+html[data-theme="light"] .mobile-menu a,
+html[data-theme="light"] .social-list-item,
+html[data-theme="light"] .text-link {
+  color: #26344d !important;
+}
+
+/* Cards, panels and modal surfaces. */
+html[data-theme="light"] .social-card,
+html[data-theme="light"] .profile-section,
+html[data-theme="light"] .privacy-card,
+html[data-theme="light"] .social-empty,
+html[data-theme="light"] .chat-window,
+html[data-theme="light"] .conversation-list {
+  background: rgba(255,255,255,.97) !important;
+  border-color: rgba(15,23,42,.14) !important;
+  box-shadow: 0 16px 44px rgba(15,23,42,.08);
+}
+html[data-theme="light"] .privacy-modal {
+  background: rgba(15,23,42,.46) !important;
+}
+html[data-theme="light"] .privacy-modal[data-edit-modal] .privacy-card {
+  background: #ffffff !important;
+  color: #172033 !important;
+  border-color: rgba(15,23,42,.16) !important;
+}
+html[data-theme="light"] .privacy-modal[data-edit-modal] .privacy-actions {
+  background: linear-gradient(180deg,rgba(255,255,255,.9),#fff 28%) !important;
+  border-top: 1px solid rgba(15,23,42,.08);
+}
+
+/* Form controls and native file inputs. */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background: #fff !important;
+  color: #172033 !important;
+  border-color: #aab4c5 !important;
+}
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder { color: #7a869b !important; opacity: 1; }
+html[data-theme="light"] input[type="file"] { color: #26344d !important; }
+html[data-theme="light"] input[type="file"]::file-selector-button {
+  margin-inline-end: 10px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #aab4c5;
+  border-radius: 10px;
+  background: #eef2f7;
+  color: #172033;
+  font-weight: 800;
+  cursor: pointer;
+}
+html[data-theme="light"] .privacy-row select {
+  background: #fff !important;
+  color: #172033 !important;
+  border-color: #aab4c5 !important;
+  min-width: 94px;
+}
+
+/* Buttons must remain legible in both themes. */
+html[data-theme="light"] .icon-button:not(.primary),
+html[data-theme="light"] .tool-btn,
+html[data-theme="light"] .small-button:not(.primary) {
+  background: #f1f4f9 !important;
+  color: #172033 !important;
+  border-color: #aab4c5 !important;
+}
+html[data-theme="light"] .icon-button.primary,
+html[data-theme="light"] .button-primary,
+html[data-theme="light"] .publish,
+html[data-theme="light"] .send-button {
+  color: #fff !important;
+}
+
+/* Profile editor: remove overlap and make every field a clear row. */
+.privacy-modal[data-edit-modal] .privacy-card {
+  width: min(720px,100%) !important;
+}
+.privacy-modal[data-edit-modal] form { width: 100%; }
+.privacy-modal[data-edit-modal] .form-field {
+  min-width: 0;
+  margin-bottom: 16px !important;
+}
+.privacy-modal[data-edit-modal] .form-field > label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: .86rem !important;
+  line-height: 1.5;
+}
+.privacy-modal[data-edit-modal] .form-field input:not([type="file"]),
+.privacy-modal[data-edit-modal] .form-field textarea {
+  min-height: 48px;
+  font-size: .9rem !important;
+  line-height: 1.7;
+}
+.privacy-modal[data-edit-modal] .form-field textarea { min-height: 116px; }
+.privacy-modal[data-edit-modal] .form-field input[type="file"] {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px;
+  border-radius: 11px;
+}
+.privacy-modal[data-edit-modal] .privacy-actions {
+  gap: 10px;
+  align-items: center;
+}
+
+/* Better readability for profile overview and privacy panel. */
+.profile-grid { align-items: start; }
+.profile-section { line-height: 1.75; }
+.privacy-list { gap: 12px !important; }
+.privacy-row { min-height: 38px; }
+.profile-stats { margin-top: 14px; }
+.profile-stat { padding: 15px 10px !important; }
+
+@media (max-width: 560px) {
+  .social-page,.social-card,.profile-section,.privacy-card,.chat-window { font-size: 15px; }
+  .privacy-modal[data-edit-modal] .privacy-card { padding: 18px !important; }
+  .privacy-modal[data-edit-modal] .privacy-actions { grid-template-columns: 1fr 1fr; }
+  .profile-section p,.privacy-row { font-size: .84rem !important; }
+}
