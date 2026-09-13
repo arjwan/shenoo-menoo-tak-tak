@@ -1,312 +1,105 @@
-/* Global readability and light-theme corrections for Shenoo Menoo pages. */
-html[data-theme="light"] {
-  --social-card: rgba(255,255,255,.97) !important;
-  --social-line: rgba(15,23,42,.16) !important;
-  --social-muted: #4f5d73 !important;
-  --light-text: #172033;
-  --light-muted: #4f5d73;
-  --light-border: #aab4c5;
-  --light-surface: #ffffff;
-  --light-surface-soft: #f5f7fb;
+/* Global light-mode readability fixes — loaded after page CSS. */
+html[data-theme="light"]{
+  --light-bg:#e9edf2!important;
+  --light-surface:#f4f6f8!important;
+  --light-surface-2:#edf1f5!important;
+  --light-text:#172033!important;
+  --light-muted:#4d5a6d!important;
+  --light-border:#b8c0cc!important;
+  --social-card:#f4f6f8!important;
+  --social-line:rgba(15,23,42,.16)!important;
+  --social-muted:#4d5a6d!important;
 }
-
-/* Comfortable Arabic typography across authenticated pages. */
-html[data-theme="light"] body,
-html[data-theme="dark"] body {
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+html[data-theme="light"] body{
+  background:#e9edf2!important;
+  color:var(--light-text)!important;
+  font-size:16px;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
 }
-.social-page,
-.social-card,
-.profile-section,
-.privacy-card,
-.chat-window,
-.card,
-.panel,
-.modal,
-.dialog,
-.settings-card,
-section,
-article {
-  line-height: 1.75;
-}
-html[data-theme="light"] body { font-size: 16px; }
-html[data-theme="light"] h1 { font-size: clamp(1.45rem,2vw,2rem); line-height: 1.45; }
-html[data-theme="light"] h2 { font-size: clamp(1.12rem,1.6vw,1.35rem); line-height: 1.5; }
-html[data-theme="light"] h3 { font-size: 1rem; line-height: 1.55; }
-html[data-theme="light"] p,
-html[data-theme="light"] label,
-html[data-theme="light"] li,
-html[data-theme="light"] td,
-html[data-theme="light"] th,
-html[data-theme="light"] .privacy-row,
-html[data-theme="light"] .setting-row,
-html[data-theme="light"] .settings-row { font-size: .95rem; }
-html[data-theme="light"] small,
-html[data-theme="light"] .muted,
-html[data-theme="light"] .hint,
-html[data-theme="light"] .meta,
-html[data-theme="light"] .subtitle,
-html[data-theme="light"] .description,
-html[data-theme="light"] .social-list-meta,
-html[data-theme="light"] .social-list-copy small,
-html[data-theme="light"] .form-message,
-html[data-theme="light"] .profile-media-note { font-size: .875rem; line-height: 1.65; }
-
-/* Universal light-mode text contrast. */
-html[data-theme="light"] body,
 html[data-theme="light"] main,
 html[data-theme="light"] section,
-html[data-theme="light"] article,
-html[data-theme="light"] .social-page,
-html[data-theme="light"] .social-card,
-html[data-theme="light"] .profile-section,
-html[data-theme="light"] .privacy-card,
-html[data-theme="light"] .chat-window,
-html[data-theme="light"] .conversation-list,
-html[data-theme="light"] .social-sidebar,
-html[data-theme="light"] .card,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .settings-card,
-html[data-theme="light"] .content-card {
-  color: var(--light-text) !important;
+html[data-theme="light"] article{color:var(--light-text)!important}
+html[data-theme="light"] h1,html[data-theme="light"] h2,html[data-theme="light"] h3,
+html[data-theme="light"] h4,html[data-theme="light"] h5,html[data-theme="light"] h6,
+html[data-theme="light"] label,html[data-theme="light"] strong,html[data-theme="light"] b{
+  color:#111827!important;opacity:1!important
 }
-html[data-theme="light"] h1,
-html[data-theme="light"] h2,
-html[data-theme="light"] h3,
-html[data-theme="light"] h4,
-html[data-theme="light"] h5,
-html[data-theme="light"] h6,
-html[data-theme="light"] label,
-html[data-theme="light"] strong,
-html[data-theme="light"] b,
-html[data-theme="light"] .privacy-row,
-html[data-theme="light"] .setting-row,
-html[data-theme="light"] .settings-row,
-html[data-theme="light"] .profile-stat strong {
-  color: var(--light-text) !important;
+html[data-theme="light"] p,html[data-theme="light"] small,
+html[data-theme="light"] .muted,html[data-theme="light"] .hint,html[data-theme="light"] .meta,
+html[data-theme="light"] .subtitle,html[data-theme="light"] .description{
+  color:var(--light-muted)!important;opacity:1!important
 }
-html[data-theme="light"] p,
-html[data-theme="light"] small,
-html[data-theme="light"] .muted,
-html[data-theme="light"] .hint,
-html[data-theme="light"] .meta,
-html[data-theme="light"] .subtitle,
-html[data-theme="light"] .description,
-html[data-theme="light"] .profile-summary p,
-html[data-theme="light"] .profile-section p,
-html[data-theme="light"] .social-list-copy small,
-html[data-theme="light"] .social-list-meta,
-html[data-theme="light"] .form-message,
-html[data-theme="light"] .profile-media-name,
-html[data-theme="light"] .profile-media-note {
-  color: var(--light-muted) !important;
+html[data-theme="light"] .card,html[data-theme="light"] .panel,html[data-theme="light"] .content-card,
+html[data-theme="light"] .social-card,html[data-theme="light"] .profile-section,
+html[data-theme="light"] .privacy-card,html[data-theme="light"] .settings-card,
+html[data-theme="light"] .chat-window,html[data-theme="light"] .conversation-list,
+html[data-theme="light"] .composer,html[data-theme="light"] .post-card,
+html[data-theme="light"] .side-card,html[data-theme="light"] .quick-call,
+html[data-theme="light"] .hero,html[data-theme="light"] .modal-content,
+html[data-theme="light"] .dialog,html[data-theme="light"] .sheet,
+html[data-theme="light"] .dropdown-menu,html[data-theme="light"] .menu,
+html[data-theme="light"] .popover{
+  background:#f4f6f8!important;color:var(--light-text)!important;
+  border-color:var(--light-border)!important;
+  box-shadow:0 10px 30px rgba(15,23,42,.07)!important
 }
-html[data-theme="light"] a:not(.primary):not(.button-primary):not(.publish):not(.send-button) {
-  color: #26344d;
+html[data-theme="light"] .home-top,html[data-theme="light"] .site-header,
+html[data-theme="light"] header{background-color:#eef1f4!important;border-color:var(--light-border)!important}
+html[data-theme="light"] input,html[data-theme="light"] textarea,html[data-theme="light"] select{
+  background:#f8f9fa!important;color:#172033!important;border-color:#aeb8c5!important;
+  font-size:16px!important
 }
-
-/* Generic surfaces: prevents dark islands in light mode. */
-html[data-theme="light"] .social-card,
-html[data-theme="light"] .profile-section,
-html[data-theme="light"] .privacy-card,
-html[data-theme="light"] .social-empty,
-html[data-theme="light"] .chat-window,
-html[data-theme="light"] .conversation-list,
-html[data-theme="light"] .card,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .settings-card,
-html[data-theme="light"] .content-card,
-html[data-theme="light"] .hero,
-html[data-theme="light"] .modal-content,
-html[data-theme="light"] .dialog,
-html[data-theme="light"] .sheet,
-html[data-theme="light"] .dropdown-menu,
-html[data-theme="light"] .menu,
-html[data-theme="light"] .popover {
-  background: rgba(255,255,255,.97) !important;
-  border-color: rgba(15,23,42,.14) !important;
-  color: var(--light-text) !important;
-  box-shadow: 0 16px 44px rgba(15,23,42,.08);
+html[data-theme="light"] input::placeholder,html[data-theme="light"] textarea::placeholder{
+  color:#667085!important;opacity:1!important
 }
-html[data-theme="light"] .privacy-modal,
-html[data-theme="light"] .modal-backdrop,
-html[data-theme="light"] .overlay {
-  background: rgba(15,23,42,.46) !important;
+/* Default light-mode controls: never allow white text on a pale button. */
+html[data-theme="light"] button,html[data-theme="light"] .btn,html[data-theme="light"] .button,
+html[data-theme="light"] .action,html[data-theme="light"] .tool-btn,
+html[data-theme="light"] .icon-button,html[data-theme="light"] .small-button,
+html[data-theme="light"] .nav-button,html[data-theme="light"] .menu-button,
+html[data-theme="light"] .top-actions a,html[data-theme="light"] .top-actions button{
+  color:#172033!important;background:#e1e6ec!important;border-color:#aeb8c5!important;
+  min-height:40px;font-weight:700!important;opacity:1!important
 }
-html[data-theme="light"] .privacy-modal[data-edit-modal] .privacy-card {
-  background: #fff !important;
-  color: var(--light-text) !important;
-  border-color: rgba(15,23,42,.16) !important;
+html[data-theme="light"] button:hover,html[data-theme="light"] .btn:hover,
+html[data-theme="light"] .button:hover,html[data-theme="light"] .action:hover,
+html[data-theme="light"] .tool-btn:hover{background:#d7dde5!important}
+/* Only explicit accent/danger controls keep white labels. */
+html[data-theme="light"] .primary,html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .button-primary,html[data-theme="light"] .publish,
+html[data-theme="light"] .send-button,html[data-theme="light"] [data-primary="true"],
+html[data-theme="light"] button[type="submit"]{
+  color:#fff!important;background:linear-gradient(135deg,#6f55e8,#5e46d5)!important;
+  border-color:transparent!important
 }
-html[data-theme="light"] .privacy-modal[data-edit-modal] .privacy-actions {
-  background: linear-gradient(180deg,rgba(255,255,255,.92),#fff 28%) !important;
-  border-top: 1px solid rgba(15,23,42,.08);
+html[data-theme="light"] .danger,html[data-theme="light"] .btn-danger,
+html[data-theme="light"] [data-danger="true"]{color:#fff!important;background:#c92a20!important;border-color:transparent!important}
+html[data-theme="light"] a:not(.primary):not(.button-primary):not(.publish):not(.send-button),
+html[data-theme="light"] nav a,html[data-theme="light"] .nav-link,
+html[data-theme="light"] .dropdown-menu a,html[data-theme="light"] .menu a{color:#26344d!important}
+html[data-theme="light"] .privacy-row>span,html[data-theme="light"] .privacy-row>label,
+html[data-theme="light"] .privacy-list label,html[data-theme="light"] .privacy-list span,
+html[data-theme="light"] .setting-row,html[data-theme="light"] .settings-row{
+  color:#26344d!important;opacity:1!important;font-size:.95rem!important
 }
-
-/* Forms and file controls. */
-html[data-theme="light"] input,
-html[data-theme="light"] textarea,
-html[data-theme="light"] select {
-  background: #fff !important;
-  color: var(--light-text) !important;
-  border-color: var(--light-border) !important;
-  font-size: 16px !important;
-}
-html[data-theme="light"] input::placeholder,
-html[data-theme="light"] textarea::placeholder { color: #6f7b8f !important; opacity: 1; }
-html[data-theme="light"] input[type="file"] { color: #26344d !important; }
-html[data-theme="light"] input[type="file"]::file-selector-button {
-  margin-inline-end: 10px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--light-border);
-  border-radius: 10px;
-  background: #eef2f7;
-  color: var(--light-text);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-/* Every button must stay readable. */
-html[data-theme="light"] button,
-html[data-theme="light"] .btn,
-html[data-theme="light"] .button,
-html[data-theme="light"] .action,
-html[data-theme="light"] .tool-btn,
-html[data-theme="light"] .icon-button,
-html[data-theme="light"] .small-button,
-html[data-theme="light"] .top-actions a,
-html[data-theme="light"] .top-actions button,
-html[data-theme="light"] .nav-button,
-html[data-theme="light"] .menu-button {
-  min-height: 40px;
-  color: var(--light-text) !important;
-  background: #f1f4f9 !important;
-  border-color: var(--light-border) !important;
-  font-size: .93rem !important;
-  font-weight: 700;
-  line-height: 1.3;
-}
-html[data-theme="light"] button:hover,
-html[data-theme="light"] .btn:hover,
-html[data-theme="light"] .button:hover,
-html[data-theme="light"] .action:hover,
-html[data-theme="light"] .tool-btn:hover,
-html[data-theme="light"] .icon-button:hover,
-html[data-theme="light"] .small-button:hover {
-  background: #e9eef6 !important;
-}
-/* Preserve project accent buttons. */
-html[data-theme="light"] .primary,
-html[data-theme="light"] .btn-primary,
-html[data-theme="light"] .button-primary,
-html[data-theme="light"] .publish,
-html[data-theme="light"] .send-button,
-html[data-theme="light"] [data-primary="true"],
-html[data-theme="light"] button[type="submit"] {
-  color: #fff !important;
-  background: linear-gradient(135deg,#7c5cff,#6750e8) !important;
-  border-color: transparent !important;
-}
-html[data-theme="light"] .danger,
-html[data-theme="light"] .btn-danger,
-html[data-theme="light"] [data-danger="true"] {
-  color: #fff !important;
-  background: #d92d20 !important;
-  border-color: transparent !important;
-}
-html[data-theme="light"] button:disabled,
-html[data-theme="light"] .btn:disabled {
-  opacity: .58;
-}
-
-/* Menus and navigation. */
-html[data-theme="light"] .nav-link,
-html[data-theme="light"] .mobile-menu a,
-html[data-theme="light"] .social-list-item,
-html[data-theme="light"] .text-link,
-html[data-theme="light"] nav a {
-  color: #26344d !important;
-}
-html[data-theme="light"] .dropdown-menu a,
-html[data-theme="light"] .menu a,
-html[data-theme="light"] .popover a {
-  color: var(--light-text) !important;
-  background: transparent !important;
-}
-
-/* Profile editor: clear rows, no overlap. */
-.privacy-modal[data-edit-modal] .privacy-card { width: min(720px,100%) !important; }
-.privacy-modal[data-edit-modal] form { width: 100%; }
-.privacy-modal[data-edit-modal] .form-field { min-width: 0; margin-bottom: 16px !important; }
-.privacy-modal[data-edit-modal] .form-field > label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: .95rem !important;
-  line-height: 1.5;
-}
+html[data-theme="light"] .privacy-modal,html[data-theme="light"] .modal-backdrop,
+html[data-theme="light"] .overlay{background:rgba(15,23,42,.48)!important}
+html[data-theme="light"] .privacy-modal[data-edit-modal] .privacy-card{background:#f4f6f8!important;color:#172033!important}
+.privacy-modal[data-edit-modal] .privacy-card{width:min(720px,100%)!important}
+.privacy-modal[data-edit-modal] .form-field{margin-bottom:16px!important;min-width:0}
+.privacy-modal[data-edit-modal] .form-field>label{display:block;margin-bottom:7px;line-height:1.5}
 .privacy-modal[data-edit-modal] .form-field input:not([type="file"]),
-.privacy-modal[data-edit-modal] .form-field textarea {
-  width: 100%;
-  min-height: 48px;
-  font-size: 1rem !important;
-  line-height: 1.7;
+.privacy-modal[data-edit-modal] .form-field textarea{width:100%;min-height:48px;line-height:1.7}
+.privacy-modal[data-edit-modal] .form-field textarea{min-height:116px;resize:vertical}
+.privacy-modal[data-edit-modal] .form-field input[type="file"]{display:block;width:100%;min-height:46px}
+html[data-theme="light"] .hub .hero,html[data-theme="light"] .hub .card{
+  background:#f4f6f8!important;color:#172033!important;border-color:#b8c0cc!important
 }
-.privacy-modal[data-edit-modal] .form-field textarea { min-height: 116px; resize: vertical; }
-.privacy-modal[data-edit-modal] .form-field input[type="file"] {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  padding: 4px;
-  border-radius: 11px;
-}
-.privacy-modal[data-edit-modal] .privacy-actions { gap: 10px; align-items: center; }
-
-/* Profile privacy readability. */
-.profile-grid { align-items: start; }
-.profile-section { line-height: 1.75; }
-.privacy-list { gap: 12px !important; }
-.privacy-row { min-height: 42px; }
-html[data-theme="light"] .privacy-row > span,
-html[data-theme="light"] .privacy-row > label,
-html[data-theme="light"] .privacy-list label,
-html[data-theme="light"] .privacy-list span { color: var(--light-text) !important; opacity: 1 !important; }
-.profile-stats { margin-top: 14px; }
-.profile-stat { padding: 15px 10px !important; }
-
-/* Challenge and utility pages that carry inline dark cards. */
-html[data-theme="light"] .hub .hero,
-html[data-theme="light"] .hub .card {
-  background: #fff !important;
-  color: var(--light-text) !important;
-  border-color: rgba(15,23,42,.14) !important;
-}
-html[data-theme="light"] .hub .hero a,
-html[data-theme="light"] .hub .card a { color: #26344d !important; }
-html[data-theme="light"] .hub .action {
-  background: #eef2f7 !important;
-  color: var(--light-text) !important;
-  border: 1px solid var(--light-border) !important;
-}
-
-@media (max-width: 720px) {
-  html[data-theme="light"] body { font-size: 15.5px; }
-  html[data-theme="light"] button,
-  html[data-theme="light"] .btn,
-  html[data-theme="light"] .button,
-  html[data-theme="light"] .action,
-  html[data-theme="light"] .tool-btn,
-  html[data-theme="light"] .icon-button,
-  html[data-theme="light"] .small-button {
-    min-height: 42px;
-    font-size: .92rem !important;
-  }
-}
-
-@media (max-width: 560px) {
-  .privacy-modal[data-edit-modal] .privacy-card { padding: 18px !important; }
-  .privacy-modal[data-edit-modal] .privacy-actions { grid-template-columns: 1fr 1fr; }
-  html[data-theme="light"] p,
-  html[data-theme="light"] .privacy-row { font-size: .92rem !important; }
+html[data-theme="light"] .hub .action{background:#e1e6ec!important;color:#172033!important;border:1px solid #aeb8c5!important}
+@media(max-width:720px){
+ html[data-theme="light"] body{font-size:15.5px}
+ html[data-theme="light"] button,html[data-theme="light"] .btn,html[data-theme="light"] .button,
+ html[data-theme="light"] .action,html[data-theme="light"] .tool-btn,html[data-theme="light"] .icon-button,
+ html[data-theme="light"] .small-button{min-height:42px;font-size:.92rem!important}
 }
