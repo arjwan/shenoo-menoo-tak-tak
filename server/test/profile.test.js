@@ -4,8 +4,6 @@ const mongoose = require('mongoose');
 const User = require('../src/models/User');
 const userRoutes = require('../src/routes/user.routes');
 
-const id = () => new mongoose.Types.ObjectId();
-
 function validUser(overrides = {}) {
   return new User({
     fullName: 'مستخدم ملف',
@@ -24,11 +22,16 @@ test('profile schema accepts bounded public details and cover position', () => {
     profile: {
       bio: 'نبذة مختصرة',
       governorate: 'بغداد',
-     S  });
-  const error = user.validateSync();
-  assert.equal(error, undefined);
-  assert.equal(user.profile.coverPositionX, 50);
-  assert.equal(user.profile.coverPositionY, 50);
+      city: 'الكرادة',
+      profession: 'مهندس',
+      website: 'https://example.com',
+      coverPositionX: 40,
+      coverPositionY: 60
+    }
+  });
+  assert.equal(user.validateSync(), undefined);
+  assert.equal(user.profile.coverPositionX, 40);
+  assert.equal(user.profile.coverPositionY, 60);
 });
 
 test('profile schema rejects an oversized bio and invalid cover position', () => {
@@ -45,7 +48,8 @@ test('profile schema rejects an oversized bio and invalid cover position', () =>
 
 test('legacy users receive safe compatible profile privacy defaults', () => {
   assert.equal(userRoutes.privacySetting(new Map(), 'profile'), 'everyone');
-  assert.equal(userRoutes.privacySetting(new Map(), 'photo'),lk), 'friends');
+  assert.equal(userRoutes.privacySetting(new Map(), 'photo'), 'everyone');
+  assert.equal(userRoutes.privacySetting(new Map(), 'lastSeen'), 'friends');
   assert.equal(userRoutes.privacySetting(new Map([['photo', 'nobody']]), 'photo'), 'nobody');
 });
 
