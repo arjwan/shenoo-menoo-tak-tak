@@ -4,6 +4,14 @@
   themeScript.defer = true;
   document.head.appendChild(themeScript);
 
+  if (!document.querySelector('link[data-theme-light-fixes]')) {
+    var themeFixes = document.createElement('link');
+    themeFixes.rel = 'stylesheet';
+    themeFixes.href = 'theme-light-fixes.css?v=20260913-1';
+    themeFixes.setAttribute('data-theme-light-fixes', '1');
+    document.head.appendChild(themeFixes);
+  }
+
   if (!document.querySelector('script[data-shno-media-cache]')) {
     var mediaCache = document.createElement('script');
     mediaCache.src = 'media-cache.js?v=20260912-2';
