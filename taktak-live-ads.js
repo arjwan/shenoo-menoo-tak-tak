@@ -5,7 +5,7 @@ const desktop=document.querySelector('.paid-ads');
 const rightSide=document.querySelector('.right-side');
 const feed=document.querySelector('.feed');
 if(!desktop||!feed)return;
-const style=document.createElement('link');style.rel='stylesheet';style.href='taktak-live-ads.css?v=20260911-1';document.head.appendChild(style);
+const style=document.createElement('link');style.rel='stylesheet';style.href='taktak-live-ads.css?v=20260913-call-small-1';document.head.appendChild(style);
 const fallback=[
  {adTitle:'اعرض إعلانك مجانًا',text:'أنشئ إعلانك الآن، وبعد موافقة المطور سيظهر هنا وفي المنشورات.',adCategory:'إعلانات شنو منو',href:'create-ad.html',icon:'📣'},
  {adTitle:'وصل تجارتك إلى كل العراق',text:'أضف منتجاتك وخدماتك ومعلومات التواصل بصورة واضحة.',adCategory:'مول العراق',href:'mall.html',icon:'🛍'},
@@ -21,7 +21,7 @@ function renderAll(){render(desktop);const mobile=document.querySelector('.mobil
 function advance(){const list=ads.length?ads:fallback;step=(step+1)%list.length;renderAll()}
 desktop.classList.add('live-ads');desktop.innerHTML=shell();
 const mobile=document.createElement('section');mobile.className='mobile-live-ads';mobile.innerHTML=shell();document.querySelector('.profile-cover')?.after(mobile);
-if(rightSide){const dock=rightSide.querySelector('[data-calls-dock]');const fab=document.createElement('button');fab.type='button';fab.className='desktop-call-fab';fab.innerHTML='☎ الاتصال والأصدقاء';rightSide.appendChild(fab);if(dock){const close=document.createElement('button');close.type='button';close.className='calls-popup-close';close.textContent='×';close.setAttribute('aria-label','إغلاق الاتصال');dock.querySelector('.calls-dock-head')?.appendChild(close);fab.addEventListener('click',()=>dock.classList.toggle('is-popup-open'));close.addEventListener('click',()=>dock.classList.remove('is-popup-open'));document.addEventListener('click',event=>{if(dock.classList.contains('is-popup-open')&&!dock.contains(event.target)&&event.target!==fab)dock.classList.remove('is-popup-open')})}}
+if(rightSide){const dock=rightSide.querySelector('[data-calls-dock]');const fab=document.createElement('button');fab.type='button';fab.className='desktop-call-fab';fab.textContent='☎';fab.title='الاتصال والأصدقاء';fab.setAttribute('aria-label','الاتصال والأصدقاء');rightSide.appendChild(fab);if(dock){const close=document.createElement('button');close.type='button';close.className='calls-popup-close';close.textContent='×';close.setAttribute('aria-label','إغلاق الاتصال');dock.querySelector('.calls-dock-head')?.appendChild(close);fab.addEventListener('click',()=>dock.classList.toggle('is-popup-open'));close.addEventListener('click',()=>dock.classList.remove('is-popup-open'));document.addEventListener('click',event=>{if(dock.classList.contains('is-popup-open')&&!dock.contains(event.target)&&event.target!==fab)dock.classList.remove('is-popup-open')})}}
 async function load(){try{const r=await fetch(API+'/api/posts/ads',{headers:{Authorization:'Bearer '+token,Accept:'application/json'}}),d=await r.json();if(r.ok&&Array.isArray(d.ads))ads=d.ads}catch(_){}renderAll();clearInterval(timer);timer=setInterval(advance,5500)}
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInterval(timer);timer=null}else if(!timer){timer=setInterval(advance,5500)}});
 load();
