@@ -53,6 +53,8 @@
     if (!document.querySelector('script[data-home-live-now]')) { var liveNow=document.createElement('script'); liveNow.src='home-live-now.js?v=20260913-4'; liveNow.defer=true; liveNow.setAttribute('data-home-live-now','1'); document.head.appendChild(liveNow); }
     if (!document.querySelector('link[data-home-mini-tv]')) { var miniTvCss=document.createElement('link'); miniTvCss.rel='stylesheet'; miniTvCss.href='home-mini-tv.css?v=20260913-tvfix-2'; miniTvCss.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTvCss); }
     if (!document.querySelector('script[data-home-mini-tv]')) { var miniTv=document.createElement('script'); miniTv.src='home-mini-tv.js?v=20260913-tvfix-2'; miniTv.defer=true; miniTv.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTv); }
+    if (!document.querySelector('link[data-home-media-popups]')) { var mediaPopupsCss=document.createElement('link'); mediaPopupsCss.rel='stylesheet'; mediaPopupsCss.href='home-media-popups.css?v=20260913-1'; mediaPopupsCss.setAttribute('data-home-media-popups','1'); document.head.appendChild(mediaPopupsCss); }
+    if (!document.querySelector('script[data-home-media-popups]')) { var mediaPopups=document.createElement('script'); mediaPopups.src='home-media-popups.js?v=20260913-1'; mediaPopups.defer=true; mediaPopups.setAttribute('data-home-media-popups','1'); document.head.appendChild(mediaPopups); }
   }
 
   if (!document.querySelector('script[data-platform-upgrades]')) { var upgrades=document.createElement('script'); upgrades.src='platform-upgrades.js?v=20260913-3'; upgrades.defer=true; upgrades.setAttribute('data-platform-upgrades','1'); document.head.appendChild(upgrades); }
