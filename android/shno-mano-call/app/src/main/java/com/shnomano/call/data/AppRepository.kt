@@ -79,19 +79,34 @@ class AppRepository(context: Context) {
     suspend fun loadFriends(): List<FriendDto> = runCatching { api.friends().all() }.getOrDefault(emptyList())
     suspend fun loadFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests().requests }.getOrDefault(emptyList())
     suspend fun loadSentFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests("sent").requests }.getOrDefault(emptyList())
-    suspend fun sendFriendRequest(userId: String): Result<String> = runCatching {
-        api.sendFriendRequest(userId)
-        "تم إرسال طلب الصداقة"
-    }.recoverCatching { error ->
-        if (error is HttpException) {
-            val message = runCatching {
-                JSONObject(error.response()?.errorBody()?.string().orEmpty()).optString("message")
-            }.getOrNull().orEmpty()
-            throw IllegalStateException(message.ifBlank {
-                if (error.code() == 409) "يوجد طلب صداقة قائم" else if (error.code() == 403) "لا يمكن إرسال الطلب لهذا المستخدم" else "تعذر إرسال الطلب"
-            })
+    suspend fun loadFriendQr(): Result<FriendQrResponse> = apiResult {
+        val response = api.friendQr()
+        if (!response.ok || response.payload.isNullOrBlank()) {
+            error(response.message ?: "تعذر إنشاء رمز QR")
         }
-        throw error
+        response
+    }
+
+    suspend fun sendFriendRequest(userId: String): Result<String> = apiResult {
+        val response = api.sendFriendRequest(userId)
+        response.message ?: when (response.outcome) {
+            "already_pending" -> "طلب الصداقة مرسل مسبقاً"
+            "already_friends" -> "أنتما صديقان بالفعل"
+            "accepted" -> "تم قبول طلب الصداقة المتبادل"
+            else -> "تم إرسال طلب الصداقة"
+        }
+    }
+
+    suspend fun sendQrFriendRequest(token: String): Result<String> = apiResult {
+        val cleanToken = token.trim()
+        if (cleanToken.isBlank()) error("رمز QR غير صالح")
+        val response = api.sendQrFriendRequest(FriendQrRequest(cleanToken))
+        response.message ?: when (response.outcome) {
+            "already_pending" -> "طلب الصداقة مرسل مسبقاً"
+            "already_friends" -> "أنتما صديقان بالفعل"
+            "accepted" -> "تم قبول طلب الصداقة المتبادل"
+            else -> "تم إرسال طلب الصداقة"
+        }
     }
     suspend fun respondToFriendRequest(requestId: String, accept: Boolean): Result<String> = runCatching {
         api.actOnFriendRequest(requestId, if (accept) "accept" else "reject")
@@ -166,6 +181,26 @@ class AppRepository(context: Context) {
         } catch (error: Throwable) {
             Result.failure(error)
         }
+    }
+
+    private suspend fun <T> apiResult(block: suspend () -> T): Result<T> = runCatching {
+        block()
+    }.recoverCatching { error ->
+        if (error is HttpException) {
+            val message = runCatching {
+                JSONObject(error.response()?.errorBody()?.string().orEmpty()).optString("message")
+            }.getOrNull().orEmpty()
+            throw IllegalStateException(message.ifBlank {
+                when (error.code()) {
+                    401 -> "سجّل الدخول أولاً"
+                    403 -> "لا يمكن تنفيذ طلب الصداقة"
+                    409 -> "يوجد طلب صداقة قائم"
+                    410 -> "انتهت صلاحية رمز QR؛ اطلب رمزاً جديداً"
+                    else -> "تعذر الاتصال بخدمة الصداقة"
+                }
+            })
+        }
+        throw error
     }
 
     private suspend fun retryPendingMessages(conversationId: String) {
