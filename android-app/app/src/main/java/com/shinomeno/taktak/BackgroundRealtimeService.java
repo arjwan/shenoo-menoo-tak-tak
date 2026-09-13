@@ -128,7 +128,7 @@ public final class BackgroundRealtimeService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         return builder(CHANNEL_REALTIME)
-            .setSmallIcon(com.shinomeno.taktak.R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle("شنو منو")
             .setContentText("استقبال الرسائل والمكالمات في الخلفية مفعّل")
             .setOngoing(true)
@@ -165,9 +165,9 @@ public final class BackgroundRealtimeService extends Service {
             JSONObject payload = firstJson(args);
             if (payload != null) handleIncomingCall(payload);
         });
-        socket.on("call:accept", args -> clearCall(false));
-        socket.on("call:reject", args -> finishIncomingAsMissed(args));
-        socket.on("call:end", args -> finishIncomingAsMissed(args));
+        socket.on("call:accept", args -> clearCall());
+        socket.on("call:reject", this::finishIncomingAsMissed);
+        socket.on("call:end", this::finishIncomingAsMissed);
         socket.on("private:message", args -> {
             JSONObject payload = firstJson(args);
             if (payload != null) postMessageNotification(payload);
@@ -219,7 +219,7 @@ public final class BackgroundRealtimeService extends Service {
 
         String label = "video".equals(ringingType) ? "مكالمة فيديو واردة" : "مكالمة صوتية واردة";
         Notification notification = builder(CHANNEL_CALLS)
-            .setSmallIcon(com.shinomeno.taktak.R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle(label)
             .setContentText(ringingCallerName)
             .setContentIntent(open)
@@ -229,8 +229,8 @@ public final class BackgroundRealtimeService extends Service {
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
-            .addAction(new Notification.Action.Builder(com.shinomeno.taktak.R.drawable.ic_launcher, "فتح المكالمة", open).build())
-            .addAction(new Notification.Action.Builder(com.shinomeno.taktak.R.drawable.ic_launcher, "رفض", reject).build())
+            .addAction(new Notification.Action.Builder(R.drawable.ic_launcher, "فتح المكالمة", open).build())
+            .addAction(new Notification.Action.Builder(R.drawable.ic_launcher, "رفض", reject).build())
             .build();
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) manager.notify(CALL_NOTIFICATION_ID, notification);
@@ -269,7 +269,7 @@ public final class BackgroundRealtimeService extends Service {
             } catch (Exception ignored) {}
             socket.emit("call:reject", payload);
         }
-        clearCall(false);
+        clearCall();
     }
 
     private void finishIncomingAsMissed(Object[] args) {
@@ -280,7 +280,7 @@ public final class BackgroundRealtimeService extends Service {
             if (!eventCallId.isEmpty() && !ringingCallId.equals(eventCallId)) return;
         }
         if (pref("missedCalls", true)) postMissedCall();
-        clearCall(false);
+        clearCall();
     }
 
     private void postMissedCall() {
@@ -295,12 +295,12 @@ public final class BackgroundRealtimeService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         Notification notification = builder(CHANNEL_MISSED)
-            .setSmallIcon(com.shinomeno.taktak.R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle("مكالمة فائتة")
             .setContentText(caller)
             .setContentIntent(open)
             .setAutoCancel(true)
-            .setCategory(Notification.CATEGORY_MISSED_CALL)
+            .setCategory(Notification.CATEGORY_CALL)
             .build();
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) manager.notify(MISSED_NOTIFICATION_BASE + Math.abs(caller.hashCode() % 500), notification);
@@ -325,7 +325,7 @@ public final class BackgroundRealtimeService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         Notification notification = builder(CHANNEL_MESSAGES)
-            .setSmallIcon(com.shinomeno.taktak.R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle(sender == null || sender.trim().isEmpty() ? "شنو منو" : sender)
             .setContentText(text)
             .setContentIntent(open)
@@ -337,7 +337,7 @@ public final class BackgroundRealtimeService extends Service {
         if (manager != null) manager.notify(MESSAGE_NOTIFICATION_BASE + Math.abs((userId + text).hashCode() % 500), notification);
     }
 
-    private void clearCall(boolean keepMissed) {
+    private void clearCall() {
         stopRingtone();
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) manager.cancel(CALL_NOTIFICATION_ID);
@@ -379,8 +379,12 @@ public final class BackgroundRealtimeService extends Service {
         if (!prefs.getBoolean(KEY_BACKGROUND, false)) return;
         if (prefs.getString(KEY_TOKEN, "").isEmpty()) return;
         Intent intent = new Intent(context, BackgroundRealtimeService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent);
-        else context.startService(intent);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent);
+            else context.startService(intent);
+        } catch (RuntimeException error) {
+            Log.w("ShnoBackground", "Android blocked background service start", error);
+        }
     }
 
     public static void stop(Context context) {
