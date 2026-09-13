@@ -25,8 +25,9 @@ function filesIn(directory) {
     }
     const file = path.join(directory, entry.name);
     if (ignoredFiles.has(file)) continue;
+    if (entry.name === '.env') continue;
     const extension = path.extname(entry.name).toLowerCase();
-    if (textExtensions.has(extension) || entry.name === '.env' || entry.name === '.gitignore') output.push(file);
+    if (textExtensions.has(extension) || entry.name.endsWith('.env.example') || entry.name === '.gitignore') output.push(file);
   }
   return output;
 }
