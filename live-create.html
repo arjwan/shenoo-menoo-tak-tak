@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إنشاء بث مباشر | شنو منو</title>
+<link rel="stylesheet" href="taktak-feed.css?v=20260907b">
+<style>
+.live-create{max-width:760px;margin:78px auto;padding:16px}.live-box{background:#111522;border:1px solid #30384e;border-radius:22px;padding:20px}.live-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.live-head a{color:#fff;text-decoration:none}.field{margin-top:18px}.field label{display:block;font-weight:800;margin-bottom:8px}.field input[type=text]{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #3b455e;background:#0b0f19;color:#fff}.privacy{display:grid;gap:10px}.privacy label{display:flex;gap:10px;align-items:flex-start;border:1px solid #333d54;border-radius:14px;padding:12px;cursor:pointer}.privacy small{display:block;opacity:.72;margin-top:3px}.people{margin-top:10px;padding:12px;border:1px dashed #46516b;border-radius:14px}.confirm{margin-top:20px;padding:13px;border-radius:14px;background:#161d2c}.start{width:100%;margin-top:16px;border:0;border-radius:14px;padding:14px;font-weight:900;font-size:17px;background:#d9233f;color:#fff;cursor:pointer}.start:disabled{opacity:.5}.note{font-size:13px;opacity:.75;margin-top:8px}.status{margin-top:12px;min-height:24px}.preview{margin-top:16px;display:none}.preview video{width:100%;max-height:62vh;background:#000;border-radius:18px}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.controls button{padding:10px 14px;border:0;border-radius:12px;font-weight:800;cursor:pointer}.end{background:#b51f35;color:#fff}@media(max-width:600px){.live-create{margin-top:60px}.live-box{padding:15px}}
+</style>
+</head><body>
+<script src="auth-guard.js?v=20260913-live-create-1"></script>
+<main class="live-create"><section class="live-box">
+<div class="live-head"><div><h1>🔴 إنشاء بث مباشر</h1><p>حدد من يستطيع مشاهدة البث قبل تشغيل الكاميرا.</p></div><a href="taktak.html">← الرئيسية</a></div>
+<div class="field"><label for="liveTitle">عنوان البث (اختياري)</label><input id="liveTitle" type="text" maxlength="120" placeholder="مثلاً: بث مباشر من شنو منو"></div>
+<div class="field"><label>من يستطيع مشاهدة البث؟</label><div class="privacy">
+<label><input type="radio" name="visibility" value="public" checked><span><strong>🌍 بث عام</strong><small>يراه جميع مستخدمي شنو منو ويظهر ضمن البثوث المباشرة.</small></span></label>
+<label><input type="radio" name="visibility" value="friends"><span><strong>👥 الأصدقاء فقط</strong><small>لا يظهر إلا لأصدقائك.</small></span></label>
+<label><input type="radio" name="visibility" value="selected"><span><strong>✓ أشخاص محددون</strong><small>اختر الأشخاص الذين تسمح لهم بالمشاهدة.</small></span></label>
+</div></div>
+<div class="people" data-selected-people hidden><strong>الأشخاص المسموح لهم</strong><p>سيتم ربط اختيار الأصدقاء هنا بقائمة أصدقاء شنو منو. لا تبدأ الكاميرا قبل التأكيد.</p><a href="friends.html">فتح قائمة الأصدقاء</a></div>
+<div class="confirm"><label><input type="checkbox" data-confirm> أؤكد أنني أريد تشغيل البث وفتح الكاميرا والمايك.</label><div class="note">لن يطلب الموقع صلاحية الكاميرا أو المايك قبل هذا التأكيد.</div></div>
+<button class="start" type="button" data-start disabled>🔴 بدء البث وفتح الكاميرا</button>
+<div class="status" data-status></div>
+<div class="preview" data-preview><video data-video autoplay playsinline muted></video><div class="controls"><button type="button" data-toggle-mic>🎙 كتم المايك</button><button type="button" data-toggle-camera>📷 إيقاف الكاميرا</button><button class="end" type="button" data-end>⏹ إنهاء البث</button></div></div>
+</section></main><script src="live-create.js?v=20260913-1"></script>
+</body></html>
