@@ -1,15 +1,23 @@
 (function () {
   var themeScript = document.createElement('script');
-  themeScript.src = 'theme.js?v=20260913-5';
+  themeScript.src = 'theme.js?v=20260913-6';
   themeScript.defer = true;
   document.head.appendChild(themeScript);
 
   if (!document.querySelector('link[data-theme-light-fixes]')) {
     var themeFixes = document.createElement('link');
     themeFixes.rel = 'stylesheet';
-    themeFixes.href = 'theme-light-fixes.css?v=20260913-5';
+    themeFixes.href = 'theme-light-fixes.css?v=20260913-6';
     themeFixes.setAttribute('data-theme-light-fixes', '1');
     document.head.appendChild(themeFixes);
+  }
+
+  if (!document.querySelector('link[data-theme-pages]')) {
+    var themePages = document.createElement('link');
+    themePages.rel = 'stylesheet';
+    themePages.href = 'theme-pages.css?v=20260913-1';
+    themePages.setAttribute('data-theme-pages', '1');
+    document.head.appendChild(themePages);
   }
 
   if (!document.querySelector('script[data-shno-media-cache]')) {
@@ -58,8 +66,6 @@
     notificationsScript.defer = true;
     document.head.appendChild(notificationsScript);
 
-    /* Capture media composer submits before the legacy multipart handler so
-       images/audio/video go browser -> R2 -> finalize, never through Oracle FFmpeg. */
     if (!document.querySelector('script[data-direct-post-upload]')) {
       var directPostUpload = document.createElement('script');
       directPostUpload.src = 'taktak-direct-upload.js?v=20260912-1';
