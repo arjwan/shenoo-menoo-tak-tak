@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إدارة الشريط المتحرك</title>
+<style>
+:root{--bg:#070910;--card:#111728;--line:rgba(255,255,255,.1);--text:#fff;--muted:#a9b0c3;--p:#7c5cff;--danger:#b91c1c}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,rgba(124,92,255,.18),transparent 35%),var(--bg);color:var(--text);font-family:"Tajawal","Segoe UI",sans-serif}.wrap{width:min(1100px,calc(100% - 24px));margin:24px auto}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.card{background:rgba(17,23,40,.9);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:16px}.grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}.full{grid-column:1/-1}label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:.9rem}input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b1020;color:#fff;font:inherit}textarea{min-height:90px;resize:vertical}.btn{border:1px solid var(--line);background:#1f2937;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:800;text-decoration:none}.primary{background:linear-gradient(135deg,var(--p),#9c6dff);border:0}.danger{background:var(--danger)}.row{display:flex;gap:8px;flex-wrap:wrap}.item{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}.meta{color:var(--muted);font-size:.82rem;margin-top:6px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#1e293b;margin-left:6px}.on{color:#86efac}.off{color:#fca5a5}.msg{min-height:24px;color:#86efac;margin-top:8px}@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.item{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div><h1 style="margin:0 0 6px">📣 إدارة الشريط المتحرك</h1><div style="color:var(--muted)">التنبيهات والتوجيهات والإعلانات هنا تظهر على كل بث مفتوح بدون عرض اسم المطور.</div></div><a class="btn" href="developer.html">رجوع للوحة المطور</a></div>
+  <section class="card">
+    <form id="tickerForm" class="grid">
+      <label class="full">نص الرسالة<textarea name="text" maxlength="500" required placeholder="اكتب التنبيه أو التوجيه أو الإعلان"></textarea></label>
+      <label>النوع<select name="type"><option value="notice">تنبيه</option><option value="guidance">توجيه</option><option value="ad">إعلان</option></select></label>
+      <label>الأولوية<input name="priority" type="number" min="0" max="100" value="50"></label>
+      <label>الحالة<select name="enabled"><option value="true">مفعلة</option><option value="false">متوقفة</option></select></label>
+      <label>بداية العرض — اختياري<input name="startsAt" type="datetime-local"></label>
+      <label>نهاية العرض — اختياري<input name="endsAt" type="datetime-local"></label>
+      <div></div>
+      <button class="btn primary full" type="submit">نشر على كل البثوث المفتوحة</button>
+    </form>
+    <div id="message" class="msg"></div>
+  </section>
+  <section class="card"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">الرسائل الحالية</h2><button class="btn" id="refreshBtn" type="button">تحديث</button></div><div id="list" style="margin-top:10px">جارٍ التحميل...</div></section>
+</div>
+<script>
+const API=location.protocol==='file:'?'https://shino-mino-tak-tak.duckdns.org':location.origin;
+const token=localStorage.getItem('developerToken')||'';
+const list=document.getElementById('list'),msg=document.getElementById('message'),form=document.getElementById('tickerForm');
+if(!token){location.href='developer.html';}
+async function api(path,opt={}){const r=await fetch(API+'/api/ticker/manage'+path,{...opt,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,...(opt.headers||{})}});const d=await r.json().catch(()=>({}));if(r.status===401||r.status===403){localStorage.removeItem('developerToken');location.href='developer.html';throw Error('انتهت جلسة المطور');}if(!r.ok)throw Error(d.message||'فشل الطلب');return d;}
+const label=t=>({notice:'تنبيه',guidance:'توجيه',ad:'إعلان'})[t]||t;
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function load(){try{const d=await api('');list.innerHTML=d.items.length?d.items.map(x=>`<div class="item"><div><div><span class="pill">${label(x.type)}</span><span class="pill">أولوية ${x.priority}</span><span class="pill ${x.enabled?'on':'off'}">${x.enabled?'مفعلة':'متوقفة'}</span></div><div style="margin-top:9px;line-height:1.8">${esc(x.text)}</div><div class="meta">${x.startsAt?'يبدأ: '+new Date(x.startsAt).toLocaleString('ar-IQ'):''} ${x.endsAt?' • ينتهي: '+new Date(x.endsAt).toLocaleString('ar-IQ'):''}</div></div><div class="row"><button class="btn" data-toggle="${x.id}" data-enabled="${x.enabled}">${x.enabled?'إيقاف':'تشغيل'}</button><button class="btn danger" data-delete="${x.id}">حذف</button></div></div>`).join(''):'لا توجد رسائل بعد.';}catch(e){list.textContent=e.message}}
+form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form);const body={text:fd.get('text').trim(),type:fd.get('type'),priority:Number(fd.get('priority')||50),enabled:fd.get('enabled')==='true',startsAt:fd.get('startsAt')||null,endsAt:fd.get('endsAt')||null};try{await api('',{method:'POST',body:JSON.stringify(body)});form.reset();form.priority.value='50';msg.textContent='تم النشر على الشريط المركزي.';await load();}catch(err){msg.textContent=err.message}};
+list.onclick=async e=>{const del=e.target.closest('[data-delete]'),tog=e.target.closest('[data-toggle]');try{if(del&&confirm('حذف هذه الرسالة؟'))await api('/'+del.dataset.delete,{method:'DELETE'});if(tog)await api('/'+tog.dataset.toggle,{method:'PATCH',body:JSON.stringify({enabled:tog.dataset.enabled!=='true'})});await load();}catch(err){msg.textContent=err.message}};
+document.getElementById('refreshBtn').onclick=load;load();
+</script>
+</body></html>
