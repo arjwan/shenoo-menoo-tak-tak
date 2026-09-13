@@ -1,7 +1,7 @@
 (function(){'use strict';
 const path=location.pathname.split('/').pop()||'taktak.html';
 const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
-function text(el,v){if(el)el.textContent=v}
+function text(el,v){if(el&&el.textContent!==v)el.textContent=v}
 function normalizeHome(){if(path!=='taktak.html'&&path!=='')return;
  const brand=q('.home-brand'); if(brand) brand.textContent='شنو منو تك تك — بنكهة عراقية 🇮🇶';
  const cover=q('[data-cover-state]'); if(cover) cover.textContent='لنا وللعرب ولكل العالم — ساهم، انشر، أضف أصدقاء، واستكشف عالمًا جديدًا من التواصل.';
@@ -17,9 +17,11 @@ async function share(kind,id){const url=shareUrl(kind,id),title=kind==='story'?'
 function storySharing(){if(path!=='stories.html')return;const install=()=>qa('.story-card[data-id]').forEach(card=>{if(card.querySelector('.story-share-button'))return;const b=document.createElement('button');b.type='button';b.className='story-share-button';b.textContent='↗ مشاركة';b.onclick=e=>{e.preventDefault();e.stopPropagation();share('story',card.dataset.id)};card.appendChild(b)});install();new MutationObserver(install).observe(document.body,{childList:true,subtree:true});}
 function reelSharing(){if(path!=='reels.html')return;document.addEventListener('click',e=>{const b=e.target.closest('[data-share-reel]');if(!b)return;e.preventDefault();share('reel',b.dataset.shareReel||b.closest('[data-id]')?.dataset.id||'')});}
 
-/* Presence is driven by the live Socket.IO room state, not the stale database flag.
-   This keeps friends/calls accurate while navigating between pages in WebView. */
+/* Presence is driven by the live Socket.IO room state. Keep DOM writes idempotent
+   so the MutationObserver cannot trigger an endless repaint loop. */
 const livePresence=new Map();
+let repaintScheduled=false;
+function cssEscape(v){return window.CSS&&typeof CSS.escape==='function'?CSS.escape(v):String(v).replace(/(["\\])/g,'\\$1')}
 function idFromCallCard(card){
  const a=card&&card.querySelector('a[href*="messages.html?user="]');
  if(!a)return'';
@@ -27,23 +29,31 @@ function idFromCallCard(card){
 }
 function paintPresence(userId,online){
  userId=String(userId||''); if(!userId)return;
- livePresence.set(userId,!!online);
- qa('[data-person-id="'+CSS.escape(userId)+'"]').forEach(row=>{
-   const dot=row.querySelector('.presence'); if(dot)dot.classList.toggle('online',!!online);
-   const meta=row.querySelector('.social-list-meta small'); if(meta)meta.textContent=online?'متصل الآن':'غير متصل';
+ online=!!online;
+ livePresence.set(userId,online);
+ const label=online?'متصل الآن':'غير متصل';
+ qa('[data-person-id="'+cssEscape(userId)+'"]').forEach(row=>{
+   const dot=row.querySelector('.presence'); if(dot&&dot.classList.contains('online')!==online)dot.classList.toggle('online',online);
+   const meta=row.querySelector('.social-list-meta small'); if(meta&&meta.textContent!==label)meta.textContent=label;
  });
  qa('.call-contact').forEach(card=>{
    if(String(idFromCallCard(card))!==userId)return;
-   const dot=card.querySelector('.presence'); if(dot)dot.classList.toggle('online',!!online);
+   const dot=card.querySelector('.presence'); if(dot&&dot.classList.contains('online')!==online)dot.classList.toggle('online',online);
    const small=card.querySelector('.call-contact-copy small');
    if(small&&/@/.test(small.textContent||'')){
      const first=(small.textContent||'').split(' · ')[0];
-     small.textContent=first+' · '+(online?'متصل الآن':'صديق على شنو منو');
+     const next=first+' · '+(online?'متصل الآن':'صديق على شنو منو');
+     if(small.textContent!==next)small.textContent=next;
    }
  });
- qa('[data-chat-presence][data-user-id="'+CSS.escape(userId)+'"]').forEach(el=>{el.textContent=online?'متصل الآن':'غير متصل'});
+ qa('[data-chat-presence][data-user-id="'+cssEscape(userId)+'"]').forEach(el=>{if(el.textContent!==label)el.textContent=label});
 }
 function repaintKnown(){livePresence.forEach((online,id)=>paintPresence(id,online));}
+function scheduleRepaint(){
+ if(repaintScheduled)return;
+ repaintScheduled=true;
+ requestAnimationFrame(function(){repaintScheduled=false;repaintKnown()});
+}
 function setupPresenceUi(){
  window.addEventListener('shno:presence:state',e=>{
    const ids=((e.detail&&e.detail.userIds)||[]).map(String),set=new Set(ids);
@@ -53,7 +63,7 @@ function setupPresenceUi(){
  });
  window.addEventListener('shno:presence:online',e=>paintPresence(e.detail&&e.detail.userId,true));
  window.addEventListener('shno:presence:offline',e=>paintPresence(e.detail&&e.detail.userId,false));
- new MutationObserver(repaintKnown).observe(document.body,{childList:true,subtree:true});
+ new MutationObserver(scheduleRepaint).observe(document.body,{childList:true,subtree:true});
 }
 
 document.addEventListener('DOMContentLoaded',()=>{normalizeHome();normalizeMessages();storySharing();reelSharing();setupPresenceUi()});
