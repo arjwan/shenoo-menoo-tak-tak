@@ -7,6 +7,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
@@ -16,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -47,15 +49,40 @@ public final class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private PermissionRequest pendingPermissionRequest;
     private boolean signinSeen;
+    private String pendingCommunicationUser;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(17, 24, 39));
+        handleIncomingIntent(getIntent());
         createNotificationChannels();
         buildView();
         if (state == null) webView.loadUrl(HOME_URL);
         else webView.restoreState(state);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+        if (webView != null && pendingCommunicationUser != null && !pendingCommunicationUser.isEmpty()) {
+            openCommunicationCard(pendingCommunicationUser);
+        }
+    }
+
+    private void handleIncomingIntent(Intent intent) {
+        if (intent == null) return;
+        pendingCommunicationUser = intent.getStringExtra("incoming_user");
+        if (intent.getBooleanExtra("incoming_call", false)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true);
+                setTurnScreenOn(true);
+            } else {
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+            }
+        }
     }
 
     private void createNotificationChannels() {
@@ -130,6 +157,10 @@ public final class MainActivity extends Activity {
                     view.clearHistory();
                     signinSeen = false;
                 }
+                syncWebSessionToNative(view);
+                if (pendingCommunicationUser != null && !pendingCommunicationUser.isEmpty()) {
+                    openCommunicationCard(pendingCommunicationUser);
+                }
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
@@ -163,6 +194,23 @@ public final class MainActivity extends Activity {
         bannerParams.gravity = 48;
         root.addView(offlineBanner, bannerParams);
         setContentView(root);
+    }
+
+    private void syncWebSessionToNative(WebView view) {
+        view.evaluateJavascript(
+            "(function(){try{var t=localStorage.getItem('token')||sessionStorage.getItem('token')||'';var p=localStorage.getItem('shnoNotificationPreferences')||'{}';var b=localStorage.getItem('shnoBackgroundRealtimeEnabled')==='1';if(window.ShnoManoNative&&window.ShnoManoNative.syncSession){window.ShnoManoNative.syncSession(t,p,String(b));}}catch(e){}})();",
+            null
+        );
+    }
+
+    private void openCommunicationCard(String userId) {
+        if (webView == null || userId == null || userId.isEmpty()) return;
+        String quoted = JSONObject.quote(userId);
+        webView.evaluateJavascript(
+            "setTimeout(function(){if(window.ShnoCommunicationDock&&window.ShnoCommunicationDock.chat){window.ShnoCommunicationDock.chat(" + quoted + ");}},900);",
+            null
+        );
+        pendingCommunicationUser = null;
     }
 
     private boolean isOnline() {
@@ -201,6 +249,16 @@ public final class MainActivity extends Activity {
         } catch (ActivityNotFoundException error) {
             openAppSettingsNative();
         }
+    }
+
+    private SharedPreferences nativePrefs() {
+        return getSharedPreferences(BackgroundRealtimeService.PREFS, MODE_PRIVATE);
+    }
+
+    private void saveBackgroundEnabled(boolean enabled) {
+        nativePrefs().edit().putBoolean(BackgroundRealtimeService.KEY_BACKGROUND, enabled).apply();
+        if (enabled) BackgroundRealtimeService.startIfAllowed(this);
+        else BackgroundRealtimeService.stop(this);
     }
 
     private void grantWebPermission() {
@@ -274,6 +332,35 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public void openAppSettings() {
             runOnUiThread(MainActivity.this::openAppSettingsNative);
+        }
+
+        @JavascriptInterface
+        public void syncSession(String token, String notificationPreferences, String backgroundEnabled) {
+            runOnUiThread(() -> {
+                boolean enabled = "true".equalsIgnoreCase(backgroundEnabled);
+                SharedPreferences.Editor editor = nativePrefs().edit();
+                editor.putString(BackgroundRealtimeService.KEY_TOKEN, token == null ? "" : token);
+                editor.putString(BackgroundRealtimeService.KEY_NOTIFICATION_PREFS, notificationPreferences == null ? "{}" : notificationPreferences);
+                editor.putBoolean(BackgroundRealtimeService.KEY_BACKGROUND, enabled);
+                editor.apply();
+                if (token == null || token.isEmpty() || !enabled) BackgroundRealtimeService.stop(MainActivity.this);
+                else BackgroundRealtimeService.startIfAllowed(MainActivity.this);
+            });
+        }
+
+        @JavascriptInterface
+        public void setBackgroundRealtimeEnabled(boolean enabled) {
+            runOnUiThread(() -> saveBackgroundEnabled(enabled));
+        }
+
+        @JavascriptInterface
+        public boolean isBackgroundRealtimeEnabled() {
+            return nativePrefs().getBoolean(BackgroundRealtimeService.KEY_BACKGROUND, false);
+        }
+
+        @JavascriptInterface
+        public void saveNotificationPreferences(String json) {
+            nativePrefs().edit().putString(BackgroundRealtimeService.KEY_NOTIFICATION_PREFS, json == null ? "{}" : json).apply();
         }
     }
 
