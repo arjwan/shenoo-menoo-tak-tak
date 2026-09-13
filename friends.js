@@ -55,8 +55,8 @@
   async function handleRequestAction(button) {
     var action = button.dataset.requestAction; if (!action) return false;
     var id = button.dataset.requestId;
-    var path = action === "cancel" ? "/api/friends/" + encodeURIComponent(id) : "/api/friends/requests/" + encodeURIComponent(id) + "/" + action;
-    try { await SocialAPI.request(path, { method: action === "cancel" ? "DELETE" : "POST" }); feedback(action === "accept" ? "تم قبول طلب الصداقة." : action === "reject" ? "تم رفض طلب الصداقة." : "تم إلغاء الطلب.", "success"); await load(currentTab); return true; } catch (error) { feedback(error.message, "error"); return true; }
+    var path = "/api/friends/requests/" + encodeURIComponent(id) + "/" + action;
+    try { await SocialAPI.request(path, { method: "PATCH" }); feedback(action === "accept" ? "تم قبول طلب الصداقة." : action === "reject" ? "تم رفض طلب الصداقة." : "تم إلغاء الطلب.", "success"); await load(currentTab); return true; } catch (error) { feedback(error.message, "error"); return true; }
   }
   document.querySelectorAll("[data-tab]").forEach(function (tab) { tab.addEventListener("click", function () { document.querySelectorAll("[data-tab]").forEach(function (item) { item.classList.toggle("is-active", item === tab); }); load(tab.dataset.tab); }); });
   var searchTimer;
