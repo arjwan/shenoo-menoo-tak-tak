@@ -1,13 +1,13 @@
 (function () {
   var themeScript = document.createElement('script');
-  themeScript.src = 'theme.js';
+  themeScript.src = 'theme.js?v=20260913-5';
   themeScript.defer = true;
   document.head.appendChild(themeScript);
 
   if (!document.querySelector('link[data-theme-light-fixes]')) {
     var themeFixes = document.createElement('link');
     themeFixes.rel = 'stylesheet';
-    themeFixes.href = 'theme-light-fixes.css?v=20260913-3';
+    themeFixes.href = 'theme-light-fixes.css?v=20260913-5';
     themeFixes.setAttribute('data-theme-light-fixes', '1');
     document.head.appendChild(themeFixes);
   }
