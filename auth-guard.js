@@ -57,7 +57,9 @@
 
   if (!document.querySelector('script[data-shno-presence]')) { var presence=document.createElement('script'); presence.src='presence-client.js?v=20260913-1'; presence.defer=true; presence.setAttribute('data-shno-presence','1'); document.head.appendChild(presence); }
 
-  if (!document.querySelector('link[data-shno-communication-dock]')) { var commCss=document.createElement('link'); commCss.rel='stylesheet'; commCss.href='communication-dock.css?v=20260913-3'; commCss.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(commCss); }
-  if (!document.querySelector('script[data-shno-communication-dock]')) { var comm=document.createElement('script'); comm.src='communication-dock.js?v=20260913-3'; comm.defer=true; comm.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(comm); }
+  if (!document.querySelector('link[data-shno-communication-dock]')) { var commCss=document.createElement('link'); commCss.rel='stylesheet'; commCss.href='communication-dock.css?v=20260913-toggle-page-4'; commCss.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(commCss); }
+  if (!document.querySelector('script[data-shno-communication-dock]')) { var comm=document.createElement('script'); comm.src='communication-dock.js?v=20260913-toggle-page-4'; comm.defer=true; comm.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(comm); }
+  if (!document.querySelector('link[data-shno-social-actions]')) { var socialActions=document.createElement('link'); socialActions.rel='stylesheet'; socialActions.href='social-actions-fix.css?v=20260913-4'; socialActions.setAttribute('data-shno-social-actions','1'); document.head.appendChild(socialActions); }
+  if (/\/stories\.html$/i.test(location.pathname) && !document.querySelector('script[data-shno-story-deck]')) { var storyDeck=document.createElement('script'); storyDeck.src='stories-deck.js?v=20260913-2'; storyDeck.defer=true; storyDeck.setAttribute('data-shno-story-deck','1'); document.head.appendChild(storyDeck); }
   if (!document.querySelector('script[data-shno-messages-link]')) { var messagesLink=document.createElement('script'); messagesLink.src='communication-messages-link.js?v=20260913-2'; messagesLink.defer=true; messagesLink.setAttribute('data-shno-messages-link','1'); document.head.appendChild(messagesLink); }
 })();

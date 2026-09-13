@@ -493,13 +493,15 @@ html[data-theme="light"] .empty {
 }
 .post-stats {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 9px 18px;
   padding: 10px 15px;
   color: var(--muted);
 }
 .post-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -508,7 +510,10 @@ html[data-theme="light"] .empty {
   background: transparent;
   color: var(--text);
   padding: 12px;
+  cursor: pointer;
+  font-weight: 700;
 }
+.post-actions .post-like.is-active { color: var(--pink); }
 .comments {
   padding: 12px;
 }
@@ -736,15 +741,22 @@ html[data-theme="light"] .empty {
   width: 100% !important;
   height: auto !important;
   max-width: 100% !important;
-  max-height: min(78svh, 760px) !important;
+  max-height: min(66svh, 620px) !important;
   aspect-ratio: var(--video-ratio, auto);
   object-fit: contain !important;
   background: #05070b !important;
 }
 .post-video video.is-portrait {
-  width: auto !important;
-  height: min(74svh, 720px) !important;
-  max-width: 100% !important;
+  width: min(100%, 420px) !important;
+  height: auto !important;
+  max-height: min(62svh, 580px) !important;
+}
+@media (max-width: 760px) {
+  .post-video video { max-height: min(58svh, 520px) !important; }
+  .post-video video.is-portrait { width: min(78vw, 360px) !important; max-height: min(56svh, 500px) !important; }
+  .post-stats { font-size: 12px; gap: 7px 12px; }
+  .post-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .post-actions button { white-space: nowrap; }
 }
 .post-image img {
   height: auto !important;
@@ -807,12 +819,13 @@ body.post-detail-active {
 }
 @media (max-width: 760px) {
   .post-video video {
-    max-height: 68svh !important;
+    max-height: min(58svh, 520px) !important;
   }
   .post-video video.is-portrait {
-    width: auto !important;
-    height: min(66svh, 620px) !important;
-    max-width: 100% !important;
+    width: min(78vw, 360px) !important;
+    height: auto !important;
+    max-width: 78vw !important;
+    max-height: min(56svh, 500px) !important;
   }
   .post-card.is-post-open {
     inset: 0 !important;

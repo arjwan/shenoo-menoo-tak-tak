@@ -9,6 +9,23 @@ on:
       - 'taktak.html'
       - 'taktak-feed.js'
       - 'taktak-feed.css'
+      - 'taktak-viewers.js'
+      - 'taktak-viewers.css'
+      - 'reels.html'
+      - 'reels-v2.js'
+      - 'reels-v2.css'
+      - 'reels-media-extra.css'
+      - 'stories.html'
+      - 'stories-deck.js'
+      - 'social-actions-fix.css'
+      - 'taal-nsolf.html'
+      - 'communication-dock.js'
+      - 'communication-dock.css'
+      - 'auth-guard.js'
+      - 'server/src/models/Post.js'
+      - 'server/src/routes/posts.routes.js'
+      - 'server/src/routes/post-feed.routes.js'
+      - 'server/src/routes/media-direct.routes.js'
 
 permissions:
   contents: read
@@ -111,12 +128,16 @@ jobs:
           sudo install -m 0644 taktak.html /usr/share/nginx/html/shno-mano/taktak.html
           sudo install -m 0644 taktak-feed.js /usr/share/nginx/html/shno-mano/taktak-feed.js
           sudo install -m 0644 taktak-feed.css /usr/share/nginx/html/shno-mano/taktak-feed.css
+          for file in taktak-viewers.js taktak-viewers.css reels.html reels-v2.js reels-v2.css reels-media-extra.css stories.html stories-deck.js social-actions-fix.css taal-nsolf.html communication-dock.js communication-dock.css auth-guard.js; do
+            sudo install -m 0644 "$file" "/usr/share/nginx/html/shno-mano/$file"
+          done
           sudo restorecon -F \
             /usr/share/nginx/html/shno-mano/signup.html \
             /usr/share/nginx/html/shno-mano/signin.html \
             /usr/share/nginx/html/shno-mano/taktak.html \
             /usr/share/nginx/html/shno-mano/taktak-feed.js \
             /usr/share/nginx/html/shno-mano/taktak-feed.css || true
+          sudo restorecon -RF /usr/share/nginx/html/shno-mano || true
           sudo systemctl restart shno-mano-tech.service
           sudo systemctl is-active --quiet shno-mano-tech.service
           sudo nginx -t
@@ -130,6 +151,8 @@ jobs:
           set -euo pipefail
           curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health
           curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verify-registration'
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak.html | grep -q '20260913-post-video-1'
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak-feed.js | grep -q 'openPostDetails'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak.html | grep -q '20260913-social-actions-2'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak-feed.js | grep -q 'data-action="share"'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak-viewers.js | grep -q 'viewer-reel-action'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taal-nsolf.html | grep -q 'شنو منو مراسلات'
           echo "Oracle deployment and public web checks passed."

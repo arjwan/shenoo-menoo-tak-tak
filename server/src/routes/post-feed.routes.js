@@ -16,7 +16,7 @@ function userView(user) {
 function postView(post,user){
   const authorId=post.author?._id||post.author;
   const canManage=String(authorId)===String(user._id)||['admin','developer'].includes(user.role);
-  return {id:post._id,author:userView(post.author),text:post.text,media:post.media,type:post.type,visibility:post.visibility,adStatus:post.adStatus,adTitle:post.adTitle||'',adContact:post.adContact||'',adCategory:post.adCategory||'',adReviewNote:post.adReviewNote||'',likesCount:post.likes.length,liked:post.likes.some(id=>String(id)===String(user._id)),commentsCount:post.commentsCount,createdAt:post.createdAt,updatedAt:post.updatedAt,canEdit:canManage,canDelete:canManage};
+  return {id:post._id,author:userView(post.author),text:post.text,media:post.media,type:post.type,visibility:post.visibility,adStatus:post.adStatus,adTitle:post.adTitle||'',adContact:post.adContact||'',adCategory:post.adCategory||'',adReviewNote:post.adReviewNote||'',likesCount:post.likes.length,liked:post.likes.some(id=>String(id)===String(user._id)),commentsCount:post.commentsCount,sharesCount:Number(post.sharesCount||0),createdAt:post.createdAt,updatedAt:post.updatedAt,canEdit:canManage,canDelete:canManage};
 }
 async function relationSets(userId){
   const [friends,following]=await Promise.all([friendIds(userId),followingIds(userId)]);

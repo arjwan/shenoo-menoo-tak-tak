@@ -24,6 +24,7 @@ const postSchema = new mongoose.Schema({
   adReviewedAt: { type: Date, default: null },
   adReviewNote: { type: String, trim: true, maxlength: 500, default: '' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  sharesCount: { type: Number, default: 0, min: 0 },
   commentsCount: { type: Number, default: 0 },
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
