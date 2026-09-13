@@ -20,3 +20,38 @@
 .profile-media-note{color:#8791a7;font-size:.63rem;line-height:1.7}
 .privacy-modal[data-edit-modal] .privacy-actions{position:sticky;bottom:-24px;margin:20px -24px -24px;padding:14px 24px;background:linear-gradient(180deg,rgba(17,23,40,.88),#111728 25%);z-index:2}
 @media(max-width:560px){.privacy-modal[data-edit-modal]{padding:8px;align-items:end}.privacy-modal[data-edit-modal] .privacy-card{max-height:94dvh;padding:18px;border-radius:22px 22px 12px 12px}.profile-media-preview.is-cover{height:155px}.privacy-modal[data-edit-modal] .privacy-actions{bottom:-18px;margin:18px -18px -18px;padding:12px 18px}}
+
+.privacy-modal[data-edit-modal] .privacy-card{color:#f8fafc}
+.privacy-modal[data-edit-modal] form{display:block;width:100%}
+.profile-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.profile-form-grid .full{grid-column:1/-1}
+.privacy-modal[data-edit-modal] .form-field input:not([type=file]),
+.privacy-modal[data-edit-modal] .form-field textarea{display:block;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(180,190,215,.34);border-radius:12px;outline:0;color:#fff!important;background:#0b1020!important;font:inherit;line-height:1.5}
+.privacy-modal[data-edit-modal] .form-field textarea{min-height:104px}
+.privacy-modal[data-edit-modal] .form-field input:focus,
+.privacy-modal[data-edit-modal] .form-field textarea:focus{border-color:#9f8cff;box-shadow:0 0 0 3px rgba(124,92,255,.18)}
+.privacy-modal[data-edit-modal] .privacy-actions .icon-button{min-height:46px;padding:0 20px;color:#fff!important;background:#202940!important;border:1px solid #697693!important;font-weight:900}
+.privacy-modal[data-edit-modal] .privacy-actions .icon-button.primary{background:linear-gradient(135deg,#6842e8,#9067ff)!important;border-color:#9f8cff!important}
+.privacy-modal[data-edit-modal] .form-message{display:block;margin-top:12px;font-weight:800;line-height:1.7}
+@media(max-width:560px){
+  .profile-form-grid{grid-template-columns:1fr}
+  .profile-form-grid .full{grid-column:auto}
+  .privacy-modal[data-edit-modal] .privacy-card{width:100%}
+  .privacy-modal[data-edit-modal] .privacy-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+html[data-theme="light"] .privacy-modal[data-edit-modal] .privacy-card,
+body.light .privacy-modal[data-edit-modal] .privacy-card,
+body.light-mode .privacy-modal[data-edit-modal] .privacy-card,
+body.theme-light .privacy-modal[data-edit-modal] .privacy-card{color:#111827;background:#fff}
+html[data-theme="light"] .privacy-modal[data-edit-modal] .form-field>label,
+body.light .privacy-modal[data-edit-modal] .form-field>label,
+body.light-mode .privacy-modal[data-edit-modal] .form-field>label,
+body.theme-light .privacy-modal[data-edit-modal] .form-field>label{color:#27344b}
+html[data-theme="light"] .privacy-modal[data-edit-modal] .form-field input:not([type=file]),
+html[data-theme="light"] .privacy-modal[data-edit-modal] .form-field textarea,
+body.light .privacy-modal[data-edit-modal] .form-field input:not([type=file]),
+body.light .privacy-modal[data-edit-modal] .form-field textarea,
+body.light-mode .privacy-modal[data-edit-modal] .form-field input:not([type=file]),
+body.light-mode .privacy-modal[data-edit-modal] .form-field textarea,
+body.theme-light .privacy-modal[data-edit-modal] .form-field input:not([type=file]),
+body.theme-light .privacy-modal[data-edit-modal] .form-field textarea{color:#111827!important;background:#f8fafc!important;border-color:#94a3b8}
