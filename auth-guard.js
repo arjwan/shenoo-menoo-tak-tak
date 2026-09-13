@@ -45,8 +45,8 @@
   }
 
   if (/\/(?:taktak\.html)?$/i.test(location.pathname)) {
-    if (!document.querySelector('link[data-home-notifications]')) { var notificationsCss=document.createElement('link'); notificationsCss.rel='stylesheet'; notificationsCss.href='home-notifications.css?v=20260913-2'; notificationsCss.setAttribute('data-home-notifications','1'); document.head.appendChild(notificationsCss); }
-    var notificationsScript=document.createElement('script'); notificationsScript.src='home-notifications.js?v=20260911-1'; notificationsScript.defer=true; document.head.appendChild(notificationsScript);
+    if (!document.querySelector('link[data-home-notifications]')) { var notificationsCss=document.createElement('link'); notificationsCss.rel='stylesheet'; notificationsCss.href='home-notifications.css?v=20260913-3'; notificationsCss.setAttribute('data-home-notifications','1'); document.head.appendChild(notificationsCss); }
+    var notificationsScript=document.createElement('script'); notificationsScript.src='home-notifications.js?v=20260913-2'; notificationsScript.defer=true; document.head.appendChild(notificationsScript);
     if (!document.querySelector('script[data-direct-post-upload]')) { var directPostUpload=document.createElement('script'); directPostUpload.src='taktak-direct-upload.js?v=20260912-1'; directPostUpload.defer=true; directPostUpload.setAttribute('data-direct-post-upload','1'); document.head.appendChild(directPostUpload); }
   }
 
@@ -58,5 +58,5 @@
   if (!document.querySelector('script[data-shno-presence]')) { var presence=document.createElement('script'); presence.src='presence-client.js?v=20260913-1'; presence.defer=true; presence.setAttribute('data-shno-presence','1'); document.head.appendChild(presence); }
 
   if (!document.querySelector('link[data-shno-communication-dock]')) { var commCss=document.createElement('link'); commCss.rel='stylesheet'; commCss.href='communication-dock.css?v=20260913-1'; commCss.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(commCss); }
-  if (!document.querySelector('script[data-shno-communication-dock]')) { var comm=document.createElement('script'); comm.src='communication-dock.js?v=20260913-1'; comm.defer=true; comm.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(comm); }
+  if (!document.querySelector('script[data-shno-communication-dock]')) { var comm=document.createElement('script'); comm.src='communication-dock.js?v=20260913-2'; comm.defer=true; comm.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(comm); }
 })();
