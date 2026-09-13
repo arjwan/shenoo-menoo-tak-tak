@@ -4,6 +4,14 @@
   themeScript.defer = true;
   document.head.appendChild(themeScript);
 
+  if (!document.querySelector('script[data-shno-i18n]')) {
+    var i18n = document.createElement('script');
+    i18n.src = 'i18n.js?v=20260913-1';
+    i18n.defer = true;
+    i18n.setAttribute('data-shno-i18n', '1');
+    document.head.appendChild(i18n);
+  }
+
   if (!document.querySelector('link[data-theme-light-fixes]')) {
     var themeFixes = document.createElement('link');
     themeFixes.rel = 'stylesheet';
@@ -26,6 +34,14 @@
     postSpacing.href = 'post-spacing.css?v=20260913-1';
     postSpacing.setAttribute('data-post-spacing', '1');
     document.head.appendChild(postSpacing);
+  }
+
+  if (!document.querySelector('link[data-platform-upgrades]')) {
+    var upgradesCss = document.createElement('link');
+    upgradesCss.rel = 'stylesheet';
+    upgradesCss.href = 'platform-upgrades.css?v=20260913-1';
+    upgradesCss.setAttribute('data-platform-upgrades', '1');
+    document.head.appendChild(upgradesCss);
   }
 
   if (!document.querySelector('script[data-shno-media-cache]')) {
@@ -65,7 +81,7 @@
     if (!document.querySelector('link[data-home-notifications]')) {
       var notificationsCss = document.createElement('link');
       notificationsCss.rel = 'stylesheet';
-      notificationsCss.href = 'home-notifications.css?v=20260911-1';
+      notificationsCss.href = 'home-notifications.css?v=20260913-2';
       notificationsCss.setAttribute('data-home-notifications', '1');
       document.head.appendChild(notificationsCss);
     }
@@ -81,6 +97,14 @@
       directPostUpload.setAttribute('data-direct-post-upload', '1');
       document.head.appendChild(directPostUpload);
     }
+  }
+
+  if (!document.querySelector('script[data-platform-upgrades]')) {
+    var upgrades = document.createElement('script');
+    upgrades.src = 'platform-upgrades.js?v=20260913-1';
+    upgrades.defer = true;
+    upgrades.setAttribute('data-platform-upgrades', '1');
+    document.head.appendChild(upgrades);
   }
 
   var token = localStorage.getItem('token') || sessionStorage.getItem('token');
