@@ -13,7 +13,7 @@
   }
 
   if (!document.querySelector('link[data-theme-light-fixes]')) {
-    var themeFixes = document.createElement('link'); themeFixes.rel='stylesheet'; themeFixes.href='theme-light-fixes.css?v=20260913-6'; themeFixes.setAttribute('data-theme-light-fixes','1'); document.head.appendChild(themeFixes);
+    var themeFixes=document.createElement('link'); themeFixes.rel='stylesheet'; themeFixes.href='theme-light-fixes.css?v=20260913-6'; themeFixes.setAttribute('data-theme-light-fixes','1'); document.head.appendChild(themeFixes);
   }
   if (!document.querySelector('link[data-theme-pages]')) {
     var themePages=document.createElement('link'); themePages.rel='stylesheet'; themePages.href='theme-pages.css?v=20260913-2'; themePages.setAttribute('data-theme-pages','1'); document.head.appendChild(themePages);
@@ -40,8 +40,8 @@
 
   if (/\bsettings\.html$/i.test(location.pathname)) {
     var notificationSettingsCss=document.createElement('link'); notificationSettingsCss.rel='stylesheet'; notificationSettingsCss.href='notification-settings.css?v=20260913-1'; document.head.appendChild(notificationSettingsCss);
-    var notificationSettings=document.createElement('script'); notificationSettings.src='notification-settings.js?v=20260913-1'; notificationSettings.defer=true; document.head.appendChild(notificationSettings);
-    var devicePanel=document.createElement('script'); devicePanel.src='settings-device-panel.js?v=20260913-1'; devicePanel.defer=true; document.head.appendChild(devicePanel);
+    var notificationSettings=document.createElement('script'); notificationSettings.src='notification-settings.js?v=20260913-2'; notificationSettings.defer=true; document.head.appendChild(notificationSettings);
+    var devicePanel=document.createElement('script'); devicePanel.src='settings-device-panel.js?v=20260913-2'; devicePanel.defer=true; document.head.appendChild(devicePanel);
   }
 
   if (/\/(?:taktak\.html)?$/i.test(location.pathname)) {
