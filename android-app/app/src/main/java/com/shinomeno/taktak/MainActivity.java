@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -23,6 +24,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
     private static final String HOME_URL = "https://shino-mino-tak-tak.duckdns.org/taktak.html";
@@ -69,6 +74,7 @@ public final class MainActivity extends Activity {
         settings.setUserAgentString(settings.getUserAgentString() + " ShenooMenooTakTakAndroid/1.1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        webView.addJavascriptInterface(new NativeBridge(), "ShnoManoNative");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -168,10 +174,33 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult qrResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (qrResult != null) {
+            if (qrResult.getContents() != null) {
+                String quoted = JSONObject.quote(qrResult.getContents());
+                webView.evaluateJavascript(
+                    "window.handleNativeFriendQr && window.handleNativeFriendQr(" + quoted + ");",
+                    null
+                );
+            }
+            return;
+        }
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FILE_PICKER && fileCallback != null) {
             fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
             fileCallback = null;
+        }
+    }
+
+    private final class NativeBridge {
+        @JavascriptInterface
+        public void scanFriendQr() {
+            runOnUiThread(() -> new IntentIntegrator(MainActivity.this)
+                .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+                .setPrompt("وجّه الكاميرا إلى رمز صديقك في شنو منو")
+                .setBeepEnabled(false)
+                .setOrientationLocked(false)
+                .initiateScan());
         }
     }
 
