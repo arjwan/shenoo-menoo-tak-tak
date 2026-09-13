@@ -17,7 +17,7 @@ pop?.addEventListener('click',event=>{if(event.target===pop)hideComposer();});
 toggleHistory?.addEventListener('click',()=>{if(!history)return;history.hidden=!history.hidden;toggleHistory.textContent=history.hidden?'عرض الرسائل':'إخفاء الرسائل';});
 form?.addEventListener('submit',()=>{setTimeout(()=>{if(input&&!input.value.trim())hideComposer();},450);});
 function updateTicker(){
- if(!history||!ticker)return;
+ if(!history||!ticker||window.__officialTickerActive)return;
  const rows=[...history.querySelectorAll('.tv-message')];
  const last=rows[rows.length-1];
  if(!last){ticker.textContent=welcome;return;}
