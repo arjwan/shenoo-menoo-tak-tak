@@ -3,7 +3,7 @@ const path=location.pathname.split('/').pop()||'taktak.html';
 const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
 function text(el,v){if(el)el.textContent=v}
 function normalizeHome(){if(path!=='taktak.html'&&path!=='')return;
- const brand=q('.home-brand'); if(brand) brand.textContent='شنو منو تك تك — بنكهة عراقية';
+ const brand=q('.home-brand'); if(brand) brand.textContent='شنو منو تك تك — بنكهة عراقية 🇮🇶';
  const cover=q('[data-cover-state]'); if(cover) cover.textContent='لنا وللعرب ولكل العالم — ساهم، انشر، أضف أصدقاء، واستكشف عالمًا جديدًا من التواصل.';
  const removeHref=['calls.html','friends.html','friend-qr.html'];
  qa('.top-actions a,.left-side a,.quick-apps a').forEach(a=>{const href=(a.getAttribute('href')||'').split('?')[0];if(removeHref.includes(href))a.remove();});
@@ -16,5 +16,45 @@ function shareUrl(kind,id){const u=new URL(location.origin+'/'+(kind==='story'?'
 async function share(kind,id){const url=shareUrl(kind,id),title=kind==='story'?'قصة على شنو منو تك تك':'ريلز على شنو منو تك تك';if(navigator.share){try{await navigator.share({title,text:'شاهد هذا المحتوى على شنو منو تك تك',url});return}catch(e){if(e&&e.name==='AbortError')return}}const choice=confirm('اضغط موافق لمشاركة الرابط خارجياً، أو إلغاء لفتحه داخل شنو منو مراسلات.');if(choice){try{await navigator.clipboard.writeText(url);alert('تم نسخ رابط شنو منو تك تك للمشاركة.')}catch{prompt('انسخ رابط المشاركة:',url)}}else{location.href='messages.html?share='+encodeURIComponent(url)+'&type='+kind}}
 function storySharing(){if(path!=='stories.html')return;const install=()=>qa('.story-card[data-id]').forEach(card=>{if(card.querySelector('.story-share-button'))return;const b=document.createElement('button');b.type='button';b.className='story-share-button';b.textContent='↗ مشاركة';b.onclick=e=>{e.preventDefault();e.stopPropagation();share('story',card.dataset.id)};card.appendChild(b)});install();new MutationObserver(install).observe(document.body,{childList:true,subtree:true});}
 function reelSharing(){if(path!=='reels.html')return;document.addEventListener('click',e=>{const b=e.target.closest('[data-share-reel]');if(!b)return;e.preventDefault();share('reel',b.dataset.shareReel||b.closest('[data-id]')?.dataset.id||'')});}
-document.addEventListener('DOMContentLoaded',()=>{normalizeHome();normalizeMessages();storySharing();reelSharing()});
+
+/* Presence is driven by the live Socket.IO room state, not the stale database flag.
+   This keeps friends/calls accurate while navigating between pages in WebView. */
+const livePresence=new Map();
+function idFromCallCard(card){
+ const a=card&&card.querySelector('a[href*="messages.html?user="]');
+ if(!a)return'';
+ try{return new URL(a.href,location.href).searchParams.get('user')||''}catch(_){return''}
+}
+function paintPresence(userId,online){
+ userId=String(userId||''); if(!userId)return;
+ livePresence.set(userId,!!online);
+ qa('[data-person-id="'+CSS.escape(userId)+'"]').forEach(row=>{
+   const dot=row.querySelector('.presence'); if(dot)dot.classList.toggle('online',!!online);
+   const meta=row.querySelector('.social-list-meta small'); if(meta)meta.textContent=online?'متصل الآن':'غير متصل';
+ });
+ qa('.call-contact').forEach(card=>{
+   if(String(idFromCallCard(card))!==userId)return;
+   const dot=card.querySelector('.presence'); if(dot)dot.classList.toggle('online',!!online);
+   const small=card.querySelector('.call-contact-copy small');
+   if(small&&/@/.test(small.textContent||'')){
+     const first=(small.textContent||'').split(' · ')[0];
+     small.textContent=first+' · '+(online?'متصل الآن':'صديق على شنو منو');
+   }
+ });
+ qa('[data-chat-presence][data-user-id="'+CSS.escape(userId)+'"]').forEach(el=>{el.textContent=online?'متصل الآن':'غير متصل'});
+}
+function repaintKnown(){livePresence.forEach((online,id)=>paintPresence(id,online));}
+function setupPresenceUi(){
+ window.addEventListener('shno:presence:state',e=>{
+   const ids=((e.detail&&e.detail.userIds)||[]).map(String),set=new Set(ids);
+   qa('[data-person-id]').forEach(row=>paintPresence(row.dataset.personId,set.has(String(row.dataset.personId))));
+   qa('.call-contact').forEach(card=>{const id=idFromCallCard(card);if(id)paintPresence(id,set.has(String(id)))});
+   ids.forEach(id=>paintPresence(id,true));
+ });
+ window.addEventListener('shno:presence:online',e=>paintPresence(e.detail&&e.detail.userId,true));
+ window.addEventListener('shno:presence:offline',e=>paintPresence(e.detail&&e.detail.userId,false));
+ new MutationObserver(repaintKnown).observe(document.body,{childList:true,subtree:true});
+}
+
+document.addEventListener('DOMContentLoaded',()=>{normalizeHome();normalizeMessages();storySharing();reelSharing();setupPresenceUi()});
 })();
