@@ -14,6 +14,7 @@ import android.net.Network;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
@@ -37,6 +38,7 @@ public final class MainActivity extends Activity {
     private static final int FILE_PICKER = 41;
     private static final int MEDIA_PERMISSIONS = 42;
     private static final int NOTIFICATION_PERMISSION = 43;
+    private static final int LOCATION_PERMISSION = 44;
     private static final String CHANNEL_MESSAGES = "shno_messages";
     private static final String CHANNEL_CALLS = "shno_calls";
     private static final String CHANNEL_MISSED = "shno_missed_calls";
@@ -61,28 +63,16 @@ public final class MainActivity extends Activity {
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager == null) return;
 
-        NotificationChannel messages = new NotificationChannel(
-            CHANNEL_MESSAGES,
-            "رسائل شنو منو",
-            NotificationManager.IMPORTANCE_HIGH
-        );
+        NotificationChannel messages = new NotificationChannel(CHANNEL_MESSAGES, "رسائل شنو منو", NotificationManager.IMPORTANCE_HIGH);
         messages.setDescription("تنبيهات الرسائل الجديدة");
         messages.enableVibration(true);
 
-        NotificationChannel calls = new NotificationChannel(
-            CHANNEL_CALLS,
-            "مكالمات شنو منو",
-            NotificationManager.IMPORTANCE_HIGH
-        );
+        NotificationChannel calls = new NotificationChannel(CHANNEL_CALLS, "مكالمات شنو منو", NotificationManager.IMPORTANCE_HIGH);
         calls.setDescription("المكالمات الصوتية ومكالمات الفيديو الواردة");
         calls.enableVibration(true);
         calls.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
 
-        NotificationChannel missed = new NotificationChannel(
-            CHANNEL_MISSED,
-            "المكالمات الفائتة",
-            NotificationManager.IMPORTANCE_HIGH
-        );
+        NotificationChannel missed = new NotificationChannel(CHANNEL_MISSED, "المكالمات الفائتة", NotificationManager.IMPORTANCE_HIGH);
         missed.setDescription("تنبيهات المكالمات التي لم يتم الرد عليها");
         missed.enableVibration(true);
 
@@ -133,13 +123,9 @@ public final class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 offlineBanner.setVisibility(isOnline() ? View.GONE : View.VISIBLE);
-
                 if (url != null && url.contains("signin.html")) {
                     signinSeen = true;
-                    view.evaluateJavascript(
-                        "(function(){var r=document.getElementById('remember');if(r){r.checked=true;}})();",
-                        null
-                    );
+                    view.evaluateJavascript("(function(){var r=document.getElementById('remember');if(r){r.checked=true;}})();", null);
                 } else if (url != null && url.contains("taktak.html") && signinSeen) {
                     view.clearHistory();
                     signinSeen = false;
@@ -186,16 +172,34 @@ public final class MainActivity extends Activity {
     }
 
     private void requestMediaPermissions() {
-        if (Build.VERSION.SDK_INT >= 23) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, MEDIA_PERMISSIONS);
-        } else {
-            grantWebPermission();
-        }
+        if (Build.VERSION.SDK_INT >= 23) requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, MEDIA_PERMISSIONS);
+        else grantWebPermission();
     }
 
     private void requestNotificationPermissionNative() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION);
+        }
+    }
+
+    private void requestLocationPermissionNative() {
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION);
+        }
+    }
+
+    private void openAppSettingsNative() {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+        startActivity(intent);
+    }
+
+    private void openBackgroundSettingsNative() {
+        try {
+            Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+            startActivity(intent);
+        } catch (ActivityNotFoundException error) {
+            openAppSettingsNative();
         }
     }
 
@@ -209,7 +213,7 @@ public final class MainActivity extends Activity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
         if (requestCode == MEDIA_PERMISSIONS) {
-            boolean granted = true;
+            boolean granted = results.length > 0;
             for (int result : results) granted &= result == PackageManager.PERMISSION_GRANTED;
             if (granted) grantWebPermission();
             else if (pendingPermissionRequest != null) {
@@ -225,10 +229,7 @@ public final class MainActivity extends Activity {
         if (qrResult != null) {
             if (qrResult.getContents() != null) {
                 String quoted = JSONObject.quote(qrResult.getContents());
-                webView.evaluateJavascript(
-                    "window.handleNativeFriendQr && window.handleNativeFriendQr(" + quoted + ");",
-                    null
-                );
+                webView.evaluateJavascript("window.handleNativeFriendQr && window.handleNativeFriendQr(" + quoted + ");", null);
             }
             return;
         }
@@ -253,6 +254,26 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public void requestNotificationPermission() {
             runOnUiThread(MainActivity.this::requestNotificationPermissionNative);
+        }
+
+        @JavascriptInterface
+        public void requestLocationPermission() {
+            runOnUiThread(MainActivity.this::requestLocationPermissionNative);
+        }
+
+        @JavascriptInterface
+        public void requestMediaPermission() {
+            runOnUiThread(MainActivity.this::requestMediaPermissions);
+        }
+
+        @JavascriptInterface
+        public void openBackgroundSettings() {
+            runOnUiThread(MainActivity.this::openBackgroundSettingsNative);
+        }
+
+        @JavascriptInterface
+        public void openAppSettings() {
+            runOnUiThread(MainActivity.this::openAppSettingsNative);
         }
     }
 
