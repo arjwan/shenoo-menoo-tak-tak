@@ -170,6 +170,47 @@ html[data-theme="light"] .send-button {
 .profile-stats { margin-top: 14px; }
 .profile-stat { padding: 15px 10px !important; }
 
+/* Strong selectors for components that previously kept dark-theme colors in light mode. */
+html[data-theme="light"] .privacy-row > span,
+html[data-theme="light"] [data-privacy-section] .privacy-row > span,
+html[data-theme="light"] [data-privacy-section] .form-message,
+html[data-theme="light"] [data-privacy-section] p,
+html[data-theme="light"] [data-privacy-section] small {
+  color:#344054 !important;
+  opacity:1 !important;
+  font-size:.9rem !important;
+}
+html[data-theme="light"] [data-privacy-section] h2,
+html[data-theme="light"] .profile-section h2 {
+  color:#101828 !important;
+  font-size:1.08rem !important;
+  font-weight:800 !important;
+}
+html[data-theme="light"] .hub .hero,
+html[data-theme="light"] .hub .card {
+  background:#fff !important;
+  color:#172033 !important;
+  border-color:rgba(15,23,42,.14) !important;
+  box-shadow:0 14px 36px rgba(15,23,42,.07);
+}
+html[data-theme="light"] .hub .hero h1,
+html[data-theme="light"] .hub .hero p,
+html[data-theme="light"] .hub .card h2,
+html[data-theme="light"] .hub .card p {
+  color:#172033 !important;
+  opacity:1 !important;
+}
+html[data-theme="light"] .hub .hero p,
+html[data-theme="light"] .hub .card p {font-size:.92rem !important;line-height:1.8}
+html[data-theme="light"] .hub .action {
+  background:#eef2f8 !important;
+  color:#172033 !important;
+  border:1px solid #cbd5e1 !important;
+  font-weight:800;
+}
+html[data-theme="light"] .hub .hero a,
+html[data-theme="light"] .hub .card a {color:#172033 !important}
+
 @media (max-width: 560px) {
   .social-page,.social-card,.profile-section,.privacy-card,.chat-window { font-size: 15px; }
   .privacy-modal[data-edit-modal] .privacy-card { padding: 18px !important; }
