@@ -6,6 +6,9 @@ on:
     branches: [ main ]
     paths:
       - '.github/workflows/deploy-oracle.yml'
+      - 'taktak.html'
+      - 'taktak-feed.js'
+      - 'taktak-feed.css'
 
 permissions:
   contents: read
@@ -79,7 +82,7 @@ jobs:
           set -euo pipefail
           scp -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts"             "$RUNNER_TEMP/otp.env" "$ORACLE_USER@$ORACLE_HOST:/tmp/shno-mano-otp.env"
 
-      - name: Deploy server and web registration page
+      - name: Deploy server and web pages
         shell: bash
         run: |
           set -euo pipefail
@@ -105,16 +108,28 @@ jobs:
 
           sudo install -m 0644 signup.html /usr/share/nginx/html/shno-mano/signup.html
           sudo install -m 0644 signin.html /usr/share/nginx/html/shno-mano/signin.html
-          sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html || true
+          sudo install -m 0644 taktak.html /usr/share/nginx/html/shno-mano/taktak.html
+          sudo install -m 0644 taktak-feed.js /usr/share/nginx/html/shno-mano/taktak-feed.js
+          sudo install -m 0644 taktak-feed.css /usr/share/nginx/html/shno-mano/taktak-feed.css
+          sudo restorecon -F \
+            /usr/share/nginx/html/shno-mano/signup.html \
+            /usr/share/nginx/html/shno-mano/signin.html \
+            /usr/share/nginx/html/shno-mano/taktak.html \
+            /usr/share/nginx/html/shno-mano/taktak-feed.js \
+            /usr/share/nginx/html/shno-mano/taktak-feed.css || true
           sudo systemctl restart shno-mano-tech.service
           sudo systemctl is-active --quiet shno-mano-tech.service
+          sudo nginx -t
+          sudo systemctl reload nginx
           curl --fail --silent --show-error http://127.0.0.1:3000/api/health
           REMOTE
 
-      - name: Verify public health and OTP page
+      - name: Verify public health and deployed web pages
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health
           curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verify-registration'
-          echo "Oracle deployment and public OTP page checks passed."
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak.html | grep -q '20260913-post-video-1'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak-feed.js | grep -q 'openPostDetails'
+          echo "Oracle deployment and public web checks passed."
