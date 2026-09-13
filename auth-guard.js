@@ -48,6 +48,7 @@
     if (!document.querySelector('link[data-home-notifications]')) { var notificationsCss=document.createElement('link'); notificationsCss.rel='stylesheet'; notificationsCss.href='home-notifications.css?v=20260913-3'; notificationsCss.setAttribute('data-home-notifications','1'); document.head.appendChild(notificationsCss); }
     var notificationsScript=document.createElement('script'); notificationsScript.src='home-notifications.js?v=20260913-2'; notificationsScript.defer=true; document.head.appendChild(notificationsScript);
     if (!document.querySelector('script[data-direct-post-upload]')) { var directPostUpload=document.createElement('script'); directPostUpload.src='taktak-direct-upload.js?v=20260912-1'; directPostUpload.defer=true; directPostUpload.setAttribute('data-direct-post-upload','1'); document.head.appendChild(directPostUpload); }
+    if (!document.querySelector('script[data-home-rooms-link]')) { var roomsLink=document.createElement('script'); roomsLink.src='home-rooms-link.js?v=20260913-1'; roomsLink.defer=true; roomsLink.setAttribute('data-home-rooms-link','1'); document.head.appendChild(roomsLink); }
   }
 
   if (!document.querySelector('script[data-platform-upgrades]')) { var upgrades=document.createElement('script'); upgrades.src='platform-upgrades.js?v=20260913-3'; upgrades.defer=true; upgrades.setAttribute('data-platform-upgrades','1'); document.head.appendChild(upgrades); }
