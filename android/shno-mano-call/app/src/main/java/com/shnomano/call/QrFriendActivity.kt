@@ -2,6 +2,7 @@ package com.shnomano.call
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -41,25 +42,38 @@ private fun QrFriendScreen(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val repo = remember { AppRepository(context) }
     val scope = rememberCoroutineScope()
-    val userId = repo.session.userId.orEmpty()
-    val payload = remember(userId) { if (userId.isBlank()) "" else "shnomano://friend/$userId" }
-    val qrBitmap = remember(payload) { payload.takeIf { it.isNotBlank() }?.let(::makeQrBitmap) }
+    var payload by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    val qrBitmap = remember(payload) { payload.takeIf { it.isNotBlank() }?.let(::makeQrBitmap) }
+
+    fun refreshQr() {
+        busy = true
+        scope.launch {
+            repo.loadFriendQr()
+                .onSuccess {
+                    payload = it.payload.orEmpty()
+                    status = null
+                }
+                .onFailure {
+                    payload = ""
+                    status = it.message ?: "تعذر إنشاء رمز QR"
+                }
+            busy = false
+        }
+    }
+
+    LaunchedEffect(Unit) { refreshQr() }
 
     val scanner = rememberLauncherForActivityResult(ScanContract()) { result ->
-        val scannedUserId = parseFriendQr(result.contents)
-        if (scannedUserId.isNullOrBlank()) {
+        val token = parseFriendQrToken(result.contents)
+        if (token.isNullOrBlank()) {
             if (!result.contents.isNullOrBlank()) status = "رمز QR ليس خاصاً بإضافة صديق في شنو منو"
-            return@rememberLauncherForActivityResult
-        }
-        if (scannedUserId == userId) {
-            status = "هذا رمز حسابك أنت"
             return@rememberLauncherForActivityResult
         }
         busy = true
         scope.launch {
-            repo.sendFriendRequest(scannedUserId)
+            repo.sendQrFriendRequest(token)
                 .onSuccess { status = it }
                 .onFailure { status = it.message ?: "تعذر إرسال طلب الصداقة" }
             busy = false
@@ -78,19 +92,35 @@ private fun QrFriendScreen(onBack: () -> Unit) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(22.dp)) {
             Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("QR الخاص بي", color = Color.White, fontSize = 18.sp)
-                Text("أرسله لصديقك ليضيفك مباشرة في شنو منو", color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
+                Text(
+                    "رمز آمن مؤقت يعمل في تطبيق شنو مانو وتطبيق اتصال",
+                    color = Color(0xFF98A2B3),
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+                )
                 if (qrBitmap != null) {
                     Surface(color = Color.White, shape = RoundedCornerShape(14.dp)) {
-                        Image(qrBitmap.asImageBitmap(), contentDescription = "رمز QR الخاص بحسابي", modifier = Modifier.size(230.dp).padding(10.dp))
+                        Image(
+                            qrBitmap.asImageBitmap(),
+                            contentDescription = "رمز QR الآمن لحسابي",
+                            modifier = Modifier.size(230.dp).padding(10.dp)
+                        )
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = {
-                        runCatching { shareQrImage(context, qrBitmap) }
-                            .onFailure { status = "تعذر مشاركة رمز QR" }
-                    }, modifier = Modifier.fillMaxWidth()) { Text("مشاركة رمز QR") }
+                    Text("تنتهي صلاحيته بعد 10 دقائق", color = Color(0xFF98A2B3), fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            runCatching { shareQrImage(context, qrBitmap) }
+                                .onFailure { status = "تعذر مشاركة رمز QR" }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("مشاركة رمز QR") }
+                } else if (busy) {
+                    CircularProgressIndicator()
                 } else {
-                    Text("سجّل الدخول أولاً لإنشاء رمز الحساب", color = MaterialTheme.colorScheme.error)
+                    Text("سجّل الدخول أولاً أو أعد تحميل الرمز", color = MaterialTheme.colorScheme.error)
                 }
+                TextButton(onClick = { refreshQr() }, enabled = !busy) { Text("تحديث الرمز") }
             }
         }
 
@@ -111,7 +141,11 @@ private fun QrFriendScreen(onBack: () -> Unit) {
         }
 
         status?.let { Text(it, color = Color(0xFF19D9A0), fontSize = 13.sp) }
-        Text("طلبات QR تستخدم نفس نظام الصداقة والحظر، لذلك لا تُكرر طلباً قائماً ولا تتجاوز الحظر.", color = Color(0xFF98A2B3), fontSize = 11.sp)
+        Text(
+            "الرمز لا يحتوي رقم الهاتف أو معرّف قاعدة البيانات، ويستخدم نفس نظام الصداقة والحظر في التطبيقين.",
+            color = Color(0xFF98A2B3),
+            fontSize = 11.sp
+        )
     }
 }
 
@@ -128,11 +162,11 @@ private fun makeQrBitmap(value: String, size: Int = 900): Bitmap {
     }
 }
 
-private fun parseFriendQr(contents: String?): String? {
-    val value = contents?.trim().orEmpty()
-    if (!value.startsWith("shnomano://friend/")) return null
-    return value.removePrefix("shnomano://friend/").substringBefore('?').trim().takeIf { it.matches(Regex("^[A-Fa-f0-9]{24}$")) }
-}
+private fun parseFriendQrToken(contents: String?): String? = runCatching {
+    val uri = Uri.parse(contents?.trim().orEmpty())
+    if (uri.scheme != "shnomano" || uri.host != "friend") return@runCatching null
+    uri.getQueryParameter("token")?.trim()?.takeIf { it.isNotBlank() }
+}.getOrNull()
 
 private fun shareQrImage(context: android.content.Context, bitmap: Bitmap) {
     val dir = File(context.cacheDir, "shared_qr").apply { mkdirs() }
@@ -142,7 +176,7 @@ private fun shareQrImage(context: android.content.Context, bitmap: Bitmap) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "image/png"
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TEXT, "أضفني على شنو منو عبر رمز QR")
+        putExtra(Intent.EXTRA_TEXT, "أضفني على شنو منو عبر رمز QR الآمن")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, "مشاركة QR شنو منو"))
