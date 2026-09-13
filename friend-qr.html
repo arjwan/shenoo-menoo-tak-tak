@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070910"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<title>إضافة صديق عبر QR | شنو منو</title>
+<link rel="stylesheet" href="mall.css">
+<link rel="stylesheet" href="social.css">
+<style>
+.invite-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.invite-card{padding:24px}.invite-card h2{margin-top:0}.invite-actions{display:flex;gap:10px;flex-wrap:wrap}.privacy-note{color:#aeb3c8;line-height:1.9}.contact-list{display:grid;gap:10px;margin-top:16px}.contact-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:15px}.contact-row small{display:block;color:#9da3b8}.small-button{cursor:pointer}.qr-card{grid-column:1/-1;text-align:center}.qr-image{width:min(260px,80vw);background:#fff;border-radius:18px;padding:12px;min-height:180px}.qr-actions{justify-content:center;margin-top:14px}.scanner-video{display:none;width:min(520px,100%);margin:14px auto;border-radius:18px;background:#000}.scanner-video.active{display:block}.file-label{position:relative;overflow:hidden}.file-label input{position:absolute;inset:0;opacity:0;cursor:pointer}@media(max-width:760px){.invite-grid{grid-template-columns:1fr}.qr-card{grid-column:auto}}
+</style>
+</head>
+<body>
+<script src="auth-guard.js"></script>
+<header class="site-header"><nav class="container nav"><a class="brand" href="taktak.html"><span class="brand-mark">تك</span><span><strong>شنو منو</strong><small>QR ودعوة الأصدقاء</small></span></a><div class="nav-actions"><a class="nav-link" href="friends.html">الأصدقاء</a><a class="nav-link" href="messages.html">المحادثات</a><a class="nav-link" href="profile.html">ملفي</a></div></nav></header>
+<main class="container social-page">
+<section class="social-card" style="padding:26px;margin-bottom:18px"><h1>أضف ربعك عبر QR ✦</h1><p class="privacy-note">رمز مؤقت وآمن يعمل في تطبيق شنو منو الرئيسي وتطبيق اتصال، ولا يحتوي رقم هاتفك أو معرّف قاعدة البيانات.</p></section>
+<div class="invite-grid">
+<section class="social-card invite-card qr-card">
+<h2>QR الخاص بي</h2>
+<img id="myQr" class="qr-image" alt="رمز QR الآمن الخاص بحسابي">
+<p class="privacy-note" id="qrExpiry">جارٍ إنشاء الرمز…</p>
+<div class="invite-actions qr-actions">
+<button class="icon-button" type="button" id="refreshQr">تحديث الرمز</button>
+<button class="icon-button primary" type="button" id="scanQr">مسح QR بالكاميرا</button>
+<label class="icon-button file-label">اختيار صورة QR<input id="qrFile" type="file" accept="image/*"></label>
+</div>
+<video id="scannerVideo" class="scanner-video" playsinline muted></video>
+</section>
+<section class="social-card invite-card"><h2>دعوة صديق</h2><p class="privacy-note">سنفتح نافذة المشاركة في جهازك، وأنت تختار التطبيق والشخص.</p><div class="invite-actions"><button class="icon-button primary" type="button" id="shareInvite">مشاركة رابط الدعوة</button><button class="icon-button" type="button" id="copyInvite">نسخ الرابط</button></div></section>
+<section class="social-card invite-card"><h2>جهات اتصالي</h2><p class="privacy-note">لن نقرأ جهات اتصالك دون إذنك. تختار بنفسك الجهات التي تريد دعوتها.</p><button class="icon-button primary" type="button" id="pickContacts">اختيار جهات اتصال</button><div class="contact-list" id="contactList"></div></section>
+</div>
+<p class="form-message" id="feedback" role="status" aria-live="polite"></p>
+</main>
+<script src="social-api.js"></script>
+<script>
+(function(){
+'use strict';
+const feedback=document.getElementById('feedback'),list=document.getElementById('contactList'),qrImage=document.getElementById('myQr'),expiry=document.getElementById('qrExpiry'),video=document.getElementById('scannerVideo');
+const inviteUrl=location.origin+'/signup.html';let stream=null,detecting=false;
+function msg(t,e){feedback.textContent=t;feedback.className='form-message '+(e?'is-error':'is-success')}
+function tokenFromPayload(raw){try{const u=new URL(String(raw||'').trim());if(u.protocol!=='shnomano:'||u.hostname!=='friend')return'';return u.searchParams.get('token')||''}catch(_){return''}}
+async function submitQr(raw){const token=tokenFromPayload(raw);if(!token){msg('هذا ليس رمز صداقة صالحاً من شنو منو.',true);return}stopCamera();try{const d=await SocialAPI.request('/api/friends/qr/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});msg(d.message||'تم إرسال طلب الصداقة.')}catch(e){msg(e.message||'تعذر إرسال طلب الصداقة.',true)}}
+async function loadQr(){expiry.textContent='جارٍ إنشاء الرمز…';try{const d=await SocialAPI.request('/api/friends/qr');qrImage.src=d.imageDataUrl;expiry.textContent='رمز آمن مؤقت؛ تنتهي صلاحيته بعد '+Math.round((d.expiresInSeconds||600)/60)+' دقائق.'}catch(e){expiry.textContent='تعذر إنشاء الرمز.';msg(e.message,true)}}
+function stopCamera(){detecting=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}video.classList.remove('active');video.srcObject=null}
+async function browserScan(){if(!('BarcodeDetector'in window)){msg('ماسح المتصفح غير مدعوم؛ اختر صورة QR بدلاً منه.',true);return}try{const detector=new BarcodeDetector({formats:['qr_code']});stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=stream;video.classList.add('active');await video.play();detecting=true;const tick=async()=>{if(!detecting)return;try{const codes=await detector.detect(video);if(codes[0]?.rawValue){await submitQr(codes[0].rawValue);return}}catch(_){}requestAnimationFrame(tick)};tick()}catch(e){stopCamera();msg('تعذر تشغيل الكاميرا. يمكنك اختيار صورة QR.',true)}}
+document.getElementById('scanQr').onclick=()=>{if(window.ShnoManoNative&&typeof window.ShnoManoNative.scanFriendQr==='function')window.ShnoManoNative.scanFriendQr();else browserScan()};
+window.handleNativeFriendQr=submitQr;
+document.getElementById('qrFile').onchange=async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!('BarcodeDetector'in window)){msg('قراءة QR من الصورة غير مدعومة في هذا الجهاز.',true);return}try{const bitmap=await createImageBitmap(file),codes=await new BarcodeDetector({formats:['qr_code']}).detect(bitmap);bitmap.close();if(codes[0]?.rawValue)await submitQr(codes[0].rawValue);else msg('لم يتم العثور على QR في الصورة.',true)}catch(_){msg('تعذر قراءة صورة QR.',true)}finally{e.target.value=''}};
+document.getElementById('refreshQr').onclick=loadQr;
+document.getElementById('shareInvite').onclick=async()=>{try{if(navigator.share)await navigator.share({title:'شنو منو تك تك',text:'تعال ويانا إلى شنو منو تك تك 🇮🇶',url:inviteUrl});else{await navigator.clipboard.writeText(inviteUrl);msg('تم نسخ رابط الدعوة.')}}catch(e){if(e.name!=='AbortError')msg('تعذر فتح المشاركة.',true)}};
+document.getElementById('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(inviteUrl);msg('تم نسخ رابط الدعوة.')}catch(_){msg('تعذر نسخ الرابط.',true)}};
+document.getElementById('pickContacts').onclick=async()=>{if(!navigator.contacts?.select){msg('اختيار جهات الاتصال غير مدعوم؛ استخدم رابط الدعوة.',true);return}try{const contacts=await navigator.contacts.select(['name','tel'],{multiple:true});list.innerHTML='';contacts.forEach(c=>{const row=document.createElement('div'),copy=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small'),button=document.createElement('button');row.className='contact-row';strong.textContent=c.name?.[0]||'جهة اتصال';small.textContent=c.tel?.[0]||'';button.className='small-button';button.type='button';button.textContent='دعوة';button.onclick=()=>navigator.share?navigator.share({text:'تعال ويانا إلى شنو منو تك تك 🇮🇶',url:inviteUrl}):navigator.clipboard.writeText(inviteUrl);copy.append(strong,small);row.append(copy,button);list.append(row)});if(!contacts.length)msg('لم تختر أي جهة اتصال.')}catch(e){if(e.name!=='AbortError')msg('لم نتمكن من قراءة الجهات المختارة.',true)}};
+addEventListener('pagehide',stopCamera);loadQr();
+}());
+</script>
+</body>
+</html>
