@@ -20,6 +20,14 @@
     document.head.appendChild(themePages);
   }
 
+  if (!document.querySelector('link[data-post-spacing]')) {
+    var postSpacing = document.createElement('link');
+    postSpacing.rel = 'stylesheet';
+    postSpacing.href = 'post-spacing.css?v=20260913-1';
+    postSpacing.setAttribute('data-post-spacing', '1');
+    document.head.appendChild(postSpacing);
+  }
+
   if (!document.querySelector('script[data-shno-media-cache]')) {
     var mediaCache = document.createElement('script');
     mediaCache.src = 'media-cache.js?v=20260912-2';
