@@ -6,15 +6,22 @@
   var saved='';
   try{saved=localStorage.getItem(KEY)||localStorage.getItem(LEGACY_KEY)||'';}catch(e){}
 
-  /* New product default: daylight mode. Existing users keep their explicit choice. */
   var theme=saved==='dark'?'dark':'light';
 
   if(!document.querySelector('link[data-theme-light-fixes]')){
     var fixes=document.createElement('link');
     fixes.rel='stylesheet';
-    fixes.href='theme-light-fixes.css?v=20260913-5';
+    fixes.href='theme-light-fixes.css?v=20260913-6';
     fixes.setAttribute('data-theme-light-fixes','1');
     document.head.appendChild(fixes);
+  }
+
+  if(!document.querySelector('link[data-theme-pages]')){
+    var pages=document.createElement('link');
+    pages.rel='stylesheet';
+    pages.href='theme-pages.css?v=20260913-1';
+    pages.setAttribute('data-theme-pages','1');
+    document.head.appendChild(pages);
   }
 
   function persist(next){
