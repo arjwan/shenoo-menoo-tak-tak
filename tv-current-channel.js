@@ -1,0 +1,5 @@
+(function(){'use strict';
+function playlists(){try{return JSON.parse(localStorage.getItem('taktak_tv_playlists')||'{}')}catch(_){return {}}}
+function saveById(id){if(!id)return;const parts=String(id).split('::');if(parts.length<2)return;const group=parts.shift(),name=parts.join('::');const all=playlists();for(const [playlistName,groups] of Object.entries(all)){const url=groups&&groups[group]&&groups[group][name];if(url){localStorage.setItem('taktak_tv_current_channel',JSON.stringify({name,url,group,playlist:playlistName,updatedAt:Date.now()}));window.dispatchEvent(new CustomEvent('taktak-tv-channel-change',{detail:{name,url,group,playlist:playlistName}}));return;}}}
+document.addEventListener('click',function(e){const item=e.target.closest('[data-id]');if(item&&e.target.closest('[data-play-channel]'))setTimeout(()=>saveById(item.dataset.id),50);});
+})();
