@@ -9,11 +9,13 @@ if(!track)return;
 let items=[];
 let index=0;
 let timer=null;
+window.__officialTickerActive=false;
 
 const typeLabel={notice:'تنبيه',guidance:'توجيه',ad:'إعلان'};
 const typeIcon={notice:'🔔',guidance:'📌',ad:'📢'};
 
 function setTicker(item){
+  window.__officialTickerActive=Boolean(item);
   if(!item){
     track.textContent=DEFAULT_MESSAGE;
     if(label)label.textContent='شنو منو TV';
@@ -59,6 +61,7 @@ async function refresh(){
   }
 }
 
+window.BroadcastTicker={refresh,isOfficialActive:()=>Boolean(window.__officialTickerActive)};
 refresh();
 setInterval(refresh,60000);
 
