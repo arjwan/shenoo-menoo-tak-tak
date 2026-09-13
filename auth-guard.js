@@ -101,7 +101,7 @@
 
   if (!document.querySelector('script[data-platform-upgrades]')) {
     var upgrades = document.createElement('script');
-    upgrades.src = 'platform-upgrades.js?v=20260913-2';
+    upgrades.src = 'platform-upgrades.js?v=20260913-3';
     upgrades.defer = true;
     upgrades.setAttribute('data-platform-upgrades', '1');
     document.head.appendChild(upgrades);
