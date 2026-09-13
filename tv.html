@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f172a">
   <title>شنو منو TV</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="tv.css?v=20260907-2">
+  <link rel="stylesheet" href="tv.css?v=20260913-3">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
@@ -15,6 +15,7 @@
   <div class="player-header">
     <h2><i class="fas fa-tv"></i> شنو منو TV</h2>
     <div class="header-actions">
+      <button class="room-badge" type="button" data-group-mode>👥 مشاهدة جماعية</button>
       <button class="room-badge is-active" type="button" data-individual-mode aria-pressed="true">👤 مشاهدة فردية</button>
       <a class="btn btn-outline" href="taktak.html">⬅ رجوع</a>
     </div>
@@ -29,8 +30,8 @@
     </div>
     <div class="custom-video-bar">
       <button type="button" class="icon-control" data-play-pause title="تشغيل/إيقاف"><i class="fas fa-play"></i></button>
-      <button type="button" class="icon-control" data-mute title="كتم الصوت"><i class="fas fa-volume-high"></i></button>
-      <input class="volume-range" type="range" min="0" max="100" value="80" aria-label="مستوى الصوت" data-volume>
+      <button type="button" class="icon-control" data-mute title="كتم صوت القناة"><i class="fas fa-volume-high"></i></button>
+      <input class="volume-range" type="range" min="0" max="100" value="80" aria-label="مستوى صوت القناة" data-volume>
       <span class="volume-value" data-volume-value>80%</span>
       <span class="now-playing" data-now-title>لم يتم اختيار قناة</span>
       <button type="button" class="icon-control" data-fit title="ملاءمة الصورة"><i class="fas fa-up-right-and-down-left-from-center"></i></button>
@@ -44,13 +45,42 @@
     <label class="btn btn-warning file-input-wrapper"><i class="fas fa-folder-open"></i> ملف فيديو<input type="file" accept="video/*" data-video-file></label>
     <button class="btn btn-outline" type="button" data-volume-down><i class="fas fa-volume-low"></i> خفض</button>
     <button class="btn btn-outline" type="button" data-volume-up><i class="fas fa-volume-high"></i> رفع</button>
-    <button class="btn btn-outline" type="button" data-chat-toggle><i class="fas fa-comments"></i> الرسائل</button>
-    <button class="btn btn-outline" type="button" data-voice><i class="fas fa-microphone"></i> الصوت</button>
     <div class="size-controls">
       <button type="button" data-size="max" title="ملء الشاشة"><i class="fas fa-expand"></i></button>
-      <button type="button" data-size="min" title="تصغير"><i class="fas fa-compress"></i></button>
+      <button type="button" data-size="min" title="الخروج من ملء الشاشة"><i class="fas fa-compress"></i></button>
     </div>
   </div>
+
+  <section class="collective-stack" hidden data-collective>
+    <section class="collective-card collective-status">
+      <div><strong>👥 غرفة المشاهدة الجماعية</strong><small data-room-status>جارٍ الاتصال بالغرفة...</small></div>
+      <div class="voice-live"><span class="voice-dot"></span><span data-voice-state>الصوت الجماعي تلقائي</span></div>
+    </section>
+
+    <section class="collective-card">
+      <div class="card-title"><strong>👥 المشاهدون</strong><span data-viewer-count>0</span></div>
+      <div class="viewer-list" data-viewers></div>
+      <div class="moderation-bar" hidden data-moderation>
+        <button class="mini-btn" type="button" data-mute-selected>🔇 كتم المحددين</button>
+        <button class="mini-btn danger" type="button" data-mute-all>🔇 كتم الكل</button>
+        <button class="mini-btn" type="button" data-clear-selection>إلغاء التحديد</button>
+      </div>
+    </section>
+
+    <section class="collective-card">
+      <div class="card-title"><strong>💬 الرسائل الحية</strong></div>
+      <div class="tv-messages" data-messages><div class="empty-row">لا توجد رسائل بعد.</div></div>
+      <form class="tv-message-form" data-message-form>
+        <input type="text" maxlength="2000" placeholder="اكتب رسالة..." data-message-input>
+        <button type="submit">إرسال</button>
+      </form>
+    </section>
+
+    <section class="collective-card" hidden data-requests-card>
+      <div class="card-title"><strong>✋ طلبات الانضمام</strong><span data-request-count>0</span></div>
+      <div class="request-list" data-requests></div>
+    </section>
+  </section>
 </div>
 
 <div class="channel-menu-overlay" data-menu-overlay>
@@ -87,12 +117,8 @@
   </div>
 </div>
 
-<section class="tv-chat" hidden data-chat>
-  <header><strong>رسائل غرفة المشاهدة</strong><button type="button" data-chat-close>×</button></header>
-  <div class="tv-chat-body"><p>سيتم ربط الرسائل الحية بخدمة غرفة TV.</p></div>
-  <form><input type="text" placeholder="اكتب رسالة..." disabled><button disabled>إرسال</button></form>
-</section>
-
-<script src="tv.js?v=20260907-2"></script>
+<script src="social-api.js"></script>
+<script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script>
+<script src="tv.js?v=20260913-3"></script>
 </body>
 </html>
