@@ -58,6 +58,15 @@ function normalizeBirthDate(value) {
 }
 function requestIp(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
 
+router.get('/registration-config', (_req, res) => {
+  return res.json({
+    ok: true,
+    otpRequired: registrationOtpRequired(),
+    phoneRequired: true,
+    developerCanCreateWithoutPhone: true
+  });
+});
+
 router.post('/signup', async (req, res) => {
   const ip = requestIp(req);
   const retryAfter = rateLimit(signupAttempts, ip, SIGNUP_WINDOW_MS, SIGNUP_MAX_ATTEMPTS);
