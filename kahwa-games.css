@@ -77,3 +77,10 @@ body.native-game-fullscreen{overflow:hidden}body.native-game-fullscreen #kahwa-g
 .game-voice>[data-vcontrols] span{min-width:20px;text-align:center;font-size:10px}
 .game-voice.is-collapsed>[data-vcontrols]{display:none}.game-voice.is-collapsed{border-radius:50%;padding:3px}
 @media(max-width:600px){.game-voice{left:6px;bottom:6px}.game-voice>[data-vtoggle],.game-voice>[data-vcontrols] button{width:31px;height:31px}}
+
+/* Top game and voice control row */
+body.domino-active .game-voice{top:76px;bottom:auto;left:12px;right:auto}
+.voice-room-controls{display:flex;gap:3px}.voice-room-controls button{width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important}
+.voice-room-controls [data-start-room]{background:#087c5d!important;border-color:#55f2c3!important}.voice-room-controls [data-close-room]{background:#702d2d!important;border-color:#ff8d8d!important}
+body.native-game-fullscreen .game-voice{top:7px}
+@media(max-width:700px){body.domino-active .game-voice{top:7px;left:6px}}
