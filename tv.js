@@ -40,7 +40,10 @@ const peers={},participants=new Map(),selected=new Set(),speaking=new Set();
 function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function absolute(url){return url&&(/^https?:/i.test(url)?url:SocialAPI.baseUrl+url);}
 function getPlaylists(){try{return JSON.parse(localStorage.getItem('taktak_tv_playlists')||'{}')}catch(e){return {}}}
-function savePlaylists(v){localStorage.setItem('taktak_tv_playlists',JSON.stringify(v));}
+let playlistSyncTimer=null;
+function savePlaylists(v,sync=true){localStorage.setItem('taktak_tv_playlists',JSON.stringify(v));if(sync&&window.SocialAPI&&SocialAPI.token()){clearTimeout(playlistSyncTimer);playlistSyncTimer=setTimeout(()=>SocialAPI.request('/api/users/me/tv-playlists',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({playlists:v})}).catch(()=>{}),500);}}
+async function restoreAccountPlaylists(){if(!window.SocialAPI||!SocialAPI.token()||!navigator.onLine)return;try{const data=await SocialAPI.request('/api/users/me/tv-playlists'),remote=data.playlists||{},local=getPlaylists();if(Object.keys(remote).length){localStorage.setItem('taktak_tv_playlists',JSON.stringify(remote));updatePlaylistSelector();render();}else if(Object.keys(local).length)savePlaylists(local,true);}catch(_e){}}
+
 function ensureDefault(){const p=getPlaylists();if(!Object.keys(p).length){p['قنواتي']={};savePlaylists(p);}return p;}
 function updatePlaylistSelector(){const p=ensureDefault();const names=Object.keys(p);const old=playlistSelect.value;playlistSelect.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');playlistSelect.value=names.includes(old)?old:names[0];}
 function currentPlaylist(){const p=ensureDefault();return p[playlistSelect.value]||{};}
@@ -107,5 +110,5 @@ if(socket){
 }
 addEventListener('beforeunload',leaveVoice);
 if(localStorage.getItem('taktak_tv_mode')==='collective'&&roomId)activateGroupMode();else activateIndividualMode();
-updatePlaylistSelector();render();
+updatePlaylistSelector();render();restoreAccountPlaylists();addEventListener('online',restoreAccountPlaylists);
 })();
