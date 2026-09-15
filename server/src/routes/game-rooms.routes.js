@@ -243,7 +243,17 @@ router.delete('/:id/join', async (req, res) => {
 
 router.post('/:id/start', async (req, res) => {
   const room = await loadRoom(req.params.id);
-  if (!room || String(room.owner) !== String(req.user._id)) return res.status(403).json({ ok: false, message: 'مالك الغرفة فقط يستطيع بدء اللعبة' });
+  if (!room) return res.status(404).json({ ok: false, message: 'الغرفة غير موجودة' });
+  const requesterId = String(req.user._id);
+  const playerIds = (room.players || []).map(String);
+  const ownerId = String(room.owner || '');
+  const ownerStillPlaying = playerIds.includes(ownerId);
+  const requesterIsFirstPlayer = playerIds[0] === requesterId;
+  if (!ownerStillPlaying && requesterIsFirstPlayer) {
+    room.owner = req.user._id;
+    room.markModified('owner');
+  }
+  if (String(room.owner) !== requesterId) return res.status(403).json({ ok: false, message: 'مالك الغرفة فقط يستطيع بدء اللعبة' });
   if (room.players.length < 2) return res.status(409).json({ ok: false, message: 'تحتاج لاعبين على الأقل' });
   const gameType = room.gameType || 'domino';
   const supported = ['domino', 'tawla', 'chess', 'cards'];
