@@ -33,8 +33,11 @@ function mark(c){
 }
 function pick(n,c){
  var legal=actions();
- if(selected!==null){var choices=legal.filter(a=>a.type==='move'&&a.from===selected&&a.to===n);if(choices.length){if(choices.length===1)return act(choices[0]);var die=choices[0].die;return act(choices.find(a=>a.die===die)||choices[0])}}
- if(legal.some(a=>a.type==='move'&&a.from===n)){selected=n;mark(c)}else{selected=null;mark(c);notice('اختر حجرًا مضيئًا',true)}
+ if(selected!==null){var choices=legal.filter(a=>a.type==='move'&&a.from===selected&&a.to===n);if(choices.length)return act(choices[0])}
+ var direct=legal.filter(a=>a.type==='move'&&a.to===n);
+ if(selected===null&&direct.length===1)return act(direct[0]);
+ if(legal.some(a=>a.type==='move'&&a.from===n)){selected=n;mark(c);notice('اختر الخانة المضيئة للانتقال')}
+ else{selected=null;mark(c);notice('اختر الحجر المضيء ثم مكان الانتقال',true)}
 }
 window.kahwaTawlaUI={mount:render,render:render,bindActions:function(){},setLegalActions:function(){},showSuccess:s=>notice(s),showError:s=>notice(s,true),destroy:function(){document.body.classList.remove('tawla-active')}};
 })();
