@@ -7,9 +7,19 @@ function pip(n){var h='<span class="dom-pips p'+n+'">';for(var i=0;i<n;i++)h+='<
 function tile(t,cls,attrs){return '<button type="button" class="dom-tile '+(t.a===t.b?'is-double ':'')+(cls||'')+'" '+(attrs||'')+' aria-label="حجر '+t.a+' '+t.b+'"><span>'+pip(t.a)+'</span><em></em><span>'+pip(t.b)+'</span></button>'}
 function legalFor(t,state){return(state.legalActions||[]).filter(function(a){return a.type==='place'&&a.tile&&a.tile.id===t.id})}
 function notice(s,error){var e=document.getElementById('domino-status');if(e){e.textContent=s;e.className='dom-notice '+(error?'bad':'good')}}
+function stoneSound(type){
+ try{
+  var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  var ac=stoneSound.ac||(stoneSound.ac=new AC()),now=ac.currentTime,g=ac.createGain(),o=ac.createOscillator();
+  if(ac.state==='suspended')ac.resume();
+  o.type='triangle';o.frequency.setValueAtTime(type==='draw'?210:155,now);o.frequency.exponentialRampToValueAtTime(type==='draw'?95:62,now+.075);
+  g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(type==='draw'?.12:.22,now+.006);g.gain.exponentialRampToValueAtTime(.0001,now+.1);
+  o.connect(g);g.connect(ac.destination);o.start(now);o.stop(now+.11);
+ }catch(_e){}
+}
 async function act(action){
  if(busy)return;busy=true;notice('جارٍ تنفيذ الحركة…');
- try{await SocialAPI.request('/api/game-rooms/'+current.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});notice('تمت الحركة');if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}
+ try{await SocialAPI.request('/api/game-rooms/'+current.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});stoneSound(action.type);notice('تمت الحركة');if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}
  catch(e){notice(e.message||'تعذرت الحركة',true)}
  finally{busy=false}
 }
