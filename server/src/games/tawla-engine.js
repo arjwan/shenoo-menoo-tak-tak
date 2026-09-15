@@ -52,14 +52,27 @@ function advance(s){
 }
 function createGame(params={}){
  const players=(params.playerIds||['p1','p2']).map(String).slice(0,2);
- return{engine:'tawla',version:2,status:'waiting',turn:players[0],players,board:setupBoard(),
+ const preferred=params.preferredStarter&&players.includes(String(params.preferredStarter))?String(params.preferredStarter):null;
+ return{engine:'tawla',version:3,status:'waiting',turn:preferred,players,board:setupBoard(),
   bar:{white:0,black:0},home:{white:0,black:0},dice:[0,0],remainingMoves:[],rolled:false,
-  finished:false,winner:null,moveCount:0,scores:params.scores||{},roundNumber:Number(params.roundNumber)||1,
+  opening:{resolved:Boolean(preferred),rolls:{}},finished:false,winner:null,moveCount:0,scores:params.scores||{},roundNumber:Number(params.roundNumber)||1,
   lastRound:params.lastRound||null,createdAt:new Date()}
 }
 function applyAction(s,userId,action={}){
  userId=String(userId);
  if(s.status!=='active')return{error:'اللعبة غير نشطة'};
+ s.opening=s.opening||{resolved:true,rolls:{}};
+ if(!s.opening.resolved){
+  if(action.type!=='opening-roll')return{error:'يجب إكمال رمية البداية أولًا'};
+  if(s.opening.rolls[userId])return{error:'أنت رميت رمية البداية بالفعل'};
+  s.opening.rolls[userId]=rollDie();
+  if(Object.keys(s.opening.rolls).length===s.players.length){
+   const a=s.opening.rolls[s.players[0]],b=s.opening.rolls[s.players[1]];
+   if(a===b){s.opening.rolls={};return{ok:true,tie:true}}
+   s.turn=a>b?s.players[0]:s.players[1];s.dice=[a,b];s.remainingMoves=[a,b];s.rolled=true;s.opening.resolved=true;
+  }
+  return{ok:true}
+ }
  if(String(s.turn)!==userId)return{error:'ليس دورك'};
  const c=colorOf(s,userId),opp=other(c);
  if(action.type==='roll'){
@@ -86,10 +99,13 @@ function applyAction(s,userId,action={}){
  return{ok:true}
 }
 function getLegalActions(s,userId){
- if(s.status!=='active'||String(s.turn)!==String(userId))return[];
+ if(s.status!=='active')return[];
+ s.opening=s.opening||{resolved:true,rolls:{}};
+ if(!s.opening.resolved)return s.opening.rolls[String(userId)]?[]:[{type:'opening-roll'}];
+ if(String(s.turn)!==String(userId))return[];
  if(!s.rolled)return[{type:'roll'}];return legalMoves(s,String(userId))
 }
-function getPublicState(s){return{status:s.status,turn:s.turn,players:s.players,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
+function getPublicState(s){return{status:s.status,turn:s.turn,players:s.players,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,opening:s.opening||{resolved:true,rolls:{}},scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
 function getPrivateState(s,userId){return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
 function isFinished(s){return!!s.finished}
 function getWinner(s){return s.winner||null}
