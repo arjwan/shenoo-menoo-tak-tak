@@ -33,8 +33,10 @@ function render(c,x){
  if(players.length<2){selected=null;legal=[];moveActions=[];sources=[];canRoll=false}document.body.classList.add('tawla-active');
  var top='',bottom='';for(var i=12;i<24;i++)top+=point(pub,i,true);for(var j=11;j>=0;j--)bottom+=point(pub,j,false);
  var names=players.map((p,i)=>'<div><b>'+(i?'⚫ ':'⚪ ')+esc(p.name||p.displayName||p.username||'لاعب')+(id(p)===String(x.me)?' (أنت)':'')+'</b><small>'+(opening.resolved?Number((pub.scores||{})[id(p)]||0)+' نقطة':opening.rolls[id(p)]?'رمية البداية: '+openingText(opening.rolls[id(p)]):'بانتظار الرمية')+'</small></div>').join('');
- c.innerHTML='<section class="tawla-table"><header><strong>طاولي</strong><span>'+(players.length<2?'بانتظار اللاعب الثاني':pub.status==='finished'?'انتهت الجولة':priv.turn?'دورك':'انتظر دور اللاعب الآخر')+'</span></header><div class="tawla-players">'+names+'</div><div class="tawla-board"><div class="tawla-row top">'+top+'</div><div class="tawla-bar"><button data-bar="black">وسط الأسود <b>'+(pub.bar&&pub.bar.black||0)+'</b></button><div class="tawla-dice"><button data-roll '+(canRoll?'':'disabled')+'>'+(canRoll?(openingRoll?'🎲 رمية البداية':'🎲 ارْمِ الزهر'):'🎲')+'</button><i>'+(dice[0]||'–')+'</i><i>'+(dice[1]||'–')+'</i><small>'+((pub.remainingMoves||[]).length?'المتبقي: '+pub.remainingMoves.join('، '):'')+'</small></div><button data-bar="white">وسط الأبيض <b>'+(pub.bar&&pub.bar.white||0)+'</b></button></div><div class="tawla-row bottom">'+bottom+'</div></div><div class="tawla-home"><button data-home="black">بيت الأسود <b>'+(pub.home&&pub.home.black||0)+'</b></button><button data-home="white">بيت الأبيض <b>'+(pub.home&&pub.home.white||0)+'</b></button></div><p class="tawla-notice">'+(players.length<2?'بانتظار انضمام اللاعب الثاني وبدء اللعبة':!opening.resolved?'كل لاعب يرمي النردين، وصاحب المجموع الأعلى يبدأ وينفذ الرقمين':priv.myColor==='white'?'أنت الأبيض وتتحرك نحو الخانة 1':'أنت الأسود وتتحرك نحو الخانة 24')+'</p></section>';
- c.querySelector('[data-roll]').onclick=function(){if(canRoll){sound();act({type:openingRoll?'opening-roll':'roll'})}};
+ var stageText=players.length<2?'بانتظار اللاعب الثاني':!opening.resolved?(openingRoll?'🎲 ارمِ نردي البداية':'انتظر رمية اللاعب الآخر'):legal.some(a=>a.type==='roll')?'🎲 ارمِ الزهر':priv.turn?'دورك: اختر الحجر المضيء':'انتظر دور اللاعب الآخر';
+ var stageControl=canRoll?'<button type="button" class="tawla-main-action" data-main-roll>'+stageText+'</button>':'<span>'+stageText+'</span>';
+ c.innerHTML='<section class="tawla-table"><header><strong>طاولي</strong><span>'+(pub.status==='finished'?'<span>انتهت الجولة</span>':stageControl)+'</span></header><div class="tawla-players">'+names+'</div><div class="tawla-board"><div class="tawla-row top">'+top+'</div><div class="tawla-bar"><button data-bar="black">وسط الأسود <b>'+(pub.bar&&pub.bar.black||0)+'</b></button><div class="tawla-dice"><button data-roll '+(canRoll?'':'disabled')+'>'+(canRoll?(openingRoll?'🎲 رمية البداية':'🎲 ارْمِ الزهر'):'🎲')+'</button><i>'+(dice[0]||'–')+'</i><i>'+(dice[1]||'–')+'</i><small>'+((pub.remainingMoves||[]).length?'المتبقي: '+pub.remainingMoves.join('، '):'')+'</small></div><button data-bar="white">وسط الأبيض <b>'+(pub.bar&&pub.bar.white||0)+'</b></button></div><div class="tawla-row bottom">'+bottom+'</div></div><div class="tawla-home"><button data-home="black">بيت الأسود <b>'+(pub.home&&pub.home.black||0)+'</b></button><button data-home="white">بيت الأبيض <b>'+(pub.home&&pub.home.white||0)+'</b></button></div><p class="tawla-notice">'+(players.length<2?'بانتظار انضمام اللاعب الثاني وبدء اللعبة':!opening.resolved?'كل لاعب يرمي النردين، وصاحب المجموع الأعلى يبدأ وينفذ الرقمين':priv.myColor==='white'?'أنت الأبيض وتتحرك نحو الخانة 1':'أنت الأسود وتتحرك نحو الخانة 24')+'</p></section>';
+ c.querySelectorAll('[data-roll],[data-main-roll]').forEach(function(btn){btn.onclick=function(){if(canRoll){sound();act({type:openingRoll?'opening-roll':'roll'})}}});
  c.querySelectorAll('[data-point]').forEach(function(el){
   el.onclick=function(e){if(!window.PointerEvent||e.detail===0)pick(Number(el.dataset.point),c)};
   el.onpointerenter=function(){if(el.classList.contains('can-from'))el.classList.add('is-touched')};
@@ -51,7 +53,12 @@ function mark(c){
  c.querySelectorAll('[data-home]').forEach(function(el){el.classList.toggle('can-to',selected!==null&&actions().some(a=>a.type==='move'&&a.from===selected&&a.to==='home'))})
 }
 function pick(n,c){
- var legal=actions();
+ var legal=actions(),pub=ctx.state&&ctx.state.public||{},opening=pub.opening||{resolved:true};
+ if(!legal.some(a=>a.type==='move')){
+  if(!opening.resolved)return notice(legal.some(a=>a.type==='opening-roll')?'اضغط «ارمِ نردي البداية» أولًا':'انتظر اللاعب الآخر حتى يرمي نردي البداية',true);
+  if(legal.some(a=>a.type==='roll'))return notice('اضغط «ارمِ الزهر» قبل اختيار الحجر',true);
+  return notice('انتظر دور اللاعب الآخر',true)
+ }
  if(selected!==null){var choices=legal.filter(a=>a.type==='move'&&a.from===selected&&a.to===n);if(choices.length)return act(choices[0])}
  var direct=legal.filter(a=>a.type==='move'&&a.to===n);
  if(selected===null&&direct.length===1)return act(direct[0]);
