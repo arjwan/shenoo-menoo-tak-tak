@@ -23,7 +23,13 @@ function render(c,x){
  var names=players.map((p,i)=>'<div><b>'+(i?'⚫ ':'⚪ ')+esc(p.name||p.displayName||p.username||'لاعب')+'</b><small>'+(opening.resolved?Number((pub.scores||{})[id(p)]||0)+' نقطة':opening.rolls[id(p)]?'رمية البداية: '+opening.rolls[id(p)]:'بانتظار الرمية')+'</small></div>').join('');
  c.innerHTML='<section class="tawla-table"><header><strong>طاولي</strong><span>'+(pub.status==='finished'?'انتهت الجولة':priv.turn?'دورك':'انتظر دور اللاعب الآخر')+'</span></header><div class="tawla-players">'+names+'</div><div class="tawla-board"><div class="tawla-row top">'+top+'</div><div class="tawla-bar"><button data-bar="black">وسط الأسود <b>'+(pub.bar&&pub.bar.black||0)+'</b></button><div class="tawla-dice"><button data-roll '+(canRoll?'':'disabled')+'>'+(canRoll?(openingRoll?'🎲 رمية البداية':'🎲 ارْمِ الزهر'):'🎲')+'</button><i>'+(dice[0]||'–')+'</i><i>'+(dice[1]||'–')+'</i><small>'+((pub.remainingMoves||[]).length?'المتبقي: '+pub.remainingMoves.join('، '):'')+'</small></div><button data-bar="white">وسط الأبيض <b>'+(pub.bar&&pub.bar.white||0)+'</b></button></div><div class="tawla-row bottom">'+bottom+'</div></div><div class="tawla-home"><button data-home="black">بيت الأسود <b>'+(pub.home&&pub.home.black||0)+'</b></button><button data-home="white">بيت الأبيض <b>'+(pub.home&&pub.home.white||0)+'</b></button></div><p class="tawla-notice">'+(!opening.resolved?'كل لاعب يرمي مرة، وصاحب الرقم الأعلى يبدأ':priv.myColor==='white'?'أنت الأبيض وتتحرك نحو الخانة 1':'أنت الأسود وتتحرك نحو الخانة 24')+'</p></section>';
  c.querySelector('[data-roll]').onclick=function(){if(canRoll){sound();act({type:openingRoll?'opening-roll':'roll'})}};
- c.querySelectorAll('[data-point]').forEach(function(el){el.onclick=function(){pick(Number(el.dataset.point),c)}});
+ c.querySelectorAll('[data-point]').forEach(function(el){
+  el.onclick=function(){pick(Number(el.dataset.point),c)};
+  el.onpointerenter=function(){if(el.classList.contains('can-from'))el.classList.add('is-touched')};
+  el.onpointerleave=function(){el.classList.remove('is-touched')};
+  el.onpointerdown=function(){if(el.classList.contains('can-from'))el.classList.add('is-touched')};
+  el.onpointerup=el.onpointercancel=function(){el.classList.remove('is-touched')};
+ });
  c.querySelectorAll('[data-bar]').forEach(function(el){el.onclick=function(){if(el.dataset.bar===priv.myColor&&legal.some(a=>a.from==='bar')){selected='bar';mark(c)}}});
  c.querySelectorAll('[data-home]').forEach(function(el){el.onclick=function(){if(selected!==null){var a=legal.find(a=>a.type==='move'&&a.from===selected&&a.to==='home');if(a)act(a)}}});
 }
