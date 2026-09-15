@@ -7,6 +7,17 @@ function setupBoard(){
  ];
  setup.forEach(([p,c,n])=>b[p][c]=n);return b
 }
+function repairState(s){
+ s.bar=s.bar||{white:0,black:0};s.home=s.home||{white:0,black:0};
+ const valid=Array.isArray(s.board)&&s.board.length===24;
+ const total=valid?s.board.reduce((n,p)=>n+Number(p&&p.white||0)+Number(p&&p.black||0),0):0;
+ const alreadyPlayed=Number(s.moveCount||0)>0||Number(s.home.white||0)+Number(s.home.black||0)>0||Number(s.bar.white||0)+Number(s.bar.black||0)>0;
+ if((!valid||total===0)&&!alreadyPlayed)s.board=setupBoard();
+ s.dice=Array.isArray(s.dice)&&s.dice.length===2?s.dice:[0,0];
+ s.remainingMoves=Array.isArray(s.remainingMoves)?s.remainingMoves:[];
+ s.opening=s.opening||{resolved:false,rolls:{}};
+ return s
+}
 function other(c){return c==='white'?'black':'white'}
 function colorOf(s,userId){return String(s.players[0])===String(userId)?'white':'black'}
 function rollDie(){return 1+Math.floor(Math.random()*6)}
@@ -63,13 +74,13 @@ function advance(s){
 function createGame(params={}){
  const players=(params.playerIds||['p1','p2']).map(String).slice(0,2);
  const preferred=params.preferredStarter&&players.includes(String(params.preferredStarter))?String(params.preferredStarter):null;
- return{engine:'tawla',version:4,status:'waiting',turn:preferred,players,board:setupBoard(),
+ return{engine:'tawla',version:5,status:'waiting',turn:preferred,players,board:setupBoard(),
   bar:{white:0,black:0},home:{white:0,black:0},dice:[0,0],remainingMoves:[],rolled:false,
   opening:{resolved:Boolean(preferred),rolls:{}},finished:false,winner:null,moveCount:0,scores:params.scores||{},roundNumber:Number(params.roundNumber)||1,
   lastRound:params.lastRound||null,createdAt:new Date()}
 }
 function applyAction(s,userId,action={}){
- userId=String(userId);
+ repairState(s);userId=String(userId);
  normalizeOpeningTurn(s);
  if(s.status!=='active')return{error:'اللعبة غير نشطة'};
  s.opening=s.opening||{resolved:true,rolls:{}};
@@ -111,15 +122,15 @@ function applyAction(s,userId,action={}){
  return{ok:true}
 }
 function getLegalActions(s,userId){
- normalizeOpeningTurn(s);
+ repairState(s);normalizeOpeningTurn(s);
  if(s.status!=='active')return[];
  s.opening=s.opening||{resolved:true,rolls:{}};
  if(!s.opening.resolved)return s.opening.rolls[String(userId)]?[]:[{type:'opening-roll'}];
  if(String(s.turn)!==String(userId))return[];
  if(!s.rolled)return[{type:'roll'}];return legalMoves(s,String(userId))
 }
-function getPublicState(s){return{status:s.status,turn:s.turn,players:s.players,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,opening:s.opening||{resolved:true,rolls:{}},scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
-function getPrivateState(s,userId){normalizeOpeningTurn(s);return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
+function getPublicState(s){repairState(s);return{status:s.status,turn:s.turn,players:s.players,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,opening:s.opening||{resolved:true,rolls:{}},scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
+function getPrivateState(s,userId){repairState(s);normalizeOpeningTurn(s);return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
 function isFinished(s){return!!s.finished}
 function getWinner(s){return s.winner||null}
 function serialize(s){return JSON.stringify(getPublicState(s))}
