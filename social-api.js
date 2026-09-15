@@ -6,7 +6,7 @@
     : window.location.origin;
 
   function getToken() {
-    return localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    return sessionStorage.getItem("token") || localStorage.getItem("token") || "";
   }
 
   async function request(path, options) {
