@@ -84,3 +84,14 @@ body.domino-active .game-voice{top:76px;bottom:auto;left:12px;right:auto}
 .voice-room-controls [data-start-room]{background:#087c5d!important;border-color:#55f2c3!important}.voice-room-controls [data-close-room]{background:#702d2d!important;border-color:#ff8d8d!important}
 body.native-game-fullscreen .game-voice{top:7px}
 @media(max-width:700px){body.domino-active .game-voice{top:7px;left:6px}}
+
+/* Phone landscape: prevent top controls, scores and player cards overlapping */
+@media (max-height:650px) and (orientation:landscape){
+ body.domino-active .game-voice{top:5px;left:5px;padding:3px;gap:2px}
+ .game-voice>[data-vtoggle],.game-voice>[data-vcontrols] button,.voice-room-controls button{width:27px!important;height:27px!important;font-size:12px!important}
+ .game-voice>[data-vcontrols]{gap:2px}.game-voice>[data-vcontrols] span{font-size:8px;min-width:14px}
+ .dom-hud{top:42px;right:8px;left:8px}.dom-scores>small{font-size:10px;margin-bottom:2px}.dom-score-card,.dom-stock{width:64px;height:52px;padding:3px;border-radius:10px}.dom-score-card b,.dom-stock b{max-width:58px;font-size:9px}.dom-score-card strong,.dom-stock strong{font-size:15px;line-height:15px}.dom-stock{top:13px}
+ .dom-player.pos-0{top:29%;right:10px;left:auto;transform:none;min-width:105px;max-width:120px;padding:5px 7px}.dom-player.pos-0 b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dom-player.pos-0 small{font-size:9px}.dom-player.pos-0 .dom-backs i{width:12px;height:22px}
+ .dom-topbar{top:7px;right:10px}.dom-topbar span{font-size:11px}.dom-chain{top:43%;min-height:92px}.dom-self{bottom:4px}.dom-self small{font-size:10px;margin-bottom:0}.dom-hand{padding:5px}
+ .dom-notice{bottom:92px;font-size:10px}
+}
