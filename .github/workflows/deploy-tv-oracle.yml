@@ -28,9 +28,9 @@ jobs:
         env:
           DEPLOY_SHA: ${{ github.sha }}
         with:
-          host: ${{ secrets.ORACLE_HOST }}
-          username: ${{ secrets.ORACLE_USER }}
-          key: ${{ secrets.ORACLE_SSH_KEY }}
+          host: 130.110.115.101
+          username: opc
+          key: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
           envs: DEPLOY_SHA
           script_stop: true
           script: |
