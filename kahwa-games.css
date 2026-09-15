@@ -167,7 +167,7 @@ body.tawla-active .play-stage{padding:0;background:transparent;border:0}body.taw
  body.tawla-active .chat-popup,body.tawla-active [data-chat-popup]{position:fixed!important;z-index:90!important;right:5px!important;bottom:5px!important;max-width:min(280px,75vw)!important;max-height:42dvh!important;overflow:auto!important}
 }
 @media (max-width:520px) and (orientation:portrait){
- body.tawla-active .tawla-table{grid-template-rows:auto auto auto auto 1fr;align-content:start}
+ body.tawla-active .tawla-table{grid-template-rows:auto auto auto auto auto;align-content:start;height:auto!important;max-height:100dvh!important}
  body.tawla-active .tawla-board{width:calc(100vw - 8px)!important;height:auto!important;max-height:none!important;aspect-ratio:1.55/1}
  body.tawla-active .tawla-row{height:50%!important}
  body.tawla-active .tawla-point i{width:clamp(13px,4.4vw,20px);height:clamp(13px,4.4vw,20px)}
