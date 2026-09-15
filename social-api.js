@@ -21,7 +21,7 @@
   }
 
   async function request(path, options) {
-    var config = Object.assign({}, options || {});
+    var config = Object.assign({ cache: "no-store" }, options || {});
     config.headers = Object.assign({ Accept: "application/json" }, config.headers || {});
 
     var token = getToken();
@@ -48,7 +48,10 @@
     }
   }
 
-  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL, version: "2026.09.15.offline6" };
+  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL, version: "2026.09.16.identity7" };
+  if ("caches" in window) {
+    caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return /^shenoo-(mall-shell|shell|offline)-v[1-5]$/.test(k);}).map(function(k){return caches.delete(k);}));}).catch(function(){});
+  }
   if ("serviceWorker" in navigator && window.location.protocol === "https:") {
     window.addEventListener("load", function () {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).then(function (registration) {
