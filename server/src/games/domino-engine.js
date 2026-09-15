@@ -49,6 +49,9 @@ function createGame(params = {}) {
     finished: false,
     winner: null,
     moveCount: 0,
+    scores: params.scores && typeof params.scores === 'object' ? { ...params.scores } : {},
+    roundNumber: Math.max(1, Number(params.roundNumber) || 1),
+    lastRound: params.lastRound || null,
     createdAt: new Date()
   };
 }
@@ -85,7 +88,8 @@ function applyAction(state, userId, action) {
     const drawn = state.stock.splice(0, 1)[0];
     state.hands[userId].push(drawn);
     state.moveCount += 1;
-    state.turn = state.players[(state.players.indexOf(userId) + 1) % state.players.length];
+    // The same player keeps drawing until a playable tile appears or stock is empty.
+    state.turn = userId;
     return { ok: true };
   }
   if (action.type === 'pass') {
@@ -121,7 +125,13 @@ function applyAction(state, userId, action) {
       // Visual rotation handled by UI; server just keeps data
     }
     // Check winning
-    if (state.hands[userId].length === 0) { state.status = 'finished'; state.winner = userId; state.finished = true; }
+    if (state.hands[userId].length === 0) {
+      const points = state.players.filter(p => p !== userId).reduce((sum, p) => sum + totalPips(state.hands[p] || []), 0);
+      state.scores = state.scores || {};
+      state.scores[userId] = Number(state.scores[userId] || 0) + points;
+      state.lastRound = { winner: userId, points, roundNumber: state.roundNumber || 1, remaining: state.players.filter(p => p !== userId).map(p => ({ player: p, points: totalPips(state.hands[p] || []) })) };
+      state.status = 'finished'; state.winner = userId; state.finished = true;
+    }
     else {
       // Check if blocked for next player
       const next = state.turn = state.players[(state.players.indexOf(userId) + 1) % state.players.length];
@@ -133,6 +143,10 @@ function applyAction(state, userId, action) {
         for (const p of state.players) scores[p] = totalPips(state.hands[p] || []);
         let lowest = state.players[0];
         for (const p of state.players) if (scores[p] < scores[lowest]) lowest = p;
+        const points = state.players.filter(p => p !== lowest).reduce((sum, p) => sum + totalPips(state.hands[p] || []), 0);
+        state.scores = state.scores || {};
+        state.scores[lowest] = Number(state.scores[lowest] || 0) + points;
+        state.lastRound = { winner: lowest, points, roundNumber: state.roundNumber || 1, blocked: true, remaining: state.players.filter(p => p !== lowest).map(p => ({ player: p, points: totalPips(state.hands[p] || []) })) };
         state.status = 'finished'; state.winner = lowest; state.finished = true;
       } else {
         state.turn = next;
@@ -155,7 +169,10 @@ function getPublicState(state) {
     stockCount: (state.stock || []).length,
     moveCount: state.moveCount,
     finished: state.finished,
-    winner: state.winner
+    winner: state.winner,
+    scores: state.scores || {},
+    roundNumber: state.roundNumber || 1,
+    lastRound: state.lastRound || null
   };
 }
 function getPrivateState(state, userId) {
