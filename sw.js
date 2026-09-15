@@ -1,4 +1,4 @@
-var CACHE_NAME="shenoo-offline-v5";
+var CACHE_NAME="shenoo-offline-v6";
 var CORE=[
  "index.html","signin.html","signup.html","taktak.html","messages.html","friends.html",
  "game-room.html","kahwa-games.css","kahwa-tawla-v2.js","kahwa-domino-ui.js",
@@ -22,22 +22,17 @@ self.addEventListener("fetch",function(event){
  var url=new URL(event.request.url);
  if(url.origin!==self.location.origin)return;
  if(url.pathname.indexOf("/api/")===0||url.pathname.indexOf("/socket.io/")===0)return;
- if(event.request.mode==="navigate"){
-  event.respondWith(fetch(event.request).then(function(response){
-   if(response&&response.ok)caches.open(CACHE_NAME).then(function(cache){cache.put(event.request,response.clone());});
-   return response;
-  }).catch(function(){
+ event.respondWith(fetch(event.request,{cache:"no-store"}).then(function(response){
+  if(response&&response.ok)caches.open(CACHE_NAME).then(function(cache){cache.put(event.request,response.clone());});
+  return response;
+ }).catch(function(){
+  return caches.match(event.request).then(function(exact){
+   if(exact)return exact;
    return caches.match(event.request,{ignoreSearch:true}).then(function(cached){
-    return cached||caches.match("taktak.html")||caches.match("index.html");
+    if(cached)return cached;
+    if(event.request.mode==="navigate")return caches.match("taktak.html").then(function(home){return home||caches.match("index.html");});
+    return new Response("",{status:503,statusText:"Offline"});
    });
-  }));
-  return;
- }
- event.respondWith(caches.match(event.request,{ignoreSearch:true}).then(function(cached){
-  var network=fetch(event.request).then(function(response){
-   if(response&&response.ok)caches.open(CACHE_NAME).then(function(cache){cache.put(event.request,response.clone());});
-   return response;
-  }).catch(function(){return cached;});
-  return cached||network;
+  });
  }));
 });
