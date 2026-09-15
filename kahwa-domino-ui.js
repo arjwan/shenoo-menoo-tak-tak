@@ -14,7 +14,7 @@
     render: function (container, ctx) {
       var state = (ctx && ctx.state) || {};
       var hand = (state.private && state.private.hand) || [];
-      var chain = (state.public && state.public.chain) || [];
+      var chain = (state.public && state.public.chain) || (state.private && state.private.chain) || [];
       var myTurn = !!(state.private && state.private.turn);
       var status = (state.public && state.public.status) || 'waiting';
 
@@ -151,6 +151,4 @@
     destroy: function () { /* cleanup not needed for simple DOM */ }
   };
 
-  // Expose globally
-  window.kahwaDominoUI = kahwaDominoUI;
 })();
