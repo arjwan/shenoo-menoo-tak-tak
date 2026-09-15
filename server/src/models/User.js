@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
   phoneVisibility: { type: String, enum: ['nobody', 'all_friends', 'selected_friends'], default: 'nobody' },
   phoneVisibleTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  tvPlaylists: { type: mongoose.Schema.Types.Mixed, default: {} },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   reviewedAt: { type: Date, default: null }
 }, { timestamps: true });
