@@ -180,7 +180,7 @@ router.get('/:id', async (req, res) => {
     const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(engineState) : (engineState && engineState.public ? engineState.public : engineState);
     extra.engineState = { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] };
   }
-  res.json({ ok: true, room: { ...base, ...extra } });
+  res.json({ ok: true, viewerId: String(req.user._id), room: { ...base, ...extra } });
 });
 
 router.post('/:id/reserve', async (req, res) => {
@@ -311,6 +311,11 @@ router.patch('/:id/settings', async (req, res) => {
     room.scoreTarget = target;
   }
   await room.save(); emitRoom(req, room); res.json({ ok: true, room: publicState(await decorate(room)) });
+});
+
+router.delete('/', async (req, res) => {
+  const result = await GameRoom.updateMany({ owner: req.user._id, isActive: { $ne: false } }, { $set: { isActive: false, 'gameState.status': 'finished', 'gameState.updatedAt': new Date() } });
+  res.json({ ok: true, deleted: Number(result.modifiedCount || 0), message: 'تم حذف جميع غرفك' });
 });
 
 router.delete('/:id', async (req, res) => {
