@@ -1,8 +1,10 @@
-var CACHE_NAME = "shenoo-mall-shell-v3";
+var CACHE_NAME = "shenoo-shell-v4";
 var SHELL = [
   "mall.html", "stores.html", "store.html", "store-create.html", "store-dashboard.html",
   "mall.css", "mall-pages.css", "mall.js", "offline-store.js", "stores.js", "store.js",
-  "store-create.js", "store-dashboard.js"
+  "store-create.js", "store-dashboard.js",
+  "tv.html", "tv.css", "tv.js", "tv-current-channel.js", "tv-room-mode.js",
+  "tv-chat-popup.js", "broadcast-ticker-client.js", "tv-controls-autohide.js", "social-api.js"
 ];
 
 self.addEventListener("install", function (event) {
