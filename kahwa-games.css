@@ -68,3 +68,12 @@ body.domino-active #kahwa-game-stage{width:100%;margin:0}
 @media(max-width:600px){.game-voice{bottom:6px;gap:3px;padding:5px}.game-voice button{padding:7px;font-size:11px}.game-voice span{font-size:10px}}
 
 body.native-game-fullscreen{overflow:hidden}body.native-game-fullscreen #kahwa-game-stage{position:fixed!important;z-index:70;inset:0;width:100vw;height:100vh;background:#061514}body.native-game-fullscreen .domino-table{box-sizing:border-box;width:100%;height:100%;min-height:100vh;border-radius:0}
+
+/* Compact collapsible game voice dock */
+.game-voice{left:12px;right:auto;bottom:12px;transform:none;border-radius:16px;padding:5px;gap:4px}
+.game-voice>[data-vtoggle]{width:34px;height:34px;padding:0;border-radius:50%;font-size:16px}
+.game-voice>[data-vcontrols]{display:flex;align-items:center;gap:3px}
+.game-voice>[data-vcontrols] button{width:34px;height:34px;padding:0;border-radius:50%;font-size:15px}
+.game-voice>[data-vcontrols] span{min-width:20px;text-align:center;font-size:10px}
+.game-voice.is-collapsed>[data-vcontrols]{display:none}.game-voice.is-collapsed{border-radius:50%;padding:3px}
+@media(max-width:600px){.game-voice{left:6px;bottom:6px}.game-voice>[data-vtoggle],.game-voice>[data-vcontrols] button{width:31px;height:31px}}
