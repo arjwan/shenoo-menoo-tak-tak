@@ -265,10 +265,10 @@ router.post('/:id/start', async (req, res) => {
       const previousWinner = previousEngineState.winner || null;
       const state = engine.createGame({
         playerIds: room.players.map(String),
-        preferredStarter: gameType === 'domino' ? previousWinner : null,
-        scores: gameType === 'domino' ? (previousEngineState.scores || {}) : undefined,
-        roundNumber: gameType === 'domino' ? (Number(previousEngineState.roundNumber || 0) + 1) : undefined,
-        lastRound: gameType === 'domino' ? (previousEngineState.lastRound || null) : undefined
+        preferredStarter: ['domino', 'tawla'].includes(gameType) ? previousWinner : null,
+        scores: ['domino', 'tawla'].includes(gameType) ? (previousEngineState.scores || {}) : undefined,
+        roundNumber: ['domino', 'tawla'].includes(gameType) ? (Number(previousEngineState.roundNumber || 0) + 1) : undefined,
+        lastRound: ['domino', 'tawla'].includes(gameType) ? (previousEngineState.lastRound || null) : undefined
       });
       room.gameState.engineState = state;
       room.gameState.engineState.status = 'active';
