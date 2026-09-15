@@ -1,137 +1,32 @@
 // Server-authoritative standard tawla (backgammon) engine.
 function emptyBoard(){return Array.from({length:24},()=>({white:0,black:0}))}
-function setupBoard(){
- const b=emptyBoard(),setup=[
-  [0,'black',2],[11,'black',5],[16,'black',3],[18,'black',5],
-  [23,'white',2],[12,'white',5],[7,'white',3],[5,'white',5]
- ];
- setup.forEach(([p,c,n])=>b[p][c]=n);return b
+function setupBoard(){const b=emptyBoard(),setup=[[0,'black',2],[11,'black',5],[16,'black',3],[18,'black',5],[23,'white',2],[12,'white',5],[7,'white',3],[5,'white',5]];setup.forEach(([p,c,n])=>b[p][c]=n);return b}
+function ensureColors(s){
+ s.colors=s.colors||{};const p0=String(s.players&&s.players[0]||''),p1=String(s.players&&s.players[1]||'');
+ if(p0&&p1){const a=s.colors[p0],b=s.colors[p1];if(!['white','black'].includes(a)||!['white','black'].includes(b)||a===b){s.colors={[p0]:'white',[p1]:'black'}}}
+ return s.colors
 }
-function repairState(s){
- s.bar=s.bar||{white:0,black:0};s.home=s.home||{white:0,black:0};
- const valid=Array.isArray(s.board)&&s.board.length===24;
- const total=valid?s.board.reduce((n,p)=>n+Number(p&&p.white||0)+Number(p&&p.black||0),0):0;
- const alreadyPlayed=Number(s.moveCount||0)>0||Number(s.home.white||0)+Number(s.home.black||0)>0||Number(s.bar.white||0)+Number(s.bar.black||0)>0;
- if((!valid||total===0)&&!alreadyPlayed)s.board=setupBoard();
- s.dice=Array.isArray(s.dice)&&s.dice.length===2?s.dice:[0,0];
- s.remainingMoves=Array.isArray(s.remainingMoves)?s.remainingMoves:[];
- s.opening=s.opening||{resolved:false,rolls:{}};
- return s
-}
+function repairState(s){s.bar=s.bar||{white:0,black:0};s.home=s.home||{white:0,black:0};const valid=Array.isArray(s.board)&&s.board.length===24;const total=valid?s.board.reduce((n,p)=>n+Number(p&&p.white||0)+Number(p&&p.black||0),0):0;const alreadyPlayed=Number(s.moveCount||0)>0||Number(s.home.white||0)+Number(s.home.black||0)>0||Number(s.bar.white||0)+Number(s.bar.black||0)>0;if((!valid||total===0)&&!alreadyPlayed)s.board=setupBoard();s.dice=Array.isArray(s.dice)&&s.dice.length===2?s.dice:[0,0];s.remainingMoves=Array.isArray(s.remainingMoves)?s.remainingMoves:[];s.opening=s.opening||{resolved:false,rolls:{}};ensureColors(s);return s}
 function other(c){return c==='white'?'black':'white'}
-function colorOf(s,userId){return String(s.players[0])===String(userId)?'white':'black'}
-function rollDie(){return 1+Math.floor(Math.random()*6)}
-function rollPair(){return[rollDie(),rollDie()]}
-function rollTotal(r){return Array.isArray(r)?Number(r[0]||0)+Number(r[1]||0):Number(r||0)}
-function movesFromRoll(r){return r[0]===r[1]?[r[0],r[0],r[0],r[0]]:[...r]}
-function direction(c){return c==='white'?-1:1}
-function homeRange(c){return c==='white'?[0,5]:[18,23]}
-function allInHome(s,c){
- if(s.bar[c])return false;const [lo,hi]=homeRange(c);
- return s.board.every((p,i)=>!p[c]||(i>=lo&&i<=hi))
-}
-function canBearOff(s,c,from,die){
- if(!allInHome(s,c))return false;
- const target=from+direction(c)*die;
- if(c==='white'){
-  if(target===-1)return true;if(target>-1)return false;
-  return !s.board.some((p,i)=>i>from&&i<=5&&p.white>0)
- }
- if(target===24)return true;if(target<24)return false;
- return !s.board.some((p,i)=>i<from&&i>=18&&p.black>0)
-}
-function entryPoint(c,die){return c==='white'?24-die:die-1}
-function openPoint(s,c,to){return to>=0&&to<24&&s.board[to][other(c)]<2}
-function movesForDie(s,c,die){
- const moves=[];
- if(s.bar[c]>0){
-  const to=entryPoint(c,die);if(openPoint(s,c,to))moves.push({type:'move',from:'bar',to,die});return moves
- }
- for(let from=0;from<24;from++){
-  if(!s.board[from][c])continue;const to=from+direction(c)*die;
-  if(to>=0&&to<24){if(openPoint(s,c,to))moves.push({type:'move',from,to,die})}
-  else if(canBearOff(s,c,from,die))moves.push({type:'move',from,to:'home',die})
- }
- return moves
-}
-function legalMoves(s,userId){
- if(s.status!=='active'||String(s.turn)!==String(userId)||!s.rolled)return[];
- const c=colorOf(s,userId),out=[];
- [...new Set(s.remainingMoves||[])].forEach(d=>out.push(...movesForDie(s,c,d)));
- return out
-}
-function normalizeOpeningTurn(s){
- if(!s.opening||!s.opening.resolved||Number(s.moveCount||0)!==0||!s.rolled)return;
- const rolls=s.opening.rolls||{},ra=rolls[String(s.players[0])],rb=rolls[String(s.players[1])];
- if(!Array.isArray(ra)||!Array.isArray(rb))return;
- const a=rollTotal(ra),b=rollTotal(rb);
- if(a&&b&&a!==b){s.turn=a>b?s.players[0]:s.players[1];s.opening.winner=String(s.turn);const win=a>b?ra:rb;s.dice=[...win];s.remainingMoves=movesFromRoll(win)}
-}
-function advance(s){
- s.turn=s.players[(s.players.findIndex(p=>String(p)===String(s.turn))+1)%s.players.length];
- s.dice=[0,0];s.remainingMoves=[];s.rolled=false
-}
-function createGame(params={}){
- const players=(params.playerIds||['p1','p2']).map(String).slice(0,2);
- const preferred=params.preferredStarter&&players.includes(String(params.preferredStarter))?String(params.preferredStarter):null;
- return{engine:'tawla',version:5,status:'waiting',turn:preferred,players,board:setupBoard(),
-  bar:{white:0,black:0},home:{white:0,black:0},dice:[0,0],remainingMoves:[],rolled:false,
-  opening:{resolved:Boolean(preferred),rolls:{}},finished:false,winner:null,moveCount:0,scores:params.scores||{},roundNumber:Number(params.roundNumber)||1,
-  lastRound:params.lastRound||null,createdAt:new Date()}
-}
-function applyAction(s,userId,action={}){
- repairState(s);userId=String(userId);
- normalizeOpeningTurn(s);
- if(s.status!=='active')return{error:'اللعبة غير نشطة'};
- s.opening=s.opening||{resolved:true,rolls:{}};
- if(!s.opening.resolved){
-  if(action.type!=='opening-roll')return{error:'يجب إكمال رمية البداية أولًا'};
-  if(s.opening.rolls[userId])return{error:'أنت رميت رمية البداية بالفعل'};
-  s.opening.rolls[userId]=rollPair();
-  if(Object.keys(s.opening.rolls).length===s.players.length){
-   const ra=s.opening.rolls[s.players[0]],rb=s.opening.rolls[s.players[1]],a=rollTotal(ra),b=rollTotal(rb);
-   if(a===b){s.opening.rolls={};return{ok:true,tie:true}}
-   s.turn=a>b?s.players[0]:s.players[1];s.opening.winner=String(s.turn);
-   const winningRoll=a>b?ra:rb;s.dice=[...winningRoll];s.remainingMoves=movesFromRoll(winningRoll);s.rolled=true;s.opening.resolved=true;
-  }
-  return{ok:true}
- }
- if(String(s.turn)!==userId)return{error:'ليس دورك'};
- const c=colorOf(s,userId),opp=other(c);
- if(action.type==='roll'){
-  if(s.rolled)return{error:'تم رمي الزهر بالفعل'};
-  s.dice=rollPair();s.remainingMoves=movesFromRoll(s.dice);s.rolled=true;
-  if(!legalMoves(s,userId).length)advance(s);return{ok:true}
- }
- if(action.type!=='move')return{error:'حركة غير معروفة'};
- const legal=legalMoves(s,userId),from=action.from==='bar'?'bar':Number(action.from),to=action.to==='home'?'home':Number(action.to),die=Number(action.die);
- const move=legal.find(m=>m.from===from&&m.to===to&&m.die===die);
- if(!move)return{error:'هذه الحركة لا تطابق الزهر'};
- if(from==='bar')s.bar[c]-=1;else s.board[from][c]-=1;
- if(to==='home')s.home[c]+=1;else{
-  if(s.board[to][opp]===1){s.board[to][opp]=0;s.bar[opp]+=1}
-  s.board[to][c]+=1
- }
- const di=s.remainingMoves.indexOf(die);if(di>=0)s.remainingMoves.splice(di,1);s.moveCount+=1;
- if(s.home[c]>=15){
-  const points=s.home[opp]===0?2:1;s.finished=true;s.status='finished';s.winner=userId;s.scores=s.scores||{};
-  s.scores[userId]=Number(s.scores[userId]||0)+points;s.lastRound={winner:userId,points,roundNumber:s.roundNumber};
-  return{ok:true}
- }
- if(!s.remainingMoves.length||!legalMoves(s,userId).length)advance(s);
- return{ok:true}
-}
-function getLegalActions(s,userId){
- repairState(s);normalizeOpeningTurn(s);
- if(s.status!=='active')return[];
- s.opening=s.opening||{resolved:true,rolls:{}};
- if(!s.opening.resolved)return s.opening.rolls[String(userId)]?[]:[{type:'opening-roll'}];
- if(String(s.turn)!==String(userId))return[];
- if(!s.rolled)return[{type:'roll'}];return legalMoves(s,String(userId))
-}
-function getPublicState(s){repairState(s);return{status:s.status,turn:s.turn,players:s.players,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,opening:s.opening||{resolved:true,rolls:{}},scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
-function getPrivateState(s,userId){repairState(s);normalizeOpeningTurn(s);return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
-function isFinished(s){return!!s.finished}
-function getWinner(s){return s.winner||null}
-function serialize(s){return JSON.stringify(getPublicState(s))}
+function colorOf(s,userId){ensureColors(s);return s.colors[String(userId)]||null}
+function rollDie(){return 1+Math.floor(Math.random()*6)}function rollPair(){return[rollDie(),rollDie()]}function rollTotal(r){return Array.isArray(r)?Number(r[0]||0)+Number(r[1]||0):Number(r||0)}function movesFromRoll(r){return r[0]===r[1]?[r[0],r[0],r[0],r[0]]:[...r]}
+function direction(c){return c==='white'?-1:1}function homeRange(c){return c==='white'?[0,5]:[18,23]}
+function allInHome(s,c){if(s.bar[c])return false;const[lo,hi]=homeRange(c);return s.board.every((p,i)=>!p[c]||(i>=lo&&i<=hi))}
+function canBearOff(s,c,from,die){if(!allInHome(s,c))return false;const target=from+direction(c)*die;if(c==='white'){if(target===-1)return true;if(target>-1)return false;return!s.board.some((p,i)=>i>from&&i<=5&&p.white>0)}if(target===24)return true;if(target<24)return false;return!s.board.some((p,i)=>i<from&&i>=18&&p.black>0)}
+function entryPoint(c,die){return c==='white'?24-die:die-1}function openPoint(s,c,to){return to>=0&&to<24&&s.board[to][other(c)]<2}
+function movesForDie(s,c,die){const moves=[];if(s.bar[c]>0){const to=entryPoint(c,die);if(openPoint(s,c,to))moves.push({type:'move',from:'bar',to,die});return moves}for(let from=0;from<24;from++){if(!s.board[from][c])continue;const to=from+direction(c)*die;if(to>=0&&to<24){if(openPoint(s,c,to))moves.push({type:'move',from,to,die})}else if(canBearOff(s,c,from,die))moves.push({type:'move',from,to:'home',die})}return moves}
+function legalMoves(s,userId){if(s.status!=='active'||String(s.turn)!==String(userId)||!s.rolled)return[];const c=colorOf(s,userId);if(!c)return[];const out=[];[...new Set(s.remainingMoves||[])].forEach(d=>out.push(...movesForDie(s,c,d)));return out}
+function advance(s){s.turn=s.players[(s.players.findIndex(p=>String(p)===String(s.turn))+1)%s.players.length];s.dice=[0,0];s.remainingMoves=[];s.rolled=false}
+function createGame(params={}){const players=(params.playerIds||['p1','p2']).map(String).slice(0,2);const preferred=params.preferredStarter&&players.includes(String(params.preferredStarter))?String(params.preferredStarter):null;const colors={};if(players[0])colors[players[0]]='white';if(players[1])colors[players[1]]='black';return{engine:'tawla',version:6,status:'waiting',turn:preferred,players,colors,board:setupBoard(),bar:{white:0,black:0},home:{white:0,black:0},dice:[0,0],remainingMoves:[],rolled:false,opening:{resolved:Boolean(preferred),rolls:{},winner:preferred},finished:false,winner:null,moveCount:0,scores:params.scores||{},roundNumber:Number(params.roundNumber)||1,lastRound:params.lastRound||null,createdAt:new Date()}}
+function openingPlayer(s){const rolls=s.opening&&s.opening.rolls||{};if(!rolls[String(s.players[0])])return String(s.players[0]);if(!rolls[String(s.players[1])])return String(s.players[1]);return null}
+function applyAction(s,userId,action={}){repairState(s);userId=String(userId);if(s.status!=='active')return{error:'اللعبة غير نشطة'};s.opening=s.opening||{resolved:false,rolls:{}};
+ if(action.type==='choose-color'&&!s.opening.resolved&&Number(s.moveCount||0)===0){const wanted=action.color;if(!['white','black'].includes(wanted))return{error:'لون غير صالح'};const otherId=s.players.map(String).find(id=>id!==userId);if(!s.players.map(String).includes(userId))return{error:'أنت لست لاعبًا'};s.colors[userId]=wanted;if(otherId)s.colors[otherId]=other(wanted);return{ok:true,colors:s.colors}}
+ if(!s.opening.resolved){if(action.type!=='opening-roll')return{error:'يجب إكمال رمية البداية أولًا'};const expected=openingPlayer(s);if(expected!==userId)return{error:'انتظر رمية اللاعب الآخر'};s.opening.rolls[userId]=rollPair();if(Object.keys(s.opening.rolls).length===s.players.length){const ra=s.opening.rolls[String(s.players[0])],rb=s.opening.rolls[String(s.players[1])],a=rollTotal(ra),b=rollTotal(rb);if(a===b){s.opening.rolls={};s.turn=null;return{ok:true,tie:true}}s.turn=a>b?s.players[0]:s.players[1];s.opening.winner=String(s.turn);s.opening.resolved=true;s.dice=[0,0];s.remainingMoves=[];s.rolled=false}return{ok:true}}
+ if(String(s.turn)!==userId)return{error:'ليس دورك'};const c=colorOf(s,userId),opp=other(c);if(!c)return{error:'لم يتم تحديد لون اللاعب'};
+ if(action.type==='roll'){if(s.rolled)return{error:'تم رمي الزهر بالفعل'};s.dice=rollPair();s.remainingMoves=movesFromRoll(s.dice);s.rolled=true;if(!legalMoves(s,userId).length)advance(s);return{ok:true}}
+ if(action.type!=='move')return{error:'حركة غير معروفة'};const legal=legalMoves(s,userId),from=action.from==='bar'?'bar':Number(action.from),to=action.to==='home'?'home':Number(action.to),die=Number(action.die);const move=legal.find(m=>m.from===from&&m.to===to&&m.die===die);if(!move)return{error:'هذه الحركة لا تطابق الزهر'};if(from==='bar')s.bar[c]-=1;else s.board[from][c]-=1;if(to==='home')s.home[c]+=1;else{if(s.board[to][opp]===1){s.board[to][opp]=0;s.bar[opp]+=1}s.board[to][c]+=1}const di=s.remainingMoves.indexOf(die);if(di>=0)s.remainingMoves.splice(di,1);s.moveCount+=1;if(s.home[c]>=15){const points=s.home[opp]===0?2:1;s.finished=true;s.status='finished';s.winner=userId;s.scores=s.scores||{};s.scores[userId]=Number(s.scores[userId]||0)+points;s.lastRound={winner:userId,points,roundNumber:s.roundNumber};return{ok:true}}if(!s.remainingMoves.length||!legalMoves(s,userId).length)advance(s);return{ok:true}}
+function getLegalActions(s,userId){repairState(s);userId=String(userId);if(s.status!=='active')return[];if(!s.opening.resolved){const expected=openingPlayer(s),actions=[];if(expected===userId)actions.push({type:'opening-roll'});if(Number(s.moveCount||0)===0)actions.push({type:'choose-color',colors:['white','black']});return actions}if(String(s.turn)!==userId)return[];if(!s.rolled)return[{type:'roll'}];return legalMoves(s,userId)}
+function getPublicState(s){repairState(s);return{status:s.status,turn:s.turn,players:s.players,colors:s.colors,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,opening:s.opening,scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
+function getPrivateState(s,userId){repairState(s);return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
+function isFinished(s){return!!s.finished}function getWinner(s){return s.winner||null}function serialize(s){return JSON.stringify(getPublicState(s))}
 module.exports={createGame,getPublicState,getPrivateState,getLegalActions,applyAction,isFinished,getWinner,serialize};
