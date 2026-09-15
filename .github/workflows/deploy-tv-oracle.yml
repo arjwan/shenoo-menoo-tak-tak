@@ -23,19 +23,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      ORACLE_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+      ORACLE_KEY_B64: ${{ secrets.ORACLE_SSH_KEY_B64 }}
     steps:
-      - name: Prepare sanitized SSH key
+      - name: Prepare SSH key
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$ORACLE_KEY"
-          printf '%s\n' "$ORACLE_KEY" |
-            tr -d '\r' |
-            sed -n '/BEGIN OPENSSH PRIVATE KEY/,/END OPENSSH PRIVATE KEY/p' |
-            sed '1s/^\xEF\xBB\xBF//' > "$RUNNER_TEMP/oracle_key"
-          grep -q '^-----BEGIN OPENSSH PRIVATE KEY-----$' "$RUNNER_TEMP/oracle_key"
-          grep -q '^-----END OPENSSH PRIVATE KEY-----$' "$RUNNER_TEMP/oracle_key"
+          test -n "$ORACLE_KEY_B64"
+          printf '%s' "$ORACLE_KEY_B64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/oracle_key"
           chmod 600 "$RUNNER_TEMP/oracle_key"
           ssh-keygen -y -f "$RUNNER_TEMP/oracle_key" >/dev/null
           ssh-keyscan -H 130.110.115.101 > "$RUNNER_TEMP/known_hosts"
