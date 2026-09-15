@@ -1,67 +1,40 @@
 (function(){
-  'use strict';
-  window.kahwaTawlaUI = {
-    mount: function(c,ctx){
-      c.innerHTML='<div class="kahwa-board" style="background:linear-gradient(135deg,#061514,#0b1a15);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:14px;color:#fff;text-align:center;"><h3>🎲 طاولي <span style="color:#E0A83F">(لوحة حقيقية)</span></h3><div style="display:flex;justify-content:center;gap:12px;margin:10px 0;align-items:center;"><div id="tawla-dice" style="font-size:28px;font-weight:900;color:#fff;">🎲 ⚀ ⚁</div></div><div id="tawla-board" style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin:10px 0;background:#132824;padding:8px;border-radius:10px;"></div><div style="display:flex;gap:8px;justify-content:center;margin-top:10px;"><button id="btn-roll" class="kahwa-btn primary">🎲 رمي الزهر</button></div><div id="tawla-status" style="color:#91A39D;font-size:13px;margin-top:8px;"></div></div>';
-      this.render(c, ctx && ctx.state ? ctx.state : {});
-      (function(ui,self,ctx){
-        var btn=document.getElementById('btn-roll');
-        if(btn){
-          btn.addEventListener('click',async function(){
-            btn.disabled=true; btn.classList.add('loading');
-            try{
-              var roomId=(ctx&&ctx.roomId)?ctx.roomId:(new URLSearchParams(location.search)).get('room');
-              if(!roomId) throw new Error('no room');
-              var r=await window.SocialAPI.request('/api/game-rooms/'+roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'roll'})});
-              self.render(document.getElementById('kahwa-game-stage'),(r&&r.room&&r.room.engineState)?r.room.engineState:(r&&r.engineState?r.engineState:{}));
-              self.showSuccess('تم رمي الزهر');
-            }catch(e){self.showError(e.message||'خطأ');}
-            finally{btn.disabled=false;btn.classList.remove('loading');}
-          });
-        }
-      })(this,this,ctx);
-    },
-    render: function(c,state){
-      state = state || {};
-      var pub = state.public || state || {};
-      var priv = state.private || {};
-      var actions = state.legalActions || [];
-      var status = pub.status || 'waiting';
-      var turn = pub.turn || '—';
-      var board = pub.board || [];
-      var dice = pub.dice || [0,0];
-      var canRoll = actions.some(function(a){return a && a.type==='roll';});
-      document.getElementById('tawla-status').textContent = (status==='active' ? 'دور: ' + turn + ' | ' : '') + 'الحالة: ' + status;
-      document.getElementById('btn-roll').style.display = canRoll ? 'inline-block' : 'none';
-      document.getElementById('tawla-dice').innerHTML = (dice[0]&&dice[1]) ? '<span style="color:#E0A83F">' + dice[0] + '</span> <span style="color:#fff">' + dice[1] + '</span>' : '🎲 ⚀ ⚁';
-      var html = '';
-      // Top row points 1-12 (display as 12 points from right to left or standard; use simple 12 columns)
-      for(var i=0;i<12;i++){ html += this.renderPoint(pub, i, actions, true); }
-      // Bar / middle info
-      html += '<div style="grid-column:span 12;display:flex;justify-content:center;gap:20px;padding:4px;background:#0d1814;border-radius:6px;color:#fff;font-size:12px;"><span>Bar: W='+(pub.bar&&pub.bar.white||0)+' B='+(pub.bar&&pub.bar.black||0)+'</span><span>Home: W='+(pub.home&&pub.home.white||0)+' B='+(pub.home&&pub.home.black||0)+'</span></div>';
-      // Bottom row points 13-24
-      for(var j=12;j<24;j++){ html += this.renderPoint(pub, j, actions, false); }
-      document.getElementById('tawla-board').innerHTML = html;
-    },
-    renderPoint: function(pub, idx, actions, top){
-      var point = pub.board && pub.board[idx] ? pub.board[idx] : {white:0,black:0};
-      var w = point.white || 0, b = point.black || 0;
-      var isLegal = actions.some(function(a){ return a && (a.from===idx || a.to===idx); });
-      var bg = isLegal ? 'rgba(224,168,63,.25)' : '#1a2325';
-      var dots = '';
-      for(var i=0;i<w&&i<5;i++) dots += '<span style="display:inline-block;width:6px;height:6px;background:#fff;border-radius:50%;margin:1px;"></span>';
-      if(w>5) dots += '<span style="font-size:10px;color:#fff;">+'+(w-5)+'</span>';
-      for(var i=0;i<b&&i<5;i++) dots += '<span style="display:inline-block;width:6px;height:6px;background:#222;border:1px solid #E0A83F;border-radius:50%;margin:1px;"></span>';
-      if(b>5) dots += '<span style="font-size:10px;color:#E0A83F;">+'+(b-5)+'</span>';
-      return '<div style="background:'+bg+';border:1px solid #333;border-radius:6px;padding:4px;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;">'+(top?'<span style="font-size:10px;color:#91A39D;">'+(idx+1)+'</span>':'<span style="font-size:10px;color:#91A39D;">'+(idx+1)+'</span>')+'<div>'+dots+'</div></div>';
-    },
-    setLegalActions: function(a){
-      var btn = document.getElementById('btn-roll');
-      if(btn) btn.style.display = (a && a.some(function(x){return x&&x.type==='roll';})) ? 'inline-block' : 'none';
-    },
-    setLoading: function(v){ var b=document.getElementById('btn-roll'); if(b){b.disabled=!!v; b.classList.toggle('loading',!!v);} },
-    showSuccess: function(m){ var s=document.getElementById('tawla-status'); if(s){s.textContent='✓ '+m; s.style.color='#19D9A0'; setTimeout(function(){s.textContent='';},1800);} },
-    showError: function(m){ var s=document.getElementById('tawla-status'); if(s){s.textContent='✗ '+m; s.style.color='#FF4D4F'; setTimeout(function(){s.textContent='';},2500);} },
-    destroy: function(){}
-  };
+'use strict';
+var ctx=null,selected=null,busy=false;
+function id(x){return String(x&&x.id||x&&x._id||x||'')}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function actions(){return(ctx.state&&ctx.state.legalActions)||[]}
+function notice(s,bad){var e=document.querySelector('.tawla-notice');if(e){e.textContent=s;e.className='tawla-notice '+(bad?'bad':'good')}}
+function checker(color,n){var h='';for(var i=0;i<Math.min(n,5);i++)h+='<i class="'+color+'"></i>';if(n>5)h+='<b>'+n+'</b>';return h}
+function point(pub,n,top){
+ var p=pub.board&&pub.board[n]||{white:0,black:0},from=actions().some(a=>a.type==='move'&&a.from===n),to=selected&&actions().some(a=>a.type==='move'&&a.from===selected&&a.to===n);
+ return '<button class="tawla-point '+(top?'top ':'bottom ')+(from?'can-from ':'')+(to?'can-to ':'')+(selected===n?'selected':'')+'" data-point="'+n+'"><span>'+(n+1)+'</span><div>'+checker('white',p.white||0)+checker('black',p.black||0)+'</div></button>'
+}
+function sound(){try{var A=window.AudioContext||window.webkitAudioContext,a=sound.a||(sound.a=new A());a.resume();var o=a.createOscillator(),g=a.createGain(),t=a.currentTime;o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(80,t+.08);g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);o.connect(g);g.connect(a.destination);o.start();o.stop(t+.11)}catch(e){}}
+async function act(a){
+ if(busy)return;busy=true;
+ try{await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});sound();selected=null;if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}
+ catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}
+}
+function render(c,x){
+ ctx=x;var s=x.state||{},pub=s.public||{},priv=s.private||{},room=x.room||{},players=room.players||[],dice=pub.dice||[0,0],legal=actions(),canRoll=legal.some(a=>a.type==='roll');
+ document.body.classList.add('tawla-active');
+ var top='',bottom='';for(var i=12;i<24;i++)top+=point(pub,i,true);for(var j=11;j>=0;j--)bottom+=point(pub,j,false);
+ var names=players.map((p,i)=>'<div><b>'+(i?'⚫ ':'⚪ ')+esc(p.name||p.displayName||p.username||'لاعب')+'</b><small>'+Number((pub.scores||{})[id(p)]||0)+' نقطة</small></div>').join('');
+ c.innerHTML='<section class="tawla-table"><header><strong>طاولي</strong><span>'+(pub.status==='finished'?'انتهت الجولة':priv.turn?'دورك':'انتظر دور اللاعب الآخر')+'</span></header><div class="tawla-players">'+names+'</div><div class="tawla-board"><div class="tawla-row top">'+top+'</div><div class="tawla-bar"><button data-bar="black">وسط الأسود <b>'+(pub.bar&&pub.bar.black||0)+'</b></button><div class="tawla-dice"><button data-roll '+(canRoll?'':'disabled')+'>'+(canRoll?'🎲 ارْمِ الزهر':'🎲')+'</button><i>'+(dice[0]||'–')+'</i><i>'+(dice[1]||'–')+'</i><small>'+((pub.remainingMoves||[]).length?'المتبقي: '+pub.remainingMoves.join('، '):'')+'</small></div><button data-bar="white">وسط الأبيض <b>'+(pub.bar&&pub.bar.white||0)+'</b></button></div><div class="tawla-row bottom">'+bottom+'</div></div><div class="tawla-home"><button data-home="black">بيت الأسود <b>'+(pub.home&&pub.home.black||0)+'</b></button><button data-home="white">بيت الأبيض <b>'+(pub.home&&pub.home.white||0)+'</b></button></div><p class="tawla-notice">'+(priv.myColor==='white'?'أنت الأبيض وتتحرك نحو الخانة 1':'أنت الأسود وتتحرك نحو الخانة 24')+'</p></section>';
+ c.querySelector('[data-roll]').onclick=function(){if(canRoll){sound();act({type:'roll'})}};
+ c.querySelectorAll('[data-point]').forEach(function(el){el.onclick=function(){pick(Number(el.dataset.point),c)}});
+ c.querySelectorAll('[data-bar]').forEach(function(el){el.onclick=function(){if(el.dataset.bar===priv.myColor&&legal.some(a=>a.from==='bar')){selected='bar';mark(c)}}});
+ c.querySelectorAll('[data-home]').forEach(function(el){el.onclick=function(){if(selected!==null){var a=legal.find(a=>a.type==='move'&&a.from===selected&&a.to==='home');if(a)act(a)}}});
+}
+function mark(c){
+ c.querySelectorAll('[data-point]').forEach(function(el){var n=Number(el.dataset.point);el.classList.toggle('selected',selected===n);el.classList.toggle('can-to',selected!==null&&actions().some(a=>a.type==='move'&&a.from===selected&&a.to===n))});
+ c.querySelectorAll('[data-home]').forEach(function(el){el.classList.toggle('can-to',selected!==null&&actions().some(a=>a.type==='move'&&a.from===selected&&a.to==='home'))})
+}
+function pick(n,c){
+ var legal=actions();
+ if(selected!==null){var choices=legal.filter(a=>a.type==='move'&&a.from===selected&&a.to===n);if(choices.length){if(choices.length===1)return act(choices[0]);var die=choices[0].die;return act(choices.find(a=>a.die===die)||choices[0])}}
+ if(legal.some(a=>a.type==='move'&&a.from===n)){selected=n;mark(c)}else{selected=null;mark(c);notice('اختر حجرًا مضيئًا',true)}
+}
+window.kahwaTawlaUI={mount:render,render:render,bindActions:function(){},setLegalActions:function(){},showSuccess:s=>notice(s),showError:s=>notice(s,true),destroy:function(){document.body.classList.remove('tawla-active')}};
 })();
