@@ -1,25 +1,21 @@
-const domino = require('./domino-engine');
-const tawla = require('./tawla-engine');
-const chess = require('./chess-engine');
-const cards = require('./cards-engine');
-
-const registry = {
-  domino,
-  tawla,
-  chess,
-  cards
+const loaders = {
+  domino: () => require('./domino-engine'),
+  tawla: () => require('./tawla-engine'),
+  chess: () => require('./chess-engine'),
+  cards: () => require('./cards-engine')
 };
 
-function createGame(type, params = {}) {
-  const engine = registry[type];
-  if (!engine) throw new Error('Unknown game type: ' + type);
-  return engine.createGame(params);
-}
+const registry = {};
 
 function getEngine(type) {
-  const engine = registry[type];
-  if (!engine) throw new Error('Unknown game type: ' + type);
-  return engine;
+  const loader = loaders[type];
+  if (!loader) throw new Error('Unknown game type: ' + type);
+  if (!registry[type]) registry[type] = loader();
+  return registry[type];
 }
 
-module.exports = { registry, createGame, getEngine, listTypes: () => Object.keys(registry) };
+function createGame(type, params = {}) {
+  return getEngine(type).createGame(params);
+}
+
+module.exports = { registry, createGame, getEngine, listTypes: () => Object.keys(loaders) };
