@@ -37,5 +37,13 @@
     }
   }
 
-  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL, version: "2026.09.07.2" };
+  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL, version: "2026.09.15.offline5" };
+  if ("serviceWorker" in navigator && window.location.protocol === "https:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).then(function (registration) {
+        if (registration.waiting) registration.waiting.postMessage("SKIP_WAITING");
+        registration.update().catch(function () {});
+      }).catch(function () {});
+    });
+  }
 }(window));
