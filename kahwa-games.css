@@ -172,3 +172,7 @@ body.tawla-active .play-stage{padding:0;background:transparent;border:0}body.taw
  body.tawla-active .tawla-row{height:50%!important}
  body.tawla-active .tawla-point i{width:clamp(13px,4.4vw,20px);height:clamp(13px,4.4vw,20px)}
 }
+
+.tawla-main-action{border:1px solid #ffe099;border-radius:999px;padding:7px 14px;background:linear-gradient(135deg,#9b4d22,#d68b34);color:#fff7dc;font-weight:900;cursor:pointer;box-shadow:0 0 0 3px #ffce6330,0 4px 10px #0007;animation:tawlaActionPulse 1.4s ease-in-out infinite}
+@keyframes tawlaActionPulse{50%{transform:scale(1.04);box-shadow:0 0 0 6px #ffce6320,0 5px 14px #0008}}
+@media(max-width:700px){.tawla-main-action{padding:5px 9px;font-size:10px}}
