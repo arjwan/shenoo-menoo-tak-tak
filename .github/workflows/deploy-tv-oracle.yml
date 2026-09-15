@@ -22,29 +22,43 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      ORACLE_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
     steps:
+      - name: Prepare sanitized SSH key
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ORACLE_KEY"
+          printf '%s\n' "$ORACLE_KEY" |
+            tr -d '\r' |
+            sed -n '/BEGIN OPENSSH PRIVATE KEY/,/END OPENSSH PRIVATE KEY/p' |
+            sed '1s/^\xEF\xBB\xBF//' > "$RUNNER_TEMP/oracle_key"
+          grep -q '^-----BEGIN OPENSSH PRIVATE KEY-----$' "$RUNNER_TEMP/oracle_key"
+          grep -q '^-----END OPENSSH PRIVATE KEY-----$' "$RUNNER_TEMP/oracle_key"
+          chmod 600 "$RUNNER_TEMP/oracle_key"
+          ssh-keygen -y -f "$RUNNER_TEMP/oracle_key" >/dev/null
+          ssh-keyscan -H 130.110.115.101 > "$RUNNER_TEMP/known_hosts"
+
       - name: Deploy verified TV files
-        uses: appleboy/ssh-action@v1.2.0
+        shell: bash
         env:
           DEPLOY_SHA: ${{ github.sha }}
-        with:
-          host: 130.110.115.101
-          username: opc
-          key: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
-          envs: DEPLOY_SHA
-          script_stop: true
-          script: |
-            set -eu
-            DEPLOY_DIR="$(mktemp -d)"
-            trap 'rm -rf "$DEPLOY_DIR"' EXIT
-            for file in tv.html tv.css tv.js tv-chat-popup.js broadcast-ticker-client.js tv-room-mode.js tv-current-channel.js tv-controls-autohide.js; do
-              curl -fsSL --retry 3 "https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/$DEPLOY_SHA/$file" -o "$DEPLOY_DIR/$file"
-              test -s "$DEPLOY_DIR/$file"
-              sudo install -m 0644 "$DEPLOY_DIR/$file" "/usr/share/nginx/html/shno-mano/$file"
-            done
-            sudo restorecon -F /usr/share/nginx/html/shno-mano/tv.html /usr/share/nginx/html/shno-mano/tv.css /usr/share/nginx/html/shno-mano/tv.js /usr/share/nginx/html/shno-mano/tv-chat-popup.js /usr/share/nginx/html/shno-mano/broadcast-ticker-client.js /usr/share/nginx/html/shno-mano/tv-room-mode.js /usr/share/nginx/html/shno-mano/tv-current-channel.js /usr/share/nginx/html/shno-mano/tv-controls-autohide.js
-            sudo nginx -t
-            sudo systemctl reload nginx
-            curl -fsS --retry 5 https://shino-mino-tak-tak.duckdns.org/tv.html | grep -q 'data-ticker-track'
-            curl -fsS --retry 5 https://shino-mino-tak-tak.duckdns.org/tv-chat-popup.js | grep -q 'showComposer'
-            curl -fsS --retry 5 https://shino-mino-tak-tak.duckdns.org/api/health | grep -q '"ok":true'
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" opc@130.110.115.101             "DEPLOY_SHA='$DEPLOY_SHA' bash -se" <<'REMOTE'
+          set -eu
+          DEPLOY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$DEPLOY_DIR"' EXIT
+          for file in tv.html tv.css tv.js tv-chat-popup.js broadcast-ticker-client.js tv-room-mode.js tv-current-channel.js tv-controls-autohide.js; do
+            curl -fsSL --retry 3 "https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/$DEPLOY_SHA/$file" -o "$DEPLOY_DIR/$file"
+            test -s "$DEPLOY_DIR/$file"
+            sudo install -m 0644 "$DEPLOY_DIR/$file" "/usr/share/nginx/html/shno-mano/$file"
+          done
+          sudo restorecon -F /usr/share/nginx/html/shno-mano/tv.html /usr/share/nginx/html/shno-mano/tv.css /usr/share/nginx/html/shno-mano/tv.js /usr/share/nginx/html/shno-mano/tv-chat-popup.js /usr/share/nginx/html/shno-mano/broadcast-ticker-client.js /usr/share/nginx/html/shno-mano/tv-room-mode.js /usr/share/nginx/html/shno-mano/tv-current-channel.js /usr/share/nginx/html/shno-mano/tv-controls-autohide.js || true
+          sudo nginx -t
+          sudo systemctl reload nginx
+          curl -fsS --retry 5 https://shino-mino-tak-tak.duckdns.org/tv.html | grep -q 'data-ticker-track'
+          curl -fsS --retry 5 https://shino-mino-tak-tak.duckdns.org/tv-chat-popup.js | grep -q 'showComposer'
+          curl -fsS --retry 5 https://shino-mino-tak-tak.duckdns.org/api/health | grep -q '"ok":true'
+          REMOTE
