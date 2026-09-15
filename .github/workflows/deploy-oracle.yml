@@ -1,31 +1,9 @@
-name: Deploy verified OTP to Oracle
+name: Deploy Shno Mano to Oracle
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths:
-      - '.github/workflows/deploy-oracle.yml'
-      - 'taktak.html'
-      - 'taktak-feed.js'
-      - 'taktak-feed.css'
-      - 'taktak-viewers.js'
-      - 'taktak-viewers.css'
-      - 'reels.html'
-      - 'reels-v2.js'
-      - 'reels-v2.css'
-      - 'reels-media-extra.css'
-      - 'stories.html'
-      - 'stories-deck.js'
-      - 'social-actions-fix.css'
-      - 'taal-nsolf.html'
-      - 'communication-dock.js'
-      - 'communication-dock.css'
-      - 'auth-guard.js'
-      - 'server/src/models/Post.js'
-      - 'server/src/routes/posts.routes.js'
-      - 'server/src/routes/post-feed.routes.js'
-      - 'server/src/routes/media-direct.routes.js'
 
 permissions:
   contents: read
@@ -42,35 +20,27 @@ jobs:
       ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
       ORACLE_USER: ${{ secrets.ORACLE_USER }}
       ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
-      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      OTP_FROM_EMAIL: ${{ secrets.OTP_FROM_EMAIL }}
-      OTP_FROM_NAME: ${{ secrets.OTP_FROM_NAME }}
-      OTP_PEPPER: ${{ secrets.OTP_PEPPER }}
+
     steps:
-      - name: Verify required deployment secrets
+      - name: Verify Oracle deployment secrets
         shell: bash
         run: |
           set -euo pipefail
           missing=()
-          for name in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY OTP_FROM_EMAIL OTP_PEPPER; do
+          for name in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY; do
             if [ -z "${!name:-}" ]; then missing+=("$name"); fi
           done
-          if [ -z "${BREVO_API_KEY:-}" ] && [ -z "${RESEND_API_KEY:-}" ]; then
-            missing+=("BREVO_API_KEY_or_RESEND_API_KEY")
-          fi
           if [ "${#missing[@]}" -ne 0 ]; then
             echo "Missing required GitHub Actions secrets: ${missing[*]}"
             exit 1
           fi
-          echo "All required Oracle and OTP secret names are configured."
 
       - name: Checkout exact main revision
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Prepare SSH identity and OTP environment fragment
+      - name: Prepare SSH identity
         shell: bash
         run: |
           set -euo pipefail
@@ -79,80 +49,60 @@ jobs:
           chmod 600 "$RUNNER_TEMP/ssh/oracle_key"
           ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
           chmod 600 "$RUNNER_TEMP/ssh/known_hosts"
-          umask 077
-          {
-            printf 'OTP_DELIVERY_MODE=email\n'
-            printf 'OTP_TTL_MINUTES=10\n'
-            printf 'OTP_RESEND_SECONDS=60\n'
-            printf 'OTP_MAX_ATTEMPTS=5\n'
-            printf 'OTP_PEPPER=%s\n' "$OTP_PEPPER"
-            printf 'BREVO_API_KEY=%s\n' "$BREVO_API_KEY"
-            printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
-            printf 'OTP_FROM_EMAIL=%s\n' "$OTP_FROM_EMAIL"
-            printf 'OTP_FROM_NAME=%s\n' "${OTP_FROM_NAME:-شنو منو اتصال}"
-            printf 'CORS_ORIGINS=https://shino-mino-tak-tak.duckdns.org\n'
-          } > "$RUNNER_TEMP/otp.env"
 
-      - name: Copy protected OTP configuration
+      - name: Deploy main to Oracle
         shell: bash
         run: |
           set -euo pipefail
-          scp -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts"             "$RUNNER_TEMP/otp.env" "$ORACLE_USER@$ORACLE_HOST:/tmp/shno-mano-otp.env"
-
-      - name: Deploy server and web pages
-        shell: bash
-        run: |
-          set -euo pipefail
-          ssh -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts"             "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
+          ssh -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" \
+            "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
           set -euo pipefail
           project=/home/opc/shenoo-menoo-tak-tak
+          webroot=/usr/share/nginx/html/shno-mano
+
           test -d "$project/.git"
           cd "$project"
           git fetch origin main
+          git checkout main
           git pull --ff-only origin main
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
-          npm ci --omit=dev
 
-          umask 077
-          test -f .env
-          cp .env ".env.backup-$(date -u +%Y%m%dT%H%M%SZ)"
-          filtered="$(mktemp)"
-          grep -Ev '^(OTP_DELIVERY_MODE|OTP_TTL_MINUTES|OTP_RESEND_SECONDS|OTP_MAX_ATTEMPTS|OTP_PEPPER|BREVO_API_KEY|RESEND_API_KEY|OTP_FROM_EMAIL|OTP_FROM_NAME|CORS_ORIGINS)=' .env > "$filtered" || true
-          cat /tmp/shno-mano-otp.env >> "$filtered"
-          mv "$filtered" .env
-          chmod 600 .env
-          rm -f /tmp/shno-mano-otp.env
+          # Keep production secrets on Oracle. Never replace .env from GitHub.
+          if [ -f package-lock.json ]; then
+            npm ci --omit=dev
+          fi
 
-          sudo install -m 0644 signup.html /usr/share/nginx/html/shno-mano/signup.html
-          sudo install -m 0644 signin.html /usr/share/nginx/html/shno-mano/signin.html
-          sudo install -m 0644 taktak.html /usr/share/nginx/html/shno-mano/taktak.html
-          sudo install -m 0644 taktak-feed.js /usr/share/nginx/html/shno-mano/taktak-feed.js
-          sudo install -m 0644 taktak-feed.css /usr/share/nginx/html/shno-mano/taktak-feed.css
-          for file in taktak-viewers.js taktak-viewers.css reels.html reels-v2.js reels-v2.css reels-media-extra.css stories.html stories-deck.js social-actions-fix.css taal-nsolf.html communication-dock.js communication-dock.css auth-guard.js; do
-            sudo install -m 0644 "$file" "/usr/share/nginx/html/shno-mano/$file"
+          # Publish all root web assets used by the site and games.
+          find . -maxdepth 1 -type f \( \
+            -name '*.html' -o -name '*.css' -o -name '*.js' -o \
+            -name '*.json' -o -name '*.xml' -o -name '*.webmanifest' -o \
+            -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o \
+            -name '*.webp' -o -name '*.svg' -o -name '*.ico' \
+          \) -print0 | while IFS= read -r -d '' file; do
+            sudo install -m 0644 "$file" "$webroot/$(basename "$file")"
           done
-          sudo restorecon -F \
-            /usr/share/nginx/html/shno-mano/signup.html \
-            /usr/share/nginx/html/shno-mano/signin.html \
-            /usr/share/nginx/html/shno-mano/taktak.html \
-            /usr/share/nginx/html/shno-mano/taktak-feed.js \
-            /usr/share/nginx/html/shno-mano/taktak-feed.css || true
-          sudo restorecon -RF /usr/share/nginx/html/shno-mano || true
+
+          sudo restorecon -RF "$webroot" || true
           sudo systemctl restart shno-mano-tech.service
           sudo systemctl is-active --quiet shno-mano-tech.service
           sudo nginx -t
           sudo systemctl reload nginx
           curl --fail --silent --show-error http://127.0.0.1:3000/api/health
+          echo
+          echo "DEPLOYED_COMMIT=$(git rev-parse --short HEAD)"
           REMOTE
 
-      - name: Verify public health and deployed web pages
+      - name: Verify public production
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verify-registration'
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak.html | grep -q '20260913-social-actions-2'
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak-feed.js | grep -q 'data-action="share"'
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taktak-viewers.js | grep -q 'viewer-reel-action'
-          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/taal-nsolf.html | grep -q 'شنو منو مراسلات'
-          echo "Oracle deployment and public web checks passed."
+          for attempt in 1 2 3 4 5; do
+            if curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health; then
+              echo
+              echo "Oracle automatic deployment passed."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Public health check failed after deployment."
+          exit 1
