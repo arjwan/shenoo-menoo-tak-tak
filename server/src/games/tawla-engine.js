@@ -46,6 +46,11 @@ function legalMoves(s,userId){
  [...new Set(s.remainingMoves||[])].forEach(d=>out.push(...movesForDie(s,c,d)));
  return out
 }
+function normalizeOpeningTurn(s){
+ if(!s.opening||!s.opening.resolved||Number(s.moveCount||0)!==0||!s.rolled)return;
+ const rolls=s.opening.rolls||{},a=Number(rolls[String(s.players[0])]),b=Number(rolls[String(s.players[1])]);
+ if(a&&b&&a!==b){s.turn=a>b?s.players[0]:s.players[1];s.opening.winner=String(s.turn)}
+}
 function advance(s){
  s.turn=s.players[(s.players.findIndex(p=>String(p)===String(s.turn))+1)%s.players.length];
  s.dice=[0,0];s.remainingMoves=[];s.rolled=false
@@ -60,6 +65,7 @@ function createGame(params={}){
 }
 function applyAction(s,userId,action={}){
  userId=String(userId);
+ normalizeOpeningTurn(s);
  if(s.status!=='active')return{error:'اللعبة غير نشطة'};
  s.opening=s.opening||{resolved:true,rolls:{}};
  if(!s.opening.resolved){
@@ -69,7 +75,7 @@ function applyAction(s,userId,action={}){
   if(Object.keys(s.opening.rolls).length===s.players.length){
    const a=s.opening.rolls[s.players[0]],b=s.opening.rolls[s.players[1]];
    if(a===b){s.opening.rolls={};return{ok:true,tie:true}}
-   s.turn=a>b?s.players[0]:s.players[1];s.dice=[a,b];s.remainingMoves=[a,b];s.rolled=true;s.opening.resolved=true;
+   s.turn=a>b?s.players[0]:s.players[1];s.opening.winner=String(s.turn);s.dice=[a,b];s.remainingMoves=[a,b];s.rolled=true;s.opening.resolved=true;
   }
   return{ok:true}
  }
@@ -99,6 +105,7 @@ function applyAction(s,userId,action={}){
  return{ok:true}
 }
 function getLegalActions(s,userId){
+ normalizeOpeningTurn(s);
  if(s.status!=='active')return[];
  s.opening=s.opening||{resolved:true,rolls:{}};
  if(!s.opening.resolved)return s.opening.rolls[String(userId)]?[]:[{type:'opening-roll'}];
@@ -106,7 +113,7 @@ function getLegalActions(s,userId){
  if(!s.rolled)return[{type:'roll'}];return legalMoves(s,String(userId))
 }
 function getPublicState(s){return{status:s.status,turn:s.turn,players:s.players,board:s.board,bar:s.bar,home:s.home,dice:s.dice,remainingMoves:s.remainingMoves||[],rolled:s.rolled,finished:s.finished,winner:s.winner,moveCount:s.moveCount||0,opening:s.opening||{resolved:true,rolls:{}},scores:s.scores||{},roundNumber:s.roundNumber||1,lastRound:s.lastRound||null}}
-function getPrivateState(s,userId){return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
+function getPrivateState(s,userId){normalizeOpeningTurn(s);return{myColor:colorOf(s,String(userId)),turn:String(s.turn)===String(userId),rolled:s.rolled,remainingMoves:s.remainingMoves||[]}}
 function isFinished(s){return!!s.finished}
 function getWinner(s){return s.winner||null}
 function serialize(s){return JSON.stringify(getPublicState(s))}
