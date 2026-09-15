@@ -2,7 +2,12 @@
 'use strict';
 var params=new URLSearchParams(location.search),roomId=params.get('room'),socket=null,stream=null,joined=false,muted=true,speaker=true;
 var peers=new Map(),audios=new Map(),ice={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
-function ui(){var box=document.createElement('section');box.className='game-voice';box.innerHTML='<button data-vtoggle title="إخفاء أو إظهار الصوت">🎧</button><div data-vcontrols><button data-vjoin title="انضم للصوت">🎙</button><button data-vmute hidden title="فتح أو كتم الميكروفون">🔇</button><button data-vspeaker hidden title="تشغيل أو إغلاق السماعة">🔊</button><button data-vleave hidden title="مغادرة الصوت">✕</button><span data-vcount>0</span></div><small data-vmsg></small>';document.body.appendChild(box);return box}
+function ui(){var box=document.createElement('section');box.className='game-voice';box.innerHTML='<button data-vtoggle title="إخفاء أو إظهار الصوت">🎧</button><div data-vcontrols><button data-vjoin title="انضم للصوت">🎙</button><button data-vmute hidden title="فتح أو كتم الميكروفون">🔇</button><button data-vspeaker hidden title="تشغيل أو إغلاق السماعة">🔊</button><button data-vleave hidden title="مغادرة الصوت">✕</button><span data-vcount>0</span></div><small data-vmsg></small>';document.body.appendChild(box);
+ var roomControls=document.createElement('div');roomControls.className='voice-room-controls';
+ var start=document.querySelector('[data-start-room]'),close=document.querySelector('[data-close-room]');
+ if(start){start.textContent='▶';start.title='بدء اللعبة أو الجولة';roomControls.appendChild(start)}
+ if(close){close.textContent='⏹';close.title='إغلاق الطاولة';roomControls.appendChild(close)}
+ box.insertBefore(roomControls,box.firstChild);return box}
 var box=ui(),toggleBtn=box.querySelector('[data-vtoggle]'),controls=box.querySelector('[data-vcontrols]'),joinBtn=box.querySelector('[data-vjoin]'),muteBtn=box.querySelector('[data-vmute]'),speakerBtn=box.querySelector('[data-vspeaker]'),leaveBtn=box.querySelector('[data-vleave]'),count=box.querySelector('[data-vcount]'),message=box.querySelector('[data-vmsg]');
 function msg(s,bad){message.textContent=s||'';message.className=bad?'bad':''}
 function emitAck(event,data){return new Promise(function(resolve,reject){socket.emit(event,data,function(r){if(r&&r.ok)resolve(r);else reject(new Error(r&&r.message||'تعذر الاتصال'))})})}
