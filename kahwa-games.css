@@ -135,3 +135,40 @@ body.tawla-active .play-stage{padding:0;background:transparent;border:0}body.taw
 .tawla-point.can-to:after{z-index:8;opacity:1;pointer-events:none;background:#38f0b5d9;box-shadow:0 0 14px #38f0b5}
 .tawla-point.selected:after{background:transparent}
 @media(max-width:700px),(max-height:650px) and (orientation:landscape){.tawla-point>div{min-width:26px;min-height:26px}.tawla-point i{width:23px;height:23px}}
+
+/* Full mobile tawla viewport */
+@media (max-width:900px){
+ html:has(body.tawla-active),body.tawla-active{width:100%;height:100%;overflow:hidden}
+ body.tawla-active>.site-header{display:none!important}
+ body.tawla-active main.container.game-room{box-sizing:border-box;width:100vw!important;max-width:none!important;height:100dvh!important;margin:0!important;padding:0!important;overflow:hidden!important}
+ body.tawla-active #roomView,body.tawla-active .play-stage,body.tawla-active #kahwa-game-stage{box-sizing:border-box;width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important}
+ body.tawla-active .tawla-table{box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;width:100vw!important;height:100dvh!important;min-height:0!important;margin:0!important;padding:4px 6px!important;border-width:6px!important;border-radius:0!important;overflow:hidden!important}
+ body.tawla-active .tawla-table>header{min-height:22px;padding:1px 5px!important;font-size:11px}
+ body.tawla-active .tawla-players{min-height:34px;margin:1px 0 3px!important;gap:4px}
+ body.tawla-active .tawla-players>div{min-width:76px;padding:2px 5px!important;font-size:9px}
+ body.tawla-active .tawla-board{align-self:center;box-sizing:border-box;width:min(100%,calc((100dvh - 105px)*2.32))!important;max-width:100%!important;height:auto!important;max-height:calc(100dvh - 105px)!important;aspect-ratio:2.32/1;margin:auto!important;border-width:5px!important}
+ body.tawla-active .tawla-row{grid-template-columns:repeat(6,minmax(0,1fr)) clamp(34px,7vw,48px) repeat(6,minmax(0,1fr));height:50%!important}
+ body.tawla-active .tawla-bar{width:clamp(34px,7vw,48px)!important;border-left-width:2px;border-right-width:2px;padding:2px;gap:2px}
+ body.tawla-active .tawla-bar>button{font-size:7px;padding:0}
+ body.tawla-active .tawla-bar>button b{font-size:12px}
+ body.tawla-active .tawla-dice{gap:2px}
+ body.tawla-active .tawla-dice>button{padding:3px 1px!important;font-size:0}
+ body.tawla-active .tawla-dice>button:first-letter{font-size:12px}
+ body.tawla-active .tawla-dice i{width:clamp(20px,5vw,27px);height:clamp(20px,5vw,27px);font-size:13px}
+ body.tawla-active .tawla-point:before{inset:0 1px}
+ body.tawla-active .tawla-point>span{font-size:6px}
+ body.tawla-active .tawla-point>div{min-width:18px;min-height:18px;padding:1px;gap:0}
+ body.tawla-active .tawla-point i{width:clamp(14px,3.6vw,23px);height:clamp(14px,3.6vw,23px)}
+ body.tawla-active .tawla-home{min-height:28px;margin:2px 0 0!important}
+ body.tawla-active .tawla-home button{padding:2px 10px;font-size:9px}
+ body.tawla-active .tawla-home b{font-size:12px}
+ body.tawla-active .tawla-notice{min-height:14px;margin:1px 0!important;font-size:8px;line-height:12px}
+ body.tawla-active .game-voice{top:3px!important;left:3px!important;transform:scale(.82);transform-origin:top left}
+ body.tawla-active .chat-popup,body.tawla-active [data-chat-popup]{position:fixed!important;z-index:90!important;right:5px!important;bottom:5px!important;max-width:min(280px,75vw)!important;max-height:42dvh!important;overflow:auto!important}
+}
+@media (max-width:520px) and (orientation:portrait){
+ body.tawla-active .tawla-table{grid-template-rows:auto auto auto auto 1fr;align-content:start}
+ body.tawla-active .tawla-board{width:calc(100vw - 8px)!important;height:auto!important;max-height:none!important;aspect-ratio:1.55/1}
+ body.tawla-active .tawla-row{height:50%!important}
+ body.tawla-active .tawla-point i{width:clamp(13px,4.4vw,20px);height:clamp(13px,4.4vw,20px)}
+}
