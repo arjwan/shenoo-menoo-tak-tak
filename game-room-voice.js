@@ -8,7 +8,7 @@ function ui(){var box=document.createElement('section');box.className='game-voic
  if(start){start.textContent='▶';start.title='بدء اللعبة أو الجولة';roomControls.appendChild(start)}
  if(close){close.textContent='⏹';close.title='إغلاق الطاولة';roomControls.appendChild(close)}
  box.insertBefore(roomControls,box.firstChild);return box}
-var box=ui(),toggleBtn=box.querySelector('[data-vtoggle]'),controls=box.querySelector('[data-vcontrols]'),joinBtn=box.querySelector('[data-vjoin]'),muteBtn=box.querySelector('[data-vmute]'),speakerBtn=box.querySelector('[data-vspeaker]'),leaveBtn=box.querySelector('[data-vleave]'),count=box.querySelector('[data-vcount]'),message=box.querySelector('[data-vmsg]');
+var box=ui();if(window.matchMedia&&window.matchMedia('(max-height:650px) and (orientation:landscape)').matches)box.classList.add('is-collapsed');var toggleBtn=box.querySelector('[data-vtoggle]'),controls=box.querySelector('[data-vcontrols]'),joinBtn=box.querySelector('[data-vjoin]'),muteBtn=box.querySelector('[data-vmute]'),speakerBtn=box.querySelector('[data-vspeaker]'),leaveBtn=box.querySelector('[data-vleave]'),count=box.querySelector('[data-vcount]'),message=box.querySelector('[data-vmsg]');
 function msg(s,bad){message.textContent=s||'';message.className=bad?'bad':''}
 function emitAck(event,data){return new Promise(function(resolve,reject){socket.emit(event,data,function(r){if(r&&r.ok)resolve(r);else reject(new Error(r&&r.message||'تعذر الاتصال'))})})}
 function closePeer(uid){var p=peers.get(String(uid));if(p)p.close();peers.delete(String(uid));var a=audios.get(String(uid));if(a)a.remove();audios.delete(String(uid))}
