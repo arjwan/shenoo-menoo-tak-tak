@@ -130,7 +130,7 @@ public final class MainActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setUserAgentString(settings.getUserAgentString() + " ShenooMenooTakTakAndroid/1.1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -167,6 +167,11 @@ public final class MainActivity extends Activity {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
+                    Uri origin = request.getOrigin();
+                    if (origin == null || !"https".equalsIgnoreCase(origin.getScheme()) || !"shino-mino-tak-tak.duckdns.org".equalsIgnoreCase(origin.getHost())) {
+                        request.deny();
+                        return;
+                    }
                     pendingPermissionRequest = request;
                     requestMediaPermissions();
                 });
@@ -220,8 +225,24 @@ public final class MainActivity extends Activity {
     }
 
     private void requestMediaPermissions() {
-        if (Build.VERSION.SDK_INT >= 23) requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, MEDIA_PERMISSIONS);
-        else grantWebPermission();
+        if (pendingPermissionRequest == null) return;
+        if (Build.VERSION.SDK_INT < 23) {
+            grantWebPermission();
+            return;
+        }
+        java.util.ArrayList<String> permissions = new java.util.ArrayList<>();
+        for (String resource : pendingPermissionRequest.getResources()) {
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
+                    && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.RECORD_AUDIO);
+            }
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
+                    && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.CAMERA);
+            }
+        }
+        if (permissions.isEmpty()) grantWebPermission();
+        else requestPermissions(permissions.toArray(new String[0]), MEDIA_PERMISSIONS);
     }
 
     private void requestNotificationPermissionNative() {
