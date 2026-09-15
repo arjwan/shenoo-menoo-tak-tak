@@ -19,8 +19,9 @@ function totalPips(tiles) {
 function cloneState(s) { return JSON.parse(JSON.stringify(s)); }
 
 function createGame(params = {}) {
-  const playersCount = Math.min(4, Math.max(2, Number(params.players) || 2));
-  const playerIds = params.playerIds || Array.from({ length: playersCount }, (_, i) => 'p' + i);
+  const suppliedIds = Array.isArray(params.playerIds) ? params.playerIds.map(String).filter(Boolean) : [];
+  const playersCount = Math.min(4, Math.max(2, suppliedIds.length || Number(params.players) || 2));
+  const playerIds = suppliedIds.length ? suppliedIds.slice(0, playersCount) : Array.from({ length: playersCount }, (_, i) => 'p' + i);
   let deck, hands, openingPlayer = params.preferredStarter && playerIds.includes(String(params.preferredStarter)) ? String(params.preferredStarter) : null;
   let openingDouble = null;
   do {
@@ -149,6 +150,7 @@ function getPublicState(state) {
     status: state.status,
     turn: state.turn,
     players: state.players.map(id => ({ id, handCount: (state.hands[id] || []).length })),
+    chain: (state.chain || []).map(tile => ({ a: tile.a, b: tile.b, id: tile.id })),
     chainLength: state.chain.length,
     stockCount: (state.stock || []).length,
     moveCount: state.moveCount,
