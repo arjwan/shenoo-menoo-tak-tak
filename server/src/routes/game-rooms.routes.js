@@ -261,8 +261,15 @@ router.post('/:id/start', async (req, res) => {
     const reg = require('../games/game-engine-registry');
     const engine = reg.getEngine(gameType);
     if (engine && engine.createGame) {
-      const previousWinner = room.gameState?.engineState?.winner || null;
-      const state = engine.createGame({ playerIds: room.players.map(String), preferredStarter: gameType === 'domino' ? previousWinner : null });
+      const previousEngineState = room.gameState?.engineState || {};
+      const previousWinner = previousEngineState.winner || null;
+      const state = engine.createGame({
+        playerIds: room.players.map(String),
+        preferredStarter: gameType === 'domino' ? previousWinner : null,
+        scores: gameType === 'domino' ? (previousEngineState.scores || {}) : undefined,
+        roundNumber: gameType === 'domino' ? (Number(previousEngineState.roundNumber || 0) + 1) : undefined,
+        lastRound: gameType === 'domino' ? (previousEngineState.lastRound || null) : undefined
+      });
       room.gameState.engineState = state;
       room.gameState.engineState.status = 'active';
       room.gameState.board = state.board || [];
