@@ -5,8 +5,19 @@
     ? "https://shino-mino-tak-tak.duckdns.org"
     : window.location.origin;
 
+  function tokenTime(token) {
+    try {
+      var part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      var data = JSON.parse(decodeURIComponent(atob(part).split("").map(function(c){return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);}).join("")));
+      return Number(data.iat || 0);
+    } catch (_e) { return 0; }
+  }
   function getToken() {
-    return sessionStorage.getItem("token") || localStorage.getItem("token") || "";
+    var sessionToken = sessionStorage.getItem("token") || "";
+    var rememberedToken = localStorage.getItem("token") || "";
+    if (!sessionToken) return rememberedToken;
+    if (!rememberedToken) return sessionToken;
+    return tokenTime(sessionToken) >= tokenTime(rememberedToken) ? sessionToken : rememberedToken;
   }
 
   async function request(path, options) {
@@ -37,7 +48,7 @@
     }
   }
 
-  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL, version: "2026.09.15.offline5" };
+  global.SocialAPI = { request: request, token: getToken, baseUrl: API_BASE_URL, version: "2026.09.15.offline6" };
   if ("serviceWorker" in navigator && window.location.protocol === "https:") {
     window.addEventListener("load", function () {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).then(function (registration) {
