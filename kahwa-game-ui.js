@@ -3,7 +3,7 @@
   window.kahwaGameUI = {
     renderers: {
       domino: window.kahwaDominoUI,
-      tawla: window.kahwaTawlaUI,
+      tawla: window.kahwaTawla3D || window.kahwaTawlaUI,
       chess: window.kahwaChessUI,
       cards: window.kahwaCardsUI
     },
