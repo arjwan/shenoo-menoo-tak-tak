@@ -1,4 +1,4 @@
-var CACHE_NAME="shenoo-offline-v6";
+var CACHE_NAME="shenoo-offline-v7";
 var CORE=[
  "index.html","signin.html","signup.html","taktak.html","messages.html","friends.html",
  "game-room.html","kahwa-games.css","kahwa-tawla-v2.js","kahwa-domino-ui.js",
@@ -23,7 +23,8 @@ self.addEventListener("fetch",function(event){
  if(url.origin!==self.location.origin)return;
  if(url.pathname.indexOf("/api/")===0||url.pathname.indexOf("/socket.io/")===0)return;
  event.respondWith(fetch(event.request,{cache:"no-store"}).then(function(response){
-  if(response&&response.ok)caches.open(CACHE_NAME).then(function(cache){cache.put(event.request,response.clone());});
+  var cacheCopy=response&&response.ok?response.clone():null;
+  if(cacheCopy){event.waitUntil(caches.open(CACHE_NAME).then(function(cache){return cache.put(event.request,cacheCopy);}).catch(function(){}));}
   return response;
  }).catch(function(){
   return caches.match(event.request).then(function(exact){
