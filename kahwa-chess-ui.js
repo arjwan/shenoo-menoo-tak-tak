@@ -1,22 +1,23 @@
 (function(){
-  'use strict';
-  window.kahwaChessUI = {
-    mount: function(c,ctx){
-      c.innerHTML='<div class="kahwa-board" style="background:linear-gradient(135deg,#071111,#0d0f14);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:12px;color:#fff;text-align:center;"><h3>♟ شطرنج <span style="color:#D4A0E8">(رقعة حقيقية)</span></h3><p style="color:#91A39D;font-size:12px;">القفاز من السيرفر. لا صوت.</p><div id="chess-board" style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-width:90vh;margin:10px auto;"></div><div style="margin-top:8px"><button id="btn-chess-resign" class="kahwa-btn error">استسلام</button></div><div id="chess-status" style="color:#91A39D;font-size:13px;margin-top:8px;"></div></div>';
-      this.render(c, ctx && ctx.state ? ctx.state : {});
-    },
-    render: function(c,state){
-      var b=state.public && state.public.board ? state.public.board : [];
-      var html='';
-      for(var r=0;r<8;r++){html+='<div style="display:flex;">'; for(var f=0;f<8;f++){var idx=r*8+f; var cell=b && b[idx] ? b[idx] : null; var piece=cell?(cell.type==='k'?'♔':cell.type==='q'?'♕':cell.type==='r'?'♖':cell.type==='b'?'♗':cell.type==='n'?'♘':cell.type==='p'?'♙':'?'):'·'; html+='<div style="flex:1;aspect-ratio:1;background:#1a1a2e;border:1px solid #333;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="window.chessMoveEvent && window.chessMoveEvent('+f+','+r+')">'+(cell?'<span style="font-size:22px;color:#'+(cell.color==='white'?'fff':'333')+';">'+piece+'</span>':'<span style="font-size:22px;color:#333;">·</span>')+'</div>'; } html+='</div>';}
-      document.getElementById('chess-board').innerHTML=html;
-      document.getElementById('chess-status').textContent=(state.public && state.public.turn ? 'دور: '+state.public.turn : 'جارٍ التحميل');
-    },
-    setLegalActions: function(a){},
-    setLoading: function(v){var b=document.getElementById('btn-chess-resign'); if(b){b.disabled=!!v;b.classList.toggle('loading',!!v);}},
-    showSuccess: function(m){var s=document.getElementById('chess-status'); if(s){s.textContent='✓ '+m;s.style.color='#19D9A0';setTimeout(function(){s.textContent='';},2000);}},
-    showError: function(m){var s=document.getElementById('chess-status'); if(s){s.textContent='✗ '+m;s.style.color='#FF4D4F';setTimeout(function(){s.textContent='';},2500);}},
-    bindActions: function(){},
-    destroy: function(){}
-  };
+'use strict';
+var ctx=null,selected=null,busy=false;
+var glyph={white:{k:'♔',q:'♕',r:'♖',b:'♗',n:'♘',p:'♙'},black:{k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'}},pieceName={p:'بيدق',n:'حصان',b:'فيل',r:'قلعة',q:'وزير',k:'ملك'};
+function actions(){return(ctx&&ctx.state&&ctx.state.legalActions)||[]}
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function square(file,rank){return'abcdefgh'[file]+String(rank+1)}
+function sound(capture){try{var A=window.AudioContext||window.webkitAudioContext,a=sound.a||(sound.a=new A()),o=a.createOscillator(),g=a.createGain(),t=a.currentTime;a.resume();o.type='triangle';o.frequency.setValueAtTime(capture?190:280,t);o.frequency.exponentialRampToValueAtTime(capture?70:150,t+.11);g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+.12);o.connect(g);g.connect(a.destination);o.start();o.stop(t+.13)}catch(e){}}
+function statusText(pub,priv){if(pub.finished)return pub.winner==='draw'?'تعادل':pub.finishReason==='resignation'?'فاز '+pub.winner+' بالاستسلام':'فاز '+pub.winner;return(pub.check?'كش — ':'')+(priv.turn?'دورك':'دور اللاعب الآخر')}
+function show(text,bad){var e=document.querySelector('.chess-notice');if(e){e.textContent=text;e.className='chess-notice '+(bad?'bad':'')}}
+async function act(action){if(busy)return;busy=true;try{await SocialAPI.request('/api/game-rooms/'+encodeURIComponent(ctx.roomId)+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});sound(false);selected=null;if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){show(e.message||'تعذرت الحركة',true)}finally{busy=false}}
+function captured(pub,color){return(pub.moveHistory||[]).filter(function(m){return m.captured&&m.color===color}).map(function(m){return glyph[color==='white'?'black':'white'][m.captured]||''}).join(' ')}
+function render(c,x){
+ ctx=x;var pub=x.state&&x.state.public||{},priv=x.state&&x.state.private||{},board=pub.board||[],flip=priv.myColor==='black',players=x.room&&x.room.players||[],cells=[];
+ for(var vr=0;vr<8;vr++)for(var vf=0;vf<8;vf++){var file=flip?7-vf:vf,rank=flip?vr:7-vr,sq=square(file,rank),idx=(7-rank)*8+file,piece=board[idx],from=actions().some(function(a){return a.type==='move'&&a.from===sq}),to=selected&&actions().some(function(a){return a.type==='move'&&a.from===selected&&a.to===sq});cells.push('<button type="button" class="chess-square '+(((file+rank)%2)?'dark':'light')+(selected===sq?' selected':'')+(to?' target':'')+'" data-square="'+sq+'" '+(from||to?'':'disabled')+'><span>'+(piece?glyph[piece.color][piece.type]:'')+'</span><small>'+sq+'</small></button>')}
+ var history=(pub.moveHistory||[]).slice(-12).reverse().map(function(m){return'<li><b>'+esc(m.san||m.from+'-'+m.to)+'</b>'+(m.captured?' · أخذ '+pieceName[m.captured]:'')+'</li>'}).join('');
+ var names=players.map(function(p,i){return'<div><b>'+(i?'⚫ ':'⚪ ')+esc(p.name||p.displayName||p.username||'لاعب')+'</b><small>'+(i?'الأسود':'الأبيض')+'</small></div>'}).join('');
+ c.innerHTML='<section class="chess-table"><header><strong>♟ شطرنج شنو منو</strong><span>'+statusText(pub,priv)+'</span></header><div class="chess-players">'+names+'</div><div class="chess-layout"><div><div class="chess-captured">أخذ الأبيض: '+captured(pub,'white')+'</div><div class="chess-board">'+cells.join('')+'</div><div class="chess-captured">أخذ الأسود: '+captured(pub,'black')+'</div></div><aside><h3>سجل النقلات</h3><ol>'+history+'</ol><button type="button" data-resign '+(pub.finished?'disabled':'')+'>استسلام</button></aside></div><p class="chess-notice">'+statusText(pub,priv)+'</p></section>';
+ c.querySelectorAll('[data-square]').forEach(function(btn){btn.onclick=function(){var sq=btn.dataset.square,own=actions().some(function(a){return a.type==='move'&&a.from===sq});if(!selected&&own){selected=sq;return render(c,x)}if(selected){var move=actions().find(function(a){return a.type==='move'&&a.from===selected&&a.to===sq});if(move)return act(move);selected=own?sq:null;render(c,x)}}});
+ var resign=c.querySelector('[data-resign]');if(resign)resign.onclick=function(){if(confirm('هل تريد الاستسلام وإنهاء المباراة؟'))act({type:'resign'})};
+}
+window.kahwaChessUI={mount:render,render:render,bindActions:function(){},setLegalActions:function(){},setLoading:function(v){busy=!!v},showSuccess:function(m){show('✓ '+m)},showError:function(m){show(m,true)},destroy:function(){ctx=null;selected=null}};
 })();
