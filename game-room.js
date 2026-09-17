@@ -13,6 +13,6 @@ $('[data-join-room]')?.addEventListener('click',join);$('[data-leave-room]')?.ad
   if (!stage) return;
   window.kahwaUIBind = function (room, state) {
     stage.style.display = 'block';
-    document.body.classList.toggle('domino-active', !!room && room.gameType === 'domino'); document.body.classList.toggle('tawla-active', !!room && room.gameType === 'tawla'); document.body.classList.toggle('chess-active', !!room && room.gameType === 'chess'); window.kahwaGameUI.mount(stage, { gameType: (room && room.gameType) || 'domino', roomId: (room && room.id) || room, room: room || {}, me: window.kahwaCurrentUserId || '', state: state || {} });
+    document.body.classList.toggle('domino-active', !!room && room.gameType === 'domino'); document.body.classList.toggle('tawla-active', !!room && room.gameType === 'tawla'); document.body.classList.toggle('chess-active', !!room && room.gameType === 'chess'); document.body.classList.toggle('cards-active', !!room && room.gameType === 'cards'); window.kahwaGameUI.mount(stage, { gameType: (room && room.gameType) || 'domino', roomId: (room && room.id) || room, room: room || {}, me: window.kahwaCurrentUserId || '', state: state || {} });
   };
 })();

@@ -1,21 +1,20 @@
 (function(){
-  'use strict';
-  window.kahwaCardsUI = {
-    mount: function(c,ctx){
-      c.innerHTML='<div class="kahwa-board" style="background:linear-gradient(135deg,#061514,#0b1a15);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:16px;color:#fff;text-align:center;"><h3>🃏 ورق <span style="color:#F0A0C0">(إطار عام)</span></h3><p style="color:#91A39D;font-size:13px;">نوع اللعبة لم يُحدد بعد — سيتم تفعيله لاحقًا</p><div style="padding:20px;background:#132824;border-radius:12px;margin-top:10px;"><strong>yard</strong><div style="font-size:28px;margin:10px 0;">🃏</div><p>يدك: <span id="cards-hand-count">—</span></p><p>المخزن: <span id="cards-stock-count">—</span></p><p>التخليص: <span id="cards-discard-count">—</span></p></div></div>';
-      this.render(c, ctx && ctx.state ? ctx.state : {});
-    },
-    render: function(c,state){
-      var publicState = (state && state.public) ? state.public : {};
-      document.getElementById('cards-hand-count').textContent = (publicState.players && publicState.players[0] ? publicState.players[0].handCount || '?' : '?');
-      document.getElementById('cards-stock-count').textContent = (publicState.stockCount !== undefined ? publicState.stockCount : '?');
-      document.getElementById('cards-discard-count').textContent = (publicState.discardCount !== undefined ? publicState.discardCount : '?');
-    },
-    setLegalActions: function(a){},
-    setLoading: function(v){},
-    showSuccess: function(m){},
-    showError: function(m){},
-    bindActions: function(){},
-    destroy: function(){}
-  };
+'use strict';
+var ctx=null,selected=new Set(),busy=false,suit={s:'♠',h:'♥',d:'♦',c:'♣'};
+function actions(){return(ctx&&ctx.state&&ctx.state.legalActions)||[]}
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function can(type,source){return actions().some(function(a){return a.type===type&&(!source||a.source===source)})}
+function sound(high){try{var A=window.AudioContext||window.webkitAudioContext,a=sound.a||(sound.a=new A()),o=a.createOscillator(),g=a.createGain(),t=a.currentTime;a.resume();o.frequency.setValueAtTime(high?440:190,t);o.frequency.exponentialRampToValueAtTime(high?230:85,t+.1);g.gain.setValueAtTime(.13,t);g.gain.exponentialRampToValueAtTime(.001,t+.11);o.connect(g);g.connect(a.destination);o.start();o.stop(t+.12)}catch(e){}}
+function show(text,bad){var e=document.querySelector('.cards-notice');if(e){e.textContent=text;e.className='cards-notice '+(bad?'bad':'')}}
+async function act(action){if(busy)return;busy=true;try{await SocialAPI.request('/api/game-rooms/'+encodeURIComponent(ctx.roomId)+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});sound(action.type==='meld');selected.clear();if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){show(e.message||'تعذرت الحركة',true)}finally{busy=false}}
+function card(card,selectable){var red=card.suit==='h'||card.suit==='d';return'<button type="button" class="rummy-card '+(red?'red':'')+(selected.has(card.id)?' selected':'')+'" data-card="'+esc(card.id)+'" '+(selectable?'':'disabled')+'><b>'+esc(card.rank)+'</b><i>'+suit[card.suit]+'</i></button>'}
+function render(c,x){
+ ctx=x;var pub=x.state&&x.state.public||{},priv=x.state&&x.state.private||{},hand=priv.hand||[],players=x.room&&x.room.players||[],playerMap={};players.forEach(function(p){playerMap[String(p.id||p._id||p)]=p.name||p.displayName||p.username||'لاعب'});var myTurn=Boolean(priv.turn),mayPlay=priv.phase==='play'&&myTurn;
+ var scores=(pub.players||[]).map(function(p){return'<div class="rummy-player '+(String(pub.turn)===String(p.id)?'active':'')+'"><b>'+esc(playerMap[p.id]||'لاعب')+'</b><span>'+p.handCount+' ورقة · '+p.score+' نقطة</span></div>'}).join('');
+ var melds=(pub.melds||[]).map(function(m){return'<div class="rummy-meld"><small>'+esc(playerMap[m.playerId]||'لاعب')+' · '+m.points+' نقطة</small><div>'+m.cards.map(function(x){return card(x,false)}).join('')+'</div></div>'}).join('')||'<p>لم تُلعب مجموعات بعد</p>';
+ var top=pub.discardTop,phase=pub.finished?'انتهت الجولة':myTurn?(priv.phase==='draw'?'دورك: اسحب ورقة':'اختر مجموعة أو تخلّص من ورقة'):'انتظر دور اللاعب الآخر';
+ c.innerHTML='<section class="rummy-table"><header><strong>🃏 تحدي الأوراق</strong><span>'+phase+'</span></header><div class="rummy-players">'+scores+'</div><div class="rummy-layout"><main><div class="rummy-piles"><button type="button" data-draw="stock" class="rummy-back" '+(can('draw','stock')?'':'disabled')+'><b>'+Number(pub.stockCount||0)+'</b><small>كومة السحب</small></button><button type="button" data-draw="discard" '+(can('draw','discard')?'':'disabled')+'>'+(top?card(top,false):'فارغة')+'<small>المكشوفة</small></button></div><div class="rummy-melds">'+melds+'</div><div class="rummy-hand">'+hand.map(function(x){return card(x,mayPlay)}).join('')+'</div><div class="rummy-actions"><button type="button" data-meld '+(can('meld')?'':'disabled')+'>لعب مجموعة</button><button type="button" data-discard '+(can('discard')?'':'disabled')+'>تخلّص من المحددة</button></div></main><aside><h3>القواعد</h3><p>اسحب ورقة، ثم كوّن 3 أوراق متساوية القيمة بأشكال مختلفة، أو تسلسلاً من الشكل نفسه.</p><p>اختر ورقة واحدة للتخلص منها وإنهاء الدور.</p></aside></div><p class="cards-notice">'+phase+'</p></section>';
+ c.querySelectorAll('[data-card]:not(:disabled)').forEach(function(btn){btn.onclick=function(){selected.has(btn.dataset.card)?selected.delete(btn.dataset.card):selected.add(btn.dataset.card);render(c,x)}});c.querySelectorAll('[data-draw]').forEach(function(btn){btn.onclick=function(){act({type:'draw',source:btn.dataset.draw})}});var meld=c.querySelector('[data-meld]');if(meld)meld.onclick=function(){act({type:'meld',cardIds:Array.from(selected)})};var discard=c.querySelector('[data-discard]');if(discard)discard.onclick=function(){if(selected.size!==1)return show('اختر ورقة واحدة فقط',true);act({type:'discard',cardId:Array.from(selected)[0]})};
+}
+window.kahwaCardsUI={mount:render,render:render,bindActions:function(){},setLegalActions:function(){},setLoading:function(v){busy=!!v},showSuccess:function(m){show('✓ '+m)},showError:function(m){show(m,true)},destroy:function(){ctx=null;selected.clear()}};
 })();
