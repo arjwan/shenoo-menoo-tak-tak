@@ -3,6 +3,18 @@ body.tawla-active .play-stage {
   background: transparent;
   border: 0;
 }
+body.tawla-active .site-header,
+body.tawla-active .game-toolbar,
+body.tawla-active .azawi-hero {
+  display: none !important;
+}
+body.tawla-active main.game-room,
+body.tawla-active #roomView,
+body.tawla-active .play-stage {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
 body.tawla-active .play-stage > .table-head,
 body.tawla-active .play-stage > .scoreboard,
 body.tawla-active .play-stage > .game-table,
