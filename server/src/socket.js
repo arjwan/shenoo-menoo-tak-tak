@@ -91,8 +91,14 @@ function attachSocket(httpServer) {
       });
     };
     const getGameRoom = async (id) => {
-      const room = await GameRoom.findById(id).catch(() => null);
-      return room ? decorate(room) : null;
+      if (!id) return null;
+      let gameRoom = await GameRoom.findById(id).catch(() => null);
+      if (!gameRoom) gameRoom = await GameRoom.findOne({ roomCode: String(id), isActive: { $ne: false } }).catch(() => null);
+      return gameRoom ? decorate(gameRoom) : null;
+    };
+    const playerTurn = (state, players) => {
+      const turn = state && state.turn != null ? String(state.turn) : '';
+      return (players || []).map(String).includes(turn) ? turn : null;
     };
     socket.on('game:join', async ({ roomId } = {}, ack) => {
       const room = await getGameRoom(roomId);
@@ -157,7 +163,7 @@ function attachSocket(httpServer) {
       room.gameState.board = publicEngine?.board || [];
       room.gameState.moveCount = Number(publicEngine?.moveCount || nextState.moveCount || 0);
       room.gameState.status = publicEngine?.status || nextState.status || 'active';
-      room.gameState.turn = nextState.turn || null;
+      room.gameState.turn = playerTurn(nextState, room.players);
       room.gameState.updatedAt = new Date();
       room.markModified('gameState.engineState');
       await room.save();
