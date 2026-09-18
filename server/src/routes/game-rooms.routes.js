@@ -18,6 +18,10 @@ function cleanReservations(room) {
   room.reservations = (room.reservations || []).filter((r) => new Date(r.expiresAt).getTime() > now);
 }
 function makeCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+function playerTurn(state, players) {
+  const turn = state && state.turn != null ? String(state.turn) : '';
+  return (players || []).map(String).includes(turn) ? turn : null;
+}
 async function expireAbandonedRooms() {
   await GameRoom.updateMany({ isActive: { $ne: false }, expiresAt: { $ne: null, $lte: new Date() } }, { $set: { isActive: false, 'gameState.status': 'finished', 'gameState.updatedAt': new Date() } });
 }
@@ -275,7 +279,7 @@ router.post('/:id/start', async (req, res) => {
       room.gameState.board = state.board || [];
       room.gameState.moveCount = state.moveCount || 0;
       room.gameState.status = 'active';
-      room.gameState.turn = state.turn;
+      room.gameState.turn = playerTurn(state, room.players);
       room.gameState.updatedAt = new Date();
     }
   } else {
@@ -358,7 +362,7 @@ router.post('/:id/action', async (req, res) => {
       room.gameState.board = result.state.board || engineState.board || [];
       room.gameState.moveCount = (result.state.moveCount || engineState.moveCount || 0);
       room.gameState.status = result.state.status || engineState.status || 'active';
-      if (result.state.turn) room.gameState.turn = result.state.turn;
+      room.gameState.turn = playerTurn(result.state, room.players);
     }
     room.gameState.updatedAt = new Date();
     room.markModified('gameState.engineState');
