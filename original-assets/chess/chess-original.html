@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260918-05-13efa67","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YACgEZulLoA,0","Arial Narrow":"YAGyDvJ_4Ts,0","Arial Rounded MT Bold":"YAFcfoaHu-s,0","Arial":"YAGyDvJ_4Ts,0","Avenir Next":"YAFcfmNq6UY,0","Baloo 2":"YADK30bC6HQ,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Broken Glyph":"YADZ-exUkv0,0","Canva Sans":"YAFdJjTk5UU,1","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAFcfvtOAUY,1","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","Courier Prime":"YAD1aFjegN8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAFdJpU7Kkk,0","Georgia":"YAGzXkO0pEM,0","Ghost Mono":"YAHQutsX00Q,0","Hanken Grotesk":"YAFcfhwp99E,0","Helvetica Neue":"YAFcf6CtJfI,0","Helvetica":"YAFcf6CtJfI,0","IBM Plex Mono":"YAFdJkmvhGI,0","Impact":"YAFcfnjI7Vk,0","Instrument Serif":"YAHFeOnZNEk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YADK3zbC6RM,0","JetBrains Mono":"YAFdJksXcAk,0","Josefin Sans":"YAFdJjvw9Ps,0","Lato":"YAFdJuFCnaw,0","Libre Baskerville":"YACgEUFdPdA,0","Lobster":"YAD8SnSjSFI,0","Lora":"YACgEXvxf8Q,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YAFdtQi73Xs,0","Nunito":"YAFdJoNRMmU,1","Oleo Script":"YACgEQQ14jI,0","Oswald":"YACgEQY10lw,0","Pacifico":"YADLjORQ1u4,0","Phantom Sans":"YAFdJvgJ5TU,0","Playfair Display":"YAFdJhem5V8,1","Plus Jakarta Sans":"YAGvf3_u0_Q,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YAFdJpYtCxE,1","Raleway":"YAFdJhmxbVQ,1","Roboto Slab":"YAFdJswIKAg,0","Rockwell":"YAFcfyVZnN0,0","Rye":"YACgEdQP21k,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Source Serif 4":"YACgEfdj394,0","Space Grotesk":"YADZ-dYEmhg,0","Space Mono":"YADW1-vpsoc,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Trebuchet MS":"YAFcfrglpVA,0","UV Display":"YAEdVfSSpYo,0","UV Sans":"YAFdJvgJ5TU,0","Ubuntu":"YACgERDU--Q,0","Verdana":"YAGzXTctYtQ,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YAD1aFjegN8,0","ui-sans-serif":"YACkoD1yZN0,0"}}');</script><script src="/_sdk/83d6dfdadcd4750a.telemetry_sdk.js" integrity="sha512-XS4Dvzp6vbagZS9vFErihvr8aO3S0tH78KWUefn06fmL4WYqryBtZj/IOLITYj7dFA4gPVvPg1W/JB1DK3uLNQ=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>شطرنج واقعي</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/0ddbbee1c66b1212.editing_sdk.js" integrity="sha512-HQn5LM1yruQSbY78ATUril6QeOJ9xj7KqO64ltLtb4vBwI5Qv3/tloFFOndBPZTNZoeV5xKzuth5y6FTi9crsg=="></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --cream:#fff7e8; --ink:#32170b; --dark-wood:#4b1908; --walnut:#7a351e;
+      --gold:#efc96f; --light-square:#f1d09a; --dark-square:#874128;
+      --white-piece:#fff7df; --black-piece:#29140d; --accent:#126d91;
+    }
+    *{box-sizing:border-box}
+    html,body{width:100%;max-width:100%;overflow-x:hidden}
+    body{margin:0;font-family:"DM Sans",sans-serif;color:var(--ink)}
+    button,select,input{font:inherit}
+    .app-shell{
+      width:100%; min-height:calc(100 * min(var(--vh,1vh),1vh)); padding:18px;
+      background:
+        radial-gradient(circle at 6% 4%,rgba(255,239,195,.8),transparent 25%),
+        radial-gradient(circle at 95% 12%,rgba(237,185,95,.35),transparent 29%),
+        linear-gradient(128deg,#bb7440,#73401f 52%,#321208);
+    }
+    .paper{
+      background:rgba(255,248,232,.96); border:1px solid rgba(91,42,16,.25);
+      box-shadow:0 16px 38px rgba(34,10,2,.24); border-radius:18px;
+    }
+    .brand-mark{
+      width:49px;height:49px;border-radius:15px;display:grid;place-items:center;
+      color:#fff7df;background:conic-gradient(from 25deg,#f4d27e,#803817,#efbd64,#3d1608);
+      box-shadow:inset 0 0 0 3px #401607,0 7px 14px #32120577;
+    }
+    .small-title{font-size:.72rem;letter-spacing:.12em;font-weight:800;color:#8b5133}
+    .badge{background:#254f38;color:#fff0ca;border-radius:999px;padding:.3rem .72rem;font-size:.72rem;font-weight:800}
+    .btn{
+      border:0;border-radius:12px;padding:.68rem .9rem;font-weight:800;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;gap:.42rem;
+      transition:transform .16s,filter .16s,opacity .16s;
+    }
+    .btn:hover:not(:disabled){filter:brightness(1.08)} .btn:active:not(:disabled){transform:translateY(2px)}
+    .btn:disabled{opacity:.43;cursor:not-allowed}
+    .btn-primary{background:#80351f;color:#fff5dc;box-shadow:0 4px 0 #431508}
+    .btn-gold{background:#f0d094;color:#4b2612}
+    .btn-blue{background:#1c719d;color:#f4fbff;box-shadow:0 4px 0 #0b405b}
+    .btn-muted{background:#e8dbc2;color:#5b4738}
+    button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #1c719d;outline-offset:3px}
+    .chess-frame{
+      width:min(760px,100%,calc(100 * min(var(--vh,1vh),1vh) - 235px));
+      min-width:min(280px,100%); margin:auto; padding:clamp(8px,1.7vw,16px); border-radius:20px;
+      background:repeating-linear-gradient(7deg,rgba(255,213,143,.12) 0 1px,transparent 1px 11px),
+        linear-gradient(135deg,#290c02,#c4773b 23%,#54200b 52%,#bd7035 80%,#321005);
+      box-shadow:inset 0 0 0 2px #e5ad67,inset 0 0 0 8px #3a1206,0 18px 36px #26100488,0 5px 0 #351105;
+    }
+    .board{
+      direction:ltr;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));
+      width:100%;aspect-ratio:1 / 1;max-width:100%;height:auto;min-height:0;align-self:start;
+      border:5px solid #4a1a08;overflow:hidden;border-radius:5px;background:var(--light-square);
+    }
+    .square{
+      border:0;position:relative;display:grid;place-items:center;padding:0;cursor:pointer;
+      overflow:visible;touch-action:manipulation;min-width:0;
+    }
+    .square.light{background:var(--light-square)} .square.dark{background:var(--dark-square)}
+    .square.last::before,.square.selected::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1}
+    .square.last::before{background:#f8dc6070}.square.selected::before{box-shadow:inset 0 0 0 4px #ffe06b}
+    .square.legal::after{
+      content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;background:#277b53c9;
+      border:2px solid #e8ffe2;box-shadow:0 0 13px #bcf8ae;z-index:2;
+    }
+    .square.capture::after{
+      content:"";position:absolute;inset:9%;border:4px solid #ffe576;border-radius:50%;
+      box-shadow:0 0 12px #44200b;z-index:2;
+    }
+    .piece{
+      position:relative;z-index:3;font-family:"Times New Roman",serif;font-size:clamp(29px,6.1vw,62px);
+      line-height:1;filter:drop-shadow(2px 4px 2px rgba(32,10,2,.58));transition:transform .16s,filter .16s;
+      user-select:none;
+    }
+    .square:hover .piece{transform:translateY(-3px)}
+    .piece.white{color:var(--white-piece);text-shadow:0 1px 0 #6d3c1c,1px 1px 0 #6d3c1c,-1px -1px 0 #6d3c1c}
+    .piece.black{color:var(--black-piece);text-shadow:0 1px 0 #c78f52}
+    .coord{position:absolute;z-index:4;font-size:9px;font-weight:800;opacity:.75;pointer-events:none}
+    .coord.file{left:4px;bottom:2px}.coord.rank{right:4px;top:2px}
+    .clock{
+      min-width:145px;background:linear-gradient(145deg,#332017,#130b07);color:#fff2d2;border:2px solid #d79b54;
+      border-radius:15px;padding:10px 15px;box-shadow:inset 0 2px 7px #0008;transition:.2s;
+    }
+    .clock.active{border-color:#f9d76a;box-shadow:0 0 0 3px #f9d76a44,inset 0 2px 7px #0008}.clock.low{border-color:#ef785b;color:#ffe0d6}
+    .clock-time{font-family:"Playfair Display",serif;font-size:1.62rem;font-weight:800;direction:ltr}
+    .status{min-height:49px;border-radius:13px;padding:.72rem 1rem;background:#f5e4c4;color:#66361f;font-weight:700;line-height:1.55}
+    .status.thinking{color:#155a78;background:#ddf1f6}.status.warning{color:#923621;background:#ffe1d3}.status.good{color:#216343;background:#ddf1e4}
+    .history{max-height:330px;overflow:auto}.history li{padding:.54rem 0;border-bottom:1px dashed #dec6a3;font-size:.88rem}
+    .drawer{
+      position:fixed;z-index:80;top:0;bottom:0;left:0;width:min(390px,100%);padding:20px;overflow:auto;
+      background:#fff8e9;box-shadow:10px 0 35px #1e0a04aa;transform:translateX(-105%);transition:transform .3s ease;
+    }
+    .drawer.open{transform:translateX(0)} .backdrop{position:fixed;inset:0;z-index:75;background:#26100466;display:none}.backdrop.show{display:block}
+    .modal{position:fixed;inset:0;z-index:90;padding:16px;background:#261004b8;display:none;place-items:center}.modal.show{display:grid}
+    .modal-card{width:min(520px,100%);max-height:calc(92 * min(var(--vh,1vh),1vh));overflow:auto}
+    .spectator-row{display:flex;align-items:center;gap:.7rem;padding:.7rem 0;border-bottom:1px dashed #dec6a3}
+    .avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:#f1d095;color:#4f250f;font-weight:800}
+    .promotion-option{
+      width:75px;height:75px;border:2px solid #dbbd8f;border-radius:14px;background:#fff9ed;display:grid;place-items:center;
+      cursor:pointer;font-size:52px;line-height:1;
+    }
+    .promotion-option:hover{background:#fde8ba;border-color:#9d4c28}
+    .field{width:100%;border:1px solid #d8bd94;border-radius:12px;background:#fffaf0;padding:.72rem}
+    @media(max-width:720px){
+      .app-shell{padding:10px}.clock{min-width:0;flex:1;padding:8px 10px}.clock-time{font-size:1.32rem}
+      .btn{padding:.62rem .68rem;font-size:.82rem}.board{border-width:3px}
+    }
+  </style>
+  <script src="/_sdk/8de366929c5f3b48.data_sdk.js" type="text/javascript" integrity="sha512-TyQ8k8cZj66xe/aENmn6RyZpdOFZXbAo5+KBG3PeFM+Q4qMTHU8xAqmq4ADClNfPrstgQYV6OzZHwLTnElzB2g=="></script>
+  <script src="/_sdk/765e1fea0cec97ce.resizing_sdk.js" type="text/javascript" integrity="sha512-IRTJnqww0+HQ5V/LlWEQrlD5SrYHaVvaeVoNe8HYQXoaguzUGheSd9+n9s6WOgaTcEH0g37DuINHZ9aqfzWjlw=="></script>
+ </head>
+ <body data-template-id="__page-root" style="background: linear-gradient(128deg, rgb(187, 116, 64), rgb(115, 64, 31), rgb(50, 18, 8));">
+  <div class="app-shell">
+   <header class="max-w-[1450px] mx-auto flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div class="flex items-center gap-3">
+     <div class="brand-mark" aria-hidden="true"><i data-lucide="crown" width="25"></i>
+     </div>
+     <div>
+      <p data-template-id="brand-kicker" class="canva-text small-title m-0" style="color: rgb(139, 81, 51); font-weight: 700; font-style: normal; font-size: 12px;">لعبة استراتيجية عربية</p>
+      <h1 data-template-id="app-title" class="canva-text font-bold m-0" style="color: rgb(50, 23, 11); font-weight: 700; font-style: normal; font-size: 32px;">شطرنج واقعي</h1>
+     </div><span data-template-id="live-badge" class="canva-tag badge" style="background: rgb(37, 79, 56); color: rgb(255, 240, 202); font-weight: 700; font-style: normal; font-size: 16px;">الرقعة جاهزة</span>
+    </div>
+    <nav aria-label="أنماط وأدوات الشطرنج" class="flex flex-wrap gap-2">
+     <button id="ai-mode" data-template-id="ai-mode-button" class="canva-button btn btn-blue" type="button" style="background: rgb(28, 113, 157); color: rgb(244, 251, 255); font-weight: 700;"><i data-lucide="bot" width="17" aria-hidden="true"></i><span data-template-id="ai-mode-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">ضد الذكاء الاصطناعي</span></button> <button id="local-mode" data-template-id="local-mode-button" class="canva-button btn btn-gold" type="button" style="background: rgb(240, 208, 148); color: rgb(75, 38, 18); font-weight: 700;"><i data-lucide="users-round" width="17" aria-hidden="true"></i><span data-template-id="local-mode-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">لاعبان محلياً</span></button> <button id="spectators-open" data-template-id="spectators-button" class="canva-button btn btn-gold" type="button" style="background: rgb(240, 208, 148); color: rgb(75, 38, 18); font-weight: 700;"><i data-lucide="eye" width="17" aria-hidden="true"></i><span data-template-id="spectators-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">المتفرجون</span></button> <button id="settings-open" data-template-id="settings-button" class="canva-button btn btn-muted" type="button" style="background: rgb(232, 219, 194); color: rgb(91, 71, 56); font-weight: 700;"><i data-lucide="sliders-horizontal" width="17" aria-hidden="true"></i><span data-template-id="settings-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">الإعدادات</span></button>
+    </nav>
+   </header>
+   <main class="max-w-[1450px] mx-auto">
+    <section class="flex flex-wrap items-center justify-between gap-3 mb-4" aria-label="حالة المباراة">
+     <div>
+      <p data-template-id="game-kicker" class="canva-text small-title m-0" style="color: rgb(139, 81, 51); font-weight: 700; font-style: normal; font-size: 12px;">مباراة مباشرة</p>
+      <h2 data-template-id="game-title" class="canva-text font-bold m-0" style="color: rgb(50, 23, 11); font-weight: 700; font-style: normal; font-size: 24px;">رقعة الشطرنج</h2>
+     </div>
+     <div data-template-id="turn-card" class="canva-panel paper px-4 py-3" style="background: rgb(255, 248, 233);">
+      <p id="turn-title" class="font-bold m-0" aria-live="polite"></p>
+      <p id="turn-detail" class="text-xs text-[#704126] mt-1 mb-0"></p>
+     </div>
+    </section>
+    <div id="spectator-banner" data-template-id="spectator-banner" class="canva-banner hidden mb-3 rounded-xl p-3 font-bold" aria-live="polite" style="background: rgb(223, 241, 246); color: rgb(22, 81, 110); font-weight: 700;"></div>
+    <div class="grid xl:grid-cols-[minmax(0,1fr)_305px] gap-5 items-start">
+     <section class="min-w-0">
+      <div class="flex gap-3 justify-center mb-3">
+       <div id="black-clock" class="clock">
+        <p data-template-id="black-clock-label" class="canva-text text-xs font-bold m-0" style="color: rgb(255, 242, 210); font-weight: 700; font-style: normal; font-size: 16px;">الأسود</p>
+        <p id="black-time" class="clock-time m-0">05:00</p>
+       </div>
+       <div id="white-clock" class="clock">
+        <p data-template-id="white-clock-label" class="canva-text text-xs font-bold m-0" style="color: rgb(255, 242, 210); font-weight: 700; font-style: normal; font-size: 16px;">الأبيض</p>
+        <p id="white-time" class="clock-time m-0">05:00</p>
+       </div>
+      </div>
+      <div class="chess-frame">
+       <div id="board" class="board" role="grid" aria-label="رقعة شطرنج تفاعلية"></div>
+      </div>
+      <p data-template-id="board-caption" class="canva-text text-center text-sm font-bold mt-3 mb-0" style="color: rgb(112, 64, 33); font-weight: 700; font-style: normal; font-size: 12px;">اضغط القطعة ثم اختر مربعاً قانونياً مضاءً. تعمل الرقعة باللمس ولوحة المفاتيح.</p>
+      <div id="status-message" class="status mt-4" aria-live="polite"></div>
+      <div data-template-id="controls-panel" class="canva-panel paper mt-4 p-3 flex flex-wrap justify-center gap-2" style="background: rgb(255, 248, 233);">
+       <button id="new-game" data-template-id="new-game-button" class="canva-button btn btn-primary" type="button" style="background: rgb(128, 53, 31); color: rgb(255, 245, 220); font-weight: 700;"><i data-lucide="plus" width="16" aria-hidden="true"></i><span data-template-id="new-game-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">مباراة جديدة</span></button> <button id="undo-button" data-template-id="undo-button" class="canva-button btn btn-gold" type="button" style="background: rgb(240, 208, 148); color: rgb(75, 38, 18); font-weight: 700;"><i data-lucide="undo-2" width="16" aria-hidden="true"></i><span data-template-id="undo-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">تراجع</span></button> <button id="redo-button" data-template-id="redo-button" class="canva-button btn btn-muted" type="button" style="background: rgb(232, 219, 194); color: rgb(91, 71, 56); font-weight: 700;"><i data-lucide="redo-2" width="16" aria-hidden="true"></i><span data-template-id="redo-label" class="canva-text" style="font-weight: 700; font-style: normal; font-size: 16px;">إعادة</span></button>
+      </div>
+     </section>
+     <aside class="space-y-4">
+      <section data-template-id="players-panel" class="canva-panel paper p-4" style="background: rgb(255, 248, 233);">
+       <h3 data-template-id="players-title" class="canva-text font-bold mb-3" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 19px;">اللاعبون</h3>
+       <div class="space-y-3">
+        <div class="flex justify-between items-center"><span id="white-player" class="font-bold"></span><span>♔</span>
+        </div>
+        <div class="border-t border-dashed border-[#d9c4a1]"></div>
+        <div class="flex justify-between items-center"><span id="black-player" class="font-bold"></span><span>♚</span>
+        </div>
+       </div>
+      </section>
+      <section data-template-id="history-panel" class="canva-panel paper p-4" style="background: rgb(255, 248, 233);">
+       <h3 data-template-id="history-title" class="canva-text font-bold mb-2" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 19px;">سجل النقلات</h3>
+       <ol id="history" class="history list-none m-0 p-0"></ol>
+      </section>
+      <section data-template-id="help-panel" class="canva-panel paper p-4" style="background: rgb(244, 226, 186);">
+       <h3 data-template-id="help-title" class="canva-text font-bold mb-2" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 19px;">قواعد مفعلة</h3>
+       <p data-template-id="help-copy" class="canva-text text-sm leading-7 m-0" style="color: rgb(112, 65, 38); font-weight: 400; font-style: normal; font-size: 16px;">النقلات القانونية، الكش، الكش مات، التبييت، الأخذ بالتجاوز وترقية البيدق مفعلة داخل الرقعة.</p>
+      </section>
+     </aside>
+    </div>
+   </main>
+  </div>
+  <div id="drawer-backdrop" class="backdrop"></div>
+  <aside id="spectator-drawer" class="drawer" aria-hidden="true" aria-label="لوحة المتفرجين">
+   <div class="flex justify-between items-center gap-3 mb-4">
+    <div>
+     <p data-template-id="spectator-kicker" class="canva-text small-title m-0" style="color: rgb(139, 81, 51); font-weight: 700; font-style: normal; font-size: 12px;">لوحة المباراة</p>
+     <h2 data-template-id="spectator-title" class="canva-text font-bold m-0" style="color: rgb(50, 23, 11); font-weight: 700; font-style: normal; font-size: 24px;">وضع المتفرجين</h2>
+    </div><button id="drawer-close" class="btn btn-muted p-2" type="button" aria-label="إغلاق لوحة المتفرجين"><i data-lucide="x" width="18"></i></button>
+   </div>
+   <div data-template-id="offline-banner" class="canva-banner rounded-xl p-3 text-sm font-bold mb-4" style="background: rgb(223, 241, 246); color: rgb(22, 81, 110); font-weight: 700; font-style: normal; font-size: 16px;">أوفلاين — قائمة عرض تجريبية محلية</div>
+   <section data-template-id="spectator-panel" class="canva-panel paper p-4" style="background: rgb(255, 248, 233);">
+    <p data-template-id="spectator-copy" class="canva-text text-sm leading-7 mt-0" style="color: rgb(112, 65, 38); font-weight: 400; font-style: normal; font-size: 16px;">يمكن للمتفرج متابعة الرقعة وحالة المباراة فقط. لا يسمح له بتحريك القطع.</p><button id="spectator-toggle" data-template-id="spectator-toggle-button" class="canva-button btn btn-primary w-full mt-2" type="button" style="background: rgb(128, 53, 31); color: rgb(255, 245, 220); font-weight: 700; font-style: normal; font-size: 16px;">الدخول كمتفرج</button>
+   </section>
+   <section data-template-id="audience-panel" class="canva-panel paper p-4 mt-4" style="background: rgb(255, 248, 233);">
+    <div class="flex justify-between items-center">
+     <h3 data-template-id="audience-title" class="canva-text font-bold m-0" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 19px;">المتفرجون التجريبيون</h3><span id="audience-count" class="text-sm font-bold text-[#80502e]"></span>
+    </div>
+    <div id="audience-list" class="mt-2"></div>
+   </section>
+  </aside>
+  <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+   <form id="settings-form" data-template-id="settings-panel" class="canva-panel modal-card paper p-6" style="background: rgb(255, 248, 233);">
+    <div class="flex justify-between items-center gap-3">
+     <h2 id="settings-title" data-template-id="settings-title" class="canva-text font-bold m-0" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 24px;">إعدادات المباراة</h2><button id="settings-close" class="btn btn-muted p-2" type="button" aria-label="إغلاق الإعدادات"><i data-lucide="x" width="18"></i></button>
+    </div>
+    <p data-template-id="settings-copy" class="canva-text text-sm leading-7 mt-3" style="color: rgb(112, 65, 38); font-weight: 400; font-style: normal; font-size: 16px;">اختر مستوى الذكاء وثيم الرقعة ولون القطع والوقت. تطبيق الإعدادات يبدأ مباراة جديدة.</p>
+    <div class="grid sm:grid-cols-2 gap-4 mt-4">
+     <div>
+      <label data-template-id="ai-level-label" class="canva-text font-bold block mb-1" for="ai-level" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 16px;">مستوى الذكاء الاصطناعي</label> <select id="ai-level" class="field"> <option value="1">مبتدئ</option> <option value="2">سهل</option> <option value="3" selected="">متوسط</option> <option value="4">صعب</option> </select>
+     </div>
+     <div>
+      <label data-template-id="time-label" class="canva-text font-bold block mb-1" for="time-control" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 16px;">المؤقت لكل لاعب</label> <select id="time-control" class="field"> <option value="60">1 دقيقة</option> <option value="180">3 دقائق</option> <option value="300" selected="">5 دقائق</option> <option value="600">10 دقائق</option> </select>
+     </div>
+     <div>
+      <label data-template-id="theme-label" class="canva-text font-bold block mb-1" for="board-theme" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 16px;">ثيم ألوان الرقعة</label> <select id="board-theme" class="field"> <option value="walnut">جوز دافئ</option> <option value="midnight">ليلي داكن</option> <option value="ivory">عاجي</option> <option value="forest">غابة</option> </select>
+     </div>
+     <div>
+      <label data-template-id="piece-style-label" class="canva-text font-bold block mb-1" for="piece-style" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 16px;">لون القطع</label> <select id="piece-style" class="field"> <option value="classic">كلاسيكي</option> <option value="ivory">عاجي وأسود</option> <option value="gold">ذهبي وفحمي</option> </select>
+     </div>
+    </div><button data-template-id="settings-save-button" class="canva-button btn btn-primary w-full mt-5" type="submit" style="background: rgb(128, 53, 31); color: rgb(255, 245, 220); font-weight: 700; font-style: normal; font-size: 16px;">حفظ وتطبيق</button>
+   </form>
+  </div>
+  <div id="promotion-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="promotion-title">
+   <section data-template-id="promotion-panel" class="canva-panel modal-card paper p-6 text-center" style="background: rgb(255, 248, 233);">
+    <h2 id="promotion-title" data-template-id="promotion-title" class="canva-text font-bold mb-2" style="color: rgb(61, 29, 15); font-weight: 700; font-style: normal; font-size: 24px;">ترقية البيدق</h2>
+    <p data-template-id="promotion-copy" class="canva-text mb-4" style="color: rgb(112, 65, 38); font-weight: 400; font-style: normal; font-size: 16px;">اختر القطعة الجديدة للبيدق.</p>
+    <div id="promotion-options" class="flex justify-center gap-3"></div>
+   </section>
+  </div>
+  <script>
+    const files = "abcdefgh";
+    const symbols = { wp:"♙", wn:"♘", wb:"♗", wr:"♖", wq:"♕", wk:"♔", bp:"♟", bn:"♞", bb:"♝", br:"♜", bq:"♛", bk:"♚" };
+    const names = {p:"بيدق",n:"حصان",b:"فيل",r:"رخ",q:"وزير",k:"ملك"};
+    const values = {p:100,n:320,b:330,r:500,q:900,k:20000};
+    const themes = {
+      walnut:["#f1d09a","#874128"],
+      midnight:["#b6c0cb","#3a4a5a"],
+      ivory:["#f5ecd7","#a98c6e"],
+      forest:["#d5d9b9","#567052"]
+    };
+    const $ = (s) => document.querySelector(s);
+    const opponent = c => c === "w" ? "b" : "w";
+    const inside = (r,c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+    const sq = (r,c) => files[c] + (8-r);
+    const clone = data => JSON.parse(JSON.stringify(data));
+
+    let timer = null;
+    let aiTimer = null;
+    let state = {};
+    const spectators = [
+      {name:"سارة", status:"يشاهد الآن"},
+      {name:"عمر", status:"أوفلاين"},
+      {name:"نور", status:"يشاهد الآن"}
+    ];
+
+    function initialBoard(){
+      return [
+        ["br","bn","bb","bq","bk","bb","bn","br"],
+        ["bp","bp","bp","bp","bp","bp","bp","bp"],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        ["wp","wp","wp","wp","wp","wp","wp","wp"],
+        ["wr","wn","wb","wq","wk","wb","wn","wr"]
+      ];
+    }
+
+    function resetGame(){
+      clearInterval(timer);
+      clearTimeout(aiTimer);
+      aiTimer = null;
+      state = {
+        board:initialBoard(), turn:"w", selected:null, legal:[], moves:[], redo:[],
+        castle:{wK:true,wQ:true,bK:true,bQ:true}, ep:null, half:0,
+        last:null, started:false, over:false, thinking:false, spectator:false,
+        mode:state.mode || "local", level:state.level || 3,
+        baseTime:state.baseTime || 300, clocks:{w:state.baseTime || 300,b:state.baseTime || 300},
+        pendingPromotion:null
+      };
+      render();
+      showMessage("اختر قطعة ثم مربعاً مضاءً. تبدأ الساعة بعد أول نقلة.");
+      startTimer();
+    }
+
+    function isSquareAttacked(board,r,c,by){
+      const pawnRow = by === "w" ? r+1 : r-1;
+      for(const dc of [-1,1]) if(inside(pawnRow,c+dc) && board[pawnRow][c+dc] === by+"p") return true;
+      const knightJumps=[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+      for(const [dr,dc] of knightJumps) if(inside(r+dr,c+dc) && board[r+dr][c+dc] === by+"n") return true;
+      for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if((dr||dc) && inside(r+dr,c+dc) && board[r+dr][c+dc] === by+"k") return true;
+      const rays=[
+        {directions:[[1,0],[-1,0],[0,1],[0,-1]],attackers:["r","q"]},
+        {directions:[[1,1],[1,-1],[-1,1],[-1,-1]],attackers:["b","q"]}
+      ];
+      for(const {directions,attackers} of rays) for(const [dr,dc] of directions){
+        let rr=r+dr,cc=c+dc;
+        while(inside(rr,cc)){
+          const piece=board[rr][cc];
+          if(piece){ if(piece[0]===by && attackers.includes(piece[1])) return true; break; }
+          rr+=dr;cc+=dc;
+        }
+      }
+      return false;
+    }
+
+    const isAttacked = isSquareAttacked;
+
+    function inCheck(board,color){
+      for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+        if(board[r][c] === color+"k") return isAttacked(board,r,c,opponent(color));
+      }
+      return true;
+    }
+
+    function pseudoMoves(board,r,c,attackOnly=false){
+      const piece = board[r][c];
+      if(!piece) return [];
+      const color = piece[0], type = piece[1], enemy = opponent(color), out = [];
+      const add = (rr,cc,extra={}) => {
+        if(inside(rr,cc) && (!board[rr][cc] || board[rr][cc][0] !== color)) out.push({from:[r,c],to:[rr,cc],...extra});
+      };
+      const ray = dirs => dirs.forEach(([dr,dc]) => {
+        let rr=r+dr, cc=c+dc;
+        while(inside(rr,cc)){
+          if(!board[rr][cc]) out.push({from:[r,c],to:[rr,cc]});
+          else { if(board[rr][cc][0] !== color) out.push({from:[r,c],to:[rr,cc]}); break; }
+          rr+=dr; cc+=dc;
+        }
+      });
+
+      if(type === "p"){
+        const d=color === "w" ? -1 : 1, start=color === "w" ? 6 : 1;
+        if(attackOnly){
+          [-1,1].forEach(dc => { if(inside(r+d,c+dc)) out.push({from:[r,c],to:[r+d,c+dc]}); });
+          return out;
+        }
+        if(inside(r+d,c) && !board[r+d][c]){
+          out.push({from:[r,c],to:[r+d,c]});
+          if(r === start && !board[r+2*d][c]) out.push({from:[r,c],to:[r+2*d,c],double:true});
+        }
+        [-1,1].forEach(dc => {
+          const rr=r+d,cc=c+dc;
+          if(inside(rr,cc) && board[rr][cc] && board[rr][cc][0] === enemy) out.push({from:[r,c],to:[rr,cc]});
+          if(state.ep === sq(rr,cc)) out.push({from:[r,c],to:[rr,cc],ep:true});
+        });
+      }
+      if(type === "n") [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dr,dc])=>add(r+dr,c+dc));
+      if(type === "b") ray([[1,1],[1,-1],[-1,1],[-1,-1]]);
+      if(type === "r") ray([[1,0],[-1,0],[0,1],[0,-1]]);
+      if(type === "q") ray([[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]);
+      if(type === "k"){
+        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr || dc) add(r+dr,c+dc);
+        if(!attackOnly && !inCheck(board,color)){
+          const row=color === "w" ? 7 : 0;
+          if(r === row && c === 4){
+            if(state.castle[color+"K"] && !board[row][5] && !board[row][6] && board[row][7] === color+"r" &&
+               !isAttacked(board,row,5,enemy) && !isAttacked(board,row,6,enemy)) out.push({from:[r,c],to:[row,6],castle:"K"});
+            if(state.castle[color+"Q"] && !board[row][3] && !board[row][2] && !board[row][1] && board[row][0] === color+"r" &&
+               !isAttacked(board,row,3,enemy) && !isAttacked(board,row,2,enemy)) out.push({from:[r,c],to:[row,2],castle:"Q"});
+          }
+        }
+      }
+      return out;
+    }
+
+    function simulate(move,board=state.board){
+      const b=clone(board), piece=b[move.from[0]][move.from[1]];
+      b[move.to[0]][move.to[1]]=piece;
+      b[move.from[0]][move.from[1]]=null;
+      if(move.ep) b[move.from[0]][move.to[1]]=null;
+      if(move.castle){
+        const row=move.from[0];
+        if(move.castle === "K"){ b[row][5]=b[row][7]; b[row][7]=null; }
+        else { b[row][3]=b[row][0]; b[row][0]=null; }
+      }
+      if(piece[1] === "p" && (move.to[0] === 0 || move.to[0] === 7)) b[move.to[0]][move.to[1]]=piece[0]+(move.promotion || "q");
+      return b;
+    }
+
+    function legalMoves(color=state.turn, board=state.board){
+      const out=[];
+      for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+        if(board[r][c] && board[r][c][0] === color){
+          pseudoMoves(board,r,c).forEach(m => {
+            const piece=board[r][c];
+            const promotions=piece[1]==="p" && (m.to[0]===0 || m.to[0]===7) ? ["q","r","b","n"] : [null];
+            promotions.forEach(promotion=>{
+              const candidate=promotion ? {...m,promotion} : m;
+              if(!inCheck(simulate(candidate,board),color)) out.push(candidate);
+            });
+          });
+        }
+      }
+      return out;
+    }
+
+    function runChessLogicTests(){
+      const saved=state;
+      const testState={board:initialBoard(),turn:"w",castle:{wK:true,wQ:true,bK:true,bQ:true},ep:null};
+      state=testState;
+      const opening=legalMoves("w").some(m=>m.from[0]===6&&m.from[1]===4&&m.to[0]===4&&m.to[1]===4);
+      const block=Array.from({length:8},()=>Array(8).fill(null));
+      block[7][4]="wk"; block[0][4]="bk"; block[0][0]="br"; block[6][4]="wp";
+      state={board:block,turn:"w",castle:{wK:false,wQ:false,bK:false,bQ:false},ep:null};
+      const legalBlock=legalMoves("w").some(m=>m.from[0]===6&&m.from[1]===4&&m.to[0]===5&&m.to[1]===4);
+      const safe=Array.from({length:8},()=>Array(8).fill(null));
+      safe[7][4]="wk"; safe[0][4]="bk";
+      state={board:safe,turn:"w",castle:{wK:false,wQ:false,bK:false,bQ:false},ep:null};
+      const safeKing=legalMoves("w").some(m=>m.from[0]===7&&m.from[1]===4&&m.to[0]===6&&m.to[1]===3);
+      safe[5][3]="br";
+      const attackedKing=!legalMoves("w").some(m=>m.from[0]===7&&m.from[1]===4&&m.to[0]===6&&m.to[1]===3);
+      state=saved;
+      return opening&&legalBlock&&safeKing&&attackedKing;
+    }
+
+    function notation(move,piece,capture,check){
+      if(move.castle) return move.castle === "K" ? "O-O"+check : "O-O-O"+check;
+      const letter = piece[1] === "p" ? "" : piece[1].toUpperCase();
+      const pawnFile = piece[1] === "p" && capture ? files[move.from[1]] : "";
+      return `${letter}${pawnFile}${capture ? "x" : ""}${sq(move.to[0],move.to[1])}${move.promotion ? "="+move.promotion.toUpperCase() : ""}${check}`;
+    }
+
+    function snapshot(){
+      // Keep snapshots finite: move history contains earlier snapshots and must not be nested.
+      return clone({
+        board:state.board,turn:state.turn,castle:state.castle,ep:state.ep,half:state.half,last:state.last,
+        started:state.started,clocks:state.clocks
+      });
+    }
+
+    function applyMove(move,skipPromotion=false){
+      const piece=state.board[move.from[0]][move.from[1]];
+      if(piece[1] === "p" && (move.to[0] === 0 || move.to[0] === 7) && !move.promotion && !skipPromotion){
+        state.pendingPromotion=move;
+        openPromotion();
+        return;
+      }
+      state.redo=[];
+      state.moves.push({snapshot:snapshot(),label:""});
+      const target=state.board[move.to[0]][move.to[1]];
+      const capture=!!target || move.ep;
+
+      state.board=simulate(move);
+      state.ep=piece[1] === "p" && Math.abs(move.to[0]-move.from[0]) === 2 ? sq((move.to[0]+move.from[0])/2,move.from[1]) : null;
+      if(piece[1] === "k"){state.castle[piece[0]+"K"]=false;state.castle[piece[0]+"Q"]=false;}
+      if(piece[1] === "r"){if(move.from[1]===0)state.castle[piece[0]+"Q"]=false;if(move.from[1]===7)state.castle[piece[0]+"K"]=false;}
+      if(target && target[1] === "r"){if(move.to[1]===0)state.castle[target[0]+"Q"]=false;if(move.to[1]===7)state.castle[target[0]+"K"]=false;}
+      state.half=(piece[1] === "p" || capture) ? 0 : state.half+1;
+      state.last={from:move.from,to:move.to};
+      state.turn=opponent(state.turn);
+      state.started=true;
+      state.selected=null;state.legal=[];
+      const check=inCheck(state.board,state.turn);
+      state.moves[state.moves.length-1].label=notation(move,piece,capture,check?"+":"");
+      evaluateGame();
+      render();
+
+      if(!state.over && state.mode === "ai" && state.turn === "b" && !state.spectator) setTimeout(aiPlay,450);
+    }
+
+    function evaluateGame(){
+      const moves=legalMoves();
+      const checked=inCheck(state.board,state.turn);
+      if(!moves.length){
+        state.over=true; clearInterval(timer);
+        showMessage(checked ? `كش مات — فاز ${state.turn === "w" ? "الأسود" : "الأبيض"}` : "تعادل — لا توجد نقلة قانونية.",checked ? "warning" : "good");
+      } else if(state.half >= 100){
+        state.over=true;clearInterval(timer);showMessage("تعادل بقاعدة الخمسين نقلة.","good");
+      } else if(checked) {
+        showMessage(`كش — دور ${state.turn === "w" ? "الأبيض" : "الأسود"}.`,"warning");
+      }
+    }
+
+    function selectSquare(r,c){
+      if(state.over || state.thinking || state.spectator) return;
+      if(state.mode === "ai" && state.turn === "b"){showMessage("الذكاء الاصطناعي يفكر في نقلته.","thinking");return;}
+      const selectedMove=state.legal.find(m=>m.to[0]===r && m.to[1]===c);
+      if(selectedMove){applyMove(selectedMove);return;}
+      if(state.board[r][c] && state.board[r][c][0] === state.turn){
+        state.selected=[r,c];
+        state.legal=legalMoves().filter(m=>m.from[0]===r && m.from[1]===c);
+        renderBoard();
+      } else {
+        state.selected=null;state.legal=[];renderBoard();
+      }
+    }
+
+    function renderBoard(){
+      const board=$("#board");
+      board.innerHTML="";
+      for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+        const piece=state.board[r][c];
+        const button=document.createElement("button");
+        button.type="button";
+        button.className=`square ${(r+c)%2 ? "dark" : "light"}`;
+        button.setAttribute("role","gridcell");
+        button.setAttribute("aria-label",`${sq(r,c)} ${piece ? names[piece[1]]+" "+(piece[0]==="w"?"أبيض":"أسود") : "فارغ"}`);
+        if(state.last && ((state.last.from[0]===r && state.last.from[1]===c) || (state.last.to[0]===r && state.last.to[1]===c))) button.classList.add("last");
+        if(state.selected && state.selected[0]===r && state.selected[1]===c) button.classList.add("selected");
+        const move=state.legal.find(m=>m.to[0]===r && m.to[1]===c);
+        if(move) button.classList.add(piece ? "capture" : "legal");
+        if(piece) button.innerHTML=`<span class="piece ${piece[0]==="w"?"white":"black"}">${symbols[piece]}</span>`;
+        if(r===7) button.innerHTML+=`<span class="coord file">${files[c]}</span>`;
+        if(c===0) button.innerHTML+=`<span class="coord rank">${8-r}</span>`;
+        button.addEventListener("click",()=>selectSquare(r,c));
+        board.appendChild(button);
+      }
+    }
+
+    function renderHistory(){
+      const list=$("#history");
+      if(!state.moves.length){list.innerHTML="<li>لم تبدأ النقلات بعد.</li>";return;}
+      let html="";
+      state.moves.forEach((move,index)=>{
+        if(index%2===0) html+=`<li><b>${Math.floor(index/2)+1}.</b> ${move.label}`;
+        else html+=` &nbsp; ${move.label}</li>`;
+      });
+      if(state.moves.length%2) html+="</li>";
+      list.innerHTML=html;
+    }
+
+    function render(){
+      renderBoard();
+      const checked=inCheck(state.board,state.turn);
+      $("#turn-title").textContent=state.thinking ? "الذكاء الاصطناعي يفكر..." : `دور ${state.turn === "w" ? "الأبيض" : "الأسود"}${checked ? " — كش!" : ""}`;
+      $("#turn-detail").textContent=state.mode === "ai" ? `ضد الذكاء الاصطناعي — المستوى ${state.level}` : "لاعبان محلياً على الجهاز";
+      $("#white-player").textContent="اللاعب الأبيض";
+      $("#black-player").textContent=state.mode === "ai" ? "الذكاء الاصطناعي" : "اللاعب الأسود";
+      ["w","b"].forEach(color=>{
+        const clock=$("#"+(color==="w"?"white":"black")+"-clock");
+        clock.classList.toggle("active",state.started && state.turn===color && !state.over && !state.thinking);
+        clock.classList.toggle("low",state.clocks[color]<30);
+        $("#"+(color==="w"?"white":"black")+"-time").textContent=formatTime(state.clocks[color]);
+      });
+      $("#undo-button").disabled=!state.moves.length || state.thinking;
+      $("#redo-button").disabled=!state.redo.length || state.thinking;
+      $("#spectator-banner").classList.toggle("hidden",!state.spectator);
+      $("#spectator-banner").textContent="وضع المتفرج نشط: يمكنك مشاهدة المباراة فقط ولا يمكنك تحريك القطع.";
+      renderHistory();
+    }
+
+    function formatTime(seconds){
+      seconds=Math.max(0,Math.ceil(seconds));
+      return `${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
+    }
+
+    function showMessage(text,type=""){
+      const box=$("#status-message");
+      box.textContent=text;
+      box.className="status mt-4 "+type;
+    }
+
+    function startTimer(){
+      clearInterval(timer);
+      timer=setInterval(()=>{
+        if(!state.started || state.over || state.thinking || state.spectator) return;
+        state.clocks[state.turn]--;
+        if(state.clocks[state.turn]<=0){
+          state.clocks[state.turn]=0;state.over=true;clearInterval(timer);
+          showMessage(`انتهى وقت ${state.turn === "w" ? "الأبيض" : "الأسود"} — فاز ${state.turn === "w" ? "الأسود" : "الأبيض"}.`,"warning");
+        }
+        render();
+      },1000);
+    }
+
+    function boardScore(board,color){
+      let score=0;
+      board.flat().forEach(piece=>{if(piece) score+=(piece[0]===color?1:-1)*values[piece[1]];});
+      const enemy=opponent(color);
+      if(inCheck(board,enemy)) score+=35;
+      if(inCheck(board,color)) score-=45;
+      return score;
+    }
+
+    function orderedMoves(moves,board){
+      return moves.slice().sort((a,b)=>{
+        const captureA=board[a.to[0]][a.to[1]],captureB=board[b.to[0]][b.to[1]];
+        const score=m=> (m.promotion?values[m.promotion]:0)+(m.castle?40:0)+(m.to[0]===0||m.to[0]===7?20:0);
+        return (captureB?values[captureB[1]]:0)+score(b)-(captureA?values[captureA[1]]:0)-score(a);
+      });
+    }
+
+    function minimax(board,turn,depth,alpha,beta,maximizingColor){
+      const moves=legalMoves(turn,board);
+      if(!moves.length) return {score:inCheck(board,turn) ? (turn===maximizingColor ? -999999-depth : 999999+depth) : 0};
+      if(depth===0) return {score:boardScore(board,maximizingColor)};
+      const ordered=orderedMoves(moves,board);
+      let bestMove=null;
+      if(turn===maximizingColor){
+        let best=-Infinity;
+        for(const move of ordered){
+          const result=minimax(simulate(move,board),opponent(turn),depth-1,alpha,beta,maximizingColor);
+          if(result.score>best){best=result.score;bestMove=move;} alpha=Math.max(alpha,best);if(beta<=alpha) break;
+        }
+        return {score:best,move:bestMove};
+      }
+      let best=Infinity;
+      for(const move of ordered){
+        const result=minimax(simulate(move,board),opponent(turn),depth-1,alpha,beta,maximizingColor);
+        if(result.score<best){best=result.score;bestMove=move;} beta=Math.min(beta,best);if(beta<=alpha) break;
+      }
+      return {score:best,move:bestMove};
+    }
+
+    function chooseAiMove(moves){
+      if(state.level===1) return moves[Math.floor(Math.random()*moves.length)];
+      const ordered=orderedMoves(moves,state.board);
+      if(state.level===2) return ordered.find(m=>state.board[m.to[0]][m.to[1]]) || ordered[Math.floor(Math.random()*ordered.length)];
+      const depth=state.level===3 ? 1 : state.level===4 ? 2 : state.level===5 ? 3 : 3;
+      return minimax(state.board,"b",depth,-Infinity,Infinity,"b").move || ordered[0];
+    }
+
+    function aiPlay(){
+      if(state.over || state.turn !== "b" || state.mode !== "ai" || state.spectator) return;
+      state.thinking=true;
+      showMessage("الذكاء الاصطناعي يفكر في نقلة قانونية...","thinking");
+      render();
+      aiTimer=setTimeout(()=>{
+        aiTimer=null;
+        if(state.over || state.turn !== "b" || state.mode !== "ai" || state.spectator){state.thinking=false;render();return;}
+        try{
+          const moves=legalMoves("b");
+          if(!moves.length){state.thinking=false;evaluateGame();render();return;}
+          const chosen=chooseAiMove(moves) || moves[0];
+          state.thinking=false;
+          applyMove(chosen,true);
+          if(!state.over) showMessage("نفذ الذكاء الاصطناعي نقلة قانونية.","good");
+        }catch(error){
+          state.thinking=false;
+          showMessage("تعذر تنفيذ نقلة الذكاء الاصطناعي. يمكنك المتابعة أو بدء مباراة جديدة.","warning");
+          render();
+        }
+      },500+state.level*150);
+    }
+
+    function openPromotion(){
+      const options=$("#promotion-options");
+      options.innerHTML="";
+      ["q","r","b","n"].forEach(type=>{
+        const btn=document.createElement("button");
+        btn.type="button";btn.className="promotion-option";
+        btn.innerHTML=`<span class="piece ${state.turn==="w"?"white":"black"}">${symbols[state.turn+type]}</span>`;
+        btn.setAttribute("aria-label","ترقية إلى "+names[type]);
+        btn.addEventListener("click",()=>{
+          const move=state.pendingPromotion;
+          move.promotion=type;
+          state.pendingPromotion=null;
+          $("#promotion-modal").classList.remove("show");
+          applyMove(move,true);
+        });
+        options.appendChild(btn);
+      });
+      $("#promotion-modal").classList.add("show");
+    }
+
+    function applyTheme(name){
+      const colors=themes[name];
+      document.documentElement.style.setProperty("--light-square",colors[0]);
+      document.documentElement.style.setProperty("--dark-square",colors[1]);
+    }
+
+    function applyPieceStyle(style){
+      if(style==="gold"){
+        document.documentElement.style.setProperty("--white-piece","#f3c566");
+        document.documentElement.style.setProperty("--black-piece","#202126");
+      } else if(style==="ivory"){
+        document.documentElement.style.setProperty("--white-piece","#fff7df");
+        document.documentElement.style.setProperty("--black-piece","#211b18");
+      } else {
+        document.documentElement.style.setProperty("--white-piece","#fff7df");
+        document.documentElement.style.setProperty("--black-piece","#29140d");
+      }
+    }
+
+    function openSpectators(){
+      $("#spectator-drawer").classList.add("open");
+      $("#drawer-backdrop").classList.add("show");
+      $("#spectator-drawer").setAttribute("aria-hidden","false");
+      renderAudience();
+    }
+
+    function closeSpectators(){
+      $("#spectator-drawer").classList.remove("open");
+      $("#drawer-backdrop").classList.remove("show");
+      $("#spectator-drawer").setAttribute("aria-hidden","true");
+    }
+
+    function renderAudience(){
+      $("#audience-count").textContent=`${spectators.length} متفرجين`;
+      $("#audience-list").innerHTML=spectators.map(person=>`
+        <div class="spectator-row">
+          <span class="avatar">${person.name[0]}</span>
+          <div><b>${person.name}</b><p class="text-xs text-[#80502e] m-0">${person.status}</p></div>
+        </div>`).join("");
+    }
+
+    $("#new-game").addEventListener("click",resetGame);
+    $("#ai-mode").addEventListener("click",()=>{state.mode="ai";resetGame();showMessage("بدأت مباراة ضد الذكاء الاصطناعي. أنت تلعب بالأبيض.","good");});
+    $("#local-mode").addEventListener("click",()=>{state.mode="local";resetGame();showMessage("بدأت مباراة لاعبين محلياً.","good");});
+
+    $("#undo-button").addEventListener("click",()=>{
+      const last=state.moves.pop();
+      if(!last) return;
+      state.redo.push({snapshot:snapshot(),label:last.label});
+      Object.assign(state,last.snapshot);
+      state.selected=null;state.legal=[];state.over=false;state.thinking=false;
+      showMessage("تم التراجع عن النقلة.","good");
+      render();
+    });
+
+    $("#redo-button").addEventListener("click",()=>{
+      const next=state.redo.pop();
+      if(!next) return;
+      state.moves.push({snapshot:snapshot(),label:next.label});
+      Object.assign(state,next.snapshot);
+      state.selected=null;state.legal=[];state.over=false;state.thinking=false;
+      showMessage("تمت إعادة النقلة.","good");
+      render();
+    });
+
+    $("#settings-open").addEventListener("click",()=>$("#settings-modal").classList.add("show"));
+    $("#settings-close").addEventListener("click",()=>$("#settings-modal").classList.remove("show"));
+    $("#settings-form").addEventListener("submit",event=>{
+      event.preventDefault();
+      state.level=Number($("#ai-level").value);
+      state.baseTime=Number($("#time-control").value);
+      applyTheme($("#board-theme").value);
+      applyPieceStyle($("#piece-style").value);
+      $("#settings-modal").classList.remove("show");
+      resetGame();
+      showMessage("تم تطبيق الإعدادات وبدء مباراة جديدة.","good");
+    });
+
+    $("#spectators-open").addEventListener("click",openSpectators);
+    $("#drawer-close").addEventListener("click",closeSpectators);
+    $("#drawer-backdrop").addEventListener("click",closeSpectators);
+    $("#spectator-toggle").addEventListener("click",()=>{
+      state.spectator=!state.spectator;
+      $("#spectator-toggle").textContent=state.spectator ? "مغادرة وضع المتفرج" : "الدخول كمتفرج";
+      render();
+    });
+
+    document.addEventListener("DOMContentLoaded",()=>{
+      runChessLogicTests();
+      state={mode:"local",level:3,baseTime:300};
+      resetGame();
+      renderAudience();
+      lucide.createIcons();
+    });
+  </script>
+ 
+</body></html>

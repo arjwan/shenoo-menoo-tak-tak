@@ -1,0 +1,471 @@
+body.tawla-active .play-stage {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+/* Canva build 6 visual language on the server-authoritative board. */
+body.tawla-active{--tawla-ink:#2a170c;--tawla-paper:#fff8e9;--tawla-walnut:#5e2a11;--tawla-deep:#230d05;--tawla-maple:#d59253;--tawla-brick:#8e351f;--tawla-gold:#e3b866;background:radial-gradient(circle at 12% 0,#ffe8b4cc,transparent 28%),radial-gradient(circle at 92% 8%,#e2a45852,transparent 32%),linear-gradient(130deg,#b66f38,#7c4020 55%,#3b190d)!important}
+body.tawla-active .tawla-build-six{color:#fff8e9;background:repeating-linear-gradient(8deg,#ffc67721 0 1px,transparent 1px 11px),linear-gradient(135deg,#2c0e04,#c47a3d 21%,#55210c 48%,#bd7034 76%,#301006)!important;border-color:#3a1306!important;box-shadow:inset 0 0 0 2px #e5ad67,inset 0 0 0 7px #3a1306,0 20px 42px #260c0385!important}
+body.tawla-active .tawla-build-six>header{display:grid!important;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:7px 10px!important;background:#2a1009cc;border:1px solid #e3b86655;border-radius:12px}
+body.tawla-active .tawla-build-six>header>div:first-child{display:grid;line-height:1.1}body.tawla-active .tawla-build-six>header small{color:#e3b866;font-size:9px}.tawla-live-badges{display:flex!important;justify-content:flex-end;gap:5px;flex-wrap:wrap}.tawla-live-badges span{padding:4px 7px;border:1px solid #e3b86655;border-radius:999px;background:#fff8e914;color:#fff8e9;font-size:9px;font-weight:800}.tawla-live-badges .online{color:#8ef0b1}.tawla-live-badges .offline{color:#ffd37c}
+body.tawla-active .tawla-build-six .tawla-board{border-color:#54210c!important;background:repeating-linear-gradient(88deg,#62270a14 0 1px,transparent 1px 13px),linear-gradient(110deg,#d49354,#f0bd7c 43%,#c77838)!important;box-shadow:inset 0 0 0 2px #f5cb8e,0 14px 28px #260c0385!important}
+body.tawla-active .tawla-build-six .tawla-point:before{filter:drop-shadow(1px 2px 1px #310e0473)}body.tawla-active .tawla-build-six .tawla-point:nth-child(odd):before{background:linear-gradient(90deg,#963c22,#b86545,#963c22)!important}body.tawla-active .tawla-build-six .tawla-point:nth-child(even):before{background:linear-gradient(90deg,#f8e9bf,#fff4d4,#f8e9bf)!important}
+body.tawla-active .tawla-build-six .tawla-center-bar{background:linear-gradient(90deg,#3a1206,#d1823d 51%,#301005)!important;box-shadow:inset 2px 0 #e4a25a!important}.tawla-build-six .tawla-main-action,.tawla-build-six [data-roll]{border:0!important;border-radius:10px!important;background:#7d321f!important;color:#fff5dc!important;box-shadow:0 4px 0 #421508!important}
+.tawla-build-six .dice-pair.rolling .tawla-die:first-child{animation:buildSixRollA .68s cubic-bezier(.3,.8,.3,1)}.tawla-build-six .dice-pair.rolling .tawla-die:last-child{animation:buildSixRollB .68s cubic-bezier(.3,.8,.3,1)}@keyframes buildSixRollA{20%{transform:translate(-24px,-18px) rotate(105deg) scale(.78)}55%{transform:translate(18px,7px) rotate(-78deg) scale(1.1)}100%{transform:none}}@keyframes buildSixRollB{20%{transform:translate(22px,-22px) rotate(-125deg) scale(.8)}55%{transform:translate(-14px,9px) rotate(88deg) scale(1.08)}100%{transform:none}}
+@media(max-width:700px){body.tawla-active .tawla-build-six>header{grid-template-columns:1fr auto}.tawla-live-badges{grid-column:1/-1;justify-content:center}.tawla-live-badges span{font-size:8px;padding:3px 5px}}
+body.tawla-active .site-header,
+body.tawla-active .game-toolbar,
+body.tawla-active .azawi-hero {
+  display: none !important;
+}
+body.tawla-active main.game-room,
+body.tawla-active #roomView,
+body.tawla-active .play-stage {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+body.tawla-active .play-stage > .table-head,
+body.tawla-active .play-stage > .scoreboard,
+body.tawla-active .play-stage > .game-table,
+body.tawla-active .play-stage > .table-controls {
+  display: none !important;
+}
+body.tawla-active #kahwa-game-stage {
+  display: block !important;
+  width: 100%;
+  margin: 0;
+}
+.tawla-table {
+  --wood: #5a260f;
+  --wood2: #9b4e21;
+  --felt: #d8a75e;
+  --red: #922d22;
+  --cream: #f0d296;
+  position: relative;
+  max-width: 1180px;
+  margin: auto;
+  padding: 10px 12px 14px;
+  border: 8px solid #7c3717;
+  border-radius: 22px;
+  background: linear-gradient(100deg, #4a1c0b, #8e431d 50%, #4b1d0c);
+  box-shadow:
+    inset 0 0 0 3px #c57338,
+    0 16px 30px #0008;
+  color: #fff4dc;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.tawla-table > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 8px;
+}
+.tawla-main-action,
+.tawla-table [data-roll],
+.tawla-color-choice button {
+  border: 1px solid #e2ad6c;
+  border-radius: 10px;
+  background: #3a160b;
+  color: #fff0ce;
+  padding: 7px 12px;
+  font-weight: 800;
+}
+.tawla-color-choice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 2px 0 6px;
+}
+.tawla-players {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 8px 8px;
+}
+.tawla-players > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid #ffffff22;
+  border-radius: 10px;
+  background: #35150bd9;
+}
+.tawla-players small {
+  color: #f2c98f;
+}
+.tawla-board {
+  position: relative;
+  height: clamp(390px, 58vw, 620px);
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  border: 6px solid #2b0e05;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e2b36d, #d29b51 50%, #e0af68);
+  box-shadow: inset 0 0 24px #4d1b0b66;
+  overflow: hidden;
+}
+.tawla-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  direction: ltr;
+}
+.tawla-row.top {
+  align-items: start;
+}
+.tawla-row.bottom {
+  align-items: end;
+}
+.tawla-point {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+  overflow: visible;
+}
+.tawla-point:before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  filter: drop-shadow(0 1px 1px #5d250744);
+}
+.tawla-point.top:before {
+  top: 0;
+  border-left: clamp(17px, 2.65vw, 35px) solid transparent;
+  border-right: clamp(17px, 2.65vw, 35px) solid transparent;
+  border-top: clamp(145px, 24vw, 265px) solid var(--red);
+}
+.tawla-point.bottom:before {
+  bottom: 0;
+  border-left: clamp(17px, 2.65vw, 35px) solid transparent;
+  border-right: clamp(17px, 2.65vw, 35px) solid transparent;
+  border-bottom: clamp(145px, 24vw, 265px) solid var(--red);
+}
+.tawla-point:nth-child(even):before {
+  border-top-color: var(--cream);
+}
+.tawla-row.bottom .tawla-point:nth-child(even):before {
+  border-top-color: transparent;
+  border-bottom-color: var(--cream);
+}
+.tawla-point > span {
+  position: absolute;
+  z-index: 3;
+  left: 3px;
+  font-size: 10px;
+  color: #51200e;
+}
+.tawla-point.top > span {
+  top: 2px;
+}
+.tawla-point.bottom > span {
+  bottom: 2px;
+}
+.tawla-point > div {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.tawla-point.top > div {
+  top: 5px;
+}
+.tawla-point.bottom > div {
+  bottom: 5px;
+  flex-direction: column-reverse;
+}
+.tawla-point i,
+.bar-stack i {
+  display: block;
+  width: clamp(27px, 4vw, 48px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  margin: -2px 0;
+  background: #eee;
+  border: 2px solid #c7c3b7;
+  box-shadow: 0 2px 3px #0006;
+  touch-action: none;
+  cursor: grab;
+  transition: none !important;
+}
+.tawla-point i.black,
+.bar-stack i.black {
+  background: #18191a;
+  border-color: #050505;
+  box-shadow:
+    inset 0 1px 1px #666,
+    0 2px 3px #0008;
+}
+.tawla-point i.white,
+.bar-stack i.white {
+  background: #f3f0e7;
+}
+.tawla-point i:active,
+.bar-stack i:active {
+  cursor: grabbing;
+}
+.tawla-point.can-from {
+  cursor: grab;
+}
+.tawla-point.can-from:active {
+  cursor: grabbing;
+}
+.tawla-center-bar {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: clamp(34px, 5.5vw, 64px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 2px;
+  border-inline: 2px solid #6f3117;
+  background: linear-gradient(90deg, #62280f, #a55a2b, #5a230d);
+  box-shadow: inset 0 0 12px #0006;
+}
+.bar-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 80px;
+}
+.tawla-dice-zone {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.dice-pair {
+  display: flex;
+  gap: 6px;
+  direction: ltr;
+}
+.tawla-die {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  padding: 5px;
+  border-radius: 7px;
+  background: #f7f5ed;
+  border: 1px solid #aaa;
+  box-shadow: 0 3px 6px #0008;
+}
+.tawla-die b {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #171717;
+}
+.tawla-die.face-1 b:nth-child(1) {
+  grid-area: 2/2;
+}
+.tawla-die.face-2 b:nth-child(1) {
+  grid-area: 1/1;
+}
+.tawla-die.face-2 b:nth-child(2) {
+  grid-area: 3/3;
+}
+.tawla-die.face-3 b:nth-child(1) {
+  grid-area: 1/1;
+}
+.tawla-die.face-3 b:nth-child(2) {
+  grid-area: 2/2;
+}
+.tawla-die.face-3 b:nth-child(3) {
+  grid-area: 3/3;
+}
+.tawla-die.face-4 b:nth-child(1) {
+  grid-area: 1/1;
+}
+.tawla-die.face-4 b:nth-child(2) {
+  grid-area: 1/3;
+}
+.tawla-die.face-4 b:nth-child(3) {
+  grid-area: 3/1;
+}
+.tawla-die.face-4 b:nth-child(4) {
+  grid-area: 3/3;
+}
+.tawla-die.face-5 b:nth-child(1) {
+  grid-area: 1/1;
+}
+.tawla-die.face-5 b:nth-child(2) {
+  grid-area: 1/3;
+}
+.tawla-die.face-5 b:nth-child(3) {
+  grid-area: 2/2;
+}
+.tawla-die.face-5 b:nth-child(4) {
+  grid-area: 3/1;
+}
+.tawla-die.face-5 b:nth-child(5) {
+  grid-area: 3/3;
+}
+.tawla-die.face-6 b:nth-child(1) {
+  grid-area: 1/1;
+}
+.tawla-die.face-6 b:nth-child(2) {
+  grid-area: 2/1;
+}
+.tawla-die.face-6 b:nth-child(3) {
+  grid-area: 3/1;
+}
+.tawla-die.face-6 b:nth-child(4) {
+  grid-area: 1/3;
+}
+.tawla-die.face-6 b:nth-child(5) {
+  grid-area: 2/3;
+}
+.tawla-die.face-6 b:nth-child(6) {
+  grid-area: 3/3;
+}
+.dice-pair.rolling {
+  animation: tawlaRoll 0.52s cubic-bezier(0.18, 0.78, 0.3, 1);
+}
+@keyframes tawlaRoll {
+  0% {
+    transform: translate(48px, -34px) rotate(0) scale(0.86);
+  }
+  35% {
+    transform: translate(-24px, 12px) rotate(190deg) scale(1.08);
+  }
+  70% {
+    transform: translate(11px, -6px) rotate(330deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+.tawla-home {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px 0;
+  color: #f1c887;
+  font-size: 12px;
+}
+.tawla-notice {
+  text-align: center;
+  margin: 4px 0 0;
+  color: #f6d79e;
+}
+.tawla-notice.bad {
+  color: #ff9a9a;
+}
+.tawla-drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  width: clamp(30px, 4.2vw, 50px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #f3f0e7;
+  border: 2px solid #c7c3b7;
+  box-shadow: 0 3px 7px #0007;
+  will-change: left, top;
+}
+.tawla-drag-ghost.black {
+  background: #18191a;
+  border-color: #050505;
+}
+.tawla-chat {
+  position: absolute;
+  z-index: 10;
+  right: 14px;
+  bottom: 12px;
+  border: 1px solid #e2ad6c;
+  border-radius: 18px;
+  background: #35150be8;
+  color: #fff0ce;
+  padding: 7px 12px;
+  text-decoration: none;
+  font-weight: 700;
+}
+@media (max-width: 700px) {
+  body.tawla-active .game-toolbar {
+    display: none;
+  }
+  .tawla-table {
+    border-width: 5px;
+    border-radius: 12px;
+    padding: 5px;
+  }
+  .tawla-table > header {
+    font-size: 12px;
+  }
+  .tawla-players {
+    font-size: 11px;
+  }
+  .tawla-board {
+    height: calc(100vh - 205px);
+    min-height: 350px;
+  }
+  .tawla-point.top:before {
+    border-top-width: min(29vh, 205px);
+  }
+  .tawla-point.bottom:before {
+    border-bottom-width: min(29vh, 205px);
+  }
+  .tawla-dice-zone {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #5a260fcc;
+    padding: 5px;
+    border-radius: 9px;
+  }
+  .tawla-home {
+    font-size: 10px;
+  }
+  .tawla-notice {
+    font-size: 11px;
+    padding-bottom: 28px;
+  }
+}
+/* Canva build 6 is the complete tawla surface. The site shell only supplies
+   identity, room state and the real voice controls while this game is open. */
+body.tawla-active{background:radial-gradient(circle at 12% 0,#ffe8b4cc,transparent 28%),radial-gradient(circle at 92% 8%,#e2a45852,transparent 32%),linear-gradient(130deg,#b66f38,#7c4020 55%,#3b190d)!important}
+body.tawla-active .site-header,body.tawla-active #roomView>.game-toolbar,body.tawla-active .play-stage>.table-head,body.tawla-active .play-stage>.scoreboard,body.tawla-active .play-stage>.game-table,body.tawla-active .play-stage>.table-controls,body.tawla-active .play-stage>[data-feedback]{display:none!important}
+body.tawla-active main.container.game-room{width:100%;max-width:none;margin:0;padding:0}
+body.tawla-active .play-stage{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important}
+body.tawla-active #kahwa-game-stage{width:100%;max-width:none!important;margin:0!important}
+.canva-tawla-app{min-height:100vh;padding:18px;color:#2a170c;font-family:"DM Sans","Noto Kufi Arabic",sans-serif}
+.canva-game-header,.canva-match-heading,.canva-game-grid{width:min(1500px,100%);margin-inline:auto}
+.canva-game-header,.canva-match-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.canva-game-header{margin-bottom:20px}.canva-brand{display:flex;align-items:center;gap:12px}.canva-brand>span:nth-child(2){display:flex;flex-direction:column}.canva-brand small,.canva-match-heading small{color:#88512f;font-size:.72rem;font-weight:800;letter-spacing:.08em}.canva-brand strong{font-size:2rem}.canva-brand>b{padding:5px 11px;border-radius:99px;background:#284b37;color:#fbf2d4}.canva-brand-mark{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;color:#fff8e7;background:conic-gradient(from 40deg,#f5d68a,#833817,#f3c770,#4b1c0b);box-shadow:inset 0 0 0 3px #391306,0 7px 14px #3b160a55;font-size:26px}
+.canva-header-actions button,.canva-side-panel>button{border:0;border-radius:12px;padding:.72rem .92rem;font-weight:800;cursor:pointer;background:#1b709d;color:#f4fbff;box-shadow:0 4px 0 #0c415e}.canva-match-heading{margin-bottom:16px}.canva-match-heading h2{margin:2px 0 0;font-size:1.5rem}.canva-match-heading>span{padding:7px 12px;border-radius:99px;background:#284b37;color:#fff8e9;font-weight:800;font-size:.78rem}
+.canva-game-grid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}.canva-turn-card,.canva-side-panel{background:#fff8e9f5;border:1px solid #4f230c38;box-shadow:0 16px 40px #2d12063d;border-radius:20px}.canva-turn-card{display:flex;align-items:center;gap:12px;padding:14px 18px;margin-bottom:14px}.canva-turn-card div{display:flex;flex-direction:column}.canva-turn-card small{color:#704126;margin-top:3px}.canva-status-dot{width:10px;height:10px;border-radius:50%;background:#4f9d68;box-shadow:0 0 0 4px #4f9d6822}.canva-side-panel{padding:20px}.canva-side-panel h3{margin:0 0 15px}.canva-player-list>div{display:flex;flex-direction:column;padding:12px 0;border-bottom:1px dashed #d9c5a7}.canva-player-list small{color:#80533b}.canva-connection{display:flex;flex-direction:column;gap:6px;margin:18px 0;padding:13px;border:1px solid #e3c69d;background:#fffdf7;border-radius:14px}.canva-connection span{color:#3e875c;font-weight:800}.canva-connection small{line-height:1.6;color:#704126}.canva-side-panel>button{width:100%;background:#7d321f;box-shadow:0 4px 0 #421508}.canva-side-panel>button:disabled{opacity:.45;cursor:not-allowed}
+.board-scroll{width:100%;overflow-x:auto;padding:5px 3px 18px}.canva-board-frame{width:max(900px,100%);padding:15px;border-radius:16px;background:repeating-linear-gradient(8deg,#ffc67721 0 1px,transparent 1px 11px),linear-gradient(135deg,#2c0e04,#c47a3d 21%,#55210c 48%,#bd7034 76%,#301006);box-shadow:inset 0 0 0 2px #e5ad67,inset 0 0 0 7px #3a1306,0 20px 42px #260c0385,0 5px 0 #321105}
+.canva-board-frame .tawla-table{margin:0!important;max-width:none!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}.canva-board-frame .tawla-players{margin-bottom:10px}
+@media(max-width:950px){.canva-game-grid{grid-template-columns:1fr}.canva-side-panel{display:none}.canva-tawla-app{padding:10px}.canva-brand>b{display:none}.canva-brand strong{font-size:1.55rem}.canva-board-frame{padding:8px;border-radius:11px}}
