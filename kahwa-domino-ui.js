@@ -18,66 +18,54 @@ function notice(s,error){var e=document.getElementById('domino-status');if(e){e.
 // 0/180 by run direction, doubles immune, corners ±90 by neighbor rows), so
 // touching halves always show equal pips.
 function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
- var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:-1};
+ var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:0};
  if(!n||!(W>0)||!(tileW>0)||!(tileH>0))return out;
- // Real domino path geometry.  The path is built from the previous tile's
- // physical edge, not from fixed blank grid slots.  When a run reaches the
- // side limit, the next tile itself becomes the vertical turn and the following
- // tile starts from that turn's opposite edge.  This prevents the malformed
- // "floating/drop-down" shapes seen around right-side turns in production.
+ // One physical chain, in logical order. Never split around the opening tile.
+ // Runs alternate left/right. Exactly one tile makes each 90-degree turn;
+ // the next tile continues straight on the new row. This removes branches.
  gap=0;
- var rowH=((W<800||n>20)?tileW:tileH), cols=Math.max(3,Math.floor(W/tileW)),half=Math.max(1,Math.floor((cols-1)/2));
- var leftBound=-half*tileW,rightBound=half*tileW;
- var anchor=Math.floor(n/2),k;
- if(anchorId!=null){for(k=0;k<n;k++){if(String(chain[k].id)===String(anchorId)){anchor=k;break}}}
- out.anchorIndex=anchor;out.cols=cols;
- var raw=new Array(n),cells=new Array(n),i;
- function dims(t,corner){return (corner||t.a===t.b)?{w:tileH,h:tileW}:{w:tileW,h:tileH}}
- function placeRun(start,stop,step,edge,rowY,dir,vstep){
-  var ii,t,d,w,can,cx;
-  for(ii=start;step>0?ii<=stop:ii>=stop;ii+=step){
-   t=chain[ii];d=dims(t,false);w=d.w;
-   can=dir>0?(edge+w<=rightBound+0.01):(edge-w>=leftBound-0.01);
-   if(!can){ // this tile is the corner/turn
-    d=dims(t,true);
-    var tx=dir>0?edge:edge-d.w,ty=vstep>0?rowY:rowY-rowH;
-    raw[ii]={x:tx,y:ty,w:d.w,h:d.h,rot:0,corner:true,row:Math.round(ty/rowH),col:Math.round(tx/tileW),id:t.id};
-    cells[ii]={cx:Math.round(tx/tileW),r1:Math.round(ty/rowH),r2:Math.round(ty/rowH)+1,corner:true};
-    rowY+=vstep*rowH;dir=-dir;edge=dir>0?tx+d.w:tx;
-    continue;
+ var pad=tileH, usable=Math.max(tileW*3,W-pad*2);
+ var runCap=Math.max(3,Math.floor((usable-tileH)/tileW));
+ var rects=[],cells=[],dir=1,row=0,x=0,y=0,i,t,isTurn,w,h;
+ out.cols=runCap; out.anchorIndex=0;
+ for(i=0;i<n;i++){
+  t=chain[i];
+  // After runCap straight stones, this stone alone is the corner.
+  isTurn=(i>0 && (i%(runCap+1)===runCap));
+  if(isTurn){
+   w=tileH; h=tileW;
+   if(dir>0){
+    rects.push({x:x,y:y,w:w,h:h,rot:90,corner:true,row:row,col:runCap,id:t.id});
+    cells.push({cx:runCap,r1:row,r2:row+1,corner:true});
+    x=x+w;
+   }else{
+    x=x-w;
+    rects.push({x:x,y:y,w:w,h:h,rot:-90,corner:true,row:row,col:0,id:t.id});
+    cells.push({cx:0,r1:row,r2:row+1,corner:true});
    }
-   var x=dir>0?edge:edge-w,y=rowY;
-   if(t.a===t.b){ // a double is perpendicular but still consumes its real width
-    y=rowY-(tileW-tileH)/2;
-   }
-   raw[ii]={x:x,y:y,w:d.w,h:d.h,rot:0,corner:false,row:Math.round(rowY/rowH),col:Math.round(x/tileW),id:t.id};
-   cells[ii]={cx:Math.round(x/tileW),cy:Math.round(rowY/rowH),corner:false};
-   edge+=dir*w;
+   // Continue from the bottom edge of the corner, in the opposite direction.
+   y+=tileW; row++; dir=-dir;
+   continue;
+  }
+  w=tileW; h=tileH;
+  if(dir>0){
+   rects.push({x:x,y:y,w:w,h:h,rot:0,corner:false,row:row,col:Math.round(x/tileW),id:t.id});
+   cells.push({cx:Math.round(x/tileW),cy:row,corner:false});
+   x+=w;
+  }else{
+   x-=w;
+   rects.push({x:x,y:y,w:w,h:h,rot:180,corner:false,row:row,col:Math.round(x/tileW),id:t.id});
+   cells.push({cx:Math.round(x/tileW),cy:row,corner:false});
   }
  }
- var ad=dims(chain[anchor],false);
- raw[anchor]={x:0,y:chain[anchor].a===chain[anchor].b?-(tileW-tileH)/2:0,w:ad.w,h:ad.h,rot:0,corner:false,row:0,col:0,id:chain[anchor].id};
- cells[anchor]={cx:0,cy:0,corner:false};
- placeRun(anchor+1,n-1,1,ad.w,0,1,1);       // right side snakes downward
- placeRun(anchor-1,0,-1,0,0,-1,-1);         // left side snakes upward
- function cx(r){return r.x+r.w/2}function cy(r){return r.y+r.h/2}
- for(i=0;i<n;i++){var r=raw[i],t=chain[i];
-  if(r.corner){
-   if(i>0&&i+1<n)r.rot=(cy(raw[i-1])<cy(raw[i+1]))?90:-90;
-   else if(i>0)r.rot=(cy(raw[i-1])<cy(r))?90:-90;
-   else r.rot=(cy(raw[i+1])>cy(r))?90:-90;
-  }else if(t.a!==t.b){
-   if(i>0)r.rot=(cx(raw[i-1])<cx(r))?0:180;
-   else if(i+1<n)r.rot=(cx(raw[i+1])>cx(r))?0:180;
-  }
+ var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+ for(i=0;i<rects.length;i++){
+  var r=rects[i];
+  minX=Math.min(minX,r.x);minY=Math.min(minY,r.y);
+  maxX=Math.max(maxX,r.x+r.w);maxY=Math.max(maxY,r.y+r.h);
  }
- var minX=raw[0].x,minY=raw[0].y,maxX=raw[0].x+raw[0].w,maxY=raw[0].y+raw[0].h,minRow=0,maxRow=0;
- for(i=0;i<n;i++){var rr=raw[i],cc=cells[i];
-  if(rr.x<minX)minX=rr.x;if(rr.y<minY)minY=rr.y;if(rr.x+rr.w>maxX)maxX=rr.x+rr.w;if(rr.y+rr.h>maxY)maxY=rr.y+rr.h;
-  if(cc.corner){if(cc.r1<minRow)minRow=cc.r1;if(cc.r2>maxRow)maxRow=cc.r2}else{if(cc.cy<minRow)minRow=cc.cy;if(cc.cy>maxRow)maxRow=cc.cy}
- }
- for(i=0;i<n;i++){raw[i].x-=minX;raw[i].y-=minY;var c=cells[i];if(c.corner){c.r1-=minRow;c.r2-=minRow}else c.cy-=minRow;out.cells.push(c)}
- out.rects=raw;out.boardW=maxX-minX;out.boardH=maxY-minY;out.rows=maxRow-minRow+1;
+ for(i=0;i<rects.length;i++){rects[i].x-=minX;rects[i].y-=minY}
+ out.rects=rects;out.cells=cells;out.boardW=maxX-minX;out.boardH=maxY-minY;out.rows=row+1;
  return out;
 }
 function snakeScale(bW,bH,aW,aH){
