@@ -121,3 +121,5 @@ body.cards-active .play-stage>.table-head,body.cards-active .play-stage>.scorebo
 .dom-snake-board .dom-tile{position:absolute;flex:none;margin:0}
 .dom-snake-board .dom-pips i{width:var(--pip,7px);height:var(--pip,7px)}
 .dom-snake>.dom-empty{display:block;text-align:center;margin-top:30px}
+.dom-snake-board .dom-tile.is-double.is-flat{flex-direction:row}
+.dom-snake-board .dom-tile.is-double.is-flat em{width:2px;height:auto}

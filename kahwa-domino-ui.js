@@ -20,53 +20,43 @@ function notice(s,error){var e=document.getElementById('domino-status');if(e){e.
 function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
  var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:0};
  if(!n||!(W>0)||!(tileW>0)||!(tileH>0))return out;
- // One physical chain, in logical order. Never split around the opening tile.
- // Runs alternate left/right. Exactly one tile makes each 90-degree turn;
- // the next tile continues straight on the new row. This removes branches.
- gap=0;
- var pad=tileH, usable=Math.max(tileW*3,W-pad*2);
- var runCap=Math.max(3,Math.floor((usable-tileH)/tileW));
- var rects=[],cells=[],dir=1,row=0,x=0,y=0,i,t,isTurn,w,h;
- out.cols=runCap; out.anchorIndex=0;
- for(i=0;i<n;i++){
-  t=chain[i];
-  // After runCap straight stones, this stone alone is the corner.
-  isTurn=(i>0 && (i%(runCap+1)===runCap));
-  if(isTurn){
-   w=tileH; h=tileW;
-   if(dir>0){
-    rects.push({x:x,y:y,w:w,h:h,rot:90,corner:true,row:row,col:runCap,id:t.id});
-    cells.push({cx:runCap,r1:row,r2:row+1,corner:true});
-    x=x+w;
-   }else{
-    x=x-w;
-    rects.push({x:x,y:y,w:w,h:h,rot:-90,corner:true,row:row,col:0,id:t.id});
-    cells.push({cx:0,r1:row,r2:row+1,corner:true});
-   }
-   // Continue from the bottom edge of the corner, in the opposite direction.
-   y+=tileW; row++; dir=-dir;
-   continue;
-  }
-  w=tileW; h=tileH;
-  if(dir>0){
-   rects.push({x:x,y:y,w:w,h:h,rot:0,corner:false,row:row,col:Math.round(x/tileW),id:t.id});
-   cells.push({cx:Math.round(x/tileW),cy:row,corner:false});
-   x+=w;
-  }else{
-   x-=w;
-   rects.push({x:x,y:y,w:w,h:h,rot:180,corner:false,row:row,col:Math.round(x/tileW),id:t.id});
-   cells.push({cx:Math.round(x/tileW),cy:row,corner:false});
-  }
+ gap=0; // visual domino chain: intended contacts are edge-to-edge.
+ var cols=Math.max(3,Math.floor(W/tileW)),limit=Math.max(tileW*3,cols*tileW),minVert=(n>20?3:2);
+ var RIGHT=0,DOWN=1,LEFT=2,UP=3,dir=RIGHT,hdir=1,vleft=0;
+ var raw=[],i,minX=0,minY=0,maxX=0,maxY=0;
+ function isDouble(t){return t&&t.a===t.b}
+ function dims(t,d){
+  if(d===RIGHT||d===LEFT)return isDouble(t)?{w:tileH,h:tileW,flat:false}:{w:tileW,h:tileH,flat:false};
+  return isDouble(t)?{w:tileW,h:tileH,flat:true}:{w:tileH,h:tileW,flat:false};
  }
- var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
- for(i=0;i<rects.length;i++){
-  var r=rects[i];
-  minX=Math.min(minX,r.x);minY=Math.min(minY,r.y);
-  maxX=Math.max(maxX,r.x+r.w);maxY=Math.max(maxY,r.y+r.h);
+ function wouldOverflow(x,w,d){return d===RIGHT?(x+w>limit+0.01):(x< -0.01)}
+ function placeFirst(){var t=chain[0],d=dims(t,RIGHT);return {x:0,y:isDouble(t)?-(tileW-tileH):0,w:d.w,h:d.h,dir:RIGHT,rot:0,flatDouble:d.flat,corner:false,row:0,col:0,id:t.id}}
+ function sideFromPrev(prev,d,t){
+  var dm=dims(t,d),x=prev.x,y=prev.y;
+  if(d===RIGHT){x=prev.x+prev.w;y=(prev.dir===DOWN)?prev.y+prev.h:(prev.dir===UP?prev.y-tileH:prev.y);if(isDouble(t)&&prev.dir!==DOWN&&prev.dir!==UP)y-= (tileW-tileH)}
+  else if(d===LEFT){x=prev.x-dm.w;y=(prev.dir===DOWN)?prev.y+prev.h:(prev.dir===UP?prev.y-tileH:prev.y);if(isDouble(t)&&prev.dir!==DOWN&&prev.dir!==UP)y-= (tileW-tileH)}
+  else if(d===DOWN){x=(prev.dir===RIGHT)?prev.x+prev.w:(prev.dir===LEFT?prev.x-dm.w:prev.x);y=(prev.dir===DOWN)?prev.y+prev.h:prev.y;if(dm.flat){if(prev.dir===DOWN)x=(prev.x<limit/2)?prev.x+prev.w-dm.w:prev.x;y=prev.y+prev.h}}
+  else{ x=(prev.dir===RIGHT)?prev.x+prev.w:(prev.dir===LEFT?prev.x-dm.w:prev.x);y=(prev.dir===UP)?prev.y-dm.h:prev.y-dm.h;if(dm.flat)y=prev.y }
+  return {x:x,y:y,w:dm.w,h:dm.h,dir:d,rot:(d===RIGHT?0:(d===LEFT?180:(d===DOWN?90:-90))),flatDouble:dm.flat,corner:false,row:Math.round(y/tileH),col:Math.round(x/tileW),id:t.id};
  }
- for(i=0;i<rects.length;i++){rects[i].x-=minX;rects[i].y-=minY}
- out.rects=rects;out.cells=cells;out.boardW=maxX-minX;out.boardH=maxY-minY;out.rows=row+1;
- return out;
+ raw[0]=placeFirst();
+ for(i=1;i<n;i++){
+  var prev=raw[i-1],t=chain[i],nextDir=dir,dm;
+  if(vleft>0){nextDir=DOWN;vleft--}
+  else if(dir===RIGHT||dir===LEFT){
+   dm=dims(t,dir);
+   var nx=dir===RIGHT?prev.x+prev.w:prev.x-dm.w;
+   if(wouldOverflow(nx,dm.w,dir)&&i<n-1){nextDir=DOWN;vleft=Math.min(minVert-1,n-i-1);hdir=(dir===RIGHT)?-1:1}
+  }else nextDir=hdir>0?RIGHT:LEFT;
+  var r=sideFromPrev(prev,nextDir,t);
+  if((prev.dir===RIGHT||prev.dir===LEFT)&&nextDir===DOWN)r.corner=true;
+  if((prev.dir===DOWN||prev.dir===UP)&&(nextDir===RIGHT||nextDir===LEFT))r.corner=true;
+  raw[i]=r;dir=nextDir;
+  if(vleft===0&&nextDir===DOWN&&i<n-1){dir=hdir>0?RIGHT:LEFT}
+ }
+ for(i=0;i<n;i++){var r=raw[i];if(i===0){minX=r.x;minY=r.y;maxX=r.x+r.w;maxY=r.y+r.h}else{if(r.x<minX)minX=r.x;if(r.y<minY)minY=r.y;if(r.x+r.w>maxX)maxX=r.x+r.w;if(r.y+r.h>maxY)maxY=r.y+r.h}}
+ for(i=0;i<n;i++){var rr=raw[i];rr.x-=minX;rr.y-=minY;rr.pathDir=rr.dir;out.rects.push(rr);out.cells.push({cx:Math.round(rr.x/tileW),cy:Math.round(rr.y/tileH),corner:!!rr.corner,pathDir:rr.dir})}
+ out.boardW=maxX-minX;out.boardH=maxY-minY;out.rows=Math.max(1,Math.ceil(out.boardH/tileH));out.cols=cols;return out;
 }
 function snakeScale(bW,bH,aW,aH){
  if(!(bW>0)||!(bH>0)||!(aW>0)||!(aH>0))return 1;
@@ -81,11 +71,11 @@ function renderChain(chainEl,chain,anchorId,W,availW,availH){
  var ts=snakeTileSize(W),lay=snakeLayout(chain,W,ts.w,ts.h,0,anchorId);
  var sc=snakeScale(lay.boardW,lay.boardH,availW,availH);
  var pipPx=Math.max(3,Math.round(ts.w/12)),h='',i;
- for(i=0;i<lay.rects.length;i++){var r=lay.rects[i],t=chain[i],style;
-  if(r.corner){var cx=r.x+r.w/2,cy=r.y+r.h/2;
-   style='left:'+Math.round(cx-ts.w/2)+'px;top:'+Math.round(cy-ts.h/2)+'px;width:'+ts.w+'px;height:'+ts.h+'px;--pip:'+pipPx+'px;transform:rotate('+r.rot+'deg)'}
-  else{style='left:'+Math.round(r.x)+'px;top:'+Math.round(r.y)+'px;width:'+Math.round(r.w)+'px;height:'+Math.round(r.h)+'px;--pip:'+pipPx+'px'+(r.rot?';transform:rotate('+r.rot+'deg)':'')}
-  h+=tile(t,'chain-tile'+(r.corner?' is-turn':(r.rot?' is-rev':'')),'disabled style="'+style+'"')}
+ for(i=0;i<lay.rects.length;i++){var r=lay.rects[i],t=chain[i],style,cls='chain-tile';
+  if(Math.abs(r.rot)===90&&!r.flatDouble){var cx=r.x+r.w/2,cy=r.y+r.h/2;
+   style='left:'+Math.round(cx-ts.w/2)+'px;top:'+Math.round(cy-ts.h/2)+'px;width:'+ts.w+'px;height:'+ts.h+'px;--pip:'+pipPx+'px;transform:rotate('+r.rot+'deg)';cls+=' is-turn'}
+  else{style='left:'+Math.round(r.x)+'px;top:'+Math.round(r.y)+'px;width:'+Math.round(r.w)+'px;height:'+Math.round(r.h)+'px;--pip:'+pipPx+'px'+(r.rot?';transform:rotate('+r.rot+'deg)':'');if(r.rot)cls+=' is-rev';if(r.flatDouble)cls+=' is-flat'}
+  h+=tile(t,cls,'disabled style="'+style+'"')}
  chainEl.innerHTML='<div class="dom-snake-view" style="width:'+Math.max(1,Math.round(lay.boardW*sc))+'px;height:'+Math.max(1,Math.round(lay.boardH*sc))+'px"><div class="dom-snake-board" style="width:'+lay.boardW+'px;height:'+lay.boardH+'px;transform:scale('+sc.toFixed(3)+')">'+h+'</div></div>';
 }
 async function act(action){

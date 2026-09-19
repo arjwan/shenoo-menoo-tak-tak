@@ -408,7 +408,7 @@ function dominoUIHarness() {
   T('domino');
 }
 
-console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
+console.log('L1) domino snake layout: continuous physical path, bounds, no overlap');
 {
   function eulerChain() {
     const adj = Array.from({ length: 7 }, () => []);
@@ -466,23 +466,25 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
   for (const W of [340, 700, 1100]) {
     for (const len of [1, 2, 7, 13, 28]) {
       const sub = chain28.slice(0, len);
-      const useAnchor = len % 2 === 1;
-      const anchorId = useAnchor ? sub[Math.floor(len / 3)].id : 'no-such-tile';
+      const anchorId = len % 2 === 1 ? sub[Math.floor(len / 3)].id : 'no-such-tile';
       const ts = domUI.snakeTileSize(W);
       const lay = domUI.snakeLayout(sub, W, ts.w, ts.h, 5, anchorId);
       eq(lay.rects.length, len, 'W=' + W + ' len=' + len + ': every tile placed');
-      eq(lay.anchorIndex, useAnchor ? Math.floor(len / 3) : Math.floor(len / 2), 'W=' + W + ' len=' + len + ': anchor honored, fallback centered');
-      assert(lay.cols >= 3 && lay.rows >= 1 && lay.boardW <= W + 0.01, 'W=' + W + ' len=' + len + ': board fits the measured width');
+      eq(lay.anchorIndex, 0, 'W=' + W + ' len=' + len + ': renderer ignores anchor and draws one chain[0..n-1] path');
+      const fitScale = domUI.snakeScale(lay.boardW, lay.boardH, W, Math.max(120, W * 0.75));
+      assert(lay.cols >= 3 && lay.rows >= 1 && lay.boardW * fitScale <= W + 0.01, 'W=' + W + ' len=' + len + ': board fits the measured width after uniform scaling');
       for (let i = 0; i < len; i++) {
         const r = lay.rects[i];
         eq(r.id, sub[i].id, 'W=' + W + ' len=' + len + ': layout never reorders the chain');
         assert(r.x >= -0.01 && r.y >= -0.01 && r.x + r.w <= lay.boardW + 0.01 && r.y + r.h <= lay.boardH + 0.01, 'W=' + W + ' len=' + len + ': tile ' + i + ' in bounds');
-        if (r.corner) assert(Math.abs(r.rot) === 90, 'W=' + W + ' len=' + len + ': tile ' + i + ' (corner) rotates ±90');
-        else if (sub[i].a === sub[i].b) eq(r.rot, 0, 'W=' + W + ' len=' + len + ': double ' + i + ' never rotates');
-        else assert(r.rot === 0 || r.rot === 180, 'W=' + W + ' len=' + len + ': single ' + i + ' lies 0/180 by run direction');
-        if (!r.corner) {
-          if (sub[i].a === sub[i].b) assert(r.w < r.h, 'W=' + W + ' len=' + len + ': double ' + i + ' stands tall');
-          else assert(r.w > r.h, 'W=' + W + ' len=' + len + ': single ' + i + ' lies flat');
+        assert((Math.abs(r.w - ts.w) < 0.01 && Math.abs(r.h - ts.h) < 0.01) || (Math.abs(r.w - ts.h) < 0.01 && Math.abs(r.h - ts.w) < 0.01), 'W=' + W + ' len=' + len + ': tile ' + i + ' uses only uniform domino dimensions');
+        assert([0, 90, -90, 180].includes(r.rot), 'W=' + W + ' len=' + len + ': tile ' + i + ' uses an orthogonal visual rotation');
+        if (sub[i].a === sub[i].b) {
+          if (r.pathDir === 0 || r.pathDir === 2) assert(r.w < r.h, 'W=' + W + ' len=' + len + ': horizontal-path double ' + i + ' is perpendicular/vertical');
+          else assert(r.w > r.h, 'W=' + W + ' len=' + len + ': vertical-path double ' + i + ' is perpendicular/horizontal');
+        } else {
+          if (r.pathDir === 0 || r.pathDir === 2) assert(r.w > r.h, 'W=' + W + ' len=' + len + ': horizontal-path single ' + i + ' lies with the path');
+          else assert(r.w < r.h, 'W=' + W + ' len=' + len + ': vertical-path single ' + i + ' stands with the path');
         }
         for (let j = i + 1; j < len; j++) assert(!overlaps(r, lay.rects[j]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + j + ' never overlap');
         if (i + 1 < len) {
@@ -506,6 +508,7 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
           else { upVal = t.a; downVal = t.b; }
           if (side === 'U') return upVal;
           if (side === 'D') return downVal;
+          if (side === 'L' || side === 'R') return otherIdx < idx ? upVal : downVal;
           return (o.y + o.h / 2 < r.y + r.h / 2) ? upVal : downVal;
         };
         for (let i = 0; i + 1 < len; i++) {
@@ -531,6 +534,19 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
       T('domino');
     }
   }
+  { // Visual reference fixture: one continuous old-domino-style path, not split around an anchor.
+    const ts = domUI.snakeTileSize(700);
+    const lay = domUI.snakeLayout(chain28.slice(0, 28), 700, ts.w, ts.h, 0, chain28[14].id);
+    const dirs = lay.rects.map(r => r.pathDir).filter((d, i, a) => i === 0 || d !== a[i - 1]);
+    const hasReferenceSnake = dirs.some((d, i) => d === 0 && dirs[i + 1] === 1 && dirs[i + 2] === 2 && dirs[i + 3] === 1 && dirs[i + 4] === 0);
+    assert(hasReferenceSnake, 'reference fixture follows RIGHT -> DOWN -> LEFT -> DOWN -> RIGHT');
+    eq(lay.anchorIndex, 0, 'reference fixture ignores anchor and remains one continuous server chain');
+    for (let i = 1; i < lay.rects.length; i++) assert(jointSides(lay.rects[i - 1], lay.rects[i]), 'reference fixture pair ' + (i - 1) + '/' + i + ' touches physically');
+    const verticalRuns = dirs.filter(d => d === 1 || d === 3).length;
+    assert(verticalRuns >= 2, 'reference fixture has real vertical runs, not horizontal-corner-horizontal kinks');
+    T('domino');
+  }
+
   eq(JSON.stringify(chain28), before, 'layout never mutates the logical chain');
   eq(domino.openEnds(chain28), endsBefore, 'open ends still come from logic, untouched by layout');
   T('domino');
