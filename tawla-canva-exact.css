@@ -1,3 +1,8 @@
+/* Canva build 6 is the complete tawla surface. The site shell only supplies
+   identity, room state and the real voice controls while this game is open. */
+body.tawla-active{background:radial-gradient(circle at 12% 0,#ffe8b4cc,transparent 28%),radial-gradient(circle at 92% 8%,#e2a45852,transparent 32%),linear-gradient(130deg,#b66f38,#7c4020 55%,#3b190d)!important}
+body.tawla-active .site-header,body.tawla-active #roomView>.game-toolbar,body.tawla-active .play-stage>.table-head,body.tawla-active .play-stage>.scoreboard,body.tawla-active .play-stage>.game-table,body.tawla-active .play-stage>.table-controls,body.tawla-active .play-stage>[data-feedback]{display:none!important}
+body.tawla-active main.container.game-room{width:100%;max-width:none;margin:0;padding:0}
 body.tawla-active .play-stage{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important}
 body.tawla-active #kahwa-game-stage{width:100%;max-width:none!important;margin:0!important}
 .canva-tawla-app{min-height:100vh;padding:18px;color:#2a170c;font-family:"DM Sans","Noto Kufi Arabic",sans-serif}

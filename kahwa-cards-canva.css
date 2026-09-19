@@ -1,0 +1,178 @@
+/* ==========================================================================
+ * Kahwa cards — preserved Canva original as runtime styles.
+ * Version: 20260919-canva-runtime-1
+ * Source (read-only, never edited): canva-originals/cards/index.html
+ *
+ * Part 1 below is the original <style> block transformed MECHANICALLY:
+ *   :root / body            ->  body.cards-active     (page-level; vars stay
+ *                                  global to the cards view so chess/cards
+ *                                  --gold/--ink values never collide)
+ *   every other selector    ->  body.cards-active #kahwa-game-stage <sel>
+ *   @media / @keyframes / declarations -> unchanged
+ * Part 2 defines only the Tailwind utilities the transplanted markup uses,
+ * scoped the same way (the original loads cdn.tailwindcss.com; the runtime
+ * must not, to avoid preflight regressions and to work offline).
+ * No selector in this file may touch domino, tawla or chess.
+ * ========================================================================== */
+/* --- Part 1: original <style>, mechanically scoped --- */
+body.cards-active{--felt:#075847;--deep:#032f27;--gold:#f6c860;--ink:#edf8f3;--muted:#b7d3c8;--panel:rgba(3,39,32,.88);--danger:#b84444}
+body.cards-active #kahwa-game-stage *{box-sizing:border-box}
+body.cards-active{width:100%;margin:0;color:var(--ink);font-family:"Noto Sans Arabic",sans-serif;background:#032f27}
+body.cards-active #kahwa-game-stage button,body.cards-active #kahwa-game-stage input,body.cards-active #kahwa-game-stage select{font:inherit}
+body.cards-active #kahwa-game-stage button:focus-visible,body.cards-active #kahwa-game-stage input:focus-visible,body.cards-active #kahwa-game-stage select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+body.cards-active #kahwa-game-stage .felt{background:radial-gradient(circle at 50% 40%,rgba(32,143,105,.42),transparent 40%),radial-gradient(circle at 10% 10%,rgba(255,255,255,.06) 0 1px,transparent 1px),linear-gradient(135deg,#075847,#03382f 60%,#022c25);background-size:auto,12px 12px,auto}
+body.cards-active #kahwa-game-stage .panel{background:var(--panel);border:1px solid rgba(210,242,226,.15);box-shadow:0 15px 38px rgba(0,0,0,.26);backdrop-filter:blur(12px)}
+body.cards-active #kahwa-game-stage .wood{border:10px solid #59381f;box-shadow:inset 0 0 0 2px #a56b35,0 18px 48px rgba(0,0,0,.42)}
+body.cards-active #kahwa-game-stage .screen{display:none}
+body.cards-active #kahwa-game-stage .screen.active{display:block;animation:rise .32s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+body.cards-active #kahwa-game-stage .game-card{transition:transform .2s,box-shadow .2s}
+body.cards-active #kahwa-game-stage .game-card:hover{transform:translateY(-5px);box-shadow:0 20px 35px rgba(0,0,0,.3)}
+body.cards-active #kahwa-game-stage .playing-card{width:76px;height:112px;border:3px solid #e7e1d4;border-radius:12px;background:#fbfaf4;color:#17221f;position:relative;flex:0 0 auto;box-shadow:0 6px 12px rgba(0,0,0,.3);transition:.17s;cursor:pointer}
+body.cards-active #kahwa-game-stage .playing-card:hover:not(:disabled),body.cards-active #kahwa-game-stage .playing-card:focus-visible:not(:disabled){transform:translateY(-10px);box-shadow:0 13px 21px rgba(0,0,0,.38),0 0 0 3px rgba(246,200,96,.8)}
+body.cards-active #kahwa-game-stage .playing-card:disabled{opacity:.44;cursor:not-allowed;filter:grayscale(.25)}
+body.cards-active #kahwa-game-stage .playing-card.legal{box-shadow:0 0 0 3px rgba(246,200,96,.9),0 8px 18px rgba(0,0,0,.35)}
+body.cards-active #kahwa-game-stage .red{color:#c9333d}
+body.cards-active #kahwa-game-stage .black{color:#17221f}
+body.cards-active #kahwa-game-stage .rank{position:absolute;top:8px;right:8px;font-size:1.1rem;font-weight:800;line-height:1}
+body.cards-active #kahwa-game-stage .suit{position:absolute;top:32px;left:0;right:0;text-align:center;font-size:2.15rem}
+body.cards-active #kahwa-game-stage .corner{top:auto;bottom:8px;right:auto;left:8px;transform:rotate(180deg)}
+body.cards-active #kahwa-game-stage .back{background:repeating-linear-gradient(45deg,#d7b350 0 5px,#174e75 5px 10px);border-color:#f4dc89;cursor:default}
+body.cards-active #kahwa-game-stage .back:after{content:"";position:absolute;inset:8px;border:2px solid #fff0ad;border-radius:7px}
+body.cards-active #kahwa-game-stage .modal{display:none}
+body.cards-active #kahwa-game-stage .modal.show{display:flex}
+body.cards-active #kahwa-game-stage .toast{opacity:0;transform:translateY(16px);pointer-events:none;transition:.24s}
+body.cards-active #kahwa-game-stage .toast.show{opacity:1;transform:translateY(0)}
+body.cards-active #kahwa-game-stage .turn{box-shadow:0 0 0 2px var(--gold),0 0 17px rgba(246,200,96,.45)}
+body.cards-active #kahwa-game-stage .hidden{display:none!important}
+body.cards-active #kahwa-game-stage .reduce-motion *,body.cards-active #kahwa-game-stage .reduce-motion *:before,body.cards-active #kahwa-game-stage .reduce-motion *:after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+@media(max-width:640px){body.cards-active #kahwa-game-stage .wood{border-width:6px}body.cards-active #kahwa-game-stage .playing-card{width:59px;height:88px}body.cards-active #kahwa-game-stage .rank{font-size:.9rem;top:6px;right:6px}body.cards-active #kahwa-game-stage .suit{font-size:1.65rem;top:25px}body.cards-active #kahwa-game-stage .corner{bottom:6px;left:6px}}
+/* ---------------------------------------------------------------------------
+ * Part 2 — scoped Tailwind-utility fallbacks.
+ * The preserved original loads cdn.tailwindcss.com; the runtime instead
+ * defines ONLY the utilities the transplanted markup actually uses, scoped
+ * under body.cards-active #kahwa-game-stage so nothing leaks to the lobby,
+ * toolbar, domino, tawla or chess. No preflight, works offline.
+ * --------------------------------------------------------------------------- */
+body.cards-active #kahwa-game-stage .block{display:block}
+body.cards-active #kahwa-game-stage .inline{display:inline}
+body.cards-active #kahwa-game-stage .flex{display:flex}
+body.cards-active #kahwa-game-stage .grid{display:grid}
+body.cards-active #kahwa-game-stage .hidden{display:none!important}
+body.cards-active #kahwa-game-stage .flex-1{flex:1 1 0%}
+body.cards-active #kahwa-game-stage .flex-col{flex-direction:column}
+body.cards-active #kahwa-game-stage .flex-wrap{flex-wrap:wrap}
+body.cards-active #kahwa-game-stage .items-center{align-items:center}
+body.cards-active #kahwa-game-stage .items-end{align-items:flex-end}
+body.cards-active #kahwa-game-stage .justify-between{justify-content:space-between}
+body.cards-active #kahwa-game-stage .justify-center{justify-content:center}
+body.cards-active #kahwa-game-stage .min-w-0{min-width:0}
+body.cards-active #kahwa-game-stage .w-4{width:1rem}
+body.cards-active #kahwa-game-stage .w-5{width:1.25rem}
+body.cards-active #kahwa-game-stage .w-14{width:3.5rem}
+body.cards-active #kahwa-game-stage .w-full{width:100%}
+body.cards-active #kahwa-game-stage .h-14{height:3.5rem}
+body.cards-active #kahwa-game-stage .h-28{height:7rem}
+body.cards-active #kahwa-game-stage .h-5{height:1.25rem}
+body.cards-active #kahwa-game-stage .max-w-2xl{max-width:42rem}
+body.cards-active #kahwa-game-stage .max-w-md{max-width:28rem}
+body.cards-active #kahwa-game-stage .max-w-xl{max-width:36rem}
+body.cards-active #kahwa-game-stage .max-h-52{max-height:13rem}
+body.cards-active #kahwa-game-stage .max-h-\[calc\(88\*min\(var\(--vh\,1vh\)\,1vh\)\)\]{max-height:calc(88*min(var(--vh,1vh),1vh))}
+body.cards-active #kahwa-game-stage .min-h-\[115px\]{min-height:115px}
+body.cards-active #kahwa-game-stage .mx-auto{margin-left:auto;margin-right:auto}
+body.cards-active #kahwa-game-stage .p-2{padding:.5rem}
+body.cards-active #kahwa-game-stage .p-3{padding:.75rem}
+body.cards-active #kahwa-game-stage .p-4{padding:1rem}
+body.cards-active #kahwa-game-stage .p-6{padding:1.5rem}
+body.cards-active #kahwa-game-stage .px-2{padding-left:.5rem;padding-right:.5rem}
+body.cards-active #kahwa-game-stage .px-3{padding-left:.75rem;padding-right:.75rem}
+body.cards-active #kahwa-game-stage .px-4{padding-left:1rem;padding-right:1rem}
+body.cards-active #kahwa-game-stage .px-5{padding-left:1.25rem;padding-right:1.25rem}
+body.cards-active #kahwa-game-stage .py-1{padding-top:.25rem;padding-bottom:.25rem}
+body.cards-active #kahwa-game-stage .py-2{padding-top:.5rem;padding-bottom:.5rem}
+body.cards-active #kahwa-game-stage .py-3{padding-top:.75rem;padding-bottom:.75rem}
+body.cards-active #kahwa-game-stage .py-7{padding-top:1.75rem;padding-bottom:1.75rem}
+body.cards-active #kahwa-game-stage .py-12{padding-top:3rem;padding-bottom:3rem}
+body.cards-active #kahwa-game-stage .pt-4{padding-top:1rem}
+body.cards-active #kahwa-game-stage .pb-2{padding-bottom:.5rem}
+body.cards-active #kahwa-game-stage .mb-3{margin-bottom:.75rem}
+body.cards-active #kahwa-game-stage .mb-4{margin-bottom:1rem}
+body.cards-active #kahwa-game-stage .mt-1{margin-top:.25rem}
+body.cards-active #kahwa-game-stage .mt-2{margin-top:.5rem}
+body.cards-active #kahwa-game-stage .mt-3{margin-top:.75rem}
+body.cards-active #kahwa-game-stage .mt-4{margin-top:1rem}
+body.cards-active #kahwa-game-stage .mt-5{margin-top:1.25rem}
+body.cards-active #kahwa-game-stage .mt-6{margin-top:1.5rem}
+body.cards-active #kahwa-game-stage .mt-7{margin-top:1.75rem}
+body.cards-active #kahwa-game-stage .mt-32{margin-top:8rem}
+body.cards-active #kahwa-game-stage .gap-2{gap:.5rem}
+body.cards-active #kahwa-game-stage .gap-3{gap:.75rem}
+body.cards-active #kahwa-game-stage .gap-4{gap:1rem}
+body.cards-active #kahwa-game-stage .gap-6{gap:1.5rem}
+body.cards-active #kahwa-game-stage .space-y-2>*+*{margin-top:.5rem}
+body.cards-active #kahwa-game-stage .space-y-4>*+*{margin-top:1rem}
+body.cards-active #kahwa-game-stage .grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}
+body.cards-active #kahwa-game-stage .grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.cards-active #kahwa-game-stage .font-bold{font-weight:700}
+body.cards-active #kahwa-game-stage .text-center{text-align:center}
+body.cards-active #kahwa-game-stage .text-right{text-align:right}
+body.cards-active #kahwa-game-stage .text-xs{font-size:.75rem}
+body.cards-active #kahwa-game-stage .text-sm{font-size:.875rem}
+body.cards-active #kahwa-game-stage .text-xl{font-size:1.25rem}
+body.cards-active #kahwa-game-stage .leading-8{line-height:2rem}
+body.cards-active #kahwa-game-stage .text-\[\#173126\]{color:#173126}
+body.cards-active #kahwa-game-stage .text-\[\#b8d6ca\]{color:#b8d6ca}
+body.cards-active #kahwa-game-stage .text-\[\#b9d7ca\]{color:#b9d7ca}
+body.cards-active #kahwa-game-stage .text-\[\#c6e2d5\]{color:#c6e2d5}
+body.cards-active #kahwa-game-stage .text-\[\#d2e6dc\]{color:#d2e6dc}
+body.cards-active #kahwa-game-stage .text-\[\#d3e8de\]{color:#d3e8de}
+body.cards-active #kahwa-game-stage .text-\[\#f6c860\]{color:#f6c860}
+body.cards-active #kahwa-game-stage .bg-\[\#052f27\]\/90{background-color:rgba(5,47,39,.9)}
+body.cards-active #kahwa-game-stage .bg-\[\#042f27\]\/80{background-color:rgba(4,47,39,.8)}
+body.cards-active #kahwa-game-stage .bg-\[\#8f3635\]{background-color:#8f3635}
+body.cards-active #kahwa-game-stage .bg-\[\#f6c860\]{background-color:#f6c860}
+body.cards-active #kahwa-game-stage .bg-\[\#f6c860\]\/10{background-color:rgba(246,200,96,.1)}
+body.cards-active #kahwa-game-stage .bg-black\/70{background-color:rgba(0,0,0,.7)}
+body.cards-active #kahwa-game-stage .bg-white\/5{background-color:rgba(255,255,255,.05)}
+body.cards-active #kahwa-game-stage .bg-white\/10{background-color:rgba(255,255,255,.1)}
+body.cards-active #kahwa-game-stage .border{border-width:1px;border-style:solid}
+body.cards-active #kahwa-game-stage .border-t{border-top-width:1px;border-style:solid}
+body.cards-active #kahwa-game-stage .border-b{border-bottom-width:1px;border-style:solid}
+body.cards-active #kahwa-game-stage .border-white\/10{border-color:rgba(255,255,255,.1)}
+body.cards-active #kahwa-game-stage .border-white\/15{border-color:rgba(255,255,255,.15)}
+body.cards-active #kahwa-game-stage .border-\[\#f6c860\]\/40{border-color:rgba(246,200,96,.4)}
+body.cards-active #kahwa-game-stage .rounded-lg{border-radius:.5rem}
+body.cards-active #kahwa-game-stage .rounded-xl{border-radius:.75rem}
+body.cards-active #kahwa-game-stage .rounded-2xl{border-radius:1rem}
+body.cards-active #kahwa-game-stage .rounded-3xl{border-radius:1.5rem}
+body.cards-active #kahwa-game-stage .rounded-\[2rem\]{border-radius:2rem}
+body.cards-active #kahwa-game-stage .rounded-full{border-radius:9999px}
+body.cards-active #kahwa-game-stage .fixed{position:fixed}
+body.cards-active #kahwa-game-stage .absolute{position:absolute}
+body.cards-active #kahwa-game-stage .inset-0{top:0;right:0;bottom:0;left:0}
+body.cards-active #kahwa-game-stage .bottom-5{bottom:1.25rem}
+body.cards-active #kahwa-game-stage .left-1\/2{left:50%}
+body.cards-active #kahwa-game-stage .-translate-x-1\/2{transform:translateX(-50%)}
+body.cards-active #kahwa-game-stage .z-50{z-index:50}
+body.cards-active #kahwa-game-stage .z-\[70\]{z-index:70}
+body.cards-active #kahwa-game-stage .overflow-hidden{overflow:hidden}
+body.cards-active #kahwa-game-stage .overflow-y-auto{overflow-y:auto}
+body.cards-active #kahwa-game-stage .accent-\[\#f6c860\]{accent-color:#f6c860}
+body.cards-active #kahwa-game-stage .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
+body.cards-active #kahwa-game-stage .hover\:bg-white\/10:hover{background-color:rgba(255,255,255,.1)}
+body.cards-active #kahwa-game-stage .hover\:bg-white\/20:hover{background-color:rgba(255,255,255,.2)}
+body.cards-active #kahwa-game-stage .hover\:bg-\[\#a94542\]:hover{background-color:#a94542}
+@media(min-width:640px){
+body.cards-active #kahwa-game-stage .sm\:flex-row{flex-direction:row}
+body.cards-active #kahwa-game-stage .sm\:gap-3{gap:.75rem}
+body.cards-active #kahwa-game-stage .sm\:gap-10{gap:2.5rem}
+body.cards-active #kahwa-game-stage .sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.cards-active #kahwa-game-stage .sm\:justify-start{justify-content:flex-start}
+body.cards-active #kahwa-game-stage .sm\:p-4{padding:1rem}
+body.cards-active #kahwa-game-stage .sm\:p-6{padding:1.5rem}
+body.cards-active #kahwa-game-stage .sm\:p-9{padding:2.25rem}
+}
+@media(min-width:1280px){
+body.cards-active #kahwa-game-stage .xl\:grid-cols-\[1fr_310px\]{grid-template-columns:1fr 310px}
+}

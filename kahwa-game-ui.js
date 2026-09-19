@@ -4,13 +4,22 @@
     renderers: {
       domino: window.kahwaDominoUI,
       tawla: window.kahwaTawlaUI,
-      chess: window.kahwaChessUI,
-      cards: window.kahwaCardsUI
+      chess: window.kahwaChessCanvaUI,
+      cards: window.kahwaCardsCanvaUI
     },
     current: null,
     mount: function (container, context) {
       var type = (context && context.gameType) || 'domino';
-      var R = this.renderers[type] || this.renderers.domino;
+      // Resolve at mount time (adapters load before this file, but lazy
+      // lookup is immune to script order).
+      var table = {
+        domino: window.kahwaDominoUI,
+        tawla: window.kahwaTawlaUI,
+        chess: window.kahwaChessCanvaUI,
+        cards: window.kahwaCardsCanvaUI
+      };
+      var R = table[type] || table.domino;
+      this.renderers = table;
       this.current = R;
       if (R && R.mount) R.mount(container, context);
       if (R && R.bindActions) R.bindActions(container, context);
