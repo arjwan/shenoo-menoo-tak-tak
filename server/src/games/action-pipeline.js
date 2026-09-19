@@ -62,4 +62,23 @@ function applyRoomAction(engine, engineState, userId, action) {
   return result;
 }
 
-module.exports = { withRoomLock, applyRoomAction };
+// Spectator-safe public snapshot, flattened into the room response so players
+// and spectators observe the SAME authoritative position (tawla dice included).
+// Pure function (no DB): unit-testable. Never exposes hands or private data.
+function flattenPublicEngine(gameType, engineState) {
+  try {
+    if (!engineState || typeof engineState !== 'object') return {};
+    const engine = require('./game-engine-registry').getEngine(gameType || 'domino');
+    const pub = engine && engine.getPublicState ? engine.getPublicState(engineState) : null;
+    if (!pub || typeof pub !== 'object') return {};
+    const out = {};
+    for (const k of Object.keys(pub)) {
+      if (k === 'engine' || k === 'version' || k === 'createdAt') continue;
+      if (pub[k] !== undefined) out[k] = pub[k];
+    }
+    if (pub.turn !== undefined) out.engineTurn = pub.turn;
+    return out;
+  } catch (_) { return {}; }
+}
+
+module.exports = { withRoomLock, applyRoomAction, flattenPublicEngine };

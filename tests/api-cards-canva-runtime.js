@@ -137,4 +137,24 @@ assert((css.match(/body\.cards-active/g) || []).length >= 32, 'rule count covers
 assert(!read('kahwa-cards-ui.js').includes('<section id="game-screen"'),
   'negative control: old kahwa-cards-ui.js lacks the original game-screen');
 
+// 9. The adapter speaks the ORIGINAL's rummy vocabulary. Every label below
+// was verified absent from canva-originals/cards/index.html (invented by an
+// earlier alternative runtime), so this section fails if that alternative
+// wording ever returns; every required phrase is verified present in the
+// original first, then required in the adapter.
+const BANNED_LABELS = ['العب مجموعة', 'تخلص من المحددة', 'أعلن مجموعة',
+  'تخلص من ورقة واحدة', 'ثم العبها', 'اختر ورقة واحدة فقط', 'مجموعة معلنة',
+  'تخلص من جميع أوراقه'];
+for (const b of BANNED_LABELS) {
+  assert(!orig.includes(b), 'sanity: banned label really is non-original: ' + b);
+  assert(!adapter.includes(b), 'alternative label must never return: ' + b);
+}
+for (const root of ['كوّن', 'ارمِ', 'اسحب', 'تخلّص من جميع أوراقه']) {
+  assert(orig.includes(root), 'sanity: required vocabulary really is original: ' + root);
+}
+for (const r of ['كوّن مجموعة', 'ارمِ المحددة', 'ارمِ ورقة واحدة', 'اسحب من الكومة',
+  'تخلّص من جميع أوراقه', 'دورك الآن', '، قابلة للعب']) {
+  assert(body.includes(r), 'adapter uses original vocabulary: ' + r);
+}
+
 console.log('ALL CARDS CANVA RUNTIME TESTS PASS');

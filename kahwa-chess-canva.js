@@ -231,7 +231,7 @@ function paintPanels(c) {
   var priv = (ctx && ctx.state && ctx.state.private) || {};
   var room = (ctx && ctx.room) || {}, players = room.players || [];
   var me = String((ctx && ctx.me) || '');
-  var turnColor = pub.turn === 'black' ? 'black' : 'white';
+  var turnColor = (pub.engineTurn || pub.turn) === 'black' ? 'black' : 'white';
   var turnAr = turnColor === 'white' ? 'الأبيض' : 'الأسود';
   var title = qs(c, '#turn-title'), detail = qs(c, '#turn-detail');
   if (title) {

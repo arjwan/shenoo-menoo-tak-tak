@@ -35,10 +35,11 @@ assert(!tawla.getLegalActions(s, 'pB').some(action => action.type === 'opening-r
 console.log('9) deterministic roll action');
 const active = tawla.createGame({ playerIds: ['pA', 'pB'], preferredStarter: 'pA' });
 active.status = 'active';
-const originalRandom = Math.random;
-Math.random = () => 0;
+const nodeCrypto = require('crypto');
+const originalRandomInt = nodeCrypto.randomInt;
+nodeCrypto.randomInt = () => 0;
 const rollRes = tawla.applyAction(active, 'pA', { type: 'roll' });
-Math.random = originalRandom;
+nodeCrypto.randomInt = originalRandomInt;
 assert(rollRes && !rollRes.error, 'roll ok');
 assert(active.dice[0] === 1 && active.dice[1] === 1, 'dice rolled');
 console.log('10) legal move accepted by authoritative engine');

@@ -4,7 +4,9 @@ function assert(value, message) { if (!value) throw new Error('FAIL: ' + message
 
 // 1. The runtime JS file is the preserved original plus EXACTLY the pinned
 // move-path performance patch (instant roll send instead of the 520ms gate,
-// moveId dedupe stamp, render from POST response). Any other deviation —
+// moveId dedupe stamp, render from POST response) plus the sound-layer
+// migration (twin tone/moveSound/diceSound removed; the shared sound layer
+// plays dice/move/hit exactly once per state transition). Any other deviation —
 // including an old or rewritten tawla UI — fails this equality.
 // The preserved file itself is never modified (pinned by 1b).
 const MOVE_PATH_PATCHES = [
@@ -13,7 +15,13 @@ const MOVE_PATH_PATCHES = [
   ["async function act(a){if(busy)return;busy=true;try{await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});if(a.type==='move')moveSound();drag=null;if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}}",
    "async function act(a){if(busy)return;busy=true;try{a.moveId=a.moveId||moveId();var d=await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});if(a.type==='move')moveSound();drag=null;if(d&&d.room&&window.kahwaApplyActionResponse)window.kahwaApplyActionResponse(d.room);else if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}}"],
   ["setTimeout(()=>act({type:openingRoll?'opening-roll':'roll'}),520)",
-   "act({type:openingRoll?'opening-roll':'roll'})"]
+   "act({type:openingRoll?'opening-roll':'roll'})"],
+  ["function tone(freq,end,duration,volume,delay){try{var A=window.AudioContext||window.webkitAudioContext,a=tone.a||(tone.a=new A()),t=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();a.resume();o.type='triangle';o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(end,t+duration);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+duration+.01)}catch(e){}}\nfunction moveSound(){tone(210,92,.09,.18,0)}\nfunction diceSound(){for(var i=0;i<5;i++)tone(150+i*17,70,.045,.09,i*.055)}\n",
+   ""],
+  ["if(a.type==='move')moveSound();",
+   ""],
+  ["if(canRoll&&!busy){diceSound();",
+   "if(canRoll&&!busy){"]
 ];
 let expectedRuntime = read('original-assets/tawla/kahwa-tawla-v2.js');
 for (const [from, to] of MOVE_PATH_PATCHES) {
