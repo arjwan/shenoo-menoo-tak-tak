@@ -21,7 +21,7 @@ function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
  var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:0};
  if(!n||!(W>0)||!(tileW>0)||!(tileH>0))return out;
  gap=0; // visual domino chain: intended contacts are edge-to-edge.
- var cols=Math.max(3,Math.floor(W/tileW)),limit=Math.max(tileW*3,cols*tileW),minVert=(n>20?3:2);
+ var cols=Math.max(3,Math.floor(W/tileW)),limit=Math.max(tileW*3,(cols-2)*tileW),minVert=(n>20?4:3);
  var RIGHT=0,DOWN=1,LEFT=2,UP=3,dir=RIGHT,hdir=1,vleft=0;
  var raw=[],i,minX=0,minY=0,maxX=0,maxY=0;
  function isDouble(t){return t&&t.a===t.b}
@@ -29,13 +29,13 @@ function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
   if(d===RIGHT||d===LEFT)return isDouble(t)?{w:tileH,h:tileW,flat:false}:{w:tileW,h:tileH,flat:false};
   return isDouble(t)?{w:tileW,h:tileH,flat:true}:{w:tileH,h:tileW,flat:false};
  }
- function wouldOverflow(x,w,d){return d===RIGHT?(x+w>limit+0.01):(x< -0.01)}
- function placeFirst(){var t=chain[0],d=dims(t,RIGHT);return {x:0,y:isDouble(t)?-(tileW-tileH):0,w:d.w,h:d.h,dir:RIGHT,rot:0,flatDouble:d.flat,corner:false,row:0,col:0,id:t.id}}
+ function wouldOverflow(x,w,d){return d===RIGHT?(x+w>limit+0.01):(x< tileW*2-0.01)}
+ function placeFirst(){var t=chain[0],d=dims(t,RIGHT);return {x:0,y:isDouble(t)?-(tileW-tileH)/2:0,w:d.w,h:d.h,dir:RIGHT,rot:0,flatDouble:d.flat,corner:false,row:0,col:0,id:t.id}}
  function sideFromPrev(prev,d,t){
   var dm=dims(t,d),x=prev.x,y=prev.y;
-  if(d===RIGHT){x=prev.x+prev.w;y=(prev.dir===DOWN)?prev.y+prev.h:(prev.dir===UP?prev.y-tileH:prev.y);if(isDouble(t)&&prev.dir!==DOWN&&prev.dir!==UP)y-= (tileW-tileH)}
-  else if(d===LEFT){x=prev.x-dm.w;y=(prev.dir===DOWN)?prev.y+prev.h:(prev.dir===UP?prev.y-tileH:prev.y);if(isDouble(t)&&prev.dir!==DOWN&&prev.dir!==UP)y-= (tileW-tileH)}
-  else if(d===DOWN){x=(prev.dir===RIGHT)?prev.x+prev.w:(prev.dir===LEFT?prev.x-dm.w:prev.x);y=(prev.dir===DOWN)?prev.y+prev.h:prev.y;if(dm.flat){if(prev.dir===DOWN)x=(prev.x<limit/2)?prev.x+prev.w-dm.w:prev.x;y=prev.y+prev.h}}
+  if(d===RIGHT){x=prev.x+prev.w;y=(prev.dir===DOWN)?prev.y+prev.h:(prev.dir===UP?prev.y-tileH:prev.y);if(isDouble(t)&&prev.dir!==DOWN&&prev.dir!==UP)y-= (tileW-tileH)/2}
+  else if(d===LEFT){x=prev.x-dm.w;y=(prev.dir===DOWN)?prev.y+prev.h:(prev.dir===UP?prev.y-tileH:prev.y);if(isDouble(t)&&prev.dir!==DOWN&&prev.dir!==UP)y-= (tileW-tileH)/2}
+  else if(d===DOWN){x=(prev.dir===RIGHT)?prev.x+prev.w:(prev.dir===LEFT?prev.x-dm.w:prev.x);y=(prev.dir===DOWN)?prev.y+prev.h:prev.y;if(dm.flat){if(prev.dir===DOWN)x=prev.x+prev.w/2-dm.w/2;y=prev.y+prev.h}}
   else{ x=(prev.dir===RIGHT)?prev.x+prev.w:(prev.dir===LEFT?prev.x-dm.w:prev.x);y=(prev.dir===UP)?prev.y-dm.h:prev.y-dm.h;if(dm.flat)y=prev.y }
   return {x:x,y:y,w:dm.w,h:dm.h,dir:d,rot:(d===RIGHT?0:(d===LEFT?180:(d===DOWN?90:-90))),flatDouble:dm.flat,corner:false,row:Math.round(y/tileH),col:Math.round(x/tileW),id:t.id};
  }

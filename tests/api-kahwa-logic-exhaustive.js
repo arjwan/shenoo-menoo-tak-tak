@@ -537,13 +537,22 @@ console.log('L1) domino snake layout: continuous physical path, bounds, no overl
   { // Visual reference fixture: one continuous old-domino-style path, not split around an anchor.
     const ts = domUI.snakeTileSize(700);
     const lay = domUI.snakeLayout(chain28.slice(0, 28), 700, ts.w, ts.h, 0, chain28[14].id);
-    const dirs = lay.rects.map(r => r.pathDir).filter((d, i, a) => i === 0 || d !== a[i - 1]);
+    const runs = [];
+    for (const r of lay.rects) {
+      const last = runs[runs.length - 1];
+      if (last && last.dir === r.pathDir) last.count++; else runs.push({ dir: r.pathDir, count: 1 });
+    }
+    const dirs = runs.map(r => r.dir);
     const hasReferenceSnake = dirs.some((d, i) => d === 0 && dirs[i + 1] === 1 && dirs[i + 2] === 2 && dirs[i + 3] === 1 && dirs[i + 4] === 0);
     assert(hasReferenceSnake, 'reference fixture follows RIGHT -> DOWN -> LEFT -> DOWN -> RIGHT');
     eq(lay.anchorIndex, 0, 'reference fixture ignores anchor and remains one continuous server chain');
     for (let i = 1; i < lay.rects.length; i++) assert(jointSides(lay.rects[i - 1], lay.rects[i]), 'reference fixture pair ' + (i - 1) + '/' + i + ' touches physically');
-    const verticalRuns = dirs.filter(d => d === 1 || d === 3).length;
-    assert(verticalRuns >= 2, 'reference fixture has real vertical runs, not horizontal-corner-horizontal kinks');
+    const verticalRuns = runs.filter(r => r.dir === 1 || r.dir === 3);
+    assert(verticalRuns.length >= 2, 'reference fixture has real vertical runs, not horizontal-corner-horizontal kinks');
+    assert(verticalRuns.every(r => r.count >= 3), 'reference fixture keeps at least three tiles in every vertical run before reversing');
+    for (let i = 1; i + 1 < lay.rects.length; i++) if (chain28[i].a === chain28[i].b && !lay.rects[i].corner) {
+      assert(lay.rects[i - 1].pathDir === lay.rects[i + 1].pathDir || lay.rects[i].pathDir === lay.rects[i - 1].pathDir || lay.rects[i].pathDir === lay.rects[i + 1].pathDir, 'double tile ' + i + ' does not independently force a path turn');
+    }
     T('domino');
   }
 
