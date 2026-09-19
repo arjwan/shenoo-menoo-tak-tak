@@ -91,8 +91,14 @@ function attachSocket(httpServer) {
       });
     };
     const getGameRoom = async (id) => {
-      const room = await GameRoom.findById(id).catch(() => null);
-      return room ? decorate(room) : null;
+      if (!id) return null;
+      let gameRoom = await GameRoom.findById(id).catch(() => null);
+      if (!gameRoom) gameRoom = await GameRoom.findOne({ roomCode: String(id), isActive: { $ne: false } }).catch(() => null);
+      return gameRoom ? decorate(gameRoom) : null;
+    };
+    const playerTurn = (state, players) => {
+      const turn = state && state.turn != null ? String(state.turn) : '';
+      return (players || []).map(String).includes(turn) ? turn : null;
     };
     socket.on('game:join', async ({ roomId } = {}, ack) => {
       const room = await getGameRoom(roomId);
@@ -121,20 +127,58 @@ function attachSocket(httpServer) {
       socket.leave(`game:${roomId}`);
       await emitSpectators(roomId);
     });
-    socket.on('game:move', async ({ roomId, move } = {}, ack) => {
+    socket.on('game:move', async ({ roomId, move, action } = {}, ack) => {
       const room = await getGameRoom(roomId);
-      const isPlayer = room && room.players.some((id) => String(id) === String(socket.user._id));
-      if (!room || !isPlayer || room.spectators.some((id) => String(id) === String(socket.user._id))) return typeof ack === 'function' && ack({ ok: false, message: 'المشاهد لا يستطيع اللعب' });
-      if (room.gameState.turn && String(room.gameState.turn) !== String(socket.user._id)) return typeof ack === 'function' && ack({ ok: false, message: 'ليس دورك' });
-      const safeMove = move && typeof move === 'object' ? { tile: String(move.tile || '').slice(0, 20), side: ['left', 'right'].includes(move.side) ? move.side : null } : null;
-      if (!safeMove || !safeMove.tile) return typeof ack === 'function' && ack({ ok: false, message: 'حركة غير صالحة' });
-      room.gameState.board.push(safeMove);
-      room.gameState.moveCount += 1;
-      room.gameState.turn = room.players[(room.players.findIndex((id) => String(id) === String(socket.user._id)) + 1) % room.players.length];
-      room.gameState.status = 'active';
+      const userId = String(socket.user._id);
+      const isPlayer = room && room.players.some((id) => String(id) === userId);
+      if (!room || !isPlayer || room.spectators.some((id) => String(id) === userId)) {
+        return typeof ack === 'function' && ack({ ok: false, message: 'المشاهد لا يستطيع اللعب' });
+      }
+
+      const registry = require('./games/game-engine-registry');
+      let engine;
+      try { engine = registry.getEngine(room.gameType || 'domino'); }
+      catch (_) { return typeof ack === 'function' && ack({ ok: false, message: 'محرك اللعبة غير متاح' }); }
+
+      const engineState = room.gameState && room.gameState.engineState;
+      if (!engineState || !engine || typeof engine.applyAction !== 'function') {
+        return typeof ack === 'function' && ack({ ok: false, message: 'حالة اللعبة غير جاهزة' });
+      }
+
+      // New clients send { action }; keep { move } as a compatibility alias.
+      // Validation and turn enforcement belong to the authoritative engine.
+      const requestedAction = action && typeof action === 'object' ? action : move;
+      if (!requestedAction || typeof requestedAction !== 'object') {
+        return typeof ack === 'function' && ack({ ok: false, message: 'حركة غير صالحة' });
+      }
+
+      const result = engine.applyAction(engineState, userId, requestedAction);
+      if (!result || result.error || result.ok === false) {
+        return typeof ack === 'function' && ack({ ok: false, message: result?.error || 'حركة غير قانونية' });
+      }
+
+      const nextState = result.state || engineState;
+      room.gameState.engineState = nextState;
+      const publicEngine = typeof engine.getPublicState === 'function' ? engine.getPublicState(nextState) : nextState;
+      room.gameState.board = publicEngine?.board || [];
+      room.gameState.moveCount = Number(publicEngine?.moveCount || nextState.moveCount || 0);
+      room.gameState.status = publicEngine?.status || nextState.status || 'active';
+      room.gameState.turn = playerTurn(nextState, room.players);
       room.gameState.updatedAt = new Date();
+      room.markModified('gameState.engineState');
       await room.save();
+
+      // Broadcast public data only. Private hands/legal actions are emitted
+      // separately to each authenticated player socket.
       io.to(`game:${roomId}`).emit('game:state', publicState(room));
+      for (const playerId of (room.players || []).map(String)) {
+        const privateState = typeof engine.getPrivateState === 'function' ? engine.getPrivateState(nextState, playerId) : null;
+        const legalActions = typeof engine.getLegalActions === 'function' ? engine.getLegalActions(nextState, playerId) : [];
+        io.to(`user:${playerId}`).emit('game:private-state', {
+          roomId: String(room._id),
+          engineState: { private: privateState, legalActions: legalActions || [] }
+        });
+      }
       if (typeof ack === 'function') ack({ ok: true });
     });
     socket.on('voice:join', async ({ roomId } = {}, ack) => {
