@@ -466,13 +466,59 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
         const r = lay.rects[i];
         eq(r.id, sub[i].id, 'W=' + W + ' len=' + len + ': layout never reorders the chain');
         assert(r.x >= -0.01 && r.y >= -0.01 && r.x + r.w <= lay.boardW + 0.01 && r.y + r.h <= lay.boardH + 0.01, 'W=' + W + ' len=' + len + ': tile ' + i + ' in bounds');
-        eq(r.corner, Math.abs(r.rot) === 90, 'W=' + W + ' len=' + len + ': tile ' + i + ' rotates exactly on turns');
+        if (r.corner) assert(Math.abs(r.rot) === 90, 'W=' + W + ' len=' + len + ': tile ' + i + ' (corner) rotates ±90');
+        else if (sub[i].a === sub[i].b) eq(r.rot, 0, 'W=' + W + ' len=' + len + ': double ' + i + ' never rotates');
+        else assert(r.rot === 0 || r.rot === 180, 'W=' + W + ' len=' + len + ': single ' + i + ' lies 0/180 by run direction');
         if (!r.corner) {
           if (sub[i].a === sub[i].b) assert(r.w < r.h, 'W=' + W + ' len=' + len + ': double ' + i + ' stands tall');
           else assert(r.w > r.h, 'W=' + W + ' len=' + len + ': single ' + i + ' lies flat');
         }
         for (let j = i + 1; j < len; j++) assert(!overlaps(r, lay.rects[j]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + j + ' never overlap');
         if (i + 1 < len) assert(adjacent(lay.cells[i], lay.cells[i + 1]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' stay cell-adjacent');
+      }
+      { // REGRESSION (production screenshot): touching halves show equal pips
+        const halves = (idx) => {
+          const r = lay.rects[idx], t = sub[idx];
+          if (r.rot === 0) return { L: t.a, R: t.b };
+          if (r.rot === 180) return { L: t.b, R: t.a };
+          if (r.rot === 90) return { U: t.a, D: t.b };
+          return { U: t.b, D: t.a };
+        };
+        for (let i = 0; i + 1 < len; i++) {
+          const A = lay.cells[i], B = lay.cells[i + 1], ha = halves(i), hb = halves(i + 1);
+          const joint = sub[i].b;
+          eq(sub[i + 1].a, joint, 'W=' + W + ' len=' + len + ': chain joint consistent');
+          assert(!(A.corner && B.corner), 'W=' + W + ' len=' + len + ': corners never adjacent');
+          let fa, fb;
+          if (!A.corner && !B.corner) {
+            eq(A.cy, B.cy, 'W=' + W + ' len=' + len + ': data pair shares a row');
+            if (A.cx + 1 === B.cx) { fa = ha.R; fb = hb.L; }
+            else { eq(B.cx + 1, A.cx, 'W=' + W + ' len=' + len + ': data pair side by side'); fa = ha.L; fb = hb.R; }
+          } else if (A.corner) {
+            eq(B.cy === A.r1 || B.cy === A.r2, true, 'W=' + W + ' len=' + len + ': data meets corner inside its span');
+            eq(Math.abs(B.cx - A.cx), 1, 'W=' + W + ' len=' + len + ': data beside corner');
+            fb = (B.cx > A.cx) ? hb.L : hb.R;
+            fa = (B.cy === A.r1) ? ha.U : ha.D;
+          } else {
+            eq(A.cy === B.r1 || A.cy === B.r2, true, 'W=' + W + ' len=' + len + ': data meets corner inside its span');
+            eq(Math.abs(A.cx - B.cx), 1, 'W=' + W + ' len=' + len + ': data beside corner');
+            fa = (A.cx > B.cx) ? ha.L : ha.R;
+            fb = (A.cy === B.r1) ? hb.U : hb.D;
+          }
+          eq(fa, joint, 'W=' + W + ' len=' + len + ': tile ' + i + ' faces the joint value');
+          eq(fb, joint, 'W=' + W + ' len=' + len + ': tile ' + (i + 1) + ' faces the joint value');
+        }
+        if (len > 1) {
+          const ends = domino.openEnds(sub);
+          const freeVal = (idx, other) => {
+            const C = lay.cells[idx], O = lay.cells[other], h = halves(idx);
+            if (!C.corner) return (O.cx > C.cx) ? h.L : h.R;
+            const orow = O.corner ? O.r1 : O.cy;
+            return (orow === C.r1) ? h.D : h.U;
+          };
+          eq(freeVal(0, 1), ends.left, 'W=' + W + ' len=' + len + ': chain-start free half shows the logical left end');
+          eq(freeVal(len - 1, len - 2), ends.right, 'W=' + W + ' len=' + len + ': chain-end free half shows the logical right end');
+        } else eq(lay.rects[0].rot, 0, 'W=' + W + ' len=' + len + ': lone tile never rotates');
       }
       T('domino');
     }
