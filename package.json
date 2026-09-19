@@ -8,7 +8,7 @@
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
     "test": "node server/src/scripts/scan-secrets.js --history && node --test server/test/*.test.js",
-    "test:kahwa": "node tests/api-engine-contract.js && node tests/api-tawla-contract.js && node tests/api-chess-contract.js && node tests/api-cards-contract.js && node tests/api-kahwa-integration-contract.js && node tests/api-kahwa-original-ui-contract.js",
+    "test:kahwa": "node tests/api-engine-contract.js && node tests/api-tawla-contract.js && node tests/api-chess-contract.js && node tests/api-cards-contract.js && node tests/api-kahwa-integration-contract.js && node tests/api-tawla-canva-runtime.js && node tests/api-chess-canva-runtime.js && node tests/api-cards-canva-runtime.js",
     "seed:developer": "node server/src/scripts/createDeveloper.js",
     "seed:rooms": "node server/src/scripts/seedOfficialRooms.js",
     "games:close-all": "node server/src/scripts/closeAllGameRooms.js",

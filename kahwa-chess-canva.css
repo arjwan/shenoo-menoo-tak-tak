@@ -1,0 +1,194 @@
+/* ==========================================================================
+ * Kahwa chess — preserved Canva original as runtime styles.
+ * Version: 20260919-canva-runtime-1
+ * Source (read-only, never edited): original-assets/chess/chess-original.html
+ *
+ * Part 1 below is the original <style> block transformed MECHANICALLY:
+ *   :root / html,body / body  ->  body.chess-active   (page-level, vars stay
+ *                                  global to the chess view so both games can
+ *                                  define --gold/--ink differently)
+ *   every other selector      ->  body.chess-active #kahwa-game-stage <sel>
+ *   @media / declarations     ->  unchanged
+ * Part 2 defines only the Tailwind utilities the transplanted markup uses,
+ * scoped the same way (the original loads cdn.tailwindcss.com; the runtime
+ * must not, to avoid preflight regressions and to work offline).
+ * No selector in this file may touch domino, tawla or cards.
+ * ========================================================================== */
+/* --- Part 1: original <style>, mechanically scoped --- */
+body.chess-active{
+      --cream:#fff7e8; --ink:#32170b; --dark-wood:#4b1908; --walnut:#7a351e;
+      --gold:#efc96f; --light-square:#f1d09a; --dark-square:#874128;
+      --white-piece:#fff7df; --black-piece:#29140d; --accent:#126d91;
+    }
+body.chess-active #kahwa-game-stage *{box-sizing:border-box}
+body.chess-active{width:100%;max-width:100%;overflow-x:hidden}
+body.chess-active{margin:0;font-family:"DM Sans",sans-serif;color:var(--ink)}
+body.chess-active #kahwa-game-stage button,body.chess-active #kahwa-game-stage select,body.chess-active #kahwa-game-stage input{font:inherit}
+body.chess-active #kahwa-game-stage .app-shell{
+      width:100%; min-height:calc(100 * min(var(--vh,1vh),1vh)); padding:18px;
+      background:
+        radial-gradient(circle at 6% 4%,rgba(255,239,195,.8),transparent 25%),
+        radial-gradient(circle at 95% 12%,rgba(237,185,95,.35),transparent 29%),
+        linear-gradient(128deg,#bb7440,#73401f 52%,#321208);
+    }
+body.chess-active #kahwa-game-stage .paper{
+      background:rgba(255,248,232,.96); border:1px solid rgba(91,42,16,.25);
+      box-shadow:0 16px 38px rgba(34,10,2,.24); border-radius:18px;
+    }
+body.chess-active #kahwa-game-stage .brand-mark{
+      width:49px;height:49px;border-radius:15px;display:grid;place-items:center;
+      color:#fff7df;background:conic-gradient(from 25deg,#f4d27e,#803817,#efbd64,#3d1608);
+      box-shadow:inset 0 0 0 3px #401607,0 7px 14px #32120577;
+    }
+body.chess-active #kahwa-game-stage .small-title{font-size:.72rem;letter-spacing:.12em;font-weight:800;color:#8b5133}
+body.chess-active #kahwa-game-stage .badge{background:#254f38;color:#fff0ca;border-radius:999px;padding:.3rem .72rem;font-size:.72rem;font-weight:800}
+body.chess-active #kahwa-game-stage .btn{
+      border:0;border-radius:12px;padding:.68rem .9rem;font-weight:800;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;gap:.42rem;
+      transition:transform .16s,filter .16s,opacity .16s;
+    }
+body.chess-active #kahwa-game-stage .btn:hover:not(:disabled){filter:brightness(1.08)}
+body.chess-active #kahwa-game-stage .btn:active:not(:disabled){transform:translateY(2px)}
+body.chess-active #kahwa-game-stage .btn:disabled{opacity:.43;cursor:not-allowed}
+body.chess-active #kahwa-game-stage .btn-primary{background:#80351f;color:#fff5dc;box-shadow:0 4px 0 #431508}
+body.chess-active #kahwa-game-stage .btn-gold{background:#f0d094;color:#4b2612}
+body.chess-active #kahwa-game-stage .btn-blue{background:#1c719d;color:#f4fbff;box-shadow:0 4px 0 #0b405b}
+body.chess-active #kahwa-game-stage .btn-muted{background:#e8dbc2;color:#5b4738}
+body.chess-active #kahwa-game-stage button:focus-visible,body.chess-active #kahwa-game-stage select:focus-visible,body.chess-active #kahwa-game-stage input:focus-visible{outline:3px solid #1c719d;outline-offset:3px}
+body.chess-active #kahwa-game-stage .chess-frame{
+      width:min(760px,100%,calc(100 * min(var(--vh,1vh),1vh) - 235px));
+      min-width:min(280px,100%); margin:auto; padding:clamp(8px,1.7vw,16px); border-radius:20px;
+      background:repeating-linear-gradient(7deg,rgba(255,213,143,.12) 0 1px,transparent 1px 11px),
+        linear-gradient(135deg,#290c02,#c4773b 23%,#54200b 52%,#bd7035 80%,#321005);
+      box-shadow:inset 0 0 0 2px #e5ad67,inset 0 0 0 8px #3a1206,0 18px 36px #26100488,0 5px 0 #351105;
+    }
+body.chess-active #kahwa-game-stage .board{
+      direction:ltr;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));
+      width:100%;aspect-ratio:1 / 1;max-width:100%;height:auto;min-height:0;align-self:start;
+      border:5px solid #4a1a08;overflow:hidden;border-radius:5px;background:var(--light-square);
+    }
+body.chess-active #kahwa-game-stage .square{
+      border:0;position:relative;display:grid;place-items:center;padding:0;cursor:pointer;
+      overflow:visible;touch-action:manipulation;min-width:0;
+    }
+body.chess-active #kahwa-game-stage .square.light{background:var(--light-square)}
+body.chess-active #kahwa-game-stage .square.dark{background:var(--dark-square)}
+body.chess-active #kahwa-game-stage .square.last::before,body.chess-active #kahwa-game-stage .square.selected::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1}
+body.chess-active #kahwa-game-stage .square.last::before{background:#f8dc6070}
+body.chess-active #kahwa-game-stage .square.selected::before{box-shadow:inset 0 0 0 4px #ffe06b}
+body.chess-active #kahwa-game-stage .square.legal::after{
+      content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;background:#277b53c9;
+      border:2px solid #e8ffe2;box-shadow:0 0 13px #bcf8ae;z-index:2;
+    }
+body.chess-active #kahwa-game-stage .square.capture::after{
+      content:"";position:absolute;inset:9%;border:4px solid #ffe576;border-radius:50%;
+      box-shadow:0 0 12px #44200b;z-index:2;
+    }
+body.chess-active #kahwa-game-stage .piece{
+      position:relative;z-index:3;font-family:"Times New Roman",serif;font-size:clamp(29px,6.1vw,62px);
+      line-height:1;filter:drop-shadow(2px 4px 2px rgba(32,10,2,.58));transition:transform .16s,filter .16s;
+      user-select:none;
+    }
+body.chess-active #kahwa-game-stage .square:hover .piece{transform:translateY(-3px)}
+body.chess-active #kahwa-game-stage .piece.white{color:var(--white-piece);text-shadow:0 1px 0 #6d3c1c,1px 1px 0 #6d3c1c,-1px -1px 0 #6d3c1c}
+body.chess-active #kahwa-game-stage .piece.black{color:var(--black-piece);text-shadow:0 1px 0 #c78f52}
+body.chess-active #kahwa-game-stage .coord{position:absolute;z-index:4;font-size:9px;font-weight:800;opacity:.75;pointer-events:none}
+body.chess-active #kahwa-game-stage .coord.file{left:4px;bottom:2px}
+body.chess-active #kahwa-game-stage .coord.rank{right:4px;top:2px}
+body.chess-active #kahwa-game-stage .clock{
+      min-width:145px;background:linear-gradient(145deg,#332017,#130b07);color:#fff2d2;border:2px solid #d79b54;
+      border-radius:15px;padding:10px 15px;box-shadow:inset 0 2px 7px #0008;transition:.2s;
+    }
+body.chess-active #kahwa-game-stage .clock.active{border-color:#f9d76a;box-shadow:0 0 0 3px #f9d76a44,inset 0 2px 7px #0008}
+body.chess-active #kahwa-game-stage .clock.low{border-color:#ef785b;color:#ffe0d6}
+body.chess-active #kahwa-game-stage .clock-time{font-family:"Playfair Display",serif;font-size:1.62rem;font-weight:800;direction:ltr}
+body.chess-active #kahwa-game-stage .status{min-height:49px;border-radius:13px;padding:.72rem 1rem;background:#f5e4c4;color:#66361f;font-weight:700;line-height:1.55}
+body.chess-active #kahwa-game-stage .status.thinking{color:#155a78;background:#ddf1f6}
+body.chess-active #kahwa-game-stage .status.warning{color:#923621;background:#ffe1d3}
+body.chess-active #kahwa-game-stage .status.good{color:#216343;background:#ddf1e4}
+body.chess-active #kahwa-game-stage .history{max-height:330px;overflow:auto}
+body.chess-active #kahwa-game-stage .history li{padding:.54rem 0;border-bottom:1px dashed #dec6a3;font-size:.88rem}
+body.chess-active #kahwa-game-stage .drawer{
+      position:fixed;z-index:80;top:0;bottom:0;left:0;width:min(390px,100%);padding:20px;overflow:auto;
+      background:#fff8e9;box-shadow:10px 0 35px #1e0a04aa;transform:translateX(-105%);transition:transform .3s ease;
+    }
+body.chess-active #kahwa-game-stage .drawer.open{transform:translateX(0)}
+body.chess-active #kahwa-game-stage .backdrop{position:fixed;inset:0;z-index:75;background:#26100466;display:none}
+body.chess-active #kahwa-game-stage .backdrop.show{display:block}
+body.chess-active #kahwa-game-stage .modal{position:fixed;inset:0;z-index:90;padding:16px;background:#261004b8;display:none;place-items:center}
+body.chess-active #kahwa-game-stage .modal.show{display:grid}
+body.chess-active #kahwa-game-stage .modal-card{width:min(520px,100%);max-height:calc(92 * min(var(--vh,1vh),1vh));overflow:auto}
+body.chess-active #kahwa-game-stage .spectator-row{display:flex;align-items:center;gap:.7rem;padding:.7rem 0;border-bottom:1px dashed #dec6a3}
+body.chess-active #kahwa-game-stage .avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:#f1d095;color:#4f250f;font-weight:800}
+body.chess-active #kahwa-game-stage .promotion-option{
+      width:75px;height:75px;border:2px solid #dbbd8f;border-radius:14px;background:#fff9ed;display:grid;place-items:center;
+      cursor:pointer;font-size:52px;line-height:1;
+    }
+body.chess-active #kahwa-game-stage .promotion-option:hover{background:#fde8ba;border-color:#9d4c28}
+body.chess-active #kahwa-game-stage .field{width:100%;border:1px solid #d8bd94;border-radius:12px;background:#fffaf0;padding:.72rem}
+@media(max-width:720px){body.chess-active #kahwa-game-stage .app-shell{padding:10px}body.chess-active #kahwa-game-stage .clock{min-width:0;flex:1;padding:8px 10px}body.chess-active #kahwa-game-stage .clock-time{font-size:1.32rem}body.chess-active #kahwa-game-stage .btn{padding:.62rem .68rem;font-size:.82rem}body.chess-active #kahwa-game-stage .board{border-width:3px}}
+
+/* ---------------------------------------------------------------------------
+ * Part 2 — scoped Tailwind-utility fallbacks.
+ * The preserved original loads cdn.tailwindcss.com; the runtime instead
+ * defines ONLY the utilities the transplanted markup actually uses, scoped
+ * under body.chess-active #kahwa-game-stage so nothing leaks to the lobby,
+ * toolbar, domino, tawla or cards. No preflight, works offline.
+ * --------------------------------------------------------------------------- */
+body.chess-active #kahwa-game-stage .block{display:block}
+body.chess-active #kahwa-game-stage .flex{display:flex}
+body.chess-active #kahwa-game-stage .grid{display:grid}
+body.chess-active #kahwa-game-stage .hidden{display:none!important}
+body.chess-active #kahwa-game-stage .flex-wrap{flex-wrap:wrap}
+body.chess-active #kahwa-game-stage .items-center{align-items:center}
+body.chess-active #kahwa-game-stage .items-start{align-items:start}
+body.chess-active #kahwa-game-stage .justify-between{justify-content:space-between}
+body.chess-active #kahwa-game-stage .justify-center{justify-content:center}
+body.chess-active #kahwa-game-stage .min-w-0{min-width:0}
+body.chess-active #kahwa-game-stage .w-full{width:100%}
+body.chess-active #kahwa-game-stage .max-w-\[1450px\]{max-width:1450px}
+body.chess-active #kahwa-game-stage .mx-auto{margin-left:auto;margin-right:auto}
+body.chess-active #kahwa-game-stage .m-0{margin:0}
+body.chess-active #kahwa-game-stage .p-0{padding:0}
+body.chess-active #kahwa-game-stage .p-2{padding:.5rem}
+body.chess-active #kahwa-game-stage .p-3{padding:.75rem}
+body.chess-active #kahwa-game-stage .p-4{padding:1rem}
+body.chess-active #kahwa-game-stage .p-6{padding:1.5rem}
+body.chess-active #kahwa-game-stage .px-4{padding-left:1rem;padding-right:1rem}
+body.chess-active #kahwa-game-stage .py-3{padding-top:.75rem;padding-bottom:.75rem}
+body.chess-active #kahwa-game-stage .mb-0{margin-bottom:0}
+body.chess-active #kahwa-game-stage .mb-1{margin-bottom:.25rem}
+body.chess-active #kahwa-game-stage .mb-2{margin-bottom:.5rem}
+body.chess-active #kahwa-game-stage .mb-3{margin-bottom:.75rem}
+body.chess-active #kahwa-game-stage .mb-4{margin-bottom:1rem}
+body.chess-active #kahwa-game-stage .mb-5{margin-bottom:1.25rem}
+body.chess-active #kahwa-game-stage .mt-0{margin-top:0}
+body.chess-active #kahwa-game-stage .mt-1{margin-top:.25rem}
+body.chess-active #kahwa-game-stage .mt-2{margin-top:.5rem}
+body.chess-active #kahwa-game-stage .mt-3{margin-top:.75rem}
+body.chess-active #kahwa-game-stage .mt-4{margin-top:1rem}
+body.chess-active #kahwa-game-stage .mt-5{margin-top:1.25rem}
+body.chess-active #kahwa-game-stage .gap-2{gap:.5rem}
+body.chess-active #kahwa-game-stage .gap-3{gap:.75rem}
+body.chess-active #kahwa-game-stage .gap-4{gap:1rem}
+body.chess-active #kahwa-game-stage .gap-5{gap:1.25rem}
+body.chess-active #kahwa-game-stage .space-y-3>*+*{margin-top:.75rem}
+body.chess-active #kahwa-game-stage .space-y-4>*+*{margin-top:1rem}
+body.chess-active #kahwa-game-stage .font-bold{font-weight:700}
+body.chess-active #kahwa-game-stage .text-center{text-align:center}
+body.chess-active #kahwa-game-stage .text-sm{font-size:.875rem}
+body.chess-active #kahwa-game-stage .text-xs{font-size:.75rem}
+body.chess-active #kahwa-game-stage .leading-7{line-height:1.75rem}
+body.chess-active #kahwa-game-stage .text-\[\#704126\]{color:#704126}
+body.chess-active #kahwa-game-stage .text-\[\#80502e\]{color:#80502e}
+body.chess-active #kahwa-game-stage .list-none{list-style:none}
+body.chess-active #kahwa-game-stage .rounded-xl{border-radius:.75rem}
+body.chess-active #kahwa-game-stage .border-t{border-top-width:1px}
+body.chess-active #kahwa-game-stage .border-dashed{border-style:dashed}
+body.chess-active #kahwa-game-stage .border-\[\#d9c4a1\]{border-color:#d9c4a1}
+@media(min-width:640px){
+body.chess-active #kahwa-game-stage .sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1280px){
+body.chess-active #kahwa-game-stage .xl\:grid-cols-\[minmax\(0\,1fr\)_305px\]{grid-template-columns:minmax(0,1fr) 305px}
+}
