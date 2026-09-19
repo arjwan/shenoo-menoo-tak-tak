@@ -12,7 +12,11 @@ function notice(s,error){var e=document.getElementById('domino-status');if(e){e.
 // modified here; this only assigns each tile a true rect {x,y,w,h,rot}.
 // Right side of the anchor snakes right→down→left→down→right, the left side
 // left→up→right→up→left. Turn columns are derived from the measured width W:
-// no fixed pixel constants decide where turns happen.
+// no fixed pixel constants decide where turns happen. Orientation is derived
+// from true chain-neighbor geometry: every tile's a-half faces its
+// chain-previous neighbor and its b-half its chain-next neighbor (data tiles
+// 0/180 by run direction, doubles immune, corners ±90 by neighbor rows), so
+// touching halves always show equal pips.
 function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
  var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:-1};
  if(!n||!(W>0)||!(tileW>0)||!(tileH>0))return out;
@@ -43,18 +47,26 @@ function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
   if(c.corner){var a=c.r1+sh,b=c.r2+sh,def=tileW+gap-(H[a]+H[b]);
    if(def>0){var up=Math.ceil(def/2);H[a]+=up;H[b]+=def-up}}}
  var Y=[0];for(r=1;r<rows;r++)Y.push(Y[r-1]+H[r-1]);
+ function rowOf(j){var c=cells[j];return c.corner?c.r1:c.cy}
  var rects=[];
- for(i=0;i<n;i++){var t=chain[i],cc=cells[i],dbl=t.a===t.b,fw,fh,rx,ry;
+ for(i=0;i<n;i++){var t=chain[i],cc=cells[i],dbl=t.a===t.b,fw,fh,rx,ry,rot=0;
   if(cc.corner){fw=tileH;fh=tileW;
-   rx=cc.cx*sx+(sx-fw)/2;
+   rx=cc.cx*sx+(sx-tileW)/2;
    var sTop=Y[cc.r1+sh],sBot=Y[cc.r2+sh]+H[cc.r2+sh]-gap;
    ry=sTop+(sBot-sTop-fh)/2;
-   rects.push({x:rx,y:ry,w:fw,h:fh,rot:cc.rot,corner:true,row:cc.r1+sh,col:cc.cx,id:t.id})}
+   if(i>0&&i+1<n){rot=(rowOf(i-1)<rowOf(i+1))?90:-90}
+   else if(i>0){rot=(rowOf(i-1)===cc.r1)?90:-90}
+   else{rot=(rowOf(i+1)===cc.r1)?-90:90}
+   rects.push({x:rx,y:ry,w:fw,h:fh,rot:rot,corner:true,row:cc.r1+sh,col:cc.cx,id:t.id})}
   else{fw=dbl?tileH:tileW;fh=dbl?tileW:tileH;
    rx=cc.cx*sx+(sx-fw)/2;
    var rTop=Y[cc.cy+sh];
    ry=rTop+(H[cc.cy+sh]-gap-fh)/2;
-   rects.push({x:rx,y:ry,w:fw,h:fh,rot:0,corner:false,row:cc.cy+sh,col:cc.cx,id:t.id})}
+   if(!dbl){
+    if(i>0){var pc=cells[i-1];rot=((pc.corner?pc.cx:pc.cx)<cc.cx)?0:180}
+    else if(i+1<n){var nc=cells[i+1];rot=((nc.corner?nc.cx:nc.cx)>cc.cx)?0:180}
+   }
+   rects.push({x:rx,y:ry,w:fw,h:fh,rot:rot,corner:false,row:cc.cy+sh,col:cc.cx,id:t.id})}
   out.cells.push(cc.corner?{cx:cc.cx,r1:cc.r1+sh,r2:cc.r2+sh,corner:true}:{cx:cc.cx,cy:cc.cy+sh,corner:false})}
  out.rects=rects;out.boardW=cols*sx-gap;out.boardH=Y[rows-1]+H[rows-1]-gap;
  out.rows=rows;out.cols=cols;
@@ -74,10 +86,10 @@ function renderChain(chainEl,chain,anchorId,W,availW,availH){
  var sc=snakeScale(lay.boardW,lay.boardH,availW,availH);
  var pipPx=Math.max(3,Math.round(ts.w/12)),h='',i;
  for(i=0;i<lay.rects.length;i++){var r=lay.rects[i],t=chain[i],style;
-  if(r.rot){var cx=r.x+r.w/2,cy=r.y+r.h/2;
+  if(r.corner){var cx=r.x+r.w/2,cy=r.y+r.h/2;
    style='left:'+Math.round(cx-ts.w/2)+'px;top:'+Math.round(cy-ts.h/2)+'px;width:'+ts.w+'px;height:'+ts.h+'px;--pip:'+pipPx+'px;transform:rotate('+r.rot+'deg)'}
-  else{style='left:'+Math.round(r.x)+'px;top:'+Math.round(r.y)+'px;width:'+Math.round(r.w)+'px;height:'+Math.round(r.h)+'px;--pip:'+pipPx+'px'}
-  h+=tile(t,'chain-tile'+(r.rot?' is-turn':''),'disabled style="'+style+'"')}
+  else{style='left:'+Math.round(r.x)+'px;top:'+Math.round(r.y)+'px;width:'+Math.round(r.w)+'px;height:'+Math.round(r.h)+'px;--pip:'+pipPx+'px'+(r.rot?';transform:rotate('+r.rot+'deg)':'')}
+  h+=tile(t,'chain-tile'+(r.corner?' is-turn':(r.rot?' is-rev':'')),'disabled style="'+style+'"')}
  chainEl.innerHTML='<div class="dom-snake-view" style="width:'+Math.max(1,Math.round(lay.boardW*sc))+'px;height:'+Math.max(1,Math.round(lay.boardH*sc))+'px"><div class="dom-snake-board" style="width:'+lay.boardW+'px;height:'+lay.boardH+'px;transform:scale('+sc.toFixed(3)+')">'+h+'</div></div>';
 }
 async function act(action){
