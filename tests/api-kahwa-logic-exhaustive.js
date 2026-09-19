@@ -446,6 +446,7 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
   assert(domino.validateChain(chain28).valid, 'trail joints match');
   const before = JSON.stringify(chain28), endsBefore = domino.openEnds(chain28);
   eq(domUI.snakeTileSize(820).w, 86, 'desktop keeps the exact current tile size');
+  eq(domUI.snakeTileSize(820).h, 43, 'desktop uses true 2:1 domino half-row height');
   eq(domUI.snakeTileSize(100).w, 40, 'tiny widths floor the tile size');
   assert(domUI.snakeTileSize(360).w < 86, 'narrow screens shrink chain tiles');
   eq(domUI.snakeScale(100, 100, 500, 500), 1, 'fitting board needs no scale');
@@ -474,7 +475,12 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
           else assert(r.w > r.h, 'W=' + W + ' len=' + len + ': single ' + i + ' lies flat');
         }
         for (let j = i + 1; j < len; j++) assert(!overlaps(r, lay.rects[j]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + j + ' never overlap');
-        if (i + 1 < len) assert(adjacent(lay.cells[i], lay.cells[i + 1]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' stay cell-adjacent');
+        if (i + 1 < len) {
+          assert(adjacent(lay.cells[i], lay.cells[i + 1]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' stay cell-adjacent');
+          const nr = lay.rects[i + 1];
+          if (lay.cells[i + 1].cx > lay.cells[i].cx) eq(Math.round((r.x + r.w - nr.x) * 1000) / 1000, 0, 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' touch with no right-side gap');
+          else eq(Math.round((nr.x + nr.w - r.x) * 1000) / 1000, 0, 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' touch with no left-side gap');
+        }
       }
       { // REGRESSION (production screenshot): touching halves show equal pips
         const halves = (idx) => {
