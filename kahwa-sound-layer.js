@@ -2,7 +2,8 @@
 //
 // Single sound source per event, so nothing ever double-plays:
 //   domino : placement knock + draw blip (own AND remote moves)
-//   tawla  : hit thud only (moves/dice stay with the original twin sounds)
+//   tawla  : dice rattle on every roll, stone knock per move, thud on hit
+//            (the twin is silent; both players hear the same transitions)
 //   chess  : move click / capture thud
 //   cards  : draw / discard / meld blips
 // Sounds fire once per authoritative state transition (diff-based). Repeated
@@ -24,6 +25,18 @@
       if (nc > pc) out.push('place');
       if (ns < ps) out.push('draw');
     } else if (gameType === 'tawla') {
+      // One dice rattle per roll, heard identically by both players and
+      // spectators: the authoritative rolled flag flips false->true exactly
+      // once per roll (opening rolls grow opening.rolls the same way).
+      // One knock per stone move via moveCount. POST responses and socket
+      // echoes of the same snapshot diff to nothing, so nothing double-plays.
+      if (!!nextPub.rolled && !prevPub.rolled) out.push('dice');
+      else {
+        var pr = (prevPub.opening && prevPub.opening.rolls) || {};
+        var nr = (nextPub.opening && nextPub.opening.rolls) || {};
+        if (Object.keys(nr).length > Object.keys(pr).length) out.push('dice');
+      }
+      if (Number(nextPub.moveCount || 0) > Number(prevPub.moveCount || 0)) out.push('stone');
       var pb = prevPub.bar || {}, nb = nextPub.bar || {};
       if (Number(nb.white || 0) > Number(pb.white || 0) ||
           Number(nb.black || 0) > Number(pb.black || 0)) out.push('hit');
@@ -60,11 +73,11 @@
     } catch (_e) { return null; }
   }
   function unlock() { audio(); }
-  function blip(freq, end, dur, vol, type) {
+  function blip(freq, end, dur, vol, type, when) {
     try {
       var a = audio();
       if (!a) return;
-      var t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+      var t = a.currentTime + (when || 0), o = a.createOscillator(), g = a.createGain();
       o.type = type || 'triangle';
       o.frequency.setValueAtTime(freq, t);
       o.frequency.exponentialRampToValueAtTime(Math.max(1, end), t + dur);
@@ -79,6 +92,8 @@
   }
   function play(ev) {
     if (ev === 'place') blip(155, 62, 0.12, 0.3);
+    else if (ev === 'dice') { for (var i = 0; i < 5; i++) blip(150 + i * 17, 70, 0.045, 0.09, 'triangle', i * 0.055); }
+    else if (ev === 'stone') blip(210, 92, 0.09, 0.18);
     else if (ev === 'draw') blip(210, 95, 0.12, 0.18);
     else if (ev === 'hit' || ev === 'capture') { blip(140, 55, 0.16, 0.32); blip(90, 40, 0.2, 0.2); }
     else if (ev === 'move') blip(320, 140, 0.07, 0.22);

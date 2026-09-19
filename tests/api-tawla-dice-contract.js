@@ -241,8 +241,52 @@ console.log('11) one sound per event, never duplicated');
   t('domino', { chain: [{ a: 1, b: 2 }], stockCount: 5 }, { chain: [{ a: 1, b: 2 }, { a: 2, b: 3 }], stockCount: 5 }, ['place'], 'domino placement knocks');
   t('domino', { chain: [{ a: 1, b: 2 }], stockCount: 5 }, { chain: [{ a: 1, b: 2 }], stockCount: 4 }, ['draw'], 'domino draw blips');
   t('domino', { chain: [{ a: 1, b: 2 }], stockCount: 4 }, { chain: [{ a: 1, b: 2 }], stockCount: 4 }, [], 'domino re-render silent');
-  t('tawla', { bar: { white: 0, black: 0 } }, { bar: { white: 1, black: 0 } }, ['hit'], 'tawla hit thuds');
-  t('tawla', { bar: { white: 0, black: 0 } }, { bar: { white: 0, black: 0 } }, [], 'tawla plain re-render silent');
+  t('tawla', { rolled: false, moveCount: 0, bar: {}, opening: { rolls: {} } },
+             { rolled: true, moveCount: 0, bar: {}, opening: { rolls: {} } }, ['dice'], 'roll rattles dice');
+  t('tawla', { rolled: false, moveCount: 0, bar: {}, opening: { rolls: {} } },
+             { rolled: true, moveCount: 0, bar: {}, opening: { rolls: {} } }, ['dice'], 'other side hears the same roll');
+  t('tawla', { rolled: true, moveCount: 2, bar: { white: 0, black: 0 } },
+             { rolled: true, moveCount: 3, bar: { white: 0, black: 0 } }, ['stone'], 'stone knocks for local and remote moves');
+  t('tawla', { rolled: true, moveCount: 2, bar: { white: 0, black: 0 } },
+             { rolled: true, moveCount: 3, bar: { white: 1, black: 0 } }, ['stone', 'hit'], 'hit move knocks then thuds');
+  t('tawla', { rolled: false, moveCount: 0, bar: {}, opening: { rolls: {} } },
+             { rolled: false, moveCount: 0, bar: {}, opening: { rolls: { pA: [3, 4] } } }, ['dice'], 'opening roll rattles');
+  t('tawla', { rolled: true, moveCount: 1 }, { rolled: false, moveCount: 1 }, [], 'turn pass stays silent');
+  t('tawla', { rolled: true, moveCount: 3, bar: { white: 1, black: 0 } },
+             { rolled: true, moveCount: 3, bar: { white: 1, black: 0 } }, [], 'socket echo of same snapshot silent');
+  {
+    // A full turn rendered twice per snapshot (POST response + socket echo)
+    // still sounds every event exactly once: identity is the state
+    // transition itself, not a flag.
+    const seq = [
+      { rolled: false, moveCount: 0, bar: { white: 0, black: 0 }, opening: { rolls: {} } },
+      { rolled: true, moveCount: 0, bar: { white: 0, black: 0 }, opening: { rolls: {} } },
+      { rolled: true, moveCount: 1, bar: { white: 0, black: 0 }, opening: { rolls: {} } },
+      { rolled: true, moveCount: 2, bar: { white: 1, black: 0 }, opening: { rolls: {} } },
+      { rolled: false, moveCount: 2, bar: { white: 1, black: 0 }, opening: { rolls: {} } },
+      { rolled: true, moveCount: 2, bar: { white: 1, black: 0 }, opening: { rolls: {} } },
+    ];
+    let prev = null;
+    const heard = [];
+    for (const s of seq) {
+      heard.push(...soundEventsFor('tawla', prev, s));
+      heard.push(...soundEventsFor('tawla', s, s));
+      prev = s;
+    }
+    eq(heard, ['dice', 'stone', 'stone', 'hit', 'dice'], 'full turn sounds once per event across POST+echo renders');
+  }
+  {
+    // Single-source audit: the live tawla/chess/domino/cards runtimes hold
+    // no audio of their own, so no event can sound twice.
+    const twin = fs.readFileSync('kahwa-tawla-v2.js', 'utf8');
+    assert(!twin.includes('tone') && !twin.includes('moveSound') && !twin.includes('diceSound'), 'tawla twin fully silent');
+    for (const f of ['kahwa-chess-canva.js', 'kahwa-domino-ui.js', 'kahwa-cards-canva.js']) {
+      const s = fs.readFileSync(f, 'utf8');
+      assert(!s.includes('AudioContext') && !s.includes('Oscillator') && !s.includes('new Audio'), f + ' holds no audio (layer is the only source)');
+    }
+    const layer = fs.readFileSync('kahwa-sound-layer.js', 'utf8');
+    assert(layer.includes('.catch('), 'layer catches audio/autoplay failures so games never break');
+  }
   t('chess', { moveCount: 5, moveHistory: [] }, { moveCount: 6, moveHistory: [{ captured: null }] }, ['move'], 'chess move clicks');
   t('chess', { moveCount: 5, moveHistory: [] }, { moveCount: 6, moveHistory: [{ captured: 'p' }] }, ['capture'], 'chess capture thuds');
   t('chess', { moveCount: 6, moveHistory: [{ captured: 'p' }] }, { moveCount: 6, moveHistory: [{ captured: 'p' }] }, [], 'chess echo silent');

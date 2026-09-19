@@ -205,7 +205,7 @@ function paintCenter(c) {
   (pub.melds || []).forEach(function (m) {
     var row = document.createElement('div');
     row.className = 'flex flex-wrap justify-center gap-2 mt-6';
-    row.setAttribute('aria-label', 'مجموعة معلنة');
+    row.setAttribute('aria-label', 'مجموعة مكوّنة');
     (m.cards || []).forEach(function (card) { row.appendChild(makeCard(card, false)); });
     var cap = document.createElement('p');
     cap.className = 'text-xs text-[#c6e2d5]';
@@ -253,7 +253,7 @@ function paintHand(c) {
     help.textContent = isSpectator() ? 'أنت متفرج: تشاهد الطاولة فقط.' :
       !priv.turn ? 'انتظر دورك؛ الأوراق غير القابلة للعب معطلة.' :
       priv.phase === 'draw' ? 'دورك: اسحب من الكومة أو خذ المكشوفة.' :
-      (n ? ('حددت ' + n + ' — أكمل مجموعة من 3+ أو تخلص من ورقة واحدة.') : 'اختر أوراق مجموعة صالحة ثم العبها، أو تخلص من ورقة واحدة.');
+      (n ? ('حددت ' + n + ' — أكمل مجموعة من 3+ أو ارمِ ورقة واحدة.') : 'اختر أوراق مجموعة صالحة ثم كوّنها، أو ارمِ ورقة واحدة.');
   }
 }
 function paintActions(c) {
@@ -276,11 +276,11 @@ function paintActions(c) {
     btn('خذ المكشوفة', false, mine && canDo('draw', 'discard'), function () { doAct({ type: 'draw', source: 'discard' }); });
   } else {
     var n = Object.keys(selected).length;
-    btn('العب مجموعة' + (n ? ' (' + n + ')' : ''), true, mine && canDo('meld') && n >= 3, function () {
+    btn('كوّن مجموعة' + (n ? ' (' + n + ')' : ''), true, mine && canDo('meld') && n >= 3, function () {
       doAct({ type: 'meld', cardIds: Object.keys(selected) });
     });
-    btn('تخلص من المحددة', false, mine && canDo('discard') && n === 1, function () {
-      if (Object.keys(selected).length !== 1) { showToast(c, 'اختر ورقة واحدة فقط'); return; }
+    btn('ارمِ المحددة', false, mine && canDo('discard') && n === 1, function () {
+      if (Object.keys(selected).length !== 1) { showToast(c, 'ارمِ ورقة واحدة فقط'); return; }
       doAct({ type: 'discard', cardId: Object.keys(selected)[0] });
     });
   }
@@ -291,7 +291,7 @@ function paintEvents(c) {
   if (!box) return;
   var ev = [];
   (pub.melds || []).slice().reverse().forEach(function (m) {
-    ev.push(esc(playerName(String(m.playerId))) + ' أعلن مجموعة (+' + Number(m.points || 0) + ').');
+    ev.push(esc(playerName(String(m.playerId))) + ' كوّن مجموعة (+' + Number(m.points || 0) + ').');
   });
   ev.push('الدور: ' + esc(playerName(turnId())) + (pub.phase === 'draw' ? ' — مرحلة السحب.' : ' — مرحلة اللعب.'));
   ev.push('السحب: ' + Number(pub.stockCount || 0) + ' · الرمي: ' + Number(pub.discardCount || 0) + ' · الحركات: ' + Number(pub.moveCount || 0) + '.');
@@ -318,7 +318,7 @@ function paintResults(c) {
   switchScreen(c, 'results-screen');
   var wt = qs(c, '#winner-text'), rr = qs(c, '#result-reason'), rl = qs(c, '#results-list');
   if (wt) wt.textContent = 'الفائز: ' + playerName(String(pub.winner));
-  if (rr) rr.textContent = pub.finishReason === 'empty_hand' ? 'تخلص من جميع أوراقه.' : 'انتهت الجولة.';
+  if (rr) rr.textContent = pub.finishReason === 'empty_hand' ? 'تخلّص من جميع أوراقه.' : 'انتهت الجولة.';
   if (rl) {
     var rows = (pub.players || []).slice().sort(function (a, b) { return Number(b.score || 0) - Number(a.score || 0); });
     rl.innerHTML = rows.map(function (p, i) {
