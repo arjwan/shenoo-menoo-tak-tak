@@ -1,0 +1,120 @@
+/* ==========================================================================
+ * Kahwa Azzawi — Original UI runtime link (integration layer)
+ * Version: 20260919-original-link-1
+ *
+ * Purpose: link the preserved original game surfaces to the live runtime
+ * page (game-room.html) WITHOUT modifying or replacing the preserved
+ * originals and WITHOUT changing the authoritative engines, API, Socket,
+ * rooms, players, turns, moves, spectators or chat.
+ *
+ * Preserved sources (read-only, never edited here):
+ * - original-assets/tawla/tawla-fast-2d.css + kahwa-tawla-v2.js (Canva build 6)
+ * - original-assets/chess/chess-original.html (realistic Canva chess)
+ * - canva-originals/cards/index.html (Last-Card / card library, 54245 bytes)
+ * - original-assets/school/* (school, untouched by this layer)
+ *
+ * Scope rules:
+ * - Tawla rules only under body.tawla-active (full original surface).
+ * - Chess rules only under body.chess-active #kahwa-game-stage (original
+ *   visual language mapped onto the live server-backed board).
+ * - Cards rules only under body.cards-active #kahwa-game-stage (original
+ *   felt/wood/playing-card language mapped onto the live rummy engine UI).
+ * - Domino is intentionally NOT touched by this file (passthrough).
+ * ========================================================================== */
+
+/* --------------------------------------------------------------------------
+ * A) Tawla — complete the preserved Canva build 6 surface.
+ * The live tawla-fast-2d.css keeps the first 455 lines of the preserved
+ * original; tawla-canva-exact.css keeps most of the tail. This integration
+ * block restores the exact preserved tail verbatim so the live runtime
+ * always renders the original required surface even if older CSS is cached.
+ * Source tail: original-assets/tawla/tawla-fast-2d.css (last 16 lines).
+ * -------------------------------------------------------------------------- */
+body.tawla-active{background:radial-gradient(circle at 12% 0,#ffe8b4cc,transparent 28%),radial-gradient(circle at 92% 8%,#e2a45852,transparent 32%),linear-gradient(130deg,#b66f38,#7c4020 55%,#3b190d)!important}
+body.tawla-active .site-header,body.tawla-active #roomView>.game-toolbar,body.tawla-active .play-stage>.table-head,body.tawla-active .play-stage>.scoreboard,body.tawla-active .play-stage>.game-table,body.tawla-active .play-stage>.table-controls,body.tawla-active .play-stage>[data-feedback]{display:none!important}
+body.tawla-active main.container.game-room{width:100%;max-width:none;margin:0;padding:0}
+body.tawla-active .play-stage{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important}
+body.tawla-active #kahwa-game-stage{width:100%;max-width:none!important;margin:0!important}
+.canva-tawla-app{min-height:100vh;padding:18px;color:#2a170c;font-family:"DM Sans","Noto Kufi Arabic",sans-serif}
+.canva-game-header,.canva-match-heading,.canva-game-grid{width:min(1500px,100%);margin-inline:auto}
+.canva-game-header,.canva-match-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.canva-game-header{margin-bottom:20px}.canva-brand{display:flex;align-items:center;gap:12px}.canva-brand>span:nth-child(2){display:flex;flex-direction:column}.canva-brand small,.canva-match-heading small{color:#88512f;font-size:.72rem;font-weight:800;letter-spacing:.08em}.canva-brand strong{font-size:2rem}.canva-brand>b{padding:5px 11px;border-radius:99px;background:#284b37;color:#fbf2d4}.canva-brand-mark{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;color:#fff8e7;background:conic-gradient(from 40deg,#f5d68a,#833817,#f3c770,#4b1c0b);box-shadow:inset 0 0 0 3px #391306,0 7px 14px #3b160a55;font-size:26px}
+.canva-header-actions button,.canva-side-panel>button{border:0;border-radius:12px;padding:.72rem .92rem;font-weight:800;cursor:pointer;background:#1b709d;color:#f4fbff;box-shadow:0 4px 0 #0c415e}.canva-match-heading{margin-bottom:16px}.canva-match-heading h2{margin:2px 0 0;font-size:1.5rem}.canva-match-heading>span{padding:7px 12px;border-radius:99px;background:#284b37;color:#fff8e9;font-weight:800;font-size:.78rem}
+.canva-game-grid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}.canva-turn-card,.canva-side-panel{background:#fff8e9f5;border:1px solid #4f230c38;box-shadow:0 16px 40px #2d12063d;border-radius:20px}.canva-turn-card{display:flex;align-items:center;gap:12px;padding:14px 18px;margin-bottom:14px}.canva-turn-card div{display:flex;flex-direction:column}.canva-turn-card small{color:#704126;margin-top:3px}.canva-status-dot{width:10px;height:10px;border-radius:50%;background:#4f9d68;box-shadow:0 0 0 4px #4f9d6822}.canva-side-panel{padding:20px}.canva-side-panel h3{margin:0 0 15px}.canva-player-list>div{display:flex;flex-direction:column;padding:12px 0;border-bottom:1px dashed #d9c5a7}.canva-player-list small{color:#80533b}.canva-connection{display:flex;flex-direction:column;gap:6px;margin:18px 0;padding:13px;border:1px solid #e3c69d;background:#fffdf7;border-radius:14px}.canva-connection span{color:#3e875c;font-weight:800}.canva-connection small{line-height:1.6;color:#704126}.canva-side-panel>button{width:100%;background:#7d321f;box-shadow:0 4px 0 #421508}.canva-side-panel>button:disabled{opacity:.45;cursor:not-allowed}
+.board-scroll{width:100%;overflow-x:auto;padding:5px 3px 18px}.canva-board-frame{width:max(900px,100%);padding:15px;border-radius:16px;background:repeating-linear-gradient(8deg,#ffc67721 0 1px,transparent 1px 11px),linear-gradient(135deg,#2c0e04,#c47a3d 21%,#55210c 48%,#bd7034 76%,#301006);box-shadow:inset 0 0 0 2px #e5ad67,inset 0 0 0 7px #3a1306,0 20px 42px #260c0385,0 5px 0 #321105}
+.canva-board-frame .tawla-table{margin:0!important;max-width:none!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}.canva-board-frame .tawla-players{margin-bottom:10px}
+@media(max-width:950px){.canva-game-grid{grid-template-columns:1fr}.canva-side-panel{display:none}.canva-tawla-app{padding:10px}.canva-brand>b{display:none}.canva-brand strong{font-size:1.55rem}.canva-board-frame{padding:8px;border-radius:11px}}
+/* Original-link marker: tawla stage tagged by kahwa-original-ui.js */
+body.tawla-active #kahwa-game-stage[data-original-ui="tawla"]{display:block!important}
+
+/* --------------------------------------------------------------------------
+ * Shared original banner (injected by kahwa-original-ui.js for chess/cards).
+ * Visual language only — moves still go through the authoritative engine.
+ * -------------------------------------------------------------------------- */
+body.chess-active #kahwa-game-stage .kahwa-original-banner,
+body.cards-active #kahwa-game-stage .kahwa-original-banner{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 16px;border-radius:16px}
+body.chess-active #kahwa-game-stage .kahwa-original-banner{background:rgba(255,248,232,.96);border:1px solid rgba(91,42,16,.25);box-shadow:0 16px 38px rgba(34,10,2,.24);color:#32170b}
+body.cards-active #kahwa-game-stage .kahwa-original-banner{background:rgba(3,39,32,.88);border:1px solid rgba(210,242,226,.15);box-shadow:0 15px 38px rgba(0,0,0,.26);color:#edf8f3}
+#kahwa-game-stage .kahwa-original-banner .brand-mark{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;font-size:24px;flex:0 0 auto}
+body.chess-active #kahwa-game-stage .kahwa-original-banner .brand-mark{color:#fff7df;background:conic-gradient(from 25deg,#f4d27e,#803817,#efbd64,#3d1608);box-shadow:inset 0 0 0 3px #401607,0 7px 14px #32120577}
+body.cards-active #kahwa-game-stage .kahwa-original-banner .brand-mark{background:repeating-linear-gradient(45deg,#d7b350 0 5px,#174e75 5px 10px);border:2px solid #f4dc89;color:#fff0ad}
+#kahwa-game-stage .kahwa-original-banner>div{display:flex;flex-direction:column;line-height:1.3;flex:1;min-width:0}
+#kahwa-game-stage .kahwa-original-banner small{font-size:.72rem;font-weight:800;letter-spacing:.06em}
+body.chess-active #kahwa-game-stage .kahwa-original-banner small{color:#8b5133}
+body.cards-active #kahwa-game-stage .kahwa-original-banner small{color:#f6c860}
+#kahwa-game-stage .kahwa-original-banner strong{font-size:1.25rem}
+#kahwa-game-stage .kahwa-original-banner .badge{padding:.3rem .72rem;border-radius:999px;font-size:.72rem;font-weight:800;white-space:nowrap}
+body.chess-active #kahwa-game-stage .kahwa-original-banner .badge{background:#254f38;color:#fff0ca}
+body.cards-active #kahwa-game-stage .kahwa-original-banner .badge{background:#206b54;color:#b9f1d3}
+
+/* --------------------------------------------------------------------------
+ * B) Chess — map the preserved realistic-chess visual language onto the live
+ * server-backed board. Source palette/geometry:
+ * original-assets/chess/chess-original.html (<style> block).
+ * Only visual mapping here. No local AI, no local two-player simulation,
+ * no offline move logic — every move still uses SocialAPI + /api/game-rooms.
+ * -------------------------------------------------------------------------- */
+body.chess-active #kahwa-game-stage.chess-original-linked{--cream:#fff7e8;--ink:#32170b;--gold:#efc96f;--light-square:#f1d09a;--dark-square:#874128;--white-piece:#fff7df;--black-piece:#29140d;display:block!important;width:100%;padding:18px;border-radius:18px;background:radial-gradient(circle at 6% 4%,rgba(255,239,195,.8),transparent 25%),radial-gradient(circle at 95% 12%,rgba(237,185,95,.35),transparent 29%),linear-gradient(128deg,#bb7440,#73401f 52%,#321208)}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-table{max-width:1450px;background:transparent;border:0;box-shadow:none;color:#32170b}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-table>header{padding:.72rem 1rem;border-radius:13px;background:#f5e4c4;color:#66361f;font-weight:700}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-players>div{background:rgba(255,248,232,.96);border:1px solid rgba(91,42,16,.25);box-shadow:0 16px 38px rgba(34,10,2,.24);border-radius:18px;color:#32170b}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-players small{color:#8b5133}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-layout>div:first-child{padding:clamp(8px,1.7vw,16px);border-radius:20px;background:repeating-linear-gradient(7deg,rgba(255,213,143,.12) 0 1px,transparent 1px 11px),linear-gradient(135deg,#290c02,#c4773b 23%,#54200b 52%,#bd7035 80%,#321005);box-shadow:inset 0 0 0 2px #e5ad67,inset 0 0 0 8px #3a1206,0 18px 36px #26100488,0 5px 0 #351105}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-board{border:5px solid #4a1a08;border-radius:5px;overflow:hidden;background:#f1d09a}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-square.light{background:#f1d09a}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-square.dark{background:#874128}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-square.selected{box-shadow:inset 0 0 0 4px #ffe06b}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-square.target:after{content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;background:#277b53c9;border:2px solid #e8ffe2;box-shadow:0 0 13px #bcf8ae}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-square span{font-family:"Times New Roman",serif;filter:drop-shadow(2px 4px 2px rgba(32,10,2,.58))}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-captured{background:#f5e4c4;color:#66361f;border-radius:10px;margin:6px 0}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-layout aside{background:rgba(255,248,232,.96);border:1px solid rgba(91,42,16,.25);box-shadow:0 16px 38px rgba(34,10,2,.24);border-radius:18px;color:#32170b}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-layout aside h3{color:#3d1d0f}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-layout li{border-bottom:1px dashed #dec6a3}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-layout [data-resign]{background:#80351f;border:0;box-shadow:0 4px 0 #431508}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-notice{background:#f5e4c4;color:#66361f;border-radius:13px;padding:.72rem 1rem;margin-top:10px}
+body.chess-active #kahwa-game-stage.chess-original-linked .chess-notice.bad{background:#ffe1d3;color:#923621}
+@media(max-width:720px){body.chess-active #kahwa-game-stage.chess-original-linked{padding:10px}body.chess-active #kahwa-game-stage.chess-original-linked .chess-board{border-width:3px}}
+
+/* --------------------------------------------------------------------------
+ * C) Cards — map the preserved card-library felt/wood/playing-card language
+ * onto the live server-backed rummy UI. Source:
+ * canva-originals/cards/index.html (<style> block: .felt .panel .wood
+ * .playing-card .turn). Rules and hands still come from cards-engine.js via
+ * SocialAPI + /api/game-rooms — no local simulation is introduced here.
+ * -------------------------------------------------------------------------- */
+body.cards-active #kahwa-game-stage.cards-original-linked{--felt:#075847;--deep:#032f27;--gold:#f6c860;--ink:#edf8f3;display:block!important;width:100%;padding:14px;border-radius:22px;background:radial-gradient(circle at 50% 40%,rgba(32,143,105,.42),transparent 40%),radial-gradient(circle at 10% 10%,rgba(255,255,255,.06) 0 1px,transparent 1px),linear-gradient(135deg,#075847,#03382f 60%,#022c25)}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-table{max-width:1120px;background:rgba(3,39,32,.88);border:10px solid #59381f;box-shadow:inset 0 0 0 2px #a56b35,0 18px 48px rgba(0,0,0,.42);color:#edf8f3}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-table>header{color:#f6c860}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-player{background:rgba(3,39,32,.88);border:1px solid rgba(210,242,226,.15);color:#edf8f3}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-player.active{box-shadow:0 0 0 2px #f6c860,0 0 17px rgba(246,200,96,.45);background:#f6c860;color:#173126}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-layout main,body.cards-active #kahwa-game-stage.cards-original-linked .rummy-layout aside{background:rgba(3,39,32,.88);border:1px solid rgba(210,242,226,.15)}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-card{width:76px;height:112px;border:3px solid #e7e1d4;border-radius:12px;background:#fbfaf4;color:#17221f;box-shadow:0 6px 12px rgba(0,0,0,.3)}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-card.red{color:#c9333d}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-card.selected{transform:translateY(-10px);box-shadow:0 13px 21px rgba(0,0,0,.38),0 0 0 3px rgba(246,200,96,.8);outline:0}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-card:not(:disabled):hover{transform:translateY(-10px);box-shadow:0 13px 21px rgba(0,0,0,.38),0 0 0 3px rgba(246,200,96,.8)}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-piles>button{border-color:#f4dc89}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-back{background:repeating-linear-gradient(45deg,#d7b350 0 5px,#174e75 5px 10px)!important;border-color:#f4dc89}
+body.cards-active #kahwa-game-stage.cards-original-linked .rummy-actions button{background:#0a4136;border:1px solid #f6c860;color:#edf8f3}
+body.cards-active #kahwa-game-stage.cards-original-linked .cards-notice{color:#f6c860}
+body.cards-active #kahwa-game-stage.cards-original-linked .cards-notice.bad{color:#ff9696}
+@media(max-width:640px){body.cards-active #kahwa-game-stage.cards-original-linked{padding:8px}body.cards-active #kahwa-game-stage.cards-original-linked .rummy-table{border-width:6px}body.cards-active #kahwa-game-stage.cards-original-linked .rummy-card{width:59px;height:88px}}
