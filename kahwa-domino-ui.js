@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var current=null,busy=false,nativeFullscreen=false;
+var current=null,busy=false,nativeFullscreen=false,lastBox=null,rszOn=false,rszQ=false;
 function id(x){return String(x&&x.id||x&&x._id||x||'')}
 function moveId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,10)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
@@ -8,41 +8,123 @@ function pip(n){var h='<span class="dom-pips p'+n+'">';for(var i=0;i<n;i++)h+='<
 function tile(t,cls,attrs){return '<button type="button" class="dom-tile '+(t.a===t.b?'is-double ':'')+(cls||'')+'" '+(attrs||'')+' aria-label="حجر '+t.a+' '+t.b+'"><span>'+pip(t.a)+'</span><em></em><span>'+pip(t.b)+'</span></button>'}
 function legalFor(t,state){return(state.legalActions||[]).filter(function(a){return a.type==='place'&&a.tile&&a.tile.id===t.id})}
 function notice(s,error){var e=document.getElementById('domino-status');if(e){e.textContent=s;e.className='dom-notice '+(error?'bad':'good')}}
+// Pure snake-path geometry: the logical chain (order + orientation) is NEVER
+// modified here; this only assigns each tile a true rect {x,y,w,h,rot}.
+// Right side of the anchor snakes right→down→left→down→right, the left side
+// left→up→right→up→left. Turn columns are derived from the measured width W:
+// no fixed pixel constants decide where turns happen.
+function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
+ var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:-1};
+ if(!n||!(W>0)||!(tileW>0)||!(tileH>0))return out;
+ var sx=tileW+gap,cols=Math.max(3,Math.floor((W+gap)/sx)),lo=1,hi=cols-2;
+ var anchor=Math.floor(n/2),k;
+ if(anchorId!=null){for(k=0;k<n;k++){if(String(chain[k].id)===String(anchorId)){anchor=k;break}}}
+ out.anchorIndex=anchor;
+ var ax=Math.floor((cols-1)/2);if(ax<lo)ax=lo;if(ax>hi)ax=hi;
+ var cells=new Array(n),i,x,y,dx,nx,ccx;
+ cells[anchor]={cx:ax,cy:0,corner:false};
+ x=ax;y=0;dx=1;
+ for(i=anchor+1;i<n;i++){nx=x+dx;
+  if(nx>=lo&&nx<=hi){x=nx;cells[i]={cx:x,cy:y,corner:false}}
+  else{ccx=dx>0?cols-1:0;cells[i]={cx:ccx,r1:y,r2:y+1,corner:true,rot:90};y=y+1;x=ccx;dx=-dx}}
+ x=ax;y=0;dx=-1;
+ for(i=anchor-1;i>=0;i--){nx=x+dx;
+  if(nx>=lo&&nx<=hi){x=nx;cells[i]={cx:x,cy:y,corner:false}}
+  else{ccx=dx>0?cols-1:0;cells[i]={cx:ccx,r1:y-1,r2:y,corner:true,rot:-90};y=y-1;x=ccx;dx=-dx}}
+ var minR=0,maxR=0,c;
+ for(i=0;i<n;i++){c=cells[i];
+  if(c.corner){if(c.r1<minR)minR=c.r1;if(c.r2>maxR)maxR=c.r2}
+  else{if(c.cy<minR)minR=c.cy;if(c.cy>maxR)maxR=c.cy}}
+ var rows=maxR-minR+1,sh=-minR,H=[],r;
+ for(r=0;r<rows;r++)H.push(tileH+gap);
+ for(i=0;i<n;i++){c=cells[i]; // rows fit their tallest tile (doubles stand tall)
+  if(!c.corner){var need=((chain[i].a===chain[i].b)?tileW:tileH)+gap,rr=c.cy+sh;if(need>H[rr])H[rr]=need}}
+ for(i=0;i<n;i++){c=cells[i]; // corner tiles fit the two-row span they bridge
+  if(c.corner){var a=c.r1+sh,b=c.r2+sh,def=tileW+gap-(H[a]+H[b]);
+   if(def>0){var up=Math.ceil(def/2);H[a]+=up;H[b]+=def-up}}}
+ var Y=[0];for(r=1;r<rows;r++)Y.push(Y[r-1]+H[r-1]);
+ var rects=[];
+ for(i=0;i<n;i++){var t=chain[i],cc=cells[i],dbl=t.a===t.b,fw,fh,rx,ry;
+  if(cc.corner){fw=tileH;fh=tileW;
+   rx=cc.cx*sx+(sx-fw)/2;
+   var sTop=Y[cc.r1+sh],sBot=Y[cc.r2+sh]+H[cc.r2+sh]-gap;
+   ry=sTop+(sBot-sTop-fh)/2;
+   rects.push({x:rx,y:ry,w:fw,h:fh,rot:cc.rot,corner:true,row:cc.r1+sh,col:cc.cx,id:t.id})}
+  else{fw=dbl?tileH:tileW;fh=dbl?tileW:tileH;
+   rx=cc.cx*sx+(sx-fw)/2;
+   var rTop=Y[cc.cy+sh];
+   ry=rTop+(H[cc.cy+sh]-gap-fh)/2;
+   rects.push({x:rx,y:ry,w:fw,h:fh,rot:0,corner:false,row:cc.cy+sh,col:cc.cx,id:t.id})}
+  out.cells.push(cc.corner?{cx:cc.cx,r1:cc.r1+sh,r2:cc.r2+sh,corner:true}:{cx:cc.cx,cy:cc.cy+sh,corner:false})}
+ out.rects=rects;out.boardW=cols*sx-gap;out.boardH=Y[rows-1]+H[rows-1]-gap;
+ out.rows=rows;out.cols=cols;
+ return out;
+}
+function snakeScale(bW,bH,aW,aH){
+ if(!(bW>0)||!(bH>0)||!(aW>0)||!(aH>0))return 1;
+ var s=Math.min(1,aW/bW,aH/bH);return s>0?s:1;
+}
+function snakeTileSize(W){
+ var w=Math.max(40,Math.min(86,Math.round(W/8)));
+ return {w:w,h:Math.max(24,Math.round(w*48/86))};
+}
+function renderChain(chainEl,chain,anchorId,W,availW,availH){
+ if(!chain.length){chainEl.innerHTML='<span class="dom-empty">ابدأ بالحجر المضيء</span>';return}
+ var ts=snakeTileSize(W),lay=snakeLayout(chain,W,ts.w,ts.h,5,anchorId);
+ var sc=snakeScale(lay.boardW,lay.boardH,availW,availH);
+ var pipPx=Math.max(3,Math.round(ts.w/12)),h='',i;
+ for(i=0;i<lay.rects.length;i++){var r=lay.rects[i],t=chain[i],style;
+  if(r.rot){var cx=r.x+r.w/2,cy=r.y+r.h/2;
+   style='left:'+Math.round(cx-ts.w/2)+'px;top:'+Math.round(cy-ts.h/2)+'px;width:'+ts.w+'px;height:'+ts.h+'px;--pip:'+pipPx+'px;transform:rotate('+r.rot+'deg)'}
+  else{style='left:'+Math.round(r.x)+'px;top:'+Math.round(r.y)+'px;width:'+Math.round(r.w)+'px;height:'+Math.round(r.h)+'px;--pip:'+pipPx+'px'}
+  h+=tile(t,'chain-tile'+(r.rot?' is-turn':''),'disabled style="'+style+'"')}
+ chainEl.innerHTML='<div class="dom-snake-view" style="width:'+Math.max(1,Math.round(lay.boardW*sc))+'px;height:'+Math.max(1,Math.round(lay.boardH*sc))+'px"><div class="dom-snake-board" style="width:'+lay.boardW+'px;height:'+lay.boardH+'px;transform:scale('+sc.toFixed(3)+')">'+h+'</div></div>';
+}
 async function act(action){
  if(busy)return;busy=true;notice('جارٍ تنفيذ الحركة…');
  try{action.moveId=action.moveId||moveId();var d=await SocialAPI.request('/api/game-rooms/'+current.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});notice('تمت الحركة');if(d&&d.room&&window.kahwaApplyActionResponse)window.kahwaApplyActionResponse(d.room);else if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}
- catch(e){notice(e.message||'تعذرت الحركة',true)}
+ catch(e){notice(e.message||'تعذرت الحركة',true);try{if(window.reloadKahwaRoom)window.reloadKahwaRoom()}catch(_){}}
  finally{busy=false}
 }
 function choose(t){
- var a=legalFor(t,current.state);
- if(!a.length)return notice(current.state.private&&current.state.private.turn?'هذا الحجر لا يطابق طرف السلسلة':'انتظر دورك',true);
+ var s=current.state||{},chain=((s.public||{}).chain||(s.private||{}).chain||[]);
+ var a=legalFor(t,s);
+ if(!a.length){
+  if(!(s.private&&s.private.turn))return notice('انتظر دورك',true);
+  if(!chain.length)return notice('ابدأ بالدبل المطلوب — الحجر المضيء',true);
+  return notice('هذا الحجر لا يطابق طرف السلسلة',true);
+ }
  if(a.length===1)return act(a[0]);
  var bar=document.getElementById('dom-side-choice');bar.hidden=false;
  bar.innerHTML='<button data-side="left">ضع يسارًا</button><button data-side="right">ضع يمينًا</button>';
  bar.onclick=function(e){var side=e.target.dataset.side;if(side){bar.hidden=true;act(a.find(function(x){return x.direction===side})||a[0])}}
 }
+function onResize(){if(rszQ||!current||!lastBox)return;rszQ=true;var raf=window.requestAnimationFrame||function(f){f()};raf(function(){rszQ=false;if(current&&lastBox)render(lastBox,current)})}
+function destroy(){if(rszOn&&window.removeEventListener){try{window.removeEventListener('resize',onResize)}catch(_){}rszOn=false}current=null;lastBox=null;document.body.classList.remove('domino-active')}
 function render(container,ctx){
- current=ctx;var s=ctx.state||{},priv=s.private||{},pub=s.public||{},hand=priv.hand||[],chain=pub.chain||priv.chain||[],room=ctx.room||{},players=room.players||[];
+ current=ctx;lastBox=container;var s=ctx.state||{},priv=s.private||{},pub=s.public||{},hand=priv.hand||[],chain=pub.chain||priv.chain||[],room=ctx.room||{},players=room.players||[];
  document.body.classList.add('domino-active');
+ if(!rszOn&&window.addEventListener){window.addEventListener('resize',onResize);rszOn=true}
  var opponents=players.filter(function(p){return id(p)!==ctx.me}).map(function(p,i){var ep=(pub.players||[]).find(function(x){return id(x)===id(p)});return '<div class="dom-player opponent pos-'+i+'"><b><span class="seat-number">'+(players.indexOf(p)+1)+'</span>'+esc(p.name||p.displayName||p.username||'لاعب')+'</b><small>'+(ep?ep.handCount:'—')+' أحجار</small><div class="dom-backs">'+Array.from({length:Math.min(7,ep?ep.handCount:7)},function(){return'<i></i>'}).join('')+'</div></div>'}).join('');
  var scores=pub.scores||{},last=pub.lastRound||null;
  var scoreHtml=players.map(function(p){return '<div class="dom-score-card"><b>'+esc(p.name||p.displayName||p.username||'لاعب')+'</b><strong>'+Number(scores[id(p)]||0)+'</strong><small>نقطة</small></div>'}).join('');
  var winner=last&&players.find(function(p){return id(p)===id(last.winner)});
  var endHtml=pub.status==='finished'&&last?'<div class="dom-round-end"><b>انتهت الجولة</b><span>الفائز: '+esc(winner&&(winner.name||winner.displayName||winner.username)||'اللاعب')+'</span><strong>+'+Number(last.points||0)+' نقطة</strong></div>':'';
- var chainHtml=chain.length?chain.map(function(t){return tile(t,'chain-tile','disabled')}).join(''):'<span class="dom-empty">ابدأ بالحجر المضيء</span>';
  var handHtml=hand.map(function(t){var ok=legalFor(t,s).length>0;return tile(t,(ok?'is-legal ':'')+'hand-tile','draggable="true" data-id="'+esc(t.id)+'"')}).join('');
- container.innerHTML='<section class="domino-table"><div class="dom-topbar"><strong>دومنة</strong><span>'+(pub.status==='finished'?'انتهت الجولة':priv.turn?'دورك الآن':'انتظر دور اللاعب الآخر')+'</span><button id="dom-menu" aria-label="القائمة">⋮</button></div><div class="dom-hud"><aside class="dom-scores"><small>الجولة '+Number(pub.roundNumber||1)+'</small><div>'+scoreHtml+'</div></aside><button type="button" class="dom-stock" data-stock><b>سحب</b><strong>'+Number(pub.stockCount||0)+'</strong><small>حجر</small></button></div>'+endHtml+opponents+'<div class="dom-chain-drop left" data-drop="left">يسار</div><div class="dom-chain" id="dom-chain">'+chainHtml+'</div><div class="dom-chain-drop right" data-drop="right">يمين</div><div id="dom-side-choice" class="dom-side-choice" hidden></div><div class="dom-self"><small>أحجارك</small><div class="dom-hand">'+handHtml+'</div></div><div class="dom-tools" hidden><button data-tool="draw">سحب</button><button data-tool="pass">مرور</button><button data-tool="newround">جولة جديدة</button><button data-tool="fullscreen">ملء الشاشة</button></div><p id="domino-status" class="dom-notice"></p></section>';
+ container.innerHTML='<section class="domino-table"><div class="dom-topbar"><strong>دومنة</strong><span>'+(pub.status==='finished'?'انتهت الجولة':priv.turn?'دورك الآن':'انتظر دور اللاعب الآخر')+'</span><button id="dom-menu" aria-label="القائمة">⋮</button></div><div class="dom-hud"><aside class="dom-scores"><small>الجولة '+Number(pub.roundNumber||1)+'</small><div>'+scoreHtml+'</div></aside><button type="button" class="dom-stock" data-stock><b>سحب</b><strong>'+Number(pub.stockCount||0)+'</strong><small>حجر</small></button></div>'+endHtml+opponents+'<div class="dom-chain-drop left" data-drop="left">يسار</div><div class="dom-chain dom-snake" id="dom-chain"></div><div class="dom-chain-drop right" data-drop="right">يمين</div><div id="dom-side-choice" class="dom-side-choice" hidden></div><div class="dom-self"><small>أحجارك</small><div class="dom-hand">'+handHtml+'</div></div><div class="dom-tools" hidden><button data-tool="draw">سحب</button><button data-tool="pass">مرور</button><button data-tool="newround">جولة جديدة</button><button data-tool="fullscreen">ملء الشاشة</button></div><p id="domino-status" class="dom-notice"></p></section>';
  container.querySelectorAll('.hand-tile').forEach(function(el){
    el.onclick=function(){var t=hand.find(function(x){return x.id===el.dataset.id});if(t)choose(t)};
    el.ondragstart=function(e){e.dataTransfer.setData('text/plain',el.dataset.id);container.classList.add('drag-active')};
    el.ondragend=function(){container.classList.remove('drag-active')};
  });
  container.querySelectorAll('[data-drop]').forEach(function(z){z.ondragover=function(e){e.preventDefault()};z.ondrop=function(e){e.preventDefault();var tid=e.dataTransfer.getData('text/plain'),t=hand.find(function(x){return x.id===tid}),a=t&&legalFor(t,s).find(function(x){return x.direction===z.dataset.drop});container.classList.remove('drag-active');if(a)act(a);else notice('لا يمكن وضع الحجر في هذا الطرف',true)}});
- var chainEl=container.querySelector('#dom-chain'),pan=null;
- chainEl.onpointerdown=function(e){pan={x:e.clientX,left:chainEl.scrollLeft};chainEl.setPointerCapture&&chainEl.setPointerCapture(e.pointerId);chainEl.classList.add('is-panning')};
- chainEl.onpointermove=function(e){if(pan)chainEl.scrollLeft=pan.left-(e.clientX-pan.x)};
- chainEl.onpointerup=chainEl.onpointercancel=function(){pan=null;chainEl.classList.remove('is-panning')};
+ var chainEl=container.querySelector('#dom-chain');
+ var availW=chainEl.clientWidth||container.clientWidth||window.innerWidth||320;
+ var selfEl=container.querySelector('.dom-self'),availH=0;
+ if(chainEl.getBoundingClientRect&&selfEl&&selfEl.getBoundingClientRect){try{availH=selfEl.getBoundingClientRect().top-chainEl.getBoundingClientRect().top-14}catch(_){availH=0}}
+ if(!(availH>0))availH=(window.innerHeight||600)*0.35;
+ if(availH<120)availH=120;
+ renderChain(chainEl,chain,pub.openingTileId||null,availW,availW,availH);
  var stockButton=container.querySelector('[data-stock]'),canDraw=(s.legalActions||[]).some(function(a){return a.type==='draw'});
  stockButton.disabled=!canDraw;stockButton.onclick=function(){if(canDraw)act({type:'draw'});else notice(priv.turn?'لديك حجر صالح للعب':'انتظر دورك',true)};
  var tools=container.querySelector('.dom-tools');container.querySelector('#dom-menu').onclick=function(){tools.hidden=!tools.hidden};
@@ -53,5 +135,6 @@ function render(container,ctx){
  if(pub.status==='finished'&&matchFinished){notice('انتهت المباراة — تم بلوغ '+target+' نقطة')}
  if(pub.status==='finished'&&!matchFinished&&id(room.owner)===ctx.me){setTimeout(function(){if(current===ctx){SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(){return window.reloadKahwaRoom&&window.reloadKahwaRoom()}).catch(function(e){notice(e.message||'تعذر بدء الجولة التالية',true)})}},5000)}
 }
-window.kahwaDominoUI={mount:render,render:render,bindActions:function(){},setLegalActions:function(){},showSuccess:function(s){notice(s)},showError:function(s){notice(s,true)},destroy:function(){document.body.classList.remove('domino-active')}};
+if(typeof window!=='undefined')window.kahwaDominoUI={mount:render,render:render,bindActions:function(){},setLegalActions:function(){},showSuccess:function(s){notice(s)},showError:function(s){notice(s,true)},destroy:destroy};
+if(typeof module!=='undefined'&&module.exports)module.exports={snakeLayout:snakeLayout,snakeScale:snakeScale,snakeTileSize:snakeTileSize};
 })();

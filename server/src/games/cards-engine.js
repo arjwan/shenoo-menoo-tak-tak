@@ -44,7 +44,7 @@ function getLegalActions(state, userId) {
   if (state.phase === 'draw') { const out = []; if (state.stock.length) out.push({ type: 'draw', source: 'stock' }); if (state.discard.length) out.push({ type: 'draw', source: 'discard' }); return out; }
   return [{ type: 'meld' }, { type: 'discard' }];
 }
-function applyAction(state, userId, action = {}) {
+function applyAction(state, userId, action = {}) {action = (action && typeof action === 'object') ? action : {};
   normalize(state); userId = String(userId);
   if (!['active', 'waiting'].includes(state.status) || state.finished) return { error: 'اللعبة غير نشطة' };
   if (!state.players.includes(userId)) return { error: 'أنت لست لاعبًا' };

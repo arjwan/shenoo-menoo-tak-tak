@@ -40,6 +40,7 @@ function createGame(params = {}) {
     version: 1,
     status: 'waiting',
     turn: openingPlayer,
+    openingTileId: null,
     openingDouble,
     players: playerIds,
     maxPlayers: playersCount,
@@ -56,21 +57,44 @@ function createGame(params = {}) {
   };
 }
 
+// MANDATORY INVARIANT: every two adjacent tiles must touch on equal pips
+// (chain[i].b === chain[i+1].a for all i). Open ends are ALWAYS derived from
+// the oriented chain itself (never cached, never assumed): with a valid
+// chain, the true open ends are chain[0].a (left) and chain[last].b (right).
+// Any divergence means corruption, never a rule.
+function validateChain(chain) {
+  const out = { valid: false, left: null, right: null };
+  if (!Array.isArray(chain)) return out;
+  for (let i = 0; i < chain.length; i++) {
+    const t = chain[i];
+    if (!t || !Number.isInteger(t.a) || !Number.isInteger(t.b)) return out;
+    if (t.a < 0 || t.a > 6 || t.b < 0 || t.b > 6) return out;
+    if (i + 1 < chain.length && t.b !== chain[i + 1].a) return out;
+  }
+  out.valid = true;
+  if (chain.length) { out.left = chain[0].a; out.right = chain[chain.length - 1].b; }
+  return out;
+}
+function openEnds(chain) {
+  const v = validateChain(chain);
+  return v.left === null ? null : { left: v.left, right: v.right };
+}
 // Every placement the player could legally make RIGHT NOW (draw/pass excluded).
 // Used both to offer UI actions and to re-verify draw/pass on apply: a player
 // holding a playable tile may neither draw nor pass.
 function placementsFor(state, userId) {
   const hand = (state.hands && state.hands[userId]) || [];
+  const chain = Array.isArray(state.chain) ? state.chain : [];
   const out = [];
-  if (!state.chain.length) {
+  if (!chain.length) {
     for (const tile of hand) if (state.openingDouble == null || (tile.a === state.openingDouble && tile.b === state.openingDouble)) out.push({ type: 'place', tile: { ...tile }, direction: 'right' });
     return out;
   }
-  const leftEnd = state.chain[0];
-  const rightEnd = state.chain[state.chain.length - 1];
+  const ends = validateChain(chain);
+  if (!ends.valid) return out;
   for (const tile of hand) {
-    if (tile.a === leftEnd.a || tile.b === leftEnd.a) out.push({ type: 'place', tile: { ...tile }, direction: 'left' });
-    if (tile.a === rightEnd.b || tile.b === rightEnd.b) out.push({ type: 'place', tile: { ...tile }, direction: 'right' });
+    if (tile.a === ends.left || tile.b === ends.left) out.push({ type: 'place', tile: { ...tile }, direction: 'left' });
+    if (tile.a === ends.right || tile.b === ends.right) out.push({ type: 'place', tile: { ...tile }, direction: 'right' });
   }
   return out;
 }
@@ -88,7 +112,7 @@ function legalActions(state, userId) {
   return actions;
 }
 
-function applyAction(state, userId, action) {
+function applyAction(state, userId, action = {}) {action = (action && typeof action === 'object') ? action : {};
   if (state.status !== 'active' && state.status !== 'waiting') return { error: 'not active' };
   if (state.turn !== userId) return { error: 'not your turn' };
   if (action.type === 'draw') {
@@ -107,6 +131,17 @@ function applyAction(state, userId, action) {
     if (placementsFor(state, userId).length > 0) return { error: 'لديك حجر صالح للعب — لا يمكن المرور' };
     state.turn = state.players[(state.players.indexOf(userId) + 1) % state.players.length];
     state.moveCount += 1;
+    if ((!state.stock || state.stock.length === 0) && state.players.every(p => placementsFor(state, p).length === 0)) {
+      const scores = {};
+      for (const pl of state.players) scores[pl] = totalPips(state.hands[pl] || []);
+      let lowest = state.players[0];
+      for (const pl of state.players) if (scores[pl] < scores[lowest]) lowest = pl;
+      const points = state.players.filter(pl => pl !== lowest).reduce((sum, pl) => sum + totalPips(state.hands[pl] || []), 0);
+      state.scores = state.scores || {};
+      state.scores[lowest] = Number(state.scores[lowest] || 0) + points;
+      state.lastRound = { winner: lowest, points, roundNumber: state.roundNumber || 1, blocked: true, remaining: state.players.filter(pl => pl !== lowest).map(pl => ({ player: pl, points: totalPips(state.hands[pl] || []) })) };
+      state.status = 'finished'; state.winner = lowest; state.finished = true;
+    }
     return { ok: true };
   }
   if (action.type === 'place') {
@@ -115,18 +150,26 @@ function applyAction(state, userId, action) {
     if (!tile) return { error: 'tile not in hand' };
     if (!state.chain.length) {
       if (state.openingDouble != null && (tile.a !== state.openingDouble || tile.b !== state.openingDouble)) return { error: 'opening double required' };
-      state.chain.push({ ...tile }); state.openingDouble = null;
+      state.chain.push({ ...tile }); state.openingDouble = null; state.openingTileId = tile.id;
     } else {
-    const leftEnd = state.chain[0];
-    const rightEnd = state.chain[state.chain.length - 1];
+    if (action.direction !== 'left' && action.direction !== 'right') return { error: 'illegal placement' };
+    const ends = validateChain(state.chain);
+    if (!ends.valid) return { error: 'illegal placement' };
+    let placed = null;
     if (action.direction === 'left') {
-      if (tile.b === leftEnd.a) state.chain.unshift({ ...tile });
-      else if (tile.a === leftEnd.a) state.chain.unshift({ a: tile.b, b: tile.a, id: tile.id });
+      if (tile.b === ends.left) placed = { ...tile };
+      else if (tile.a === ends.left) placed = { a: tile.b, b: tile.a, id: tile.id };
       else return { error: 'illegal placement' };
+      const candidate = [placed].concat(state.chain);
+      if (!validateChain(candidate).valid) return { error: 'illegal placement' };
+      state.chain.unshift(placed);
     } else {
-      if (tile.a === rightEnd.b) state.chain.push({ ...tile });
-      else if (tile.b === rightEnd.b) state.chain.push({ a: tile.b, b: tile.a, id: tile.id });
+      if (tile.a === ends.right) placed = { ...tile };
+      else if (tile.b === ends.right) placed = { a: tile.b, b: tile.a, id: tile.id };
       else return { error: 'illegal placement' };
+      const candidate = state.chain.concat([placed]);
+      if (!validateChain(candidate).valid) return { error: 'illegal placement' };
+      state.chain.push(placed);
     }
     }
     state.hands[userId] = state.hands[userId].filter(t => t.id !== tile.id);
@@ -144,24 +187,7 @@ function applyAction(state, userId, action) {
       state.status = 'finished'; state.winner = userId; state.finished = true;
     }
     else {
-      // Check if blocked for next player
-      const next = state.turn = state.players[(state.players.indexOf(userId) + 1) % state.players.length];
-      const nextHand = state.hands[next] || [];
-      const nextLegal = legalActions(state, next);
-      if (nextLegal.length === 0 && (!state.stock || state.stock.length === 0)) {
-        // Blocked: check lowest pips
-        const scores = {};
-        for (const p of state.players) scores[p] = totalPips(state.hands[p] || []);
-        let lowest = state.players[0];
-        for (const p of state.players) if (scores[p] < scores[lowest]) lowest = p;
-        const points = state.players.filter(p => p !== lowest).reduce((sum, p) => sum + totalPips(state.hands[p] || []), 0);
-        state.scores = state.scores || {};
-        state.scores[lowest] = Number(state.scores[lowest] || 0) + points;
-        state.lastRound = { winner: lowest, points, roundNumber: state.roundNumber || 1, blocked: true, remaining: state.players.filter(p => p !== lowest).map(p => ({ player: p, points: totalPips(state.hands[p] || []) })) };
-        state.status = 'finished'; state.winner = lowest; state.finished = true;
-      } else {
-        state.turn = next;
-      }
+      state.turn = state.players[(state.players.indexOf(userId) + 1) % state.players.length];
     }
     return { ok: true };
   }
@@ -176,7 +202,8 @@ function getPublicState(state) {
     turn: state.turn,
     players: state.players.map(id => ({ id, handCount: (state.hands[id] || []).length })),
     chain: (state.chain || []).map(tile => ({ a: tile.a, b: tile.b, id: tile.id })),
-    chainLength: state.chain.length,
+    chainLength: (state.chain || []).length,
+    openingTileId: state.openingTileId || null,
     stockCount: (state.stock || []).length,
     moveCount: state.moveCount,
     finished: state.finished,
@@ -197,4 +224,4 @@ function getPrivateState(state, userId) {
 }
 function serialize(state) { return JSON.stringify({ engine: 'domino', version: 1, status: state.status, turn: state.turn, players: state.players, handCounts: state.players.map(id => (state.hands[id] || []).length), chain: state.chain, stockLength: (state.stock || []).length, finished: state.finished, winner: state.winner, moveCount: state.moveCount, createdAt: state.createdAt }); }
 
-module.exports = { createGame: (params) => { const s = createGame(params); s.engine = 'domino'; return s; }, getPublicState, getPrivateState, getLegalActions: legalActions, applyAction, isFinished, getWinner, serialize };
+module.exports = { createGame: (params) => { const s = createGame(params); s.engine = 'domino'; return s; }, getPublicState, getPrivateState, getLegalActions: legalActions, applyAction, isFinished, getWinner, serialize, validateChain, openEnds, placementsFor };
