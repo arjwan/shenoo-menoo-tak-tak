@@ -20,7 +20,10 @@ function notice(s,error){var e=document.getElementById('domino-status');if(e){e.
 function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
  var n=(chain||[]).length,out={rects:[],cells:[],boardW:0,boardH:0,rows:0,cols:0,anchorIndex:-1};
  if(!n||!(W>0)||!(tileW>0)||!(tileH>0))return out;
- var sx=tileW+gap,cols=Math.max(3,Math.floor((W+gap)/sx)),lo=1,hi=cols-2;
+ // Domino geometry: cells touch.  A turn/double is vertical and spans exactly
+ // two half-rows; it must not inflate a whole row and create empty lanes.
+ gap=0;
+ var sx=tileW, rowH=tileH, cols=Math.max(3,Math.floor(W/sx)),lo=1,hi=cols-2;
  var anchor=Math.floor(n/2),k;
  if(anchorId!=null){for(k=0;k<n;k++){if(String(chain[k].id)===String(anchorId)){anchor=k;break}}}
  out.anchorIndex=anchor;
@@ -30,46 +33,67 @@ function snakeLayout(chain,W,tileW,tileH,gap,anchorId){
  x=ax;y=0;dx=1;
  for(i=anchor+1;i<n;i++){nx=x+dx;
   if(nx>=lo&&nx<=hi){x=nx;cells[i]={cx:x,cy:y,corner:false}}
-  else{ccx=dx>0?cols-1:0;cells[i]={cx:ccx,r1:y,r2:y+1,corner:true,rot:90};y=y+1;x=ccx;dx=-dx}}
+  else{ccx=dx>0?cols-1:0;cells[i]={cx:ccx,r1:y,r2:y+1,corner:true};y=y+1;x=ccx;dx=-dx}}
  x=ax;y=0;dx=-1;
  for(i=anchor-1;i>=0;i--){nx=x+dx;
   if(nx>=lo&&nx<=hi){x=nx;cells[i]={cx:x,cy:y,corner:false}}
-  else{ccx=dx>0?cols-1:0;cells[i]={cx:ccx,r1:y-1,r2:y,corner:true,rot:-90};y=y-1;x=ccx;dx=-dx}}
+  else{ccx=dx>0?cols-1:0;cells[i]={cx:ccx,r1:y-1,r2:y,corner:true};y=y-1;x=ccx;dx=-dx}}
  var minR=0,maxR=0,c;
  for(i=0;i<n;i++){c=cells[i];
   if(c.corner){if(c.r1<minR)minR=c.r1;if(c.r2>maxR)maxR=c.r2}
   else{if(c.cy<minR)minR=c.cy;if(c.cy>maxR)maxR=c.cy}}
- var rows=maxR-minR+1,sh=-minR,H=[],r;
- for(r=0;r<rows;r++)H.push(tileH+gap);
- for(i=0;i<n;i++){c=cells[i]; // rows fit their tallest tile (doubles stand tall)
-  if(!c.corner){var need=((chain[i].a===chain[i].b)?tileW:tileH)+gap,rr=c.cy+sh;if(need>H[rr])H[rr]=need}}
- for(i=0;i<n;i++){c=cells[i]; // corner tiles fit the two-row span they bridge
-  if(c.corner){var a=c.r1+sh,b=c.r2+sh,def=tileW+gap-(H[a]+H[b]);
-   if(def>0){var up=Math.ceil(def/2);H[a]+=up;H[b]+=def-up}}}
- var Y=[0];for(r=1;r<rows;r++)Y.push(Y[r-1]+H[r-1]);
+ // Normal packed mode uses rowH=tileH, so turns touch exactly. If a double
+ // is boxed in by occupied cells in the same column above AND below (possible
+ // only in very long cramped snakes), use the safe pitch to prevent overlap.
+ for(i=0;i<n;i++){c=cells[i];if(c.corner||chain[i].a!==chain[i].b)continue;var ub=false,db=false;
+  for(var qi=0;qi<n;qi++){if(qi===i)continue;var qc=cells[qi];
+   if(qc.corner){if(qc.cx===c.cx&&(qc.r1===c.cy-1||qc.r2===c.cy-1))ub=true;if(qc.cx===c.cx&&(qc.r1===c.cy+1||qc.r2===c.cy+1))db=true}
+   else if(qc.cx===c.cx){if(qc.cy===c.cy-1)ub=true;if(qc.cy===c.cy+1)db=true}
+  }
+  if(ub&&db){rowH=tileW;break}
+ }
+ var sh=-minR,raw=[],minX=0,minY=0,maxX=cols*sx,maxY=(maxR-minR+1)*rowH;
  function rowOf(j){var c=cells[j];return c.corner?c.r1:c.cy}
- var rects=[];
  for(i=0;i<n;i++){var t=chain[i],cc=cells[i],dbl=t.a===t.b,fw,fh,rx,ry,rot=0;
   if(cc.corner){fw=tileH;fh=tileW;
-   rx=cc.cx*sx+(sx-tileW)/2;
-   var sTop=Y[cc.r1+sh],sBot=Y[cc.r2+sh]+H[cc.r2+sh]-gap;
-   ry=sTop+(sBot-sTop-fh)/2;
+   rx=cc.cx*sx+(tileW-fw)/2;
+   ry=(Math.min(cc.r1,cc.r2)+sh)*rowH;
    if(i>0&&i+1<n){rot=(rowOf(i-1)<rowOf(i+1))?90:-90}
    else if(i>0){rot=(rowOf(i-1)===cc.r1)?90:-90}
    else{rot=(rowOf(i+1)===cc.r1)?-90:90}
-   rects.push({x:rx,y:ry,w:fw,h:fh,rot:rot,corner:true,row:cc.r1+sh,col:cc.cx,id:t.id})}
-  else{fw=dbl?tileH:tileW;fh=dbl?tileW:tileH;
-   rx=cc.cx*sx+(sx-fw)/2;
-   var rTop=Y[cc.cy+sh];
-   ry=rTop+(H[cc.cy+sh]-gap-fh)/2;
-   if(!dbl){
-    if(i>0){var pc=cells[i-1];rot=((pc.corner?pc.cx:pc.cx)<cc.cx)?0:180}
-    else if(i+1<n){var nc=cells[i+1];rot=((nc.corner?nc.cx:nc.cx)>cc.cx)?0:180}
+  }else if(dbl){fw=tileH;fh=tileW;
+   rx=cc.cx*sx+(tileW-fw)/2;
+   var rowTop=(cc.cy+sh)*rowH, upBusy=false, downBusy=false;
+   for(var jj=0;jj<n;jj++){if(jj===i)continue;var oc=cells[jj];
+    if(oc.corner){if(oc.cx===cc.cx&&(oc.r1===cc.cy-1||oc.r2===cc.cy-1))upBusy=true;if(oc.cx===cc.cx&&(oc.r1===cc.cy+1||oc.r2===cc.cy+1))downBusy=true}
+    else if(oc.cx===cc.cx){if(oc.cy===cc.cy-1)upBusy=true;if(oc.cy===cc.cy+1)downBusy=true}
    }
-   rects.push({x:rx,y:ry,w:fw,h:fh,rot:rot,corner:false,row:cc.cy+sh,col:cc.cx,id:t.id})}
+   // A perpendicular double is allowed to overhang into the empty side only;
+   // this keeps packed snake rows from colliding while preserving no cell gaps.
+   if(downBusy&&!upBusy)ry=rowTop+rowH-tileW;
+   else if(upBusy&&!downBusy)ry=rowTop;
+   else ry=rowTop-(tileW-rowH)/2;
+  }else{fw=tileW;fh=tileH;
+   rx=cc.cx*sx;
+   ry=(cc.cy+sh)*rowH;
+   if(i>0){var pc=cells[i-1];rot=((pc.corner?pc.cx:pc.cx)<cc.cx)?0:180}
+   else if(i+1<n){var nc=cells[i+1];rot=((nc.corner?nc.cx:nc.cx)>cc.cx)?0:180}
+  }
+  raw.push({x:rx,y:ry,w:fw,h:fh,rot:rot,corner:!!cc.corner,row:(cc.corner?cc.r1:cc.cy)+sh,col:cc.cx,id:t.id});
   out.cells.push(cc.corner?{cx:cc.cx,r1:cc.r1+sh,r2:cc.r2+sh,corner:true}:{cx:cc.cx,cy:cc.cy+sh,corner:false})}
- out.rects=rects;out.boardW=cols*sx-gap;out.boardH=Y[rows-1]+H[rows-1]-gap;
- out.rows=rows;out.cols=cols;
+ // Physical packing: cells decide where the snake turns, but actual x positions
+ // are edge-to-edge. A vertical double/turn is narrow, so a fixed-width grid
+ // would visibly leave holes; this pass removes those holes.
+ raw[anchor].x=0;
+ function cxOf(z){return cells[z].cx}
+ for(i=anchor+1;i<n;i++){raw[i].x=(cxOf(i)>cxOf(i-1))?raw[i-1].x+raw[i-1].w:raw[i-1].x-raw[i].w}
+ for(i=anchor-1;i>=0;i--){raw[i].x=(cxOf(i)>cxOf(i+1))?raw[i+1].x+raw[i+1].w:raw[i+1].x-raw[i].w}
+ minX=0;minY=0;maxX=0;maxY=0;
+ for(i=0;i<raw.length;i++){var rrw=raw[i];if(i===0){minX=rrw.x;minY=rrw.y;maxX=rrw.x+rrw.w;maxY=rrw.y+rrw.h}
+  else{if(rrw.x<minX)minX=rrw.x;if(rrw.y<minY)minY=rrw.y;if(rrw.x+rrw.w>maxX)maxX=rrw.x+rrw.w;if(rrw.y+rrw.h>maxY)maxY=rrw.y+rrw.h}}
+ for(i=0;i<raw.length;i++){raw[i].x-=minX;raw[i].y-=minY}
+ out.rects=raw;out.boardW=maxX-minX;out.boardH=maxY-minY;
+ out.rows=maxR-minR+1;out.cols=cols;
  return out;
 }
 function snakeScale(bW,bH,aW,aH){
@@ -78,11 +102,11 @@ function snakeScale(bW,bH,aW,aH){
 }
 function snakeTileSize(W){
  var w=Math.max(40,Math.min(86,Math.round(W/8)));
- return {w:w,h:Math.max(24,Math.round(w*48/86))};
+ return {w:w,h:Math.max(24,Math.round(w/2))};
 }
 function renderChain(chainEl,chain,anchorId,W,availW,availH){
  if(!chain.length){chainEl.innerHTML='<span class="dom-empty">ابدأ بالحجر المضيء</span>';return}
- var ts=snakeTileSize(W),lay=snakeLayout(chain,W,ts.w,ts.h,5,anchorId);
+ var ts=snakeTileSize(W),lay=snakeLayout(chain,W,ts.w,ts.h,0,anchorId);
  var sc=snakeScale(lay.boardW,lay.boardH,availW,availH);
  var pipPx=Math.max(3,Math.round(ts.w/12)),h='',i;
  for(i=0;i<lay.rects.length;i++){var r=lay.rects[i],t=chain[i],style;
