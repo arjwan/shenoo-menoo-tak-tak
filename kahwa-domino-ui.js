@@ -2,6 +2,7 @@
 'use strict';
 var current=null,busy=false,nativeFullscreen=false;
 function id(x){return String(x&&x.id||x&&x._id||x||'')}
+function moveId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,10)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
 function pip(n){var h='<span class="dom-pips p'+n+'">';for(var i=0;i<n;i++)h+='<i></i>';return h+'</span>'}
 function tile(t,cls,attrs){return '<button type="button" class="dom-tile '+(t.a===t.b?'is-double ':'')+(cls||'')+'" '+(attrs||'')+' aria-label="حجر '+t.a+' '+t.b+'"><span>'+pip(t.a)+'</span><em></em><span>'+pip(t.b)+'</span></button>'}
@@ -17,7 +18,7 @@ function stoneSound(type){
 }
 async function act(action){
  if(busy)return;busy=true;notice('جارٍ تنفيذ الحركة…');
- try{await SocialAPI.request('/api/game-rooms/'+current.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});stoneSound(action.type);notice('تمت الحركة');if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}
+ try{action.moveId=action.moveId||moveId();var d=await SocialAPI.request('/api/game-rooms/'+current.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});stoneSound(action.type);notice('تمت الحركة');if(d&&d.room&&window.kahwaApplyActionResponse)window.kahwaApplyActionResponse(d.room);else if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}
  catch(e){notice(e.message||'تعذرت الحركة',true)}
  finally{busy=false}
 }

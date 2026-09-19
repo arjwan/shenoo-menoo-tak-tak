@@ -116,6 +116,7 @@ var TEMPLATE = `<section id="game-screen" class="screen">
 var SUIT_GLYPH = { s: '\u2660', h: '\u2665', d: '\u2666', c: '\u2663' };
 var SUIT_AR = { '\u2665': 'قلوب', '\u2666': 'ألماس', '\u2663': 'سباتي', '\u2660': 'بستوني' };
 var ctx = null, selected = {}, busy = false;
+function moveId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
 
 function id(x) { return String((x && (x.id || x._id)) || x || ''); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -337,10 +338,12 @@ function paintRules(c) {
 function doAct(a) {
   if (busy || !ctx || isSpectator()) return;
   busy = true;
+  a.moveId = a.moveId || moveId();
   SocialAPI.request('/api/game-rooms/' + encodeURIComponent(ctx.roomId) + '/action', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(a)
-  }).then(function () {
+  }).then(function (d) {
     selected = {};
+    if (d && d.room && window.kahwaApplyActionResponse) return window.kahwaApplyActionResponse(d.room);
     if (window.reloadKahwaRoom) return window.reloadKahwaRoom();
   }).catch(function (e) {
     showToast(stage(), (e && e.message) || 'تعذرت الحركة');

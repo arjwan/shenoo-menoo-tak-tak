@@ -2,12 +2,34 @@ const fs = require('fs');
 function read(p) { return fs.readFileSync(p, 'utf8'); }
 function assert(value, message) { if (!value) throw new Error('FAIL: ' + message); }
 
-// 1. The runtime JS file IS the preserved original (byte-identical).
-// An old/rewritten tawla UI can never satisfy this, even if it copies every
-// original class name or data-attribute.
+// 1. The runtime JS file is the preserved original plus EXACTLY the pinned
+// move-path performance patch (instant roll send instead of the 520ms gate,
+// moveId dedupe stamp, render from POST response). Any other deviation —
+// including an old or rewritten tawla UI — fails this equality.
+// The preserved file itself is never modified (pinned by 1b).
+const MOVE_PATH_PATCHES = [
+  ["function id(x){return String(x&&x.id||x&&x._id||x||'')}",
+   "function id(x){return String(x&&x.id||x&&x._id||x||'')}\nfunction moveId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,10)}"],
+  ["async function act(a){if(busy)return;busy=true;try{await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});if(a.type==='move')moveSound();drag=null;if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}}",
+   "async function act(a){if(busy)return;busy=true;try{a.moveId=a.moveId||moveId();var d=await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});if(a.type==='move')moveSound();drag=null;if(d&&d.room&&window.kahwaApplyActionResponse)window.kahwaApplyActionResponse(d.room);else if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}}"],
+  ["setTimeout(()=>act({type:openingRoll?'opening-roll':'roll'}),520)",
+   "act({type:openingRoll?'opening-roll':'roll'})"]
+];
+let expectedRuntime = read('original-assets/tawla/kahwa-tawla-v2.js');
+for (const [from, to] of MOVE_PATH_PATCHES) {
+  const hits = expectedRuntime.split(from).length - 1;
+  assert(hits === 1, 'patch anchor must occur exactly once in preserved original: ' + from.slice(0, 60));
+  expectedRuntime = expectedRuntime.replace(from, to);
+}
 assert(
-  read('kahwa-tawla-v2.js') === read('original-assets/tawla/kahwa-tawla-v2.js'),
-  'kahwa-tawla-v2.js must be byte-identical to original-assets/tawla/kahwa-tawla-v2.js'
+  read('kahwa-tawla-v2.js') === expectedRuntime,
+  'kahwa-tawla-v2.js must be the preserved original + exactly the pinned move-path patch'
+);
+
+// 1b. The preserved original is untouched: it still carries the pre-fix line.
+assert(
+  read('original-assets/tawla/kahwa-tawla-v2.js').includes("setTimeout(()=>act({type:openingRoll?'opening-roll':'roll'}),520)"),
+  'preserved original must keep its 520ms line (only the runtime twin is patched)'
 );
 
 // 2. The two runtime stylesheets reconstruct the preserved original CSS
@@ -56,8 +78,12 @@ assert(
   /window\.kahwaTawlaUI=\{mount:render,render:render,bindActions:/.test(js),
   'exposes window.kahwaTawlaUI mount/render/bindActions interface'
 );
-for (const m of ['minimax', 'aiPlay', 'Math.random', 'localStorage']) {
-  assert(!js.includes(m), 'no local-simulation marker: ' + m);
+// Math.random is allowed ONLY inside the moveId() dedupe-stamp helper (dice and
+// all game state still come from the server engine, never from local randoms).
+const jsNoMoveId = js.replace(/function moveId\(\)\{[^}]*\}/, '');
+assert(/function moveId\(\)\{[^}]*Math\.random[^}]*\}/.test(js), 'moveId helper present');
+for (const m of ['minimax', 'aiPlay', 'Math.random', 'localStorage', 'rollDie', 'rollPair']) {
+  assert(!jsNoMoveId.includes(m), 'no local-simulation marker: ' + m);
 }
 
 // 7. kahwa-games.css must not distort the original board: no .tawla-*/.canva-*

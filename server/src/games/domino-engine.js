@@ -56,21 +56,29 @@ function createGame(params = {}) {
   };
 }
 
-function legalActions(state, userId) {
-  if (state.status !== 'active' && state.status !== 'waiting') return [];
-  if (state.turn !== userId) return [];
-  const hand = state.hands[userId] || [];
-  const actions = [];
+// Every placement the player could legally make RIGHT NOW (draw/pass excluded).
+// Used both to offer UI actions and to re-verify draw/pass on apply: a player
+// holding a playable tile may neither draw nor pass.
+function placementsFor(state, userId) {
+  const hand = (state.hands && state.hands[userId]) || [];
+  const out = [];
   if (!state.chain.length) {
-    for (const tile of hand) if (state.openingDouble == null || (tile.a === state.openingDouble && tile.b === state.openingDouble)) actions.push({ type: 'place', tile: { ...tile }, direction: 'right' });
-    return actions;
+    for (const tile of hand) if (state.openingDouble == null || (tile.a === state.openingDouble && tile.b === state.openingDouble)) out.push({ type: 'place', tile: { ...tile }, direction: 'right' });
+    return out;
   }
   const leftEnd = state.chain[0];
   const rightEnd = state.chain[state.chain.length - 1];
   for (const tile of hand) {
-    if (tile.a === leftEnd.a || tile.b === leftEnd.a) actions.push({ type: 'place', tile: { ...tile }, direction: 'left' });
-    if (tile.a === rightEnd.b || tile.b === rightEnd.b) actions.push({ type: 'place', tile: { ...tile }, direction: 'right' });
+    if (tile.a === leftEnd.a || tile.b === leftEnd.a) out.push({ type: 'place', tile: { ...tile }, direction: 'left' });
+    if (tile.a === rightEnd.b || tile.b === rightEnd.b) out.push({ type: 'place', tile: { ...tile }, direction: 'right' });
   }
+  return out;
+}
+
+function legalActions(state, userId) {
+  if (state.status !== 'active' && state.status !== 'waiting') return [];
+  if (state.turn !== userId) return [];
+  const actions = placementsFor(state, userId);
   if (actions.length === 0 && state.stock && state.stock.length > 0) {
     actions.push({ type: 'draw' });
   }
@@ -85,6 +93,8 @@ function applyAction(state, userId, action) {
   if (state.turn !== userId) return { error: 'not your turn' };
   if (action.type === 'draw') {
     if (!state.stock || state.stock.length === 0) return { error: 'no stock' };
+    if (!Array.isArray(state.hands[userId])) return { error: 'not in game' };
+    if (placementsFor(state, userId).length > 0) return { error: 'لديك حجر صالح للعب — ضعه بدل السحب' };
     const drawn = state.stock.splice(0, 1)[0];
     state.hands[userId].push(drawn);
     state.moveCount += 1;
@@ -94,13 +104,14 @@ function applyAction(state, userId, action) {
   }
   if (action.type === 'pass') {
     if (state.stock && state.stock.length > 0) return { error: 'cannot pass with stock' };
-    // Check if any legal play exists; if not, pass allowed
+    if (placementsFor(state, userId).length > 0) return { error: 'لديك حجر صالح للعب — لا يمكن المرور' };
     state.turn = state.players[(state.players.indexOf(userId) + 1) % state.players.length];
     state.moveCount += 1;
     return { ok: true };
   }
   if (action.type === 'place') {
-    const tile = state.hands[userId].find(t => t.id === action.tile.id);
+    if (!Array.isArray(state.hands[userId])) return { error: 'not in game' };
+    const tile = state.hands[userId].find(t => t.id === (action.tile && action.tile.id));
     if (!tile) return { error: 'tile not in hand' };
     if (!state.chain.length) {
       if (state.openingDouble != null && (tile.a !== state.openingDouble || tile.b !== state.openingDouble)) return { error: 'opening double required' };

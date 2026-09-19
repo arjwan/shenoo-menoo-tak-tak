@@ -71,8 +71,13 @@ async function decorate(room) {
   room.playerProfiles = await User.find({ _id: { $in: ids } }).select('fullName displayName username profile');
   return room;
 }
+let lastExpireSweepAt = 0;
 async function loadRoom(id) {
-  await expireAbandonedRooms();
+  const now = Date.now();
+  if (now - lastExpireSweepAt > 60000) {
+    lastExpireSweepAt = now;
+    await expireAbandonedRooms().catch(() => {});
+  }
   if (mongoose.isValidObjectId(id)) return GameRoom.findById(id);
   return GameRoom.findOne({ roomCode: String(id), isActive: { $ne: false } });
 }
@@ -352,28 +357,38 @@ router.post('/:id/action', async (req, res) => {
   const reg = require('../games/game-engine-registry');
   const engine = reg.getEngine(gameType);
   if (!engine || !engine.applyAction) return res.status(500).json({ ok: false, message: 'محرك اللعبة غير متاح' });
-  const engineState = room.gameState && room.gameState.engineState ? room.gameState.engineState : null;
-  if (!engineState) return res.status(409).json({ ok: false, message: 'لم تبدأ اللعبة بعد' });
+  const pipe = require('../games/action-pipeline');
   try {
-    const result = engine.applyAction(engineState, String(req.user._id), req.body || {});
-    if (result && result.error) return res.status(400).json({ ok: false, message: result.error, error: result.error });
-    room.gameState.engineState = result && result.state ? result.state : engineState;
-    if (result && result.state) {
-      room.gameState.board = result.state.board || engineState.board || [];
-      room.gameState.moveCount = (result.state.moveCount || engineState.moveCount || 0);
-      room.gameState.status = result.state.status || engineState.status || 'active';
-      room.gameState.turn = playerTurn(result.state, room.players);
-    }
-    room.gameState.updatedAt = new Date();
-    room.markModified('gameState.engineState');
-    await room.save();
-    const decorated = await decorate(room);
+    const outcome = await pipe.withRoomLock(room._id, async () => {
+      const fresh = await loadRoom(req.params.id);
+      if (!fresh || fresh.isActive === false) return { status: 404, message: 'الغرفة غير موجودة' };
+      const engineState = fresh.gameState && fresh.gameState.engineState ? fresh.gameState.engineState : null;
+      if (!engineState) return { status: 409, message: 'لم تبدأ اللعبة بعد' };
+      const result = pipe.applyRoomAction(engine, engineState, String(req.user._id), req.body || {});
+      if (!result || result.error || result.ok === false) return { status: 400, message: (result && result.error) || 'حركة غير قانونية' };
+      const next = result.state || engineState;
+      if (!result.duplicate) {
+        fresh.gameState.engineState = next;
+        fresh.gameState.board = next.board || engineState.board || [];
+        fresh.gameState.moveCount = (next.moveCount || engineState.moveCount || 0);
+        fresh.gameState.status = next.status || engineState.status || 'active';
+        fresh.gameState.turn = playerTurn(next, fresh.players);
+        fresh.gameState.updatedAt = new Date();
+        fresh.markModified('gameState.engineState');
+        await fresh.save();
+      }
+      return { room: fresh, duplicate: !!result.duplicate };
+    });
+    if (outcome.status) return res.status(outcome.status).json({ ok: false, message: outcome.message, error: outcome.message });
+    const savedRoom = outcome.room;
+    const decorated = await decorate(savedRoom);
     const base = publicState(decorated);
-    const privateState = (engine && engine.getPrivateState) ? engine.getPrivateState(room.gameState.engineState, String(req.user._id)) : null;
-    const legalActions = (engine && engine.getLegalActions) ? engine.getLegalActions(room.gameState.engineState, String(req.user._id)) : [];
-    const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(room.gameState.engineState) : (room.gameState.engineState && room.gameState.engineState.public ? room.gameState.engineState.public : room.gameState.engineState);
-    emitRoom(req, room);
-    res.json({ ok: true, room: { ...base, engineState: { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] } } });
+    const liveEngineState = savedRoom.gameState.engineState;
+    const privateState = (engine && engine.getPrivateState) ? engine.getPrivateState(liveEngineState, String(req.user._id)) : null;
+    const legalActions = (engine && engine.getLegalActions) ? engine.getLegalActions(liveEngineState, String(req.user._id)) : [];
+    const publicEngine = (engine && engine.getPublicState) ? engine.getPublicState(liveEngineState) : (liveEngineState && liveEngineState.public ? liveEngineState.public : liveEngineState);
+    emitRoom(req, savedRoom);
+    res.json({ ok: true, duplicate: !!outcome.duplicate, room: { ...base, engineState: { public: publicEngine && publicEngine.public ? publicEngine.public : publicEngine, private: privateState, legalActions: legalActions || [] } } });
   } catch (e) {
     res.status(500).json({ ok: false, message: e.message || 'خطأ في تنفيذ الحركة' });
   }

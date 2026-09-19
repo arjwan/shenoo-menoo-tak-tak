@@ -149,6 +149,7 @@ var SYMBOLS = { wp:'\u2659', wn:'\u2658', wb:'\u2657', wr:'\u2656', wq:'\u2655',
 var NAMES = { p:'\u0628\u064A\u062F\u0642', n:'\u062D\u0635\u0627\u0646', b:'\u0641\u064A\u0644', r:'\u0631\u062E', q:'\u0648\u0632\u064A\u0631', k:'\u0645\u0644\u0643' };
 var FILES = 'abcdefgh';
 var ctx = null, selected = null, busy = false;
+function moveId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
 
 function id(x) { return String((x && (x.id || x._id)) || x || ''); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -319,11 +320,13 @@ function pick(c, sq) {
 function act(a) {
   if (busy || !ctx) return;
   busy = true;
+  a.moveId = a.moveId || moveId();
   setStatus(stage(), 'جارٍ إرسال النقلة إلى الخادم...', 'thinking');
   SocialAPI.request('/api/game-rooms/' + encodeURIComponent(ctx.roomId) + '/action', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(a)
-  }).then(function () {
+  }).then(function (d) {
     selected = null;
+    if (d && d.room && window.kahwaApplyActionResponse) return window.kahwaApplyActionResponse(d.room);
     if (window.reloadKahwaRoom) return window.reloadKahwaRoom();
   }).catch(function (e) {
     setStatus(stage(), (e && e.message) || 'تعذرت النقلة', 'warning');
