@@ -32,6 +32,18 @@ function personFrom(profiles, id) {
 function publicState(room) {
   const profiles = new Map((room.playerProfiles || []).map((user) => [String(user._id), user]));
   const person = (id) => personFrom(profiles, id);
+  const gs = {
+    status: room.gameState?.status || 'waiting',
+    turn: room.gameState?.turn ? person(room.gameState.turn) : null,
+    scores: Object.fromEntries(room.gameState?.scores || []),
+    board: room.gameState?.board || [],
+    moveCount: room.gameState?.moveCount || 0,
+    updatedAt: room.gameState?.updatedAt
+  };
+  try {
+    const flat = require('../games/action-pipeline').flattenPublicEngine(room.gameType, room.gameState && room.gameState.engineState);
+    for (const k of Object.keys(flat)) if (!(k in gs)) gs[k] = flat[k];
+  } catch (_) {}
   return {
     id: room._id,
     roomCode: room.roomCode || String(room._id).slice(-6),
@@ -54,14 +66,7 @@ function publicState(room) {
     price: Number(room.price || 0),
     currency: room.currency || 'IQD',
     isActive: room.isActive !== false,
-    gameState: {
-      status: room.gameState?.status || 'waiting',
-      turn: room.gameState?.turn ? person(room.gameState.turn) : null,
-      scores: Object.fromEntries(room.gameState?.scores || []),
-      board: room.gameState?.board || [],
-      moveCount: room.gameState?.moveCount || 0,
-      updatedAt: room.gameState?.updatedAt
-    }
+    gameState: gs
   };
 }
 

@@ -4,7 +4,8 @@ function assert(value, message) { if (!value) throw new Error('FAIL: ' + message
 
 // 1. The runtime JS file is the preserved original plus EXACTLY the pinned
 // move-path performance patch (instant roll send instead of the 520ms gate,
-// moveId dedupe stamp, render from POST response). Any other deviation —
+// moveId dedupe stamp, render from POST response) plus the R4 audio guard
+// (floating AudioContext.resume() rejection is caught). Any other deviation —
 // including an old or rewritten tawla UI — fails this equality.
 // The preserved file itself is never modified (pinned by 1b).
 const MOVE_PATH_PATCHES = [
@@ -13,7 +14,9 @@ const MOVE_PATH_PATCHES = [
   ["async function act(a){if(busy)return;busy=true;try{await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});if(a.type==='move')moveSound();drag=null;if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}}",
    "async function act(a){if(busy)return;busy=true;try{a.moveId=a.moveId||moveId();var d=await SocialAPI.request('/api/game-rooms/'+ctx.roomId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});if(a.type==='move')moveSound();drag=null;if(d&&d.room&&window.kahwaApplyActionResponse)window.kahwaApplyActionResponse(d.room);else if(window.reloadKahwaRoom)await window.reloadKahwaRoom()}catch(e){notice(e.message||'تعذرت الحركة',true)}finally{busy=false}}"],
   ["setTimeout(()=>act({type:openingRoll?'opening-roll':'roll'}),520)",
-   "act({type:openingRoll?'opening-roll':'roll'})"]
+   "act({type:openingRoll?'opening-roll':'roll'})"],
+  ["g=a.createGain();a.resume();o.type",
+   "g=a.createGain();try{var rp=a.resume();if(rp&&rp.catch)rp.catch(function(){})}catch(_e){}o.type"]
 ];
 let expectedRuntime = read('original-assets/tawla/kahwa-tawla-v2.js');
 for (const [from, to] of MOVE_PATH_PATCHES) {

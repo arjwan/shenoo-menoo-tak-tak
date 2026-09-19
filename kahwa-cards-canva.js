@@ -178,7 +178,7 @@ function paintPlayers(c) {
   (room.players || []).forEach(function (p) { names[id(p)] = nameOf(p); });
   (pub.players || []).forEach(function (p) {
     var e = document.createElement('article');
-    e.className = 'rounded-xl p-3 bg-[#042f27]/80 border border-white/10' + (String(pub.turn) === String(p.id) ? ' turn' : '');
+    e.className = 'rounded-xl p-3 bg-[#042f27]/80 border border-white/10' + (turnId() === String(p.id) ? ' turn' : '');
     var mine = String(p.id) === me;
     e.innerHTML = '<div class="flex justify-between gap-2"><strong class="text-sm">' + esc(names[p.id] || 'لاعب') + (mine ? ' <span class="text-[#f6c860]">أنت</span>' : '') + '</strong><span class="text-xs text-[#c6e2d5]">' + Number(p.score || 0) + ' نقطة</span></div><p class="text-xs text-[#b8d6ca] mt-2">الأوراق: ' + Number(p.handCount || 0) + '</p>';
     box.appendChild(e);
@@ -219,6 +219,12 @@ function playerName(pid) {
   var room = (ctx && ctx.room) || {};
   var found = (room.players || []).filter(function (p) { return id(p) === String(pid); })[0];
   return found ? nameOf(found) : 'لاعب';
+}
+function turnId() {
+  var pub = (ctx && ctx.state && ctx.state.public) || ctx.state || {};
+  var t = (pub && pub.turn !== undefined) ? pub.turn : null;
+  if (t && typeof t === 'object') return String(t.id || '');
+  return String(t || '');
 }
 function paintHand(c) {
   var priv = (ctx && ctx.state && ctx.state.private) || {};
@@ -287,7 +293,7 @@ function paintEvents(c) {
   (pub.melds || []).slice().reverse().forEach(function (m) {
     ev.push(esc(playerName(String(m.playerId))) + ' أعلن مجموعة (+' + Number(m.points || 0) + ').');
   });
-  ev.push('الدور: ' + esc(playerName(String(pub.turn))) + (pub.phase === 'draw' ? ' — مرحلة السحب.' : ' — مرحلة اللعب.'));
+  ev.push('الدور: ' + esc(playerName(turnId())) + (pub.phase === 'draw' ? ' — مرحلة السحب.' : ' — مرحلة اللعب.'));
   ev.push('السحب: ' + Number(pub.stockCount || 0) + ' · الرمي: ' + Number(pub.discardCount || 0) + ' · الحركات: ' + Number(pub.moveCount || 0) + '.');
   box.innerHTML = ev.map(function (x) { return '<li class="border-b border-white/10 pb-2">' + x + '</li>'; }).join('');
 }
@@ -302,7 +308,7 @@ function paintHead(c) {
   var badge = qs(c, '[data-template-id="simulation-badge"]');
   if (badge) badge.textContent = 'مباشر';
   var banner = qs(c, '#turn-banner');
-  if (banner) banner.textContent = isSpectator() ? ('مشاهدة: دور ' + playerName(String(pub.turn))) : (priv.turn ? 'دورك الآن' : ('دور ' + playerName(String(pub.turn)) + ' الآن'));
+  if (banner) banner.textContent = isSpectator() ? ('مشاهدة: دور ' + playerName(turnId())) : (priv.turn ? 'دورك الآن' : ('دور ' + playerName(turnId()) + ' الآن'));
   var timer = qs(c, '#timer-display');
   if (timer) timer.classList.add('hidden');
 }
