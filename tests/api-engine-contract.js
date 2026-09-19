@@ -26,14 +26,18 @@ assert(pub.players.every(p => typeof p.handCount === 'number'), 'only handCount 
 assert(!pub.hands, 'hands hidden from public');
 
 console.log('5) legal actions for current turn');
-const legals = domino.getLegalActions(s, 'pA');
+const current = s.turn;
+assert(current === 'pA' || current === 'pB', 'turn is a seated player');
+const legals = domino.getLegalActions(s, current);
 assert(Array.isArray(legals) && legals.length > 0, 'legal actions non-empty');
+const other = current === 'pA' ? 'pB' : 'pA';
+assert(domino.getLegalActions(s, other).length === 0, 'waiting player has no actions');
 
 console.log('6) apply action updates turn');
 const firstAction = legals[0];
-const res = domino.applyAction(s, 'pA', firstAction);
+const res = domino.applyAction(s, current, firstAction);
 assert(res && !res.error, 'apply ok');
-assert(s.turn === 'pB', 'turn switched to pB');
+assert(s.turn === other, 'turn switched to waiting player');
 
 console.log('7) start route sets active');
 s.status = 'active';
