@@ -440,6 +440,16 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
     return Math.min(p.x + p.w, q.x + q.w) - Math.max(p.x, q.x) > 0.01 &&
            Math.min(p.y + p.h, q.y + q.h) - Math.max(p.y, q.y) > 0.01;
   }
+  function jointSides(p, q) {
+    const eps = 0.01;
+    const xov = Math.min(p.x + p.w, q.x + q.w) - Math.max(p.x, q.x);
+    const yov = Math.min(p.y + p.h, q.y + q.h) - Math.max(p.y, q.y);
+    if (Math.abs(p.x + p.w - q.x) <= eps && yov >= -eps) return ['R', 'L'];
+    if (Math.abs(q.x + q.w - p.x) <= eps && yov >= -eps) return ['L', 'R'];
+    if (Math.abs(p.y + p.h - q.y) <= eps && xov >= -eps) return ['D', 'U'];
+    if (Math.abs(q.y + q.h - p.y) <= eps && xov >= -eps) return ['U', 'D'];
+    return null;
+  }
   const chain28 = eulerChain();
   eq(chain28.length, 28, 'euler trail uses all 28 tiles');
   eq(new Set(chain28.map(t => t.id)).size, 28, 'trail tiles unique');
@@ -476,54 +486,46 @@ console.log('L1) domino snake layout: bounds, no overlap, continuity, anchor');
         }
         for (let j = i + 1; j < len; j++) assert(!overlaps(r, lay.rects[j]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + j + ' never overlap');
         if (i + 1 < len) {
-          assert(adjacent(lay.cells[i], lay.cells[i + 1]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' stay cell-adjacent');
-          const nr = lay.rects[i + 1];
-          if (lay.cells[i + 1].cx > lay.cells[i].cx) eq(Math.round((r.x + r.w - nr.x) * 1000) / 1000, 0, 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' touch with no right-side gap');
-          else eq(Math.round((nr.x + nr.w - r.x) * 1000) / 1000, 0, 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' touch with no left-side gap');
+          assert(jointSides(r, lay.rects[i + 1]), 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' physically touch at the snake joint');
         }
       }
-      { // REGRESSION (production screenshot): touching halves show equal pips
-        const halves = (idx) => {
-          const r = lay.rects[idx], t = sub[idx];
-          if (r.rot === 0) return { L: t.a, R: t.b };
-          if (r.rot === 180) return { L: t.b, R: t.a };
-          if (r.rot === 90) return { U: t.a, D: t.b };
-          return { U: t.b, D: t.a };
+      { // REGRESSION (production screenshots): touching halves show equal pips
+        const faceValue = (idx, side, otherIdx) => {
+          const r = lay.rects[idx], o = lay.rects[otherIdx], t = sub[idx];
+          const vertical = Math.abs(r.rot) === 90 || (t.a === t.b && r.h > r.w);
+          const horizontal = !vertical;
+          if (horizontal) {
+            let leftVal = r.rot === 180 ? t.b : t.a;
+            let rightVal = r.rot === 180 ? t.a : t.b;
+            if (side === 'L') return leftVal;
+            if (side === 'R') return rightVal;
+            return (o.x + o.w / 2 < r.x + r.w / 2) ? leftVal : rightVal;
+          }
+          let upVal, downVal;
+          if (r.rot === -90) { upVal = t.b; downVal = t.a; }
+          else { upVal = t.a; downVal = t.b; }
+          if (side === 'U') return upVal;
+          if (side === 'D') return downVal;
+          return (o.y + o.h / 2 < r.y + r.h / 2) ? upVal : downVal;
         };
         for (let i = 0; i + 1 < len; i++) {
-          const A = lay.cells[i], B = lay.cells[i + 1], ha = halves(i), hb = halves(i + 1);
+          const sides = jointSides(lay.rects[i], lay.rects[i + 1]);
+          assert(sides, 'W=' + W + ' len=' + len + ': tiles ' + i + '/' + (i + 1) + ' have a real contact point');
           const joint = sub[i].b;
           eq(sub[i + 1].a, joint, 'W=' + W + ' len=' + len + ': chain joint consistent');
-          assert(!(A.corner && B.corner), 'W=' + W + ' len=' + len + ': corners never adjacent');
-          let fa, fb;
-          if (!A.corner && !B.corner) {
-            eq(A.cy, B.cy, 'W=' + W + ' len=' + len + ': data pair shares a row');
-            if (A.cx + 1 === B.cx) { fa = ha.R; fb = hb.L; }
-            else { eq(B.cx + 1, A.cx, 'W=' + W + ' len=' + len + ': data pair side by side'); fa = ha.L; fb = hb.R; }
-          } else if (A.corner) {
-            eq(B.cy === A.r1 || B.cy === A.r2, true, 'W=' + W + ' len=' + len + ': data meets corner inside its span');
-            eq(Math.abs(B.cx - A.cx), 1, 'W=' + W + ' len=' + len + ': data beside corner');
-            fb = (B.cx > A.cx) ? hb.L : hb.R;
-            fa = (B.cy === A.r1) ? ha.U : ha.D;
-          } else {
-            eq(A.cy === B.r1 || A.cy === B.r2, true, 'W=' + W + ' len=' + len + ': data meets corner inside its span');
-            eq(Math.abs(A.cx - B.cx), 1, 'W=' + W + ' len=' + len + ': data beside corner');
-            fa = (A.cx > B.cx) ? ha.L : ha.R;
-            fb = (A.cy === B.r1) ? hb.U : hb.D;
-          }
-          eq(fa, joint, 'W=' + W + ' len=' + len + ': tile ' + i + ' faces the joint value');
-          eq(fb, joint, 'W=' + W + ' len=' + len + ': tile ' + (i + 1) + ' faces the joint value');
+          eq(faceValue(i, sides[0], i + 1), joint, 'W=' + W + ' len=' + len + ': tile ' + i + ' faces the joint value');
+          eq(faceValue(i + 1, sides[1], i), joint, 'W=' + W + ' len=' + len + ': tile ' + (i + 1) + ' faces the joint value');
         }
         if (len > 1) {
           const ends = domino.openEnds(sub);
-          const freeVal = (idx, other) => {
-            const C = lay.cells[idx], O = lay.cells[other], h = halves(idx);
-            if (!C.corner) return (O.cx > C.cx) ? h.L : h.R;
-            const orow = O.corner ? O.r1 : O.cy;
-            return (orow === C.r1) ? h.D : h.U;
+          const freeValue = (idx, neighborIdx) => {
+            const r = lay.rects[idx], o = lay.rects[neighborIdx], t = sub[idx];
+            const vertical = Math.abs(r.rot) === 90 || (t.a === t.b && r.h > r.w);
+            if (vertical) return (o.y + o.h / 2 < r.y + r.h / 2) ? faceValue(idx, 'D', neighborIdx) : faceValue(idx, 'U', neighborIdx);
+            return (o.x + o.w / 2 < r.x + r.w / 2) ? faceValue(idx, 'R', neighborIdx) : faceValue(idx, 'L', neighborIdx);
           };
-          eq(freeVal(0, 1), ends.left, 'W=' + W + ' len=' + len + ': chain-start free half shows the logical left end');
-          eq(freeVal(len - 1, len - 2), ends.right, 'W=' + W + ' len=' + len + ': chain-end free half shows the logical right end');
+          eq(freeValue(0, 1), ends.left, 'W=' + W + ' len=' + len + ': chain-start free half shows the logical left end');
+          eq(freeValue(len - 1, len - 2), ends.right, 'W=' + W + ' len=' + len + ': chain-end free half shows the logical right end');
         } else eq(lay.rects[0].rot, 0, 'W=' + W + ' len=' + len + ': lone tile never rotates');
       }
       T('domino');
