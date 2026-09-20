@@ -231,17 +231,32 @@
     hydrateConnection();
     wireRealRoomControls();
     var target = cfg.autoSpectate;
+    // Expose the in-flight boot promise so wiring tests (and loaders) can
+    // synchronize on real settlement instead of guessing delays. ready=true
+    // is set only after auto-spectate resolves or definitively fails.
     var done = target ? autoSpectate(target).catch(function (e) {
       state.error = String(e && e.message || e);
       setText('statusMessage', 'تعذر فتح المشاهدة التلقائية: ' + state.error);
       return null;
     }) : Promise.resolve(null);
-    return done.then(function () { state.ready = true; return state; });
+    state.boot = done.then(function () {
+      state.ready = true;
+      return state;
+    });
+    return state.boot;
   }
 
+  // Always kick boot once the document is interactive. Prefer DOMContentLoaded
+  // when still loading; otherwise start immediately (loader injects us after
+  // the original's scripts have already run).
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { boot(); });
   } else {
     boot();
   }
+  // Observable handle for harnesses: same promise as state.boot once boot runs.
+  Object.defineProperty(window, '__SHNO_CARDS_CENTER_BOOT__', {
+    configurable: true,
+    get: function () { return state.boot || Promise.resolve(state); }
+  });
 })();

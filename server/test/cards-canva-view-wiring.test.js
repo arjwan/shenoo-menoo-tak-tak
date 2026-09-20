@@ -32,7 +32,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { MongoMemoryServer } = require('mongodb-memory-server-core');
-const { JSDOM, VirtualConsole } = require('jsdom');
+const { JSDOM, VirtualConsole, requestInterceptor } = require('jsdom');
 const vm = require('node:vm');
 
 process.env.JWT_SECRET = 'test-secret-cards-canva-dom';
@@ -48,14 +48,20 @@ function sha256(p) { return crypto.createHash('sha256').update(fs.readFileSync(p
 function read(p) { return fs.readFileSync(p, 'utf8'); }
 
 // Stable wait: re-evaluate a pure state predicate until it becomes truthy.
-// No timing assumption beyond the timeout guard.
+// No timing assumption beyond the timeout guard. `what` may be a string or a
+// zero-arg function that builds a diagnostic message at timeout time (so we
+// can report which settle condition is still false on Oracle).
 async function waitFor(fn, what, { timeoutMs = 60000, everyMs = 100 } = {}) {
   const start = Date.now();
   for (;;) {
     let v;
     try { v = await fn(); } catch (_) { v = null; }
     if (v) return v;
-    if (Date.now() - start > timeoutMs) throw new Error('timed out waiting for: ' + what);
+    if (Date.now() - start > timeoutMs) {
+      let label = what;
+      try { if (typeof what === 'function') label = what(); } catch (e) { label = String(what); }
+      throw new Error('timed out waiting for: ' + label);
+    }
     await new Promise((r) => setTimeout(r, everyMs));
   }
 }
@@ -145,23 +151,44 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     const virtualConsole = new VirtualConsole();
     virtualConsole.on('jsdomError', (e) => { jsdomErrors.push(String((e && e.message) || e)); });
 
+    // CRITICAL (Oracle vs local): jsdom's ResourceLoader fetches <script src>
+    // / <link href> through undici, NOT through window.fetch. Stubbing only
+    // window.fetch still lets Tailwind/Lucide/Google Fonts hit the public
+    // network. On hosts with slow/blocked egress that stalls document "load"
+    // or starves the event loop so adapter boot never settles. Intercept
+    // subresource requests and serve empty presentation assets instantly;
+    // same-origin API traffic still goes to the real test server.
+    const externalAsset = (url) => /cdn\.tailwindcss\.com|cdn\.jsdelivr\.net\/npm\/lucide|fonts\.googleapis\.com|fonts\.gstatic\.com/i.test(String(url));
+    const interceptors = [
+      requestInterceptor(async (request) => {
+        const url = String(request.url || '');
+        if (externalAsset(url)) {
+          const isCss = /\.css(?:\?|$)/i.test(url) || /fonts\.googleapis\.com/i.test(url);
+          return new Response(isCss ? '/* test stub css */' : '/* test stub js */', {
+            status: 200,
+            headers: { 'Content-Type': isCss ? 'text/css' : 'application/javascript' }
+          });
+        }
+        // undefined → pass through to real network (our Express on 127.0.0.1)
+        return undefined;
+      })
+    ];
+
     dom = new JSDOM(servedHtml, {
       url: baseUrl + '/cards-canva.html',
       runScripts: 'dangerously',
       resources: 'usable',
       pretendToBeVisual: true,
       virtualConsole,
+      interceptors,
       beforeParse(window) {
         // Real network for the page's API calls (same origin as the test server).
-        // External CDNs (tailwind/lucide) are intentionally NOT loaded: they
-        // are presentation-only and keep MutationObservers alive after the
-        // assertions pass, which turns a clean PASS into an unhandledRejection
-        // during teardown. The original already degrades without them (lucide
-        // stub below) and every assertion below is pure DOM/room state.
+        // Keep window.fetch stub as a second line of defence for any scripted
+        // CDN fetches; ResourceLoader is covered by interceptors above.
         window.fetch = (input, init) => {
           const url = typeof input === 'string' ? input : (input && input.url) || '';
           const abs = /^https?:/i.test(url) ? url : new URL(url, baseUrl).href;
-          if (/cdn\.tailwindcss\.com|cdn\.jsdelivr\.net\/npm\/lucide/i.test(abs)) {
+          if (externalAsset(abs)) {
             return Promise.resolve(new Response('/* stubbed in test harness */', {
               status: 200, headers: { 'Content-Type': 'application/javascript' }
             }));
@@ -189,18 +216,65 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     s.textContent = 'window.__SHNO_CARDS_CANVA_CONFIG__ = ' + JSON.stringify(config) + ';' + adapterSrc;
     (doc.head || doc.documentElement).appendChild(s);
 
+    // Synchronize on the adapter's real boot promise when available (no
+    // fixed delay). Errors surface via state.error diagnostics below.
+    try {
+      const bootP = dom.window.__SHNO_CARDS_CENTER_BOOT__;
+      if (bootP && typeof bootP.then === 'function') {
+        await Promise.race([
+          bootP,
+          new Promise((_, rej) => setTimeout(() => rej(new Error('adapter boot promise timeout')), 60000))
+        ]);
+      }
+    } catch (bootErr) {
+      // Fall through to predicate wait + diagnostics; boot timeout is not a
+      // silent pass — the settle wait will still require real state.
+      jsdomErrors.push('boot: ' + String((bootErr && bootErr.message) || bootErr));
+    }
+
     // 5) STABLE WAIT: settle purely on DOM/room state — the adapter mirrors
     //    the authoritative server room state, and the original renders it.
     //    No fixed delay: the predicate below is the definition of "settled".
-    await waitFor(() => {
+    //    On failure, report which of the three contract conditions is missing.
+    function settleSnapshot() {
       const st = dom.window.__SHNO_CARDS_CENTER__;
       const roomView = doc.getElementById('roomView');
       const count = doc.getElementById('spectatorCount');
-      return st && st.ready === true &&
-        st.spectating && st.spectating.isSpectator === true &&
-        roomView && roomView.classList.contains('active') &&
-        count && /1/.test(count.textContent);
-    }, 'auto-spectate room state to settle (adapter ready + spectator registered + roomView active)');
+      const adapterReady = !!(st && st.ready === true);
+      const spectatorRegistered = !!(st && st.spectating && st.spectating.isSpectator === true);
+      const roomViewActive = !!(roomView && roomView.classList.contains('active'));
+      const countOk = !!(count && /1/.test(count.textContent || ''));
+      return {
+        adapterReady,
+        spectatorRegistered,
+        roomViewActive,
+        countOk,
+        all: adapterReady && spectatorRegistered && roomViewActive && countOk,
+        detail: {
+          ready: st && st.ready,
+          error: st && st.error,
+          spectating: st && st.spectating,
+          tableau: st && st.tableau,
+          roomViewClass: roomView && roomView.className,
+          spectatorCountText: count && count.textContent,
+          statusMessage: (doc.getElementById('statusMessage') || {}).textContent || '',
+          jsdomErrors: jsdomErrors.slice(-8)
+        }
+      };
+    }
+
+    await waitFor(() => {
+      const snap = settleSnapshot();
+      return snap.all ? snap : null;
+    }, () => {
+      const snap = settleSnapshot();
+      return 'auto-spectate room state to settle | conditions=' + JSON.stringify({
+        adapterReady: snap.adapterReady,
+        spectatorRegistered: snap.spectatorRegistered,
+        roomViewActive: snap.roomViewActive,
+        countOk: snap.countOk
+      }) + ' detail=' + JSON.stringify(snap.detail);
+    });
 
     const st = dom.window.__SHNO_CARDS_CENTER__;
 
