@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260918-05-13efa67","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YACgEZulLoA,0","Arial Narrow":"YAGyDvJ_4Ts,0","Arial Rounded MT Bold":"YAFcfoaHu-s,0","Arial":"YAGyDvJ_4Ts,0","Avenir Next":"YAFcfmNq6UY,0","Baloo 2":"YADK30bC6HQ,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Broken Glyph":"YADZ-exUkv0,0","Canva Sans":"YAFdJjTk5UU,1","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAFcfvtOAUY,1","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","Courier Prime":"YAD1aFjegN8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAFdJpU7Kkk,0","Georgia":"YAGzXkO0pEM,0","Ghost Mono":"YAHQutsX00Q,0","Hanken Grotesk":"YAFcfhwp99E,0","Helvetica Neue":"YAFcf6CtJfI,0","Helvetica":"YAFcf6CtJfI,0","IBM Plex Mono":"YAFdJkmvhGI,0","Impact":"YAFcfnjI7Vk,0","Instrument Serif":"YAHFeOnZNEk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YADK3zbC6RM,0","JetBrains Mono":"YAFdJksXcAk,0","Josefin Sans":"YAFdJjvw9Ps,0","Lato":"YAFdJuFCnaw,0","Libre Baskerville":"YACgEUFdPdA,0","Lobster":"YAD8SnSjSFI,0","Lora":"YACgEXvxf8Q,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YAFdtQi73Xs,0","Nunito":"YAFdJoNRMmU,1","Oleo Script":"YACgEQQ14jI,0","Oswald":"YACgEQY10lw,0","Pacifico":"YADLjORQ1u4,0","Phantom Sans":"YAFdJvgJ5TU,0","Playfair Display":"YAFdJhem5V8,1","Plus Jakarta Sans":"YAGvf3_u0_Q,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YAFdJpYtCxE,1","Raleway":"YAFdJhmxbVQ,1","Roboto Slab":"YAFdJswIKAg,0","Rockwell":"YAFcfyVZnN0,0","Rye":"YACgEdQP21k,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Source Serif 4":"YACgEfdj394,0","Space Grotesk":"YADZ-dYEmhg,0","Space Mono":"YADW1-vpsoc,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Trebuchet MS":"YAFcfrglpVA,0","UV Display":"YAEdVfSSpYo,0","UV Sans":"YAFdJvgJ5TU,0","Ubuntu":"YACgERDU--Q,0","Verdana":"YAGzXTctYtQ,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YAD1aFjegN8,0","ui-sans-serif":"YACkoD1yZN0,0"}}');</script><script src="/_sdk/83d6dfdadcd4750a.telemetry_sdk.js" integrity="sha512-XS4Dvzp6vbagZS9vFErihvr8aO3S0tH78KWUefn06fmL4WYqryBtZj/IOLITYj7dFA4gPVvPg1W/JB1DK3uLNQ=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز ألعاب الورق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --felt:#075d43; --felt2:#043e2e; --felt3:#0d7657; --gold:#f3c85f;
+      --paper:#fffdf6; --ink:#16382d; --red:#c82e3f; --panel:rgba(4,62,46,.82);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans Arabic",sans-serif;color:#f8fff9;background:#043e2e}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+    .app-shell{width:100%;min-height:calc(100 * min(var(--vh, 1vh), 1vh));background:radial-gradient(circle at 80% 0%,#188568 0%,var(--felt) 38%,var(--felt2) 100%);overflow:hidden}
+    .felt-pattern{background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:18px 18px}
+    .glass{background:rgba(3,52,39,.72);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 50px rgba(0,0,0,.18);backdrop-filter:blur(12px)}
+    .nav-btn,.action-btn{transition:transform .16s ease,filter .16s ease,background .16s ease}
+    .nav-btn:hover,.action-btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+    .nav-btn.active{background:#f3c85f;color:#15372c}
+    .view{display:none}.view.active{display:block;animation:rise .35s ease both}
+    @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .game-card{min-height:250px;position:relative;overflow:hidden;isolation:isolate;transition:transform .2s ease,box-shadow .2s ease}
+    .game-card:hover{transform:translateY(-6px);box-shadow:0 22px 38px rgba(0,0,0,.28)}
+    .game-card::before{content:"";position:absolute;inset:0;opacity:.2;background:linear-gradient(135deg,transparent 25%,rgba(255,255,255,.35) 25% 28%,transparent 28% 55%,rgba(255,255,255,.18) 55% 57%,transparent 57%);z-index:-1}
+    .available{background:linear-gradient(135deg,#0e7256,#064332)}
+    .soon{background:linear-gradient(135deg,#193c35,#0c2921)}
+    .badge{background:rgba(4,42,30,.52);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(8px)}
+    .card-slot{width:clamp(53px,8.4vw,98px);height:clamp(76px,11.9vw,138px);border:2px dashed rgba(255,255,255,.34);border-radius:12px;position:relative;flex:none}
+    .playing-card{width:clamp(53px,8.4vw,98px);height:clamp(76px,11.9vw,138px);border-radius:12px;background:var(--paper);box-shadow:0 5px 0 rgba(0,0,0,.16),0 8px 16px rgba(0,0,0,.2);color:#111827;position:absolute;top:0;right:0;cursor:grab;user-select:none;touch-action:none;border:1px solid rgba(12,52,37,.15);transition:transform .16s ease,box-shadow .16s ease;overflow:hidden}
+    .playing-card:hover,.playing-card.selected{transform:translateY(-7px);box-shadow:0 8px 0 rgba(0,0,0,.12),0 15px 20px rgba(0,0,0,.25),0 0 0 3px var(--gold);z-index:50!important}
+    .playing-card.dragging{opacity:.62;cursor:grabbing}
+    .card-back{background:linear-gradient(135deg,#d8b24c 0 14%,#f9e9a6 14% 28%,#ba3141 28% 42%,#f9e9a6 42% 56%,#ba3141 56% 70%,#f9e9a6 70% 84%,#d8b24c 84%);border:4px solid #fff5ca;outline:2px solid #a72637}
+    .card-face{padding:7px 8px;display:flex;flex-direction:column;justify-content:space-between;height:100%;font-weight:800}
+    .card-corner{line-height:1;font-size:clamp(13px,1.6vw,20px);display:flex;flex-direction:column;align-items:flex-start}
+    .card-center{align-self:center;font-size:clamp(25px,4.4vw,55px);line-height:1}
+    .card-bottom{transform:rotate(180deg);align-self:flex-end}.red{color:var(--red)}.black{color:#111827}
+    .tableau{min-height:clamp(250px,42vw,470px)}.tableau-pile{width:clamp(53px,8.4vw,98px);position:relative;min-height:clamp(94px,17vw,190px)}
+    .tableau-pile .playing-card{top:calc(var(--card-index) * clamp(19px,3.15vw,34px))}
+    .drop-ready{outline:3px solid var(--gold);outline-offset:4px;border-radius:12px}
+    .hidden-notice{display:none}
+    .toast{opacity:0;transform:translateY(14px);pointer-events:none;transition:.25s ease}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .participant-dot{width:9px;height:9px;background:#5ee6a8;border-radius:50%;box-shadow:0 0 12px #5ee6a8;display:inline-block}
+    .offline-dot{background:#f3c85f;box-shadow:0 0 12px #f3c85f}
+    @media(max-width:640px){.tableau{gap:3px}.game-board{padding:12px}.top-row{gap:8px}.tableau-pile{min-width:0}.mobile-stack{grid-template-columns:1fr!important}}
+  </style>
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js" type="text/javascript"></script>
+  <script src="/_sdk/8de366929c5f3b48.data_sdk.js" type="text/javascript" integrity="sha512-TyQ8k8cZj66xe/aENmn6RyZpdOFZXbAo5+KBG3PeFM+Q4qMTHU8xAqmq4ADClNfPrstgQYV6OzZHwLTnElzB2g=="></script>
+  <script src="/_sdk/0ddbbee1c66b1212.editing_sdk.js" type="text/javascript" integrity="sha512-HQn5LM1yruQSbY78ATUril6QeOJ9xj7KqO64ltLtb4vBwI5Qv3/tloFFOndBPZTNZoeV5xKzuth5y6FTi9crsg=="></script>
+  <script src="/_sdk/765e1fea0cec97ce.resizing_sdk.js" type="text/javascript" integrity="sha512-IRTJnqww0+HQ5V/LlWEQrlD5SrYHaVvaeVoNe8HYQXoaguzUGheSd9+n9s6WOgaTcEH0g37DuINHZ9aqfzWjlw=="></script>
+ </head>
+ <body data-template-id="__page-root" style="background: radial-gradient(circle at 80% 0%, rgb(24, 133, 104), rgb(7, 93, 67), rgb(4, 62, 46));">
+  <div class="app-shell felt-pattern">
+   <header data-template-id="hub-header" class="canva-header border-b border-white/15 bg-[#043e2e]/80 px-4 py-3 backdrop-blur-md" style="background: rgb(4, 62, 46);">
+    <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3">
+     <div class="flex items-center gap-3">
+      <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3c85f] text-[#15372c] shadow-lg">
+       <i data-lucide="clubs" aria-hidden="true"></i>
+      </div>
+      <div>
+       <h1 data-template-id="hub-title" class="canva-text m-0 font-extrabold tracking-tight" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 32px;">مركز ألعاب الورق</h1>
+       <p data-template-id="hub-subtitle" class="canva-text m-0 text-xs text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">عب، شاهد، وشارك — دائماً بلا رهانات أو أموال.</p>
+      </div>
+     </div>
+     <div class="flex flex-wrap items-center gap-2"><span id="connectionBadge" data-template-id="connection-badge" class="canva-tag inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold" style="background: rgb(87, 69, 29); color: rgb(255, 241, 184); font-weight: 700; font-style: normal; font-size: 16px;">وضع تجريبي / غير متصل</span> <button id="navLibrary" data-template-id="library-nav-button" type="button" class="canva-button nav-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(11, 96, 72); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">المكتبة</button> <button id="navRoom" data-template-id="room-nav-button" type="button" class="canva-button nav-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(11, 96, 72); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">الغرفة</button> <button id="navSettings" data-template-id="settings-nav-button" type="button" class="canva-button nav-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(11, 96, 72); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">الإعدادات</button>
+     </div>
+    </div>
+   </header>
+   <main class="mx-auto w-full max-w-7xl px-4 py-5">
+    <section id="statusBar" class="glass mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3" aria-live="polite">
+     <p id="statusMessage" data-template-id="offline-status-copy" class="canva-text m-0 text-sm" style="color: rgb(232, 255, 243); font-weight: 400; font-style: normal; font-size: 14px;">لا يوجد خادم متصل حالياً. يمكنك لعب سوليتير وحفظ تقدمك محلياً دون اتصال.</p><button id="reconnectButton" data-template-id="reconnect-button" type="button" class="canva-button action-btn rounded-xl px-3 py-2 text-xs font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">إعادة الاتصال</button>
+    </section>
+    <section id="libraryView" class="view active">
+     <div class="mb-6 grid items-center gap-4 rounded-3xl border border-white/15 bg-[#043e2e]/65 p-5 shadow-2xl md:grid-cols-[1.1fr_.9fr] md:p-8">
+      <div><span data-template-id="welcome-kicker" class="canva-tag inline-flex rounded-full px-3 py-1 text-xs font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">مساحتك الهادئة للعب الورق</span>
+       <h2 data-template-id="welcome-title" class="canva-text mt-4 font-extrabold leading-tight" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 24px;">جلسة ورق على طريقتك.</h2>
+       <p data-template-id="welcome-copy" class="canva-text max-w-2xl text-emerald-50 leading-8" style="color: rgb(237, 255, 245); font-weight: 400; font-style: normal; font-size: 16px; line-height: 1.8;">اختر لعبة من المكتبة، أكمل جولة أوفلاين، أو جهّز غرفة تجريبية لأصدقائك. لا توجد رهانات ولا بيانات حساسة.</p>
+       <div class="mt-5 flex flex-wrap gap-3"><button id="welcomePlay" data-template-id="welcome-play-button" type="button" class="canva-button action-btn inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">ابدأ سوليتير</button> <button id="continueGame" data-template-id="continue-button" type="button" class="canva-button action-btn inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">متابعة الجولة</button>
+       </div>
+      </div>
+      <div class="relative min-h-56 overflow-hidden rounded-2xl border border-[#f3c85f]/30"><img data-template-id="hero-image" loading="lazy" class="canva-image absolute inset-0 h-full w-full object-cover opacity-55" src="https://images.pexels.com/photos/3678384/pexels-photo-3678384.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1920" alt="أوراق لعب ورقائق على طاولة خضراء">
+       <div class="absolute inset-0 bg-gradient-to-t from-[#043e2e] via-transparent to-transparent"></div>
+       <div class="absolute bottom-4 right-4 left-4 rounded-xl bg-[#043e2e]/80 p-4 backdrop-blur">
+        <p data-template-id="hero-panel-title" class="canva-text m-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 16px;">ابدأ من حيث توقفت</p>
+        <p data-template-id="hero-panel-copy" class="canva-text mb-0 mt-1 text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">تُحفظ جولة كلوندايك الحالية محلياً على هذا الجهاز.</p>
+       </div>
+      </div>
+     </div>
+     <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div>
+       <h2 data-template-id="library-title" class="canva-text m-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 24px;">مكتبة الألعاب</h2>
+       <p data-template-id="library-copy" class="canva-text mb-0 mt-1 text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">اختر لعبتك التالية. الألعاب المقبلة جاهزة لإضافة قواعدها لاحقاً.</p>
+      </div><span data-template-id="offline-label" class="canva-tag rounded-full px-3 py-2 text-xs font-bold" style="background: rgb(11, 96, 72); color: rgb(232, 255, 243); font-weight: 700; font-style: normal; font-size: 16px;">اللعب المحلي متاح دائماً</span>
+     </div>
+     <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="مكتبة ألعاب الورق">
+      <article data-template-id="game-klondike-card" class="canva-card game-card available rounded-3xl border border-[#f3c85f]/35 p-5" style="background: rgb(14, 114, 86);">
+       <div class="flex items-start justify-between gap-3">
+        <span class="text-3xl">♠</span><span data-template-id="game-klondike-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">متاحة الآن</span>
+       </div>
+       <h3 data-template-id="game-klondike-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">سوليتير كلوندايك</h3>
+       <p data-template-id="game-klondike-copy" class="canva-text min-h-14 text-sm text-emerald-50" style="color: rgb(232, 255, 243); font-weight: 400; font-style: normal; font-size: 14px;">رتّب الأعمدة وابنِ المنازل الأربع في لعبة فردية كاملة.</p><button id="playKlondike" data-template-id="game-klondike-button" type="button" class="canva-button action-btn mt-4 w-full rounded-xl px-4 py-3 font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">العب الآن</button>
+      </article>
+      <article data-template-id="game-spider-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">♣</span><span data-template-id="game-spider-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-spider-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">سبايدر</h3>
+       <p data-template-id="game-spider-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">أكمل سلاسل متتابعة من الملك إلى الآس.</p>
+      </article>
+      <article data-template-id="game-freecell-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">♦</span><span data-template-id="game-freecell-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-freecell-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">فري سيل</h3>
+       <p data-template-id="game-freecell-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">حرّك الأوراق بدقة باستخدام الخانات الحرة.</p>
+      </article>
+      <article data-template-id="game-hearts-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">♥</span><span data-template-id="game-hearts-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-hearts-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">هارتس</h3>
+       <p data-template-id="game-hearts-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">لعبة حيل جماعية: تجنب القلوب وملكة البستوني.</p>
+      </article>
+      <article data-template-id="game-speed-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">⚡</span><span data-template-id="game-speed-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-speed-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">سبيد</h3>
+       <p data-template-id="game-speed-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">سرعة وتركيز في مباراة أوراق سريعة.</p>
+      </article>
+      <article data-template-id="game-rummy-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">◎</span><span data-template-id="game-rummy-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-rummy-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">رومي</h3>
+       <p data-template-id="game-rummy-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">كوّن مجموعات وتسلسلات قبل منافسيك.</p>
+      </article>
+      <article data-template-id="game-tarneeb-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">♜</span><span data-template-id="game-tarneeb-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-tarneeb-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">تركس</h3>
+       <p data-template-id="game-tarneeb-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">جولات عربية جماعية مبنية على الحيل والاختيار.</p>
+      </article>
+      <article data-template-id="game-blackjack-card" class="canva-card game-card soon rounded-3xl border border-white/10 p-5" style="background: rgb(25, 60, 53);">
+       <div class="flex justify-between">
+        <span class="text-3xl">21</span><span data-template-id="game-blackjack-status" class="canva-tag rounded-full px-2 py-1 text-xs font-bold" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 700; font-style: normal; font-size: 16px;">قريباً</span>
+       </div>
+       <h3 data-template-id="game-blackjack-title" class="canva-text mb-1 mt-8 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">بلاك جاك ترفيهي</h3>
+       <p data-template-id="game-blackjack-copy" class="canva-text text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">للتسلية فقط دون أموال أو مراهنات.</p>
+      </article>
+     </section>
+    </section>
+    <section id="gameView" class="view">
+     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+       <button id="backToLibrary" data-template-id="back-button" type="button" class="canva-button action-btn inline-flex items-center gap-2 rounded-xl px-4 py-2 font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">رجوع للمكتبة</button>
+       <h2 data-template-id="table-title" class="canva-text mt-3 mb-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 24px;">سوليتير كلوندايك — وضع أوفلاين</h2>
+      </div>
+      <div class="flex flex-wrap gap-2"><button id="newGame" data-template-id="new-game-button" type="button" class="canva-button action-btn rounded-xl px-4 py-2 font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">لعبة جديدة</button> <button id="undo" data-template-id="undo-button" type="button" class="canva-button action-btn rounded-xl px-4 py-2 font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">تراجع</button> <button id="redo" data-template-id="redo-button" type="button" class="canva-button action-btn rounded-xl px-4 py-2 font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">إعادة</button>
+      </div>
+     </div>
+     <section aria-label="إحصاءات الجولة" class="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+      <div class="badge rounded-2xl px-3 py-2 text-center">
+       <span data-template-id="time-label" class="canva-text block text-xs text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">الوقت</span><strong id="timer" class="text-lg tabular-nums">00:00</strong>
+      </div>
+      <div class="badge rounded-2xl px-3 py-2 text-center">
+       <span data-template-id="moves-label" class="canva-text block text-xs text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">الحركات</span><strong id="moves" class="text-lg tabular-nums">0</strong>
+      </div>
+      <div class="badge rounded-2xl px-3 py-2 text-center">
+       <span data-template-id="score-label" class="canva-text block text-xs text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">النقاط</span><strong id="score" class="text-lg tabular-nums">0</strong>
+      </div>
+     </section>
+     <section class="game-board rounded-3xl border border-white/15 bg-[#064b38]/45 p-3 shadow-2xl sm:p-5">
+      <div class="top-row mb-6 flex items-start justify-between">
+       <div class="flex gap-3">
+        <div id="stock" class="card-slot" aria-label="رزمة السحب" role="button" tabindex="0"></div>
+        <div id="waste" class="card-slot" aria-label="الأوراق المسحوبة"></div>
+       </div>
+       <div id="foundations" class="flex gap-2 sm:gap-3" aria-label="المنازل الأساسية"></div>
+      </div>
+      <div id="tableau" class="tableau flex justify-between gap-1 sm:gap-3" aria-label="أعمدة اللعب"></div>
+     </section>
+     <section id="winNotice" class="hidden-notice mt-4 rounded-2xl border border-[#f3c85f]/70 bg-[#183b30] p-4 text-center shadow-xl" aria-live="polite">
+      <h3 data-template-id="victory-title" class="canva-text m-0 font-extrabold" style="color: rgb(255, 230, 154); font-weight: 800; font-style: normal; font-size: 19px;">أحسنت! لقد فزت بالجولة</h3>
+      <p data-template-id="victory-copy" class="canva-text mb-0 mt-1 text-sm" style="color: rgb(241, 255, 247); font-weight: 400; font-style: normal; font-size: 14px;">اكتملت المنازل الأربع. حُفظ إنجازك ضمن الإحصاءات عند توفر الخدمة.</p>
+     </section>
+     <section id="noMoveNotice" class="hidden-notice mt-4 rounded-2xl border border-white/20 bg-[#123f34] p-3 text-center">
+      <p data-template-id="no-moves-copy" class="canva-text m-0 text-sm" style="color: rgb(255, 255, 255); font-weight: 400; font-style: normal; font-size: 14px;">لا تبدو هناك نقلة متاحة الآن. جرّب السحب من الرزمة أو استخدام التراجع.</p>
+     </section>
+     <aside class="mt-5 grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
+      <section data-template-id="instructions-panel" class="canva-panel rounded-2xl p-4 shadow-lg" style="background: rgb(246, 240, 221);">
+       <h3 data-template-id="instructions-title" class="canva-text mb-2 mt-0 font-extrabold" style="color: rgb(21, 55, 44); font-weight: 800; font-style: normal; font-size: 19px;">طريقة اللعب</h3>
+       <p data-template-id="instructions-copy" class="canva-text m-0 text-sm leading-7" style="color: rgb(42, 77, 64); font-weight: 400; font-style: normal; font-size: 14px; line-height: 1.8;">انقر على ورقة ثم على وجهتها، أو اسحبها إليها مباشرة. رتّب الأعمدة ترتيباً تنازلياً مع تناوب الأحمر والأسود. ابدأ العمود الفارغ بالملك فقط، وابنِ المنازل من الآس إلى الملك حسب النوع.</p>
+      </section>
+      <section data-template-id="stats-panel" class="canva-panel rounded-2xl p-4 shadow-lg" style="background: rgb(4, 62, 46);">
+       <h3 data-template-id="stats-title" class="canva-text mb-3 mt-0 font-bold" style="color: rgb(255, 230, 154); font-weight: 800; font-style: normal; font-size: 19px;">سجل الإنجازات</h3>
+       <dl class="grid grid-cols-2 gap-3 text-sm">
+        <div>
+         <dt data-template-id="win-label" class="canva-text" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">مرات الفوز</dt>
+         <dd id="statWins" class="m-0 text-xl font-bold">
+          —
+         </dd>
+        </div>
+        <div>
+         <dt data-template-id="best-time-label" class="canva-text" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">أفضل وقت</dt>
+         <dd id="statTime" class="m-0 text-xl font-bold">
+          —
+         </dd>
+        </div>
+        <div>
+         <dt data-template-id="best-moves-label" class="canva-text" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">أقل حركات</dt>
+         <dd id="statMoves" class="m-0 text-xl font-bold">
+          —
+         </dd>
+        </div>
+        <div>
+         <dt data-template-id="saved-games-label" class="canva-text" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 13px;">الألعاب</dt>
+         <dd id="statGames" class="m-0 text-xl font-bold">
+          —
+         </dd>
+        </div>
+       </dl>
+       <p id="dataStatus" class="mb-0 mt-3 text-xs text-emerald-200" aria-live="polite"></p>
+      </section>
+     </aside>
+    </section>
+    <section id="roomView" class="view">
+     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+       <h2 data-template-id="room-title" class="canva-text m-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 24px;">غرفة اللعب</h2>
+       <p data-template-id="room-copy" class="canva-text mb-0 mt-1 text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">واجهة جاهزة للربط مع WebSocket أو REST وWebRTC عند إعداد خادمك.</p>
+      </div><span data-template-id="demo-mode-badge" class="canva-tag rounded-full px-3 py-2 text-xs font-bold" style="background: rgb(87, 69, 29); color: rgb(255, 241, 184); font-weight: 700; font-style: normal; font-size: 16px;">وضع تجريبي / غير متصل</span>
+     </div>
+     <div class="mobile-stack grid gap-4 lg:grid-cols-[.85fr_1.15fr]">
+      <section class="glass rounded-3xl p-5">
+       <h3 data-template-id="room-setup-title" class="canva-text mt-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">إنشاء أو انضمام</h3>
+       <form id="roomForm" class="space-y-4">
+        <div>
+         <label data-template-id="nickname-label" class="canva-text mb-1 block text-sm font-bold" for="nickname" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">الاسم المستعار</label><input id="nickname" class="w-full rounded-xl border border-white/20 bg-[#073f30] px-3 py-3 text-white" maxlength="20">
+        </div>
+        <div>
+         <label data-template-id="seats-label" class="canva-text mb-1 block text-sm font-bold" for="seats" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">عدد المقاعد</label><select id="seats" class="w-full rounded-xl border border-white/20 bg-[#073f30] px-3 py-3 text-white"><option value="2">2</option><option value="3">3</option><option value="4" selected="">4</option></select>
+        </div><button data-template-id="create-room-button" type="submit" class="canva-button action-btn w-full rounded-xl px-4 py-3 font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">إنشاء غرفة</button>
+       </form>
+       <div class="my-5 border-t border-white/15"></div><label data-template-id="room-code-label" class="canva-text mb-1 block text-sm font-bold" for="joinCode" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">رمز الغرفة</label>
+       <div class="flex gap-2">
+        <input id="joinCode" data-template-id="room-code-input" class="canva-input min-w-0 flex-1 rounded-xl border border-white/20 bg-[#073f30] px-3 py-3 text-white" maxlength="6" placeholder="أدخل الرمز" style="color: rgb(255, 255, 255); font-weight: 400; font-style: normal; font-size: 16px;"><button id="joinRoom" data-template-id="join-room-button" type="button" class="canva-button action-btn rounded-xl px-4 py-3 font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">انضمام</button>
+       </div>
+      </section>
+      <section class="glass rounded-3xl p-5">
+       <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+         <h3 data-template-id="active-room-title" class="canva-text m-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">الغرفة النشطة</h3>
+         <p id="roomCodeDisplay" class="mt-1 mb-0 text-xl font-extrabold tracking-[.25em] text-[#f3c85f]">— — — — — —</p>
+        </div>
+        <div class="flex gap-2">
+         <button id="copyCode" data-template-id="copy-code-button" type="button" class="canva-button action-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(11, 96, 72); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">نسخ الرمز</button><button id="inviteButton" data-template-id="invite-button" type="button" class="canva-button action-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(11, 96, 72); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">دعوة</button>
+        </div>
+       </div>
+       <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <div>
+         <h4 data-template-id="players-title" class="canva-text mb-2 font-bold" style="color: rgb(255, 248, 220); font-weight: 700; font-style: normal; font-size: 16px;">اللاعبون</h4>
+         <ul id="playerList" class="space-y-2 text-sm"></ul>
+        </div>
+        <div>
+         <div class="flex items-center justify-between">
+          <h4 data-template-id="spectators-title" class="canva-text mb-2 font-bold" style="color: rgb(255, 248, 220); font-weight: 700; font-style: normal; font-size: 16px;">المتفرجون</h4><button id="toggleSpectators" data-template-id="toggle-spectators-button" type="button" class="canva-button text-xs underline" style="color: rgb(243, 200, 95); font-weight: 700; font-style: normal; font-size: 16px;">إظهار / إخفاء</button>
+         </div>
+         <p id="spectatorCount" class="mb-2 text-sm text-emerald-100">0</p>
+         <ul id="spectatorList" class="space-y-2 text-sm"></ul><button id="watchButton" data-template-id="watch-button" type="button" class="canva-button action-btn mt-3 rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">مشاهدة كمُتفرج</button>
+        </div>
+       </div><button id="leaveRoom" data-template-id="leave-room-button" type="button" class="canva-button action-btn mt-5 rounded-xl px-4 py-3 font-bold" style="background: rgb(124, 38, 50); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">خروج من الغرفة</button>
+      </section>
+     </div>
+     <div class="mobile-stack mt-4 grid gap-4 lg:grid-cols-2">
+      <section class="glass rounded-3xl p-5">
+       <div class="flex items-center justify-between">
+        <h3 data-template-id="chat-title" class="canva-text mt-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">دردشة الغرفة</h3><span data-template-id="local-chat-label" class="canva-tag rounded-full px-2 py-1 text-xs" style="background: rgb(41, 77, 68); color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 16px;">محلية تجريبية</span>
+       </div>
+       <div id="chatMessages" class="mb-3 h-40 overflow-y-auto rounded-2xl bg-[#032f24]/70 p-3 text-sm"></div>
+       <form id="chatForm" class="flex gap-2">
+        <label class="sr-only" for="chatInput">رسالة الدردشة</label><input id="chatInput" data-template-id="chat-input" class="canva-input min-w-0 flex-1 rounded-xl border border-white/20 bg-[#073f30] px-3 py-3 text-white" placeholder="اكتب رسالة..." style="color: rgb(255, 255, 255); font-weight: 400; font-style: normal; font-size: 16px;"><button data-template-id="send-chat-button" type="submit" class="canva-button action-btn rounded-xl px-4 py-3 font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">إرسال</button>
+       </form>
+      </section>
+      <section class="glass rounded-3xl p-5">
+       <div class="flex items-center justify-between">
+        <h3 data-template-id="voice-title" class="canva-text mt-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 19px;">الصوت والمشاركون</h3><span id="voiceState" data-template-id="voice-demo-label" class="canva-tag rounded-full px-2 py-1 text-xs" style="background: rgb(87, 69, 29); color: rgb(255, 241, 184); font-weight: 400; font-style: normal; font-size: 16px;">صوت تجريبي</span>
+       </div>
+       <p data-template-id="voice-copy" class="canva-text text-sm leading-7 text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px; line-height: 1.7;">واجهة الصوت مهيأة لـ WebRTC. يتطلب الصوت الحقيقي خادم إشارات وصلاحيات ميكروفون، وهما غير متاحين في هذه الجلسة التجريبية.</p>
+       <div class="flex flex-wrap gap-2">
+        <button id="micButton" data-template-id="mic-button" type="button" class="canva-button action-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(11, 96, 72); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">تشغيل الميكروفون</button><button id="muteAllButton" data-template-id="mute-all-button" type="button" class="canva-button action-btn rounded-xl px-3 py-2 text-sm font-bold" style="background: rgb(231, 240, 233); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">كتم الجميع</button>
+       </div><label data-template-id="volume-label" class="canva-text mt-4 block text-sm font-bold" for="volume" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">مستوى الصوت</label><input id="volume" class="mt-2 w-full accent-[#f3c85f]" type="range" min="0" max="100" value="70">
+       <p id="speakingIndicator" data-template-id="speaking-indicator" class="canva-text mb-0 mt-3 text-sm" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">لا أحد يتكلم الآن.</p>
+      </section>
+     </div>
+    </section>
+    <section id="settingsView" class="view">
+     <div class="mb-5">
+      <h2 data-template-id="settings-title" class="canva-text m-0 font-extrabold" style="color: rgb(255, 248, 220); font-weight: 800; font-style: normal; font-size: 24px;">الإعدادات</h2>
+      <p data-template-id="settings-copy" class="canva-text mb-0 mt-1 text-sm text-emerald-100" style="color: rgb(215, 245, 230); font-weight: 400; font-style: normal; font-size: 14px;">اختر ما تريد حفظه على جهازك لتحسين تجربتك داخل مركز الألعاب.</p>
+     </div>
+     <form id="settingsForm" class="glass max-w-3xl rounded-3xl p-5">
+      <div class="grid gap-5 sm:grid-cols-2">
+       <div>
+        <label data-template-id="language-label" class="canva-text mb-2 block font-bold" for="language" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">اللغة</label><select id="language" class="w-full rounded-xl border border-white/20 bg-[#073f30] px-3 py-3 text-white"><option>العربية</option></select>
+       </div><label class="flex items-center justify-between gap-4 rounded-2xl bg-[#073f30]/70 p-4"><span data-template-id="sound-label" class="canva-text font-bold" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">تأثيرات الصوت</span><input id="soundSetting" class="h-5 w-5 accent-[#f3c85f]" type="checkbox" checked=""></label> <label class="flex items-center justify-between gap-4 rounded-2xl bg-[#073f30]/70 p-4"><span data-template-id="notifications-label" class="canva-text font-bold" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">إشعارات الجولة</span><input id="notificationsSetting" class="h-5 w-5 accent-[#f3c85f]" type="checkbox" checked=""></label> <label class="flex items-center justify-between gap-4 rounded-2xl bg-[#073f30]/70 p-4"><span data-template-id="privacy-label" class="canva-text font-bold" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">وضع الخصوصية للاسم المستعار</span><input id="privacySetting" class="h-5 w-5 accent-[#f3c85f]" type="checkbox"></label> <label class="flex items-center justify-between gap-4 rounded-2xl bg-[#073f30]/70 p-4 sm:col-span-2"><span data-template-id="show-spectators-label" class="canva-text font-bold" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 16px;">إظهار أسماء المتفرجين</span><input id="spectatorsSetting" class="h-5 w-5 accent-[#f3c85f]" type="checkbox" checked=""></label>
+      </div><button data-template-id="save-settings-button" type="submit" class="canva-button action-btn mt-5 rounded-xl px-5 py-3 font-bold" style="background: rgb(243, 200, 95); color: rgb(21, 55, 44); font-weight: 700; font-style: normal; font-size: 16px;">حفظ الإعدادات</button>
+      <p id="settingsStatus" class="mb-0 mt-3 text-sm text-emerald-100" aria-live="polite"></p>
+     </form>
+    </section>
+   </main>
+   <div id="toast" class="toast fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#fff8dc] px-5 py-3 text-sm font-bold text-[#15372c] shadow-2xl" role="status"></div>
+  </div>
+  <script>
+    const suits=[{symbol:"♠",color:"black"},{symbol:"♥",color:"red"},{symbol:"♦",color:"red"},{symbol:"♣",color:"black"}];
+    const ranks=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+    let stock=[],waste=[],foundations=[[],[],[],[]],tableau=[[],[],[],[],[],[],[]];
+    let moves=0,score=0,elapsed=0,selected=null,undoStack=[],redoStack=[],won=false,timerId=null;
+    let backendRecords=[],stats={wins:0,best_time:0,best_moves:0,total_games:0},initialLoadTimer;
+    let room={code:"",name:"لاعب",seats:4,players:[],spectators:[],isSpectator:false};
+    let settings={sound:true,notifications:true,privacy:false,spectators:true};
+
+    const $=id=>document.getElementById(id);
+    function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),3200)}
+    function showView(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(id).classList.add("active");window.scrollTo({top:0,behavior:"smooth"})}
+    function formatTime(t){return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")}
+    function saveLocal(){localStorage.setItem("cardHubKlondike",JSON.stringify({stock,waste,foundations,tableau,moves,score,elapsed,won}))}
+    function restoreLocal(){try{const s=JSON.parse(localStorage.getItem("cardHubKlondike"));if(s&&s.stock){({stock,waste,foundations,tableau,moves,score,elapsed,won}=s);return true}}catch(e){}return false}
+    function deepState(){return JSON.stringify({stock,waste,foundations,tableau,moves,score,elapsed,won})}
+    function restoreState(s){({stock,waste,foundations,tableau,moves,score,elapsed,won}=JSON.parse(s));selected=null;render()}
+    function snapshot(){undoStack.push(deepState());if(undoStack.length>80)undoStack.shift();redoStack=[]}
+    function newDeck(){return suits.flatMap((s,si)=>ranks.map((rank,ri)=>({suit:si,rank,symbol:s.symbol,color:s.color,faceUp:false,id:si+"-"+ri})))}
+    function shuffle(deck){for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}return deck}
+    function newGame(register=true){const deck=shuffle(newDeck());stock=[];waste=[];foundations=[[],[],[],[]];tableau=[[],[],[],[],[],[],[]];for(let col=0;col<7;col++)for(let row=0;row<=col;row++){const c=deck.pop();c.faceUp=row===col;tableau[col].push(c)}stock=deck;moves=0;score=0;elapsed=0;won=false;selected=null;undoStack=[];redoStack=[];hideNotices();render();if(register)saveRecord({wins:stats.wins,best_time:stats.best_time,best_moves:stats.best_moves,total_games:stats.total_games+1,last_played:new Date().toISOString(),game_type:"klondike",settings_json:JSON.stringify(settings)})}
+    function rank(card){return ranks.indexOf(card.rank)+1}
+    function getPile(type,pile){return type==="tableau"?tableau[pile]:type==="foundation"?foundations[pile]:type==="waste"?waste:stock}
+    function cardMarkup(card,pileIndex,pileType,index){const el=document.createElement("div");el.className="playing-card "+(card.faceUp?"card-face "+card.color:"card-back");el.draggable=card.faceUp;el.dataset.type=pileType;el.dataset.pile=pileIndex;el.dataset.index=index;if(pileType==="tableau")el.style.setProperty("--card-index",index);if(card.faceUp)el.innerHTML=`<span class="card-corner ${card.color}">${card.rank}<small>${card.symbol}</small></span><span class="card-center ${card.color}">${card.symbol}</span><span class="card-corner card-bottom ${card.color}">${card.rank}<small>${card.symbol}</small></span>`;el.addEventListener("click",()=>cardClick(pileType,pileIndex,index));el.addEventListener("dragstart",e=>{if(room.isSpectator||!card.faceUp)return e.preventDefault();selected={type:pileType,pile:pileIndex,index};el.classList.add("dragging");e.dataTransfer.setData("text/plain",card.id)});el.addEventListener("dragend",()=>el.classList.remove("dragging"));return el}
+    function makeSlot(type,index){const el=document.createElement("div");el.className=type==="tableau"?"tableau-pile card-slot":"card-slot";el.dataset.dropType=type;el.addEventListener("click",()=>{if(selected&&!room.isSpectator)attemptMove(type,index)});el.addEventListener("dragover",e=>{if(!room.isSpectator){e.preventDefault();el.classList.add("drop-ready")}});el.addEventListener("dragleave",()=>el.classList.remove("drop-ready"));el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("drop-ready");if(selected&&!room.isSpectator)attemptMove(type,index)});return el}
+    function render(){ $("timer").textContent=formatTime(elapsed);$("moves").textContent=moves;$("score").textContent=score;$("undo").disabled=!undoStack.length||room.isSpectator;$("redo").disabled=!redoStack.length||room.isSpectator;const s=$("stock");s.innerHTML="";if(stock.length)s.appendChild(cardMarkup({faceUp:false},0,"stock",0));else s.innerHTML='<div class="flex h-full items-center justify-center text-center text-xs text-white/70">إعادة<br>الرزمة</div>';const w=$("waste");w.innerHTML="";if(waste.length)w.appendChild(cardMarkup(waste[waste.length-1],0,"waste",waste.length-1));const f=$("foundations");f.innerHTML="";foundations.forEach((p,i)=>{const slot=makeSlot("foundation",i);if(p.length)slot.appendChild(cardMarkup(p[p.length-1],i,"foundation",p.length-1));f.appendChild(slot)});const t=$("tableau");t.innerHTML="";tableau.forEach((p,i)=>{const slot=makeSlot("tableau",i);p.forEach((c,j)=>slot.appendChild(cardMarkup(c,i,"tableau",j)));t.appendChild(slot)});updateSelection();saveLocal()}
+    function updateSelection(){document.querySelectorAll(".playing-card").forEach(el=>el.classList.toggle("selected",selected&&el.dataset.type===selected.type&&+el.dataset.pile===selected.pile&&+el.dataset.index===selected.index))}
+    function canFoundation(c,target){return(!target.length&&c.rank==="A")||(target.length&&target[target.length-1].suit===c.suit&&rank(c)===rank(target[target.length-1])+1)}
+    function canTableau(c,target){return(!target.length&&c.rank==="K")||(target.length&&target[target.length-1].faceUp&&target[target.length-1].color!==c.color&&rank(c)===rank(target[target.length-1])-1)}
+    function cardClick(type,pile,index){if(room.isSpectator){toast("أنت في وضع المشاهدة ولا يمكنك تنفيذ نقلات.");return}if(type==="stock"){drawStock();return}const c=getPile(type,pile)[index];if(!c||!c.faceUp){selected=null;render();return}if(selected&&selected.type===type&&selected.pile===pile&&selected.index===index){selected=null;render();return}if(selected)attemptMove(type,pile);else{selected={type,pile,index};updateSelection()}}
+    function attemptMove(type,pile){if(!selected||(selected.type===type&&selected.pile===pile))return;const source=getPile(selected.type,selected.pile),moving=source.slice(selected.index),first=moving[0],target=getPile(type,pile);const legal=(type==="foundation"&&moving.length===1&&canFoundation(first,target))||(type==="tableau"&&canTableau(first,target));if(!legal){selected=null;render();return}snapshot();source.splice(selected.index);target.push(...moving);moves++;score+=type==="foundation"?10:(selected.type==="foundation"?-10:0);if(selected.type==="tableau"&&source.length&&!source[source.length-1].faceUp){source[source.length-1].faceUp=true;score+=5}selected=null;render();checkWin();setTimeout(checkMoves,100)}
+    function drawStock(){if(room.isSpectator)return;snapshot();if(!stock.length){if(!waste.length){undoStack.pop();return}stock=waste.reverse().map(c=>({...c,faceUp:false}));waste=[];moves++;render();return}for(let i=0;i<3&&stock.length;i++){const c=stock.pop();c.faceUp=true;waste.push(c)}moves++;render();setTimeout(checkMoves,100)}
+    function hideNotices(){$("winNotice").classList.add("hidden-notice");$("noMoveNotice").classList.add("hidden-notice")}
+    function checkWin(){if(foundations.every(p=>p.length===13)){won=true;$("winNotice").classList.remove("hidden-notice");const next={wins:stats.wins+1,best_time:stats.best_time?Math.min(stats.best_time,elapsed):elapsed,best_moves:stats.best_moves?Math.min(stats.best_moves,moves):moves,total_games:Math.max(stats.total_games,1),last_played:new Date().toISOString(),game_type:"klondike",settings_json:JSON.stringify(settings)};saveRecord(next)}}
+    function checkMoves(){if(won)return;const available=[...waste,...tableau.flatMap(p=>p.filter(c=>c.faceUp))];const ok=available.some(c=>foundations.some(f=>canFoundation(c,f))||tableau.some(t=>canTableau(c,t)))||stock.length>0;$("noMoveNotice").classList.toggle("hidden-notice",ok)}
+
+    function calculateStats(){stats.total_games=Math.max(0,...backendRecords.map(r=>Number(r.total_games)||0));stats.wins=Math.max(0,...backendRecords.map(r=>Number(r.wins)||0));const times=backendRecords.map(r=>Number(r.best_time)).filter(n=>n>0),movesList=backendRecords.map(r=>Number(r.best_moves)).filter(n=>n>0);stats.best_time=times.length?Math.min(...times):0;stats.best_moves=movesList.length?Math.min(...movesList):0;$("statWins").textContent=stats.wins;$("statTime").textContent=stats.best_time?formatTime(stats.best_time):"—";$("statMoves").textContent=stats.best_moves||"—";$("statGames").textContent=stats.total_games}
+    const handler={onDataChanged(data){clearTimeout(initialLoadTimer);backendRecords=data;calculateStats();$("dataStatus").textContent="تم تحميل إحصاءاتك المحفوظة."}};
+    async function initializeData(){initialLoadTimer=setTimeout(()=>{$("dataStatus").textContent="تعذر تحميل الإحصاءات الآن، ويمكنك متابعة اللعب محلياً."},8000);const r=await window.dataSdk.init(handler);if(!r.isOk){clearTimeout(initialLoadTimer);$("dataStatus").textContent="تعذر الاتصال بحفظ الإحصاءات. يستمر اللعب دون اتصال."}}
+    async function saveRecord(record){if(backendRecords.length>=999){$("dataStatus").textContent="وصلت سجلات الإحصاءات إلى الحد الأقصى.";return}const r=await window.dataSdk.create(record);if(!r.isOk)$("dataStatus").textContent="لم نتمكن من تأكيد حفظ الإحصاءات، لكن تقدم الجولة محفوظ محلياً."}
+
+    function renderRoom(){ $("roomCodeDisplay").textContent=room.code?room.code.split("").join(" "):"— — — — — —";$("playerList").innerHTML=room.players.length?room.players.map(p=>`<li class="flex items-center gap-2 rounded-xl bg-[#073f30]/70 p-2"><span class="participant-dot"></span>${p}</li>`).join(""):"<li class='text-emerald-100'>بانتظار إنشاء غرفة.</li>";$("spectatorCount").textContent=`${room.spectators.length} متفرج`;$("spectatorList").innerHTML=settings.spectators?(room.spectators.length?room.spectators.map(p=>`<li class="rounded-xl bg-[#073f30]/70 p-2">👁 ${p}</li>`).join(""):"<li class='text-emerald-100'>لا يوجد متفرجون بعد.</li>"):"<li class='text-emerald-100'>الأسماء مخفية.</li>";$("watchButton").disabled=!room.code}
+    function createRoom(){room.name=$("nickname").value.trim()||"لاعب";room.seats=Number($("seats").value);room.code=Math.random().toString(36).slice(2,8).toUpperCase();room.players=[room.name];room.spectators=[];room.isSpectator=false;renderRoom();toast("تم إنشاء غرفة تجريبية محلية. أضف خادماً للاتصال الحقيقي.");}
+    function joinRoom(){const code=$("joinCode").value.trim().toUpperCase();if(code.length<4){toast("أدخل رمز غرفة صالحاً أولاً.");return}room.name=$("nickname").value.trim()||"لاعب";room.code=code;room.players=[room.name,"صديق تجريبي"];room.spectators=["مشاهد تجريبي"];room.isSpectator=false;renderRoom();toast("انضممت إلى غرفة تجريبية غير متصلة.");}
+    async function copyRoom(){if(!room.code){toast("أنشئ غرفة أولاً.");return}try{await navigator.clipboard.writeText(room.code);toast("تم نسخ رمز الغرفة.")}catch(e){toast("رمز الغرفة: "+room.code)}}
+    function loadSettings(){try{settings={...settings,...JSON.parse(localStorage.getItem("cardHubSettings"))}}catch(e){};$("soundSetting").checked=settings.sound;$("notificationsSetting").checked=settings.notifications;$("privacySetting").checked=settings.privacy;$("spectatorsSetting").checked=settings.spectators}
+    function saveSettings(){settings={sound:$("soundSetting").checked,notifications:$("notificationsSetting").checked,privacy:$("privacySetting").checked,spectators:$("spectatorsSetting").checked};localStorage.setItem("cardHubSettings",JSON.stringify(settings));$("settingsStatus").textContent="تم حفظ الإعدادات على هذا الجهاز.";renderRoom()}
+
+    $("navLibrary").addEventListener("click",()=>showView("libraryView"));$("navRoom").addEventListener("click",()=>showView("roomView"));$("navSettings").addEventListener("click",()=>showView("settingsView"));
+    $("welcomePlay").addEventListener("click",()=>showView("gameView"));$("playKlondike").addEventListener("click",()=>showView("gameView"));$("continueGame").addEventListener("click",()=>{showView("gameView");toast("تمت متابعة الجولة المحفوظة محلياً.")});$("backToLibrary").addEventListener("click",()=>showView("libraryView"));
+    $("newGame").addEventListener("click",()=>newGame());$("undo").addEventListener("click",()=>{if(undoStack.length){redoStack.push(deepState());restoreState(undoStack.pop())}});$("redo").addEventListener("click",()=>{if(redoStack.length){undoStack.push(deepState());restoreState(redoStack.pop())}});$("stock").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();drawStock()}});
+    $("roomForm").addEventListener("submit",e=>{e.preventDefault();createRoom()});$("joinRoom").addEventListener("click",joinRoom);$("copyCode").addEventListener("click",copyRoom);$("inviteButton").addEventListener("click",copyRoom);$("leaveRoom").addEventListener("click",()=>{room={code:"",name:"لاعب",seats:4,players:[],spectators:[],isSpectator:false};renderRoom();toast("تم الخروج من الغرفة.")});$("watchButton").addEventListener("click",()=>{room.isSpectator=true;if(!room.spectators.includes(room.name))room.spectators.push(room.name);renderRoom();render();toast("أنت الآن تشاهد الطاولة ولا يمكنك إجراء نقلات.")});$("toggleSpectators").addEventListener("click",()=>{settings.spectators=!settings.spectators;renderRoom()});
+    $("chatForm").addEventListener("submit",e=>{e.preventDefault();const text=$("chatInput").value.trim();if(!text)return;const message=document.createElement("p");message.className="mb-2 rounded-xl bg-[#0b5d47] p-2";message.textContent=(room.name||"أنت")+": "+text;$("chatMessages").appendChild(message);$("chatInput").value="";$("chatMessages").scrollTop=$("chatMessages").scrollHeight});
+    $("micButton").addEventListener("click",()=>{const muted=$("micButton").dataset.muted==="true";$("micButton").dataset.muted=String(!muted);$("speakingIndicator").textContent=muted?"الميكروفون التجريبي مفعّل — لا يوجد خادم إشارات متصل.":"الميكروفون التجريبي مكتوم.";toast("الصوت تجريبي حتى إعداد خادم الإشارات والصلاحيات.")});$("muteAllButton").addEventListener("click",()=>{$("volume").value=0;$("speakingIndicator").textContent="تم كتم صوت جميع المشاركين محلياً."});$("settingsForm").addEventListener("submit",e=>{e.preventDefault();saveSettings()});$("reconnectButton").addEventListener("click",()=>{toast("لا يوجد خادم مُعد. يعمل وضع الأوفلاين بشكل كامل.")});
+    document.addEventListener("DOMContentLoaded",()=>{lucide.createIcons();loadSettings();if(!restoreLocal())newGame(false);else render();renderRoom();timerId=setInterval(()=>{if(!won){elapsed++;$("timer").textContent=formatTime(elapsed);saveLocal()}},1000);initializeData()});
+  </script>
+ 
+</body></html>
