@@ -101,8 +101,16 @@ async function spectateChange(req, res, join) {
     room: gameRooms.publicState(decorated)
   });
 }
-router.post('/rooms/:id/spectate', requireAuth, (req, res) => spectateChange(req, res, true));
-router.delete('/rooms/:id/spectate', requireAuth, (req, res) => spectateChange(req, res, false));
+// Express 4 does not catch async rejections from bare handlers; an unhandled
+// rejection during spectateChange aborts the socket (client sees ECONNRESET)
+// instead of a JSON 500. Always forward errors through next().
+function spectateHandler(join) {
+  return (req, res, next) => {
+    Promise.resolve(spectateChange(req, res, join)).catch(next);
+  };
+}
+router.post('/rooms/:id/spectate', requireAuth, spectateHandler(true));
+router.delete('/rooms/:id/spectate', requireAuth, spectateHandler(false));
 
 // The immutable original is a public design asset (no secrets inside); the
 // loader fetches it through the API so Oracle's root-only static publishing

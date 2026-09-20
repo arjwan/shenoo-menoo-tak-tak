@@ -49,8 +49,21 @@ process.env.JWT_SECRET = 'test-secret-cards-canva-dom';
     }
   }
 })();
-const loopbackAgent = new Agent({ keepAliveTimeout: 1000, connections: 8 });
-const nodeFetch = (url, init = {}) => undiciFetch(String(url), { ...init, dispatcher: loopbackAgent });
+// Keep-alive reuse against an ephemeral Express listener is a known source of
+// intermittent `read ECONNRESET` on some hosts (Oracle): the pooled socket is
+// half-closed by the server while undici still tries to write the next request.
+// Disable pipelining and force Connection: close so each API call is a fresh
+// TCP handshake to 127.0.0.1 — slower but deterministic for this harness.
+const loopbackAgent = new Agent({
+  keepAliveTimeout: 1,
+  keepAliveMaxTimeout: 1,
+  connections: 1,
+  pipelining: 0
+});
+const nodeFetch = (url, init = {}) => {
+  const headers = Object.assign({}, init.headers || {}, { Connection: 'close' });
+  return undiciFetch(String(url), { ...init, headers, dispatcher: loopbackAgent });
+};
 
 const User = require('../src/models/User');
 const cardsCanvaRoutes = require('../src/routes/cards-canva.routes');
@@ -104,22 +117,63 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     const owner = await makeUser('cards-owner', 'أبو سجاد');
     const player = await makeUser('cards-player', 'كرار وليد');
     const viewer = await makeUser('cards-viewer', 'زهراء علي');
+    const serverEvents = [];
     app = express();
     app.use(express.json());
+    // HTTP lifecycle log for cards endpoints (test harness only).
+    app.use((req, res, next) => {
+      const u = String(req.originalUrl || req.url || '');
+      if (!u.includes('/api/cards-canva') && !u.includes('/api/game-rooms')) return next();
+      const start = Date.now();
+      serverEvents.push({ type: 'request', method: req.method, url: u, t: start });
+      res.on('finish', () => serverEvents.push({
+        type: 'response-finish', method: req.method, url: u, status: res.statusCode, ms: Date.now() - start
+      }));
+      res.on('close', () => serverEvents.push({
+        type: 'response-close', method: req.method, url: u,
+        finished: res.writableFinished, ms: Date.now() - start
+      }));
+      next();
+    });
     // Same mounts as the real server.js surfaces the center needs.
     app.use('/api/cards-canva', cardsCanvaRoutes);
     app.use('/api/game-rooms', gameRoomsRoutes.router);
+    // Async route errors → JSON 500 (never silent socket reset).
+    app.use((err, req, res, next) => {
+      serverEvents.push({
+        type: 'express-error',
+        method: req.method,
+        url: req.originalUrl || req.url,
+        message: String((err && err.message) || err)
+      });
+      if (res.headersSent) return next(err);
+      res.status(500).json({ ok: false, message: String((err && err.message) || err) });
+    });
+
     server = app.listen(0, '127.0.0.1');
     await new Promise((resolve) => server.once('listening', resolve));
     baseUrl = `http://127.0.0.1:${server.address().port}`;
+    server.on('clientError', (err, socket) => {
+      serverEvents.push({ type: 'clientError', code: err && err.code, message: err && err.message });
+      try { socket.end('HTTP/1.1 400 Bad Request\r\n\r\n'); } catch (_) {}
+    });
+    server.on('connection', (socket) => {
+      serverEvents.push({ type: 'connection', remotePort: socket.remotePort });
+      socket.on('error', (err) => {
+        serverEvents.push({ type: 'socket-error', code: err && err.code, message: err && err.message });
+      });
+    });
+
     // Content-Type is required so express.json() parses the body; Authorization
     // is the real session. Headers from the caller always win over defaults.
     // Always use the direct undici agent (not env-proxy global fetch).
+    // Connection: close avoids keep-alive ECONNRESET on ephemeral listeners.
     const api = (p, token, opts = {}) => nodeFetch(baseUrl + p, {
       ...opts,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + token,
+        Connection: 'close',
         ...(opts.headers || {})
       }
     });
@@ -329,6 +383,7 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
           statusMessage: (doc.getElementById('statusMessage') || {}).textContent || '',
           locationHref: dom.window.location && dom.window.location.href,
           testBaseUrl: baseUrl,
+          serverEvents: serverEvents.slice(-30),
           jsdomErrors: jsdomErrors.slice(-8)
         }
       };
@@ -416,8 +471,11 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
       }
     } catch (e) {}
     dom = null;
-    try { if (server && server.closeAllConnections) server.closeAllConnections(); } catch (e) {}
+    // Close HTTP server first (stop accepting), then drain agent. Avoid
+    // closeAllConnections() mid-flight during diagnostics — it forces
+    // ECONNRESET on any in-flight undici socket and muddies the signal.
     if (server) await new Promise((resolve) => server.close(() => resolve()));
+    try { await loopbackAgent.close(); } catch (e) {}
     try { await mongoose.disconnect(); } catch (e) {}
     try {
       const child = mongod && (mongod.childProcess || (mongod.instanceInfo && mongod.instanceInfo.instance && mongod.instanceInfo.instance.childProcess));
