@@ -34,5 +34,8 @@ const canvaRoutes = fs.readFileSync(path.resolve(__dirname, '../server/src/route
 assert(canvaRoutes.includes('school-canva-update-20260920.html'), 'new Canva school update must be the active served UI');
 const adapter = fs.readFileSync(path.resolve(__dirname, '../school-canva-adapter.js'), 'utf8');
 assert(adapter.includes('function bootUpdatedCanva()'), 'new Canva school update must use the Shno Mano data bridge');
+assert(adapter.includes("window.eval('init()')"), 'updated Canva lexical init must be restarted after installing the data bridge');
+const loader = fs.readFileSync(path.resolve(__dirname, '../school-canva.html'), 'utf8');
+assert(loader.includes('school-canva-adapter.js?v=20260920-update-2'), 'loader must cache-bust the updated data bridge');
 
 console.log('PASS: school Canva update preserved exactly (62607 bytes)');

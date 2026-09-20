@@ -249,7 +249,15 @@
       (out[0].students || []).forEach(function (s) { result.push({ __backendId: 'student:' + s._id, record_type: 'student', student_name: s.name, stage: s.stage, grade: s.grade }); });
       rows = result; realCurriculumFiles = Array.isArray(out[4].files) ? out[4].files : []; emit(); patchCurriculumFiles();
     });
-    try { if (typeof window.init === 'function') window.init(); } catch (e) {}
+    // Top-level `const handler` in the Canva export lives in the global
+    // lexical environment. Calling through same-realm eval reliably reaches
+    // its `init()` even when the function is not exposed as window.init.
+    try {
+      if (typeof window.init === 'function') window.init();
+      else window.eval('init()');
+    } catch (e) {
+      try { window.eval('init()'); } catch (ignored) {}
+    }
     return true;
   }
 
