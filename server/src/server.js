@@ -37,6 +37,7 @@ const smartFriendToolsRoutes = require('./routes/smart-friend-tools.routes');
 const schoolRoutes = require('./routes/school.routes');
 const schoolSyncRoutes = require('./routes/school-sync.routes');
 const schoolCanvaRoutes = require('./routes/school-canva.routes');
+const cardsCanvaRoutes = require('./routes/cards-canva.routes');
 const { attachSocket } = require('./socket');
 const { attachSchoolSocket } = require('./socket-school');
 
@@ -93,6 +94,10 @@ app.use('/api/smart-friend', smartFriendRoutes);
 // school routers; path-disjoint from them.
 app.use('/api/school', schoolCanvaRoutes);
 app.use('/api/school-canva', schoolCanvaRoutes);
+// Canva cards-center original (immutable) adapter surface: /original,
+// /center/config and the server-authoritative /rooms/:id/spectate pair.
+// Room creation/joins/moves stay on the real /api/game-rooms surface.
+app.use('/api/cards-canva', cardsCanvaRoutes);
 app.use('/api/school', schoolSyncRoutes);
 app.use('/api/school', schoolRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
