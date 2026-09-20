@@ -5,7 +5,7 @@
   "description": "Shno Mano Tak Tak Iraqi platform",
   "main": "server/src/server.js",
   "scripts": {
-    "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-runtime.js",
+    "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-update.js && node tests/api-school-canva-runtime.js",
     "download:school-curriculum": "node scripts/download-iraqi-curriculum.js",
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
