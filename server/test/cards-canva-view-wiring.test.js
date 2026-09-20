@@ -49,21 +49,99 @@ process.env.JWT_SECRET = 'test-secret-cards-canva-dom';
     }
   }
 })();
-// Keep-alive reuse against an ephemeral Express listener is a known source of
-// intermittent `read ECONNRESET` on some hosts (Oracle): the pooled socket is
-// half-closed by the server while undici still tries to write the next request.
-// Disable pipelining and force Connection: close so each API call is a fresh
-// TCP handshake to 127.0.0.1 — slower but deterministic for this harness.
-const loopbackAgent = new Agent({
-  keepAliveTimeout: 1,
-  keepAliveMaxTimeout: 1,
-  connections: 1,
-  pipelining: 0
-});
-const nodeFetch = (url, init = {}) => {
-  const headers = Object.assign({}, init.headers || {}, { Connection: 'close' });
-  return undiciFetch(String(url), { ...init, headers, dispatcher: loopbackAgent });
-};
+
+// undici does not accept jsdom Headers; plain objects only.
+function plainHeaders(initHeaders) {
+  const plain = {};
+  try {
+    if (!initHeaders) return plain;
+    if (typeof initHeaders.forEach === 'function') {
+      initHeaders.forEach((v, k) => { plain[String(k)] = String(v); });
+      return plain;
+    }
+    if (Array.isArray(initHeaders)) {
+      for (const pair of initHeaders) {
+        if (pair && pair.length >= 2) plain[String(pair[0])] = String(pair[1]);
+      }
+      return plain;
+    }
+    if (typeof initHeaders === 'object') {
+      for (const k of Object.keys(initHeaders)) plain[k] = String(initHeaders[k]);
+    }
+  } catch (_) {}
+  return plain;
+}
+
+// Per-test undici lifecycle: one Agent created at start, closed ONLY after
+// every in-flight fetch settles. Never share/close a module-level dispatcher
+// across runs (Oracle flakiness: closed agent / half-open keep-alive → fetch failed).
+function createHarnessFetch() {
+  const agent = new Agent({
+    keepAliveTimeout: 1,
+    keepAliveMaxTimeout: 1,
+    connections: 1,
+    pipelining: 0
+  });
+  let chain = Promise.resolve();
+  let inFlight = 0;
+  const fetchLog = [];
+  const processEvents = [];
+
+  // Serialize ALL harness HTTP through one chain so connections:1 never
+  // overlaps two writes on the ephemeral Express listener.
+  function nodeFetch(url, init = {}) {
+    const method = (init && init.method) || 'GET';
+    const headers = plainHeaders(init && init.headers);
+    headers.Connection = 'close';
+    if (!headers['Content-Type'] && !headers['content-type'] && init && init.body) {
+      headers['Content-Type'] = 'application/json';
+    }
+    const run = () => {
+      inFlight++;
+      const started = Date.now();
+      const entry = { method, url: String(url), t: started, hasAuth: Boolean(headers.Authorization || headers.authorization) };
+      fetchLog.push(entry);
+      return undiciFetch(String(url), {
+        method,
+        body: init.body,
+        headers,
+        dispatcher: agent,
+        signal: init.signal
+      }).then((res) => {
+        entry.status = res.status;
+        entry.ms = Date.now() - started;
+        entry.phase = 'response';
+        return res;
+      }).catch((err) => {
+        const cause = err && err.cause;
+        entry.error = String((err && err.message) || err);
+        entry.causeName = cause && cause.name;
+        entry.causeMessage = cause && cause.message;
+        entry.causeCode = cause && cause.code;
+        entry.causeErrno = cause && cause.errno;
+        entry.causeSyscall = cause && cause.syscall;
+        entry.ms = Date.now() - started;
+        entry.phase = 'error';
+        throw err;
+      }).finally(() => { inFlight--; });
+    };
+    const p = chain.then(run, run);
+    // Keep chain alive even when a fetch fails so later calls still run.
+    chain = p.catch(() => {});
+    return p;
+  }
+
+  async function close() {
+    // Drain serialized queue + in-flight.
+    try { await chain; } catch (_) {}
+    for (let i = 0; i < 50 && inFlight > 0; i++) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    try { await agent.close(); } catch (_) {}
+  }
+
+  return { nodeFetch, close, fetchLog, processEvents, getInFlight: () => inFlight };
+}
 
 const User = require('../src/models/User');
 const cardsCanvaRoutes = require('../src/routes/cards-canva.routes');
@@ -105,8 +183,21 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     instance: { args: ['--wiredTigerCacheSizeGB', '0.25'] }
   });
   let server, app, baseUrl, dom;
+  // Fresh Agent+fetch per test invocation (never reuse a closed dispatcher).
+  const harness = createHarnessFetch();
+  const nodeFetch = harness.nodeFetch;
+  const onUnhandled = (err) => {
+    harness.processEvents.push({ type: 'unhandledRejection', message: String((err && err.message) || err), t: Date.now() });
+  };
+  const onUncaught = (err) => {
+    harness.processEvents.push({ type: 'uncaughtException', message: String((err && err.message) || err), t: Date.now() });
+  };
+  process.on('unhandledRejection', onUnhandled);
+  process.on('uncaughtException', onUncaught);
   try {
-    await mongoose.connect(mongod.getUri('shno-cards-canva-dom'));
+    const dbName = 'shno-cards-canva-dom-' + crypto.randomBytes(6).toString('hex');
+    await mongoose.connect(mongod.getUri(dbName));
+    const runId = crypto.randomBytes(4).toString('hex');
     async function makeUser(username, fullName) {
       const user = await User.create({
         fullName, username, contact: username + '@example.com',
@@ -114,9 +205,11 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
       });
       return { user, token: jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' }) };
     }
-    const owner = await makeUser('cards-owner', 'أبو سجاد');
-    const player = await makeUser('cards-player', 'كرار وليد');
-    const viewer = await makeUser('cards-viewer', 'زهراء علي');
+    // Unique usernames per run avoid rare unique-index collisions if a prior
+    // mongod cleanup was incomplete on a slow host.
+    const owner = await makeUser('cards-owner-' + runId, 'أبو سجاد');
+    const player = await makeUser('cards-player-' + runId, 'كرار وليد');
+    const viewer = await makeUser('cards-viewer-' + runId, 'زهراء علي');
     const serverEvents = [];
     app = express();
     app.use(express.json());
@@ -202,15 +295,21 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     assert.equal(config.autoSpectate.reason, 'game-in-progress', 'decision reason is the running game');
 
     // Probe: same POST the adapter will issue, from Node (proves Express path
-    // + auth + undici agent work before jsdom is involved).
+    // + auth + undici agent work before jsdom is involved). Uses the same room;
+    // DELETE fully completes before JSDOM so adapter registration is clean.
     const probe = await api('/api/cards-canva/rooms/' + roomId + '/spectate', viewer.token, { method: 'POST', body: '{}' });
     assert.equal(probe.status, 200, 'probe spectate HTTP status');
     const probeBody = await probe.json();
     assert.equal(probeBody.ok, true, 'probe spectate ok');
     assert.equal(probeBody.isSpectator, true, 'probe isSpectator');
-    // Leave so the adapter's own POST is the registration under test (idempotent
-    // either way, but keeps spectatorCount transitions realistic).
-    await api('/api/cards-canva/rooms/' + roomId + '/spectate', viewer.token, { method: 'DELETE', body: '{}' });
+    const leave = await api('/api/cards-canva/rooms/' + roomId + '/spectate', viewer.token, { method: 'DELETE', body: '{}' });
+    assert.equal(leave.status, 200, 'probe leave spectate HTTP status');
+    const leaveBody = await leave.json();
+    assert.equal(leaveBody.ok, true, 'probe leave ok');
+    // Confirm server document has zero spectators before adapter boot.
+    const preDomRoom = await (await api('/api/game-rooms/' + roomId, viewer.token)).json();
+    assert.equal(preDomRoom.ok, true);
+    assert.equal((preDomRoom.room.spectators || []).length, 0, 'room must have 0 spectators before JSDOM auto-spectate');
 
     // Give the adapter absolute same-origin API roots derived from THIS server
     // (still no hardcoded production host). Relative roots also work when
@@ -298,7 +397,17 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
               cause: { code: 'ERR_TEST_ORIGIN_MISMATCH', message: 'refusing non-test origin ' + abs, address: abs }
             }));
           }
-          return nodeFetch(abs, init).catch((err) => {
+          // Normalize headers (jsdom Headers → plain) before undici.
+          const method = (init && init.method) || 'GET';
+          const headers = plainHeaders(init && init.headers);
+          headers.Connection = 'close';
+          if (!headers.Authorization && !headers.authorization) {
+            try {
+              const tok = window.localStorage.getItem('token');
+              if (tok) headers.Authorization = 'Bearer ' + tok;
+            } catch (_) {}
+          }
+          return nodeFetch(abs, { method, headers, body: init && init.body }).catch((err) => {
             const cause = err && err.cause;
             const wrapped = new TypeError('fetch failed');
             wrapped.cause = {
@@ -310,9 +419,10 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
               address: cause && cause.address,
               port: cause && cause.port,
               resolvedUrl: abs,
-              method: (init && init.method) || 'GET',
+              method,
               baseUrl,
-              pageBase
+              pageBase,
+              hasAuth: Boolean(headers.Authorization || headers.authorization)
             };
             throw wrapped;
           });
@@ -383,7 +493,10 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
           statusMessage: (doc.getElementById('statusMessage') || {}).textContent || '',
           locationHref: dom.window.location && dom.window.location.href,
           testBaseUrl: baseUrl,
-          serverEvents: serverEvents.slice(-30),
+          serverEvents: serverEvents.slice(-40),
+          fetchLog: harness.fetchLog.slice(-40),
+          processEvents: harness.processEvents.slice(-20),
+          inFlight: harness.getInFlight(),
           jsdomErrors: jsdomErrors.slice(-8)
         }
       };
@@ -446,15 +559,12 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     const uncaught = jsdomErrors.filter((e) => /Uncaught/i.test(e));
     assert.deepEqual(uncaught, [], 'no uncaught page errors: ' + jsdomErrors.join(' | '));
   } finally {
-    // Harness teardown only. The Tailwind CDN script keeps a MutationObserver
-    // alive after the assertions pass; any rejection it throws once the realm
-    // is gone is a teardown artefact, not a product failure. Swallow those
-    // specifically so node:test does not promote them into a FAIL, then kill
-    // the in-memory mongod hard so the process always exits.
+    // Teardown order: stop page timers → drain fetches → close HTTP → close
+    // Agent → disconnect mongoose → stop mongod. Never closeAllConnections
+    // while undici may still be reading (forces false ECONNRESET).
     const swallow = (err) => {
       const msg = String((err && err.message) || err || '');
       if (/querySelectorAll|MutationObserver|tailwind/i.test(msg)) return;
-      // Re-surface anything unexpected so real bugs still fail the run.
       throw err;
     };
     process.on('unhandledRejection', swallow);
@@ -462,8 +572,6 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
       if (dom && dom.window) {
         try { if (typeof dom.window.stop === 'function') dom.window.stop(); } catch (e) {}
         try {
-          // Cancel the original's 1s timer so it cannot keep the event loop
-          // alive after the assertions have already proven the contract.
           if (typeof dom.window.clearInterval === 'function') {
             for (let i = 1; i < 10000; i++) dom.window.clearInterval(i);
           }
@@ -471,11 +579,8 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
       }
     } catch (e) {}
     dom = null;
-    // Close HTTP server first (stop accepting), then drain agent. Avoid
-    // closeAllConnections() mid-flight during diagnostics — it forces
-    // ECONNRESET on any in-flight undici socket and muddies the signal.
+    try { await harness.close(); } catch (e) {}
     if (server) await new Promise((resolve) => server.close(() => resolve()));
-    try { await loopbackAgent.close(); } catch (e) {}
     try { await mongoose.disconnect(); } catch (e) {}
     try {
       const child = mongod && (mongod.childProcess || (mongod.instanceInfo && mongod.instanceInfo.instance && mongod.instanceInfo.instance.childProcess));
@@ -486,5 +591,7 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
       ]);
     } catch (e) {}
     process.removeListener('unhandledRejection', swallow);
+    process.removeListener('unhandledRejection', onUnhandled);
+    process.removeListener('uncaughtException', onUncaught);
   }
 });
