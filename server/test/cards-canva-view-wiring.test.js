@@ -34,8 +34,23 @@ const jwt = require('jsonwebtoken');
 const { MongoMemoryServer } = require('mongodb-memory-server-core');
 const { JSDOM, VirtualConsole, requestInterceptor } = require('jsdom');
 const vm = require('node:vm');
+// undici Agent: direct connect (no HTTP(S)_PROXY) so jsdom-harness fetches to
+// 127.0.0.1 reach the in-process Express server on locked-down Oracle hosts.
+const { Agent, fetch: undiciFetch } = require('undici');
 
 process.env.JWT_SECRET = 'test-secret-cards-canva-dom';
+// Never send loopback API traffic through a corporate/outbound proxy.
+(function ensureLoopbackNoProxy() {
+  const extra = '127.0.0.1,localhost,::1';
+  for (const key of ['NO_PROXY', 'no_proxy']) {
+    const cur = String(process.env[key] || '');
+    if (!/(?:^|,)\s*127\.0\.0\.1\s*(?:,|$)/i.test(cur)) {
+      process.env[key] = cur ? (cur + ',' + extra) : extra;
+    }
+  }
+})();
+const loopbackAgent = new Agent({ keepAliveTimeout: 1000, connections: 8 });
+const nodeFetch = (url, init = {}) => undiciFetch(String(url), { ...init, dispatcher: loopbackAgent });
 
 const User = require('../src/models/User');
 const cardsCanvaRoutes = require('../src/routes/cards-canva.routes');
@@ -99,7 +114,8 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     baseUrl = `http://127.0.0.1:${server.address().port}`;
     // Content-Type is required so express.json() parses the body; Authorization
     // is the real session. Headers from the caller always win over defaults.
-    const api = (p, token, opts = {}) => fetch(baseUrl + p, {
+    // Always use the direct undici agent (not env-proxy global fetch).
+    const api = (p, token, opts = {}) => nodeFetch(baseUrl + p, {
       ...opts,
       headers: {
         'Content-Type': 'application/json',
@@ -131,11 +147,29 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
     assert.equal(config.autoSpectate.roomId, roomId, 'server picked the running cards room');
     assert.equal(config.autoSpectate.reason, 'game-in-progress', 'decision reason is the running game');
 
+    // Probe: same POST the adapter will issue, from Node (proves Express path
+    // + auth + undici agent work before jsdom is involved).
+    const probe = await api('/api/cards-canva/rooms/' + roomId + '/spectate', viewer.token, { method: 'POST', body: '{}' });
+    assert.equal(probe.status, 200, 'probe spectate HTTP status');
+    const probeBody = await probe.json();
+    assert.equal(probeBody.ok, true, 'probe spectate ok');
+    assert.equal(probeBody.isSpectator, true, 'probe isSpectator');
+    // Leave so the adapter's own POST is the registration under test (idempotent
+    // either way, but keeps spectatorCount transitions realistic).
+    await api('/api/cards-canva/rooms/' + roomId + '/spectate', viewer.token, { method: 'DELETE', body: '{}' });
+
+    // Give the adapter absolute same-origin API roots derived from THIS server
+    // (still no hardcoded production host). Relative roots also work when
+    // location.href is the test origin; absolute roots remove ambiguity.
+    config.restApiUrl = baseUrl + '/api/cards-canva';
+    config.gameRoomsApi = baseUrl + '/api/game-rooms';
+    config.pageOrigin = baseUrl + '/cards-canva.html';
+
     // 3) The served original: disk bytes stay the approved artifact; the
     //    served copy differs ONLY by the documented Canva-SDK adaptation
     //    (the four /_sdk/*.js tags -> inline dataSdk compatibility shim).
     const diskHtml = read(path.join(ROOT, 'original-assets/cards-canva/cards-canva-original.html'));
-    const servedRes = await fetch(baseUrl + '/api/cards-canva/original');
+    const servedRes = await nodeFetch(baseUrl + '/api/cards-canva/original');
     assert.equal(servedRes.status, 200);
     const servedHtml = await servedRes.text();
     assert.ok(diskHtml.includes('src="/_sdk/'), 'disk original still references the Canva-hosted SDKs');
@@ -182,18 +216,52 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
       virtualConsole,
       interceptors,
       beforeParse(window) {
-        // Real network for the page's API calls (same origin as the test server).
-        // Keep window.fetch stub as a second line of defence for any scripted
-        // CDN fetches; ResourceLoader is covered by interceptors above.
-        window.fetch = (input, init) => {
-          const url = typeof input === 'string' ? input : (input && input.url) || '';
-          const abs = /^https?:/i.test(url) ? url : new URL(url, baseUrl).href;
+        // Bind Node/undici fetch EXPLICITLY (loopback agent, no env proxy).
+        // Do not call bare `fetch` — inside some hosts that can resolve to a
+        // broken/recursive window.fetch or a proxy-backed global.
+        const pageBase = baseUrl + '/cards-canva.html';
+        window.fetch = (input, init = {}) => {
+          let url = '';
+          try {
+            if (typeof input === 'string') url = input;
+            else if (input && typeof input.url === 'string') url = input.url;
+            else if (input && typeof input.href === 'string') url = input.href;
+          } catch (_) { url = String(input || ''); }
+          let abs;
+          try {
+            abs = /^https?:\/\//i.test(url) ? url : new URL(url, pageBase).href;
+          } catch (e) {
+            return Promise.reject(e);
+          }
           if (externalAsset(abs)) {
             return Promise.resolve(new Response('/* stubbed in test harness */', {
               status: 200, headers: { 'Content-Type': 'application/javascript' }
             }));
           }
-          return fetch(abs, init);
+          // Only allow harness traffic to our ephemeral test origin.
+          if (!abs.startsWith(baseUrl)) {
+            return Promise.reject(Object.assign(new TypeError('fetch failed'), {
+              cause: { code: 'ERR_TEST_ORIGIN_MISMATCH', message: 'refusing non-test origin ' + abs, address: abs }
+            }));
+          }
+          return nodeFetch(abs, init).catch((err) => {
+            const cause = err && err.cause;
+            const wrapped = new TypeError('fetch failed');
+            wrapped.cause = {
+              name: cause && cause.name,
+              message: (cause && cause.message) || (err && err.message),
+              code: cause && cause.code,
+              errno: cause && cause.errno,
+              syscall: cause && cause.syscall,
+              address: cause && cause.address,
+              port: cause && cause.port,
+              resolvedUrl: abs,
+              method: (init && init.method) || 'GET',
+              baseUrl,
+              pageBase
+            };
+            throw wrapped;
+          });
         };
         window.Headers = Headers;
         window.localStorage.setItem('token', viewer.token);
@@ -253,11 +321,14 @@ test('cards center views wire to real rooms with server-authoritative auto-spect
         detail: {
           ready: st && st.ready,
           error: st && st.error,
+          lastFetch: st && st.lastFetch,
           spectating: st && st.spectating,
           tableau: st && st.tableau,
           roomViewClass: roomView && roomView.className,
           spectatorCountText: count && count.textContent,
           statusMessage: (doc.getElementById('statusMessage') || {}).textContent || '',
+          locationHref: dom.window.location && dom.window.location.href,
+          testBaseUrl: baseUrl,
           jsdomErrors: jsdomErrors.slice(-8)
         }
       };

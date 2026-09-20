@@ -35,13 +35,52 @@
     if (extra) Object.keys(extra).forEach(function (k) { h[k] = extra[k]; });
     return h;
   }
+  // Deterministic absolute URL: relative paths resolve against the page location
+  // (same-origin in production; test harness sets location to the Express base).
+  // Never hardcode host/port/domain.
+  function resolveUrl(path) {
+    if (!path) return path;
+    if (/^https?:\/\//i.test(path)) return path;
+    try {
+      var base = (window.location && window.location.href) || cfg.pageOrigin || '';
+      if (!base) return path;
+      return new URL(path, base).href;
+    } catch (e) {
+      return path;
+    }
+  }
+  function captureFetchError(method, url, err) {
+    var cause = err && err.cause;
+    state.lastFetch = {
+      method: method,
+      url: url,
+      base: (window.location && window.location.href) || null,
+      pageOrigin: cfg.pageOrigin || null,
+      apiRoot: api,
+      gameRoomsApi: gameRoomsApi,
+      name: err && err.name,
+      message: err && err.message,
+      causeName: cause && cause.name,
+      causeMessage: cause && cause.message,
+      causeCode: cause && cause.code,
+      causeErrno: cause && cause.errno,
+      causeSyscall: cause && cause.syscall,
+      causeAddress: cause && cause.address,
+      causePort: cause && cause.port
+    };
+  }
   function getJson(path) {
-    return window.fetch(path, { headers: authHeaders() })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); });
+    var url = resolveUrl(path);
+    return window.fetch(url, { headers: authHeaders() })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); })
+      .catch(function (err) { captureFetchError('GET', url, err); throw err; });
   }
   function postJson(path, body, method) {
-    return window.fetch(path, { method: method || 'POST', headers: authHeaders(), body: JSON.stringify(body || {}) })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); });
+    var url = resolveUrl(path);
+    var m = method || 'POST';
+    return window.fetch(url, { method: m, headers: authHeaders(), body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); })
+      .catch(function (err) { captureFetchError(m, url, err); throw err; });
   }
 
   // The original declares `room`, `settings`, renderRoom(), showView() and
