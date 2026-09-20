@@ -258,7 +258,8 @@ function repairCanvaExport(html) {
 router.get('/original', (_req, res) => {
   res.type('html');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-original.html');
+  // Previous approved original remains in git for instant rollback.
+  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-update-20260920.html');
   fs.readFile(file, (err, buf) => {
     if (err) return res.status(500).json({ ok: false, message: 'فشل تحميل الأصل' });
     res.end(repairCanvaExport(buf.toString('utf8')));

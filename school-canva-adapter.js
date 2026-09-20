@@ -200,6 +200,59 @@
       });
   }
 
+  // Bridge the 2026-09-20 Canva update's dataSdk contract to the real,
+  // authenticated Shno Mano school APIs without modifying the Canva asset.
+  function bootUpdatedCanva() {
+    if (!document.getElementById('structure-list')) return false;
+    var rows = [], subscriber = null, sequence = 0;
+    function emit() { if (subscriber && typeof subscriber.onDataChanged === 'function') subscriber.onDataChanged(rows.slice()); }
+    function save(record) {
+      var opId = String(record.operation_id || ('school-canva-' + Date.now() + '-' + (++sequence)));
+      return window.fetch('/api/school/operations', { method: 'POST', headers: {
+        'Content-Type': 'application/json', Authorization: 'Bearer ' + token(), 'Idempotency-Key': opId
+      }, body: JSON.stringify(record) }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok && body.isOk !== false, body: body }; });
+      });
+    }
+    window.dataSdk = {
+      init: function (handler) { subscriber = handler; setTimeout(emit, 0); return Promise.resolve({ isOk: true }); },
+      create: function (record) { return save(record).then(function (out) {
+        if (!out.ok) return { isOk: false, error: out.body.message || 'تعذر الحفظ' };
+        rows.unshift(Object.assign({}, record, { __backendId: String(record.operation_id || Date.now()) })); emit(); return { isOk: true };
+      }).catch(function (e) { return { isOk: false, error: e.message }; }); },
+      update: function (record) { return save(record).then(function (out) {
+        if (!out.ok) return { isOk: false, error: out.body.message || 'تعذر التعديل' };
+        var i = rows.findIndex(function (x) { return x.__backendId === record.__backendId; });
+        if (i >= 0) rows[i] = Object.assign({}, record); emit(); return { isOk: true };
+      }).catch(function (e) { return { isOk: false, error: e.message }; }); },
+      delete: function () { return Promise.resolve({ isOk: false, error: 'الحذف يحتاج اعتماد إدارة شنو منو' }); }
+    };
+    var get = function (path) { return api(path).catch(function () { return {}; }); };
+    Promise.all([get('/api/school/students'), get('/api/school/teachers'), get('/api/school/curriculum/offline-pack'),
+      get('/api/school/curriculum/catalog'), get('/api/school/curriculum/files')]).then(function (out) {
+      var result = [], seen = {};
+      function unique(type, key, fields) { var value = String(fields[key] || ''), id = type + ':' + value;
+        if (!value || seen[id]) return; seen[id] = true; result.push(Object.assign({ __backendId: id, record_type: type, operation_status: 'مؤكد من شنو منو' }, fields)); }
+      (out[3].items || []).forEach(function (item) {
+        unique('stage', 'stage', { stage: item.stage }); unique('grade', 'grade', { stage: item.stage, grade: item.grade });
+        unique('subject', 'subject', { stage: item.stage, grade: item.grade, subject: item.subject });
+        result.push({ __backendId: 'catalog:' + item.id, record_type: 'curriculum', curriculum_file_name: item.title,
+          curriculum_stage: item.stage, curriculum_grade: item.grade, curriculum_subject: item.subject,
+          curriculum_file_type: 'application/pdf', curriculum_status: 'مفهرس في شنو منو', curriculum_description: item.content || '' });
+      });
+      (out[1].teachers || []).forEach(function (t) { result.push({ __backendId: 'teacher:' + t.id, record_type: 'teacher',
+        teacher_name: t.name, teacher_gender: t.gender, teacher_id: String(t.id), teacher_email: String(t.id), teacher_bio: t.style || t.motto || '',
+        teacher_presence: t.status || 'متاح الآن', teacher_grades: Array.isArray(t.grades) ? t.grades.join('، ') : String(t.grades || ''), subject: t.subject, stage: t.stage }); });
+      (out[2].items || []).forEach(function (item) { if (item.lesson) result.push({ __backendId: 'lesson:' + item.id, record_type: 'lesson',
+        stage: item.stage, grade: item.grade, subject: item.subject, unit: item.chapter || '', lesson: item.lesson,
+        lesson_content: item.content || '', lesson_question: item.question || '', exam_question_text: item.question || '' }); });
+      (out[0].students || []).forEach(function (s) { result.push({ __backendId: 'student:' + s._id, record_type: 'student', student_name: s.name, stage: s.stage, grade: s.grade }); });
+      rows = result; realCurriculumFiles = Array.isArray(out[4].files) ? out[4].files : []; emit(); patchCurriculumFiles();
+    });
+    try { if (typeof window.init === 'function') window.init(); } catch (e) {}
+    return true;
+  }
+
   // Adapter-level request transformation: when the guardian has a real
   // student on Shno Mano, Canva queue records are synced to that student
   // instead of the demo student. The original's body bytes are never
@@ -780,6 +833,7 @@
   }
 
   function boot() {
+    if (bootUpdatedCanva()) return;
     // Wrap the original's render functions first, so every later re-render
     // (user filter, save(), consent click, ...) keeps the real-data patches.
     wrapRender('renderTeachers', patchTeachersView);

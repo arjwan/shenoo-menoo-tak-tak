@@ -30,4 +30,9 @@ for (const marker of [
   'window.dataSdk.delete'
 ]) assert(html.includes(marker), `missing update marker: ${marker}`);
 
+const canvaRoutes = fs.readFileSync(path.resolve(__dirname, '../server/src/routes/school-canva.routes.js'), 'utf8');
+assert(canvaRoutes.includes('school-canva-update-20260920.html'), 'new Canva school update must be the active served UI');
+const adapter = fs.readFileSync(path.resolve(__dirname, '../school-canva-adapter.js'), 'utf8');
+assert(adapter.includes('function bootUpdatedCanva()'), 'new Canva school update must use the Shno Mano data bridge');
+
 console.log('PASS: school Canva update preserved exactly (62607 bytes)');
