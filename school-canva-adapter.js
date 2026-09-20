@@ -365,6 +365,7 @@
   var realTeachersRaw = [];
   var realReport = null;
   var realExamKeys = {};
+  var realCurriculumFiles = [];
   var nextSchedule = null;
   var hydrated = false;
 
@@ -396,6 +397,43 @@
       if (count && grid) count.textContent = grid.children.length + ' من ' + realTeachersRaw.length + ' معلمًا (دليل شنو منو)';
       var kicker = document.querySelector('#teachers-view [data-template-id="teachers-kicker"]');
       if (kicker) kicker.textContent = 'دليل المعلمين (شنو منو)';
+    } catch (e) {}
+  }
+
+  function patchCurriculumFiles() {
+    try {
+      if (!realCurriculumFiles.length) return;
+      var list = $id('catalog-list');
+      if (!list) return;
+      var search = $id('library-search');
+      var query = search ? String(search.value || '').trim().toLowerCase() : '';
+      var rows = realCurriculumFiles.filter(function (item) {
+        return !query || String(item.sourcePage || '').toLowerCase().indexOf(query) !== -1 || String(item.fileName || '').toLowerCase().indexOf(query) !== -1;
+      });
+      var frag = document.createDocumentFragment();
+      rows.forEach(function (item, index) {
+        var card = document.createElement('article');
+        card.className = 'record-card';
+        var title = document.createElement('h3');
+        title.className = 'font-extrabold';
+        var sourceCode = '';
+        try { sourceCode = new URL(item.sourcePage).hostname.split('.')[0]; } catch (e) {}
+        title.textContent = 'كتاب المنهج العراقي ' + (sourceCode ? '— ' + sourceCode : 'رقم ' + (index + 1));
+        var details = document.createElement('p');
+        details.className = 'mt-1 font-bold text-[#53706f]';
+        details.textContent = (Number(item.pages) || 0) + ' صفحة · ' + Math.max(1, Math.round((Number(item.bytes) || 0) / 1048576)) + ' MB · موثّق SHA-256';
+        var link = document.createElement('a');
+        link.className = 'mt-3 inline-block rounded-xl bg-[#146c70] px-4 py-2 font-extrabold text-white';
+        link.href = item.url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'فتح وقراءة PDF';
+        card.appendChild(title); card.appendChild(details); card.appendChild(link);
+        frag.appendChild(card);
+      });
+      list.replaceChildren(frag);
+      var kicker = document.querySelector('#library-view [data-template-id="catalog-kicker"]');
+      if (kicker) kicker.textContent = realCurriculumFiles.length + ' كتابًا عراقيًا منشورًا على خادم شنو منو';
     } catch (e) {}
   }
 
@@ -561,11 +599,13 @@
           return !known[[item.stage, item.grade, item.subject].join('|')];
         });
         return { items: downloaded.concat(pending) };
-      })
+      }),
+      get('/api/school/curriculum/files')
     ]).then(function (out) {
       var students = out[0].students || [];
       realTeachersRaw = out[1].teachers || [];
       var packItems = out[4].items || [];
+      realCurriculumFiles = Array.isArray(out[5].files) ? out[5].files : [];
       if (out[2].session) realSessionId = String(out[2].session._id || '');
       var schedules = out[3].schedules || [];
       if (schedules.length) {
@@ -674,6 +714,7 @@
         if (typeof renderConsent === 'function') renderConsent();
         if (typeof renderReport === 'function') renderReport();
         if (typeof renderLibrary === 'function') renderLibrary();
+        patchCurriculumFiles();
         if (typeof renderQueue === 'function') renderQueue();
       } catch (e) {}
 
@@ -745,6 +786,7 @@
     wrapRender('selectTeacher', patchTeacherProfile);
     wrapRender('renderReport', patchReportView);
     wrapRender('renderConsent', patchConsentView);
+    wrapRender('renderLibrary', patchCurriculumFiles);
     try { buildClassroomBar(); } catch (e) {}
     try { buildStatusLine(); } catch (e) {}
     if (!realMode) return;

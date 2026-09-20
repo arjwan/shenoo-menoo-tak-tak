@@ -86,6 +86,10 @@ assert(adapter.includes('/api/school/curriculum/offline-pack'),
   'adapter uses the real curriculum offline-pack (board + library + exam key)');
 assert(adapter.includes('/api/school/curriculum/catalog'),
   'adapter falls back to the versioned Iraqi curriculum catalogue');
+assert(adapter.includes('/api/school/curriculum/files'),
+  'adapter loads the verified 136-file Iraqi curriculum manifest');
+assert(adapter.includes('فتح وقراءة PDF'),
+  'adapter renders a direct PDF reader link for each published book');
 assert(adapter.includes('/api/school/students/'), 'adapter fetches the real per-student report');
 for (const fn of ['populatePath', 'renderTeachers', 'renderConsent', 'renderReport', 'renderLibrary', 'renderQueue']) {
   assert(adapter.includes(fn), 'adapter drives the original render function ' + fn);
