@@ -90,12 +90,24 @@ async function main() {
     assert.equal(reader.readable, true);
     assert.equal(reader.book.file.url, '/uploads/school-curriculum/demo-math.pdf');
 
-    // reader: bare catalogue id is not readable
-    const catId = catalog.items[0].id;
-    const catReader = await (await api('/api/school/books/' + encodeURIComponent(catId) + '/reader')).json();
+    // reader: pending catalogue rows stay unreadable; verified+local rows are readable.
+    const pending = catalog.items.find((x) => x.verified !== true || !x.file || !x.file.url) || catalog.pendingItems?.()[0];
+    // Fall back to scanning require() object shape if helper missing in older copies.
+    const pendingId = pending ? pending.id : (catalog.items.find((x) => x.availability === 'source_pending') || {}).id;
+    assert.ok(pendingId, 'expected at least one still-pending catalogue row');
+    const catReader = await (await api('/api/school/books/' + encodeURIComponent(pendingId) + '/reader')).json();
     assert.equal(catReader.ok, true);
-    assert.equal(catReader.readable, false, 'catalogue-only row is not readable');
+    assert.equal(catReader.readable, false, 'pending catalogue row is not readable');
     assert.ok(['source_pending', 'verified_metadata', 'remote_ok'].includes(catReader.book.availability));
+
+    const availableCat = catalog.items.find((x) => x.verified === true && x.file && x.file.url);
+    if (availableCat) {
+      const okReader = await (await api('/api/school/books/' + encodeURIComponent(availableCat.id) + '/reader')).json();
+      assert.equal(okReader.ok, true);
+      assert.equal(okReader.readable, true, 'verified local catalogue row is readable');
+      assert.equal(okReader.book.availability, 'available');
+      assert.ok(okReader.book.file.url.startsWith('/uploads/school-curriculum/'));
+    }
 
     // classroom options + start/end
     const opts = await (await api('/api/school/classroom/options')).json();

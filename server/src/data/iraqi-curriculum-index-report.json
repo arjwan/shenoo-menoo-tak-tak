@@ -1,0 +1,502 @@
+{
+  "downloaded": 136,
+  "downloadFailed": 0,
+  "integrityOk": 136,
+  "duplicatesShaGroups": 5,
+  "catalogTotal": 108,
+  "catalogMatchedVerified": 95,
+  "catalogPending": 13,
+  "secondaryAttachments": 24,
+  "unmatchedFiles": [
+    {
+      "title": "كتاب الاخلاقية الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "الأخلاقية",
+      "grade": "الأول ابتدائي",
+      "fileName": "1ugtWInqi8S-reTElSAd5r2AXmFUoEQQ2.pdf"
+    },
+    {
+      "title": "كتاب الاخلاقية الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "الأخلاقية",
+      "grade": "الأول متوسط",
+      "fileName": "16srCnJ3Tg3AklT0avA9W_2EwuTIBg74r.pdf"
+    },
+    {
+      "title": "كتاب الاجتماع السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "علم الاجتماع",
+      "grade": "السادس الأدبي",
+      "fileName": "1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ.pdf"
+    },
+    {
+      "title": "كتاب الفرنسي الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الفرنسية",
+      "grade": "الأول متوسط",
+      "fileName": "1ezQhjSp-iy5WH5w7B9KFHC7oz9IIg7Di.pdf"
+    },
+    {
+      "title": "كتاب الفرنسي الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الفرنسية",
+      "grade": "الثاني متوسط",
+      "fileName": "1EWq60HjNaF-qhK7aUMzlTM5aW3Q9xyz2.pdf"
+    },
+    {
+      "title": "كتاب الفرنسي الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الفرنسية",
+      "grade": "الثالث متوسط",
+      "fileName": "1LtIcFgPPMwQvEP9nd0CWukJsdFSL3vY2.pdf"
+    },
+    {
+      "title": "كتاب الفرنسي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الفرنسية",
+      "grade": "الرابع العلمي",
+      "fileName": "1hpw5m2MWFCG7kmdsil_mokJL4BGlyarx.pdf"
+    },
+    {
+      "title": "كتاب الفرنسي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الفرنسية",
+      "grade": "الخامس العلمي",
+      "fileName": "13UGlatauNK0a3pPJQm7IlxgpIoBT8kLf.pdf"
+    },
+    {
+      "title": "كتاب الفرنسي السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الفرنسية",
+      "grade": "السادس العلمي",
+      "fileName": "1t8EGkpCnRhcxFcB_2UiR3QHnR0nXBF5v.pdf"
+    },
+    {
+      "title": "كتاب علم الارض الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "علم الأرض",
+      "grade": "الخامس العلمي",
+      "fileName": "1mwwFLVIlDkd52y9fPx53z2s6ezhUIMwl.pdf"
+    },
+    {
+      "title": "كتاب الكردي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الكردية",
+      "grade": "الرابع العلمي",
+      "fileName": "1sfVcAm2bzI_reNiMgF0LnSAfg6sspfFI.pdf"
+    },
+    {
+      "title": "كتاب الكردي الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الكردية",
+      "grade": "الرابع الأدبي",
+      "fileName": "18rATzLGoPiY3PN1ATIB734TeEhHTom0d.pdf"
+    },
+    {
+      "title": "كتاب الكردي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الكردية",
+      "grade": "الخامس العلمي",
+      "fileName": "1EnT-h07QHvqMb0cfOZUmU2oF2X5HEhRi.pdf"
+    },
+    {
+      "title": "كتاب القراءة الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "القراءة",
+      "grade": "الخامس ابتدائي",
+      "fileName": "1S9P_4htwstxFyk5RKoccW4bnN9DPlwo6.pdf"
+    },
+    {
+      "title": "كتاب القراءة الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "القراءة",
+      "grade": "الرابع ابتدائي",
+      "fileName": "1Ea8lcedAR_7JPhiwVGLu1J4QizhxXDIR.pdf"
+    },
+    {
+      "title": "كتاب القراءة السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "القراءة",
+      "grade": "السادس ابتدائي",
+      "fileName": "1YsbcKHGfzCO6d1d0aXykdh1SOFsTnnH6.pdf"
+    },
+    {
+      "title": "كتاب نشاط الانكليزي السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "subject": "اللغة الإنكليزية",
+      "grade": "السادس الأدبي",
+      "fileName": "1ZqH-ZHT2C6cqS-Ud2m_43Xa89PFmcWRr.pdf"
+    }
+  ],
+  "unmatchedCatalog": [
+    {
+      "id": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYp9is2KrZhdin2LnZitin2Ko",
+      "title": "كتاب الاجتماعيات — الثالث ابتدائي",
+      "sourceType": "official_textbook",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "الاجتماعيات",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الاجتماعيات للصف الثالث ابتدائي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الثالث ابتدائي",
+        "الاجتماعيات"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNit2KfYs9mI2Kg",
+      "title": "كتاب الحاسوب — الثالث متوسط",
+      "sourceType": "official_textbook",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "الحاسوب",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الحاسوب للصف الثالث متوسط",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الثالث متوسط",
+        "الحاسوب"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "title": "كتاب اللغة العربية — الرابع الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "اللغة العربية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة العربية للصف الرابع الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الرابع الأدبي",
+        "اللغة العربية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "title": "كتاب اللغة الإنكليزية — الرابع الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "اللغة الإنكليزية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة الإنكليزية للصف الرابع الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الرابع الأدبي",
+        "اللغة الإنكليزية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2K3Yp9iz2YjYqA",
+      "title": "كتاب الحاسوب — الرابع الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "الحاسوب",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الحاسوب للصف الرابع الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الرابع الأدبي",
+        "الحاسوب"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "title": "كتاب اللغة العربية — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "اللغة العربية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة العربية للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "اللغة العربية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "title": "كتاب التربية الإسلامية — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "التربية الإسلامية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة التربية الإسلامية للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "التربية الإسلامية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "title": "كتاب اللغة الإنكليزية — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "اللغة الإنكليزية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة الإنكليزية للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "اللغة الإنكليزية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2K3Yp9iz2YjYqA",
+      "title": "كتاب الحاسوب — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "الحاسوب",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الحاسوب للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "الحاسوب"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "title": "كتاب اللغة العربية — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "اللغة العربية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة العربية للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "اللغة العربية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "title": "كتاب التربية الإسلامية — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "التربية الإسلامية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة التربية الإسلامية للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "التربية الإسلامية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "title": "كتاب اللغة الإنكليزية — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "اللغة الإنكليزية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة الإنكليزية للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "اللغة الإنكليزية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2KfZgtiq2LXYp9iv",
+      "title": "كتاب الاقتصاد — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "الاقتصاد",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الاقتصاد للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "الاقتصاد"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      },
+      "claimed": false
+    }
+  ],
+  "readableNow": 95,
+  "manifestAvailable": 136,
+  "notes": [
+    "All 136 manifest PDFs downloaded via Drive usercontent, PDF header + size + sha256 verified.",
+    "Catalog rows marked verified/available only when a primary textbook PDF was mapped and present on disk.",
+    "Unmatched files are real extras (French/Kurdish/Ethics/Earth science/etc.) not represented in the 108-row core catalogue.",
+    "Unmatched catalogue rows lack a primary PDF in the 136-file source set for that grade/subject.",
+    "Lesson outlines are page-window indexes (no pdftotext in environment); structure is navigational only."
+  ]
+}

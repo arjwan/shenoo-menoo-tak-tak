@@ -43,11 +43,15 @@ function enrichCatalogItem(item, fileMap) {
     verified: item.verified === true,
     availability: item.availability || 'source_pending',
     sourceUrl: item.sourceUrl || '',
+    chapter: item.chapter || '',
+    lesson: item.lesson || '',
     file: {
       url: (item.file && item.file.url) || '',
       originalName: (item.file && item.file.originalName) || '',
       mimeType: (item.file && item.file.mimeType) || 'application/pdf',
-      size: (item.file && item.file.size) || 0
+      size: (item.file && item.file.size) || 0,
+      pages: (item.file && item.file.pages) || 0,
+      sha256: (item.file && item.file.sha256) || ''
     }
   };
   // A catalogue row is "available" only when a real file is on disk (or a
@@ -207,6 +211,19 @@ router.get('/books', async (req, res, next) => {
       items: combined
     });
   } catch (e) { next(e); }
+});
+
+
+router.get('/books/:id/outline', (req, res) => {
+  try {
+    const outlines = require('../data/iraqi-curriculum-outlines.json');
+    const id = String(req.params.id || '');
+    const book = (outlines.books || []).find((b) => b.catalogId === id);
+    if (!book) return res.status(404).json({ ok: false, message: 'لا يوجد فهرس لهذا الكتاب' });
+    res.json({ ok: true, book });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message });
+  }
 });
 
 router.get('/books/:id/reader', async (req, res, next) => {
