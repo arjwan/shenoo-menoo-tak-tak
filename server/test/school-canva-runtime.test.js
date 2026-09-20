@@ -56,7 +56,11 @@ async function call(method, path, { token, body, headers } = {}) {
 }
 
 test('school canva REST: full runtime lifecycle on real models', { timeout: 120000 }, async () => {
-  mongod = await MongoMemoryServer.create();
+  // /tmp is a small tmpfs in CI sandboxes: shrink WiredTiger's cache so the
+  // in-memory instance fits (default ~480M cache would overflow it).
+  mongod = await MongoMemoryServer.create({
+    instance: { args: ['--wiredTigerCacheSizeGB', '0.25'] }
+  });
   await mongoose.connect(mongod.getUri('shno-school-canva-test'));
   const alice = await makeUser('أبو ليان', 'guardian-a', 'a@example.com');
   const bob = await makeUser('أبو كريم', 'guardian-b', 'b@example.com');

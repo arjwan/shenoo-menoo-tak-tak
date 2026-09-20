@@ -21,9 +21,17 @@
  *     delivered only if the server configured it from environment. Media is
  *     started exclusively by the original's own consent-gated buttons —
  *     this adapter never calls getUserMedia and never auto-starts media.
- *  4. Demo fallback: if the platform config is unavailable, the original
- *     keeps running in its untouched demo mode (localStorage + IndexedDB
- *     queue + dataSdk stub so its sync path stays exercisable).
+ *  4. View wiring: the original renders every page from its own top-level
+ *     data globals (state, teachers, stages, subjectMap, lessons,
+ *     state.library) and its render functions. The adapter feeds those
+ *     globals with the guardian's real Shno Mano data (student, teachers,
+ *     curriculum offline-pack, sessions, consents, scores, notes) and then
+ *     drives the original's own render functions + small DOM patches, so
+ *     home/path/teachers/class/exam/report/consent/library/settings all
+ *     show the real account. The original's bytes are never modified.
+ *  5. Demo fallback: if the platform config is unavailable (or any fetch
+ *     fails), the original keeps running in its untouched demo mode
+ *     (localStorage + IndexedDB queue + dataSdk stub).
  *
  * No secrets are present in this file; the session token is read at runtime
  * from the same localStorage/sessionStorage keys every other page uses.
@@ -313,6 +321,7 @@
       if (d.type === 'participants' && d.roomId === ui.roomId) {
         var names = (d.participants || []).map(function (p) { return p.name || p.id; });
         ui.participantsEl.textContent = names.length ? 'في الصف: ' + names.join('، ') : 'لا يوجد مشاركون بعد';
+        patchSeats(d.participants || []);
         if (d.left) notify('غادر أحد المشاركين الصف.');
       }
       if (d.type === 'live' && d.roomId === ui.roomId) {
@@ -336,8 +345,9 @@
         'STUN: ' + (config.stunUrl || 'غير مهيأ'),
         'TURN: ' + ((Array.isArray(config.turnServers) && config.turnServers.length) ? 'مهيأ من الخادم' : 'غير مهيأ (يُضبط من بيئة الخادم)'),
         'حصة جارية: ' + (realSessionId ? realSessionId : 'لا توجد'),
+        nextSchedule ? 'درس مجدول: ' + nextSchedule.subject + ' — ' + nextSchedule.when : '',
         'المعلم الذكي (AI): ' + (window.__shnoAiStatus ? window.__shnoAiStatus : '—')
-      ];
+      ].filter(Boolean);
       ui.statusEl.textContent = lines.join(' · ');
     }
     render();
@@ -345,51 +355,343 @@
   }
 
   // ---------------------------------------------------------------------
-  // 6) Real data hydration (non-destructive; every step fails soft so the
-  //    demo app keeps working when the platform is unreachable).
+  // 6) View wiring: feed the original's own data globals (state, teachers,
+  //    stages, subjectMap, lessons, state.library) with the guardian's real
+  //    Shno Mano data, drive the original's render functions, and apply
+  //    small DOM patches for the few values the original hard-codes. Every
+  //    step fails soft — on any failure the original's demo content stays
+  //    exactly as authored.
   // ---------------------------------------------------------------------
-  function hydrateTeachers() {
-    return api('/api/school/teachers').then(function (d) {
-      var real = (d.teachers || []).map(function (t) {
-        return {
-          id: t.id, name: t.name, gender: t.gender, subject: t.subject, stage: t.stage,
-          grades: Array.isArray(t.grades) ? t.grades.join('، ') : String(t.grades || ''),
-          experience: t.experience, presence: t.status || 'متاح الآن',
-          language: t.language || 'عربية عراقية', rating: Number(t.rating) || 5
-        };
-      });
-      if (!real.length) return;
-      try {
-        if (typeof teachers !== 'undefined' && Array.isArray(teachers)) {
-          teachers.splice(0, teachers.length);
-          real.forEach(function (t) { teachers.push(t); });
-          if (typeof renderTeachers === 'function') renderTeachers();
-        }
-      } catch (e) { /* demo teachers remain */ }
-    }).catch(function () {});
+  var realTeachersRaw = [];
+  var realReport = null;
+  var realExamKeys = {};
+  var nextSchedule = null;
+  var hydrated = false;
+
+  function $id(id) { try { return document.getElementById(id); } catch (e) { return null; } }
+  function textOf(id, value) { var n = $id(id); if (n) n.textContent = value; }
+
+  // Wrap an original render function (top-level function declaration ->
+  // window property) so a DOM patch re-applies after every real render.
+  function wrapRender(name, after) {
+    try {
+      var orig = window[name];
+      if (typeof orig !== 'function' || orig.__shnoWrapped) return false;
+      var patched = function () {
+        var r = orig.apply(this, arguments);
+        try { after(); } catch (e) {}
+        return r;
+      };
+      patched.__shnoWrapped = true;
+      window[name] = patched;
+      return true;
+    } catch (e) { return false; }
   }
 
-  function hydrateConsentsAndSession() {
-    return Promise.all([
-      api('/api/school/students').catch(function () { return { students: [] }; }),
-      api('/api/school/sessions/active').catch(function () { return { session: null }; }),
-      api('/api/school/schedules').catch(function () { return { schedules: [] }; }),
-      api('/api/school/ai/status').catch(function () { return {}; })
+  function patchTeachersView() {
+    try {
+      if (!realTeachersRaw.length) return;
+      var grid = $id('teacher-grid');
+      var count = $id('teacher-count');
+      if (count && grid) count.textContent = grid.children.length + ' من ' + realTeachersRaw.length + ' معلمًا (دليل شنو منو)';
+      var kicker = document.querySelector('#teachers-view [data-template-id="teachers-kicker"]');
+      if (kicker) kicker.textContent = 'دليل المعلمين (شنو منو)';
+    } catch (e) {}
+  }
+
+  function patchTeacherProfile() {
+    try {
+      if (!realTeachersRaw.length) return;
+      var box = $id('teacher-profile-content');
+      if (!box) return;
+      box.innerHTML = box.innerHTML.split('شخصية تعليمية افتراضية').join('معلم من دليل شنو منو');
+      var teacherId = '';
+      try { teacherId = (typeof state !== 'undefined' && state) ? String(state.teacherId || '') : ''; } catch (e) {}
+      var t = realTeachersRaw.find(function (x) { return String(x.id) === teacherId; });
+      if (t && (t.style || t.motto)) {
+        var bits = [];
+        if (t.style) bits.push('أسلوب التدريس: ' + t.style);
+        if (t.motto) bits.push('الشعار: ' + t.motto);
+        var line = document.createElement('p');
+        line.className = 'mt-2';
+        line.textContent = bits.join(' | ');
+        box.appendChild(line);
+      }
+    } catch (e) {}
+  }
+
+  function patchReportView() {
+    try {
+      if (!realStudent) return;
+      var box = $id('report-content');
+      if (box) {
+        var html = box.innerHTML;
+        var prog = realStudent.progress || {};
+        core.reportPatches({ studentName: realStudent.name, sessions: prog.sessions, average: prog.average })
+          .forEach(function (p) { html = html.split(p.from).join(p.to); });
+        box.innerHTML = html;
+      }
+      var host = $id('activity-list');
+      if (host && host.parentNode) {
+        var extra = $id('shno-report-real');
+        if (!extra) {
+          extra = el('div', 'margin-top:10px;border:2px solid #146c70;border-radius:18px;background:#fffdf9;padding:12px 14px;font-weight:700;color:#146c70;font-size:14px;line-height:2;white-space:pre-line;', '');
+          extra.id = 'shno-report-real';
+          host.parentNode.insertBefore(extra, host.nextSibling);
+        }
+        var lines = ['سجل المنصة (حقيقي من شنو منو):'];
+        if (realReport && realReport.report && Number.isFinite(realReport.report.sessions)) lines.push('الحصص المسجلة: ' + realReport.report.sessions);
+        (realStudent.scores || []).slice(-3).reverse().forEach(function (sc) {
+          lines.push('درجة ' + (sc.subject || '') + ': ' + sc.score + '/' + (sc.maxScore || 10));
+        });
+        (realStudent.notes || []).slice(-3).reverse().forEach(function (n) {
+          lines.push('ملاحظة' + (n.subject ? ' (' + n.subject + ')' : '') + ': ' + n.text);
+        });
+        if (lines.length === 1) lines.push('لا توجد نشاطات مسجلة على المنصة بعد — ستظهر هنا فور حدوثها.');
+        extra.textContent = lines.join('\n');
+      }
+    } catch (e) {}
+  }
+
+  function patchConsentView() {
+    try {
+      if (!realStudent) return;
+      var consents = null;
+      try { consents = (typeof state !== 'undefined' && state) ? state.consents : null; } catch (e) {}
+      if (consents) textOf('consent-log', core.consentLogText(consents));
+    } catch (e) {}
+  }
+
+  function patchSeats(participants) {
+    try {
+      var title = document.querySelector('h2[data-template-id="students-title"]');
+      var grid = title ? title.nextElementSibling : null;
+      if (!grid) return;
+      var seats = core.seatCards(realStudent ? realStudent.name : '', participants || []);
+      var frag = document.createDocumentFragment();
+      seats.forEach(function (s) {
+        var d = document.createElement('div');
+        d.className = 'rounded-2xl bg-white p-3 text-center font-bold';
+        d.appendChild(document.createTextNode(s.name));
+        d.appendChild(document.createElement('br'));
+        var span = document.createElement('span');
+        span.className = s.status === 'متصل الآن' ? 'text-[#146c70]' : 'text-[#846019]';
+        span.textContent = s.status;
+        d.appendChild(span);
+        frag.appendChild(d);
+      });
+      grid.replaceChildren(frag);
+    } catch (e) {}
+  }
+
+  function patchHomeStats(input) {
+    try {
+      var section = document.querySelector('#home-view section[aria-labelledby="statistics-title"]');
+      if (!section) return;
+      var ps = [];
+      Array.prototype.forEach.call(section.querySelectorAll('article'), function (a) {
+        var p = a.querySelectorAll('p');
+        if (p.length) ps.push(p[0]);
+      });
+      if (ps.length !== 7) return;
+      var stats = core.homeStats(input);
+      ps.forEach(function (p, i) { p.textContent = core.formatCount(stats[i]); });
+      var title = $id('statistics-title');
+      if (title) title.textContent = 'نظرة سريعة على حسابك (شنو منو)';
+      var tagline = document.querySelector('[data-template-id="app-tagline"]');
+      if (tagline) tagline.textContent = 'منصة تعلم افتراضية عراقية — مربوطة بحساب شنو منو';
+    } catch (e) {}
+  }
+
+  function buildExamExtras() {
+    try {
+      var view = $id('exam-view');
+      if (!view) return;
+      if (realStudent && Array.isArray(realStudent.scores) && realStudent.scores.length && !$id('shno-past-scores')) {
+        var box = el('article', 'margin-top:20px;border:2px solid #146c70;border-radius:20px;background:#fffdf9;padding:16px 18px;', '');
+        box.id = 'shno-past-scores';
+        box.appendChild(el('b', 'color:#183a3c;font-size:16px;', 'آخر الدرجات المسجلة (شنو منو — حقيقية)'));
+        var list = el('div', 'margin-top:10px;display:grid;gap:6px;');
+        realStudent.scores.slice(-5).reverse().forEach(function (sc) {
+          list.appendChild(el('div', 'background:#eff6f3;border-radius:12px;padding:8px 12px;font-weight:700;color:#146c70;font-size:14px;',
+            (sc.subject || 'مادة') + (sc.lesson ? ' — ' + sc.lesson : '') + ': ' + sc.score + '/' + (sc.maxScore || 10)));
+        });
+        box.appendChild(list);
+        view.appendChild(box);
+      }
+      var form = $id('exam-form');
+      if (form && !form.__shnoExamHook) {
+        form.__shnoExamHook = true;
+        // Registered after the original's onsubmit (assigned during its
+        // init), so the original's local suggested score runs first, then
+        // the real model answer from the curriculum is shown for review.
+        form.addEventListener('submit', function () {
+          try {
+            var st = null;
+            try { st = (typeof state !== 'undefined') ? state : null; } catch (e) {}
+            var key = st ? realExamKeys[st.subject] : null;
+            if (!key) return;
+            var mistakes = $id('common-mistakes');
+            if (mistakes) mistakes.textContent = 'الإجابة النموذجية (من منهج شنو منو): ' + key + ' — الدرجة النهائية يعتمد المعلم أو ولي الأمر.';
+          } catch (e) {}
+        });
+      }
+    } catch (e) {}
+  }
+
+  function hydrateEverything() {
+    if (hydrated) return;
+    hydrated = true;
+    var get = function (path) { return api(path).catch(function () { return {}; }); };
+    Promise.all([
+      get('/api/school/students'),
+      get('/api/school/teachers'),
+      get('/api/school/sessions/active'),
+      get('/api/school/schedules'),
+      get('/api/school/curriculum/offline-pack')
     ]).then(function (out) {
       var students = out[0].students || [];
+      realTeachersRaw = out[1].teachers || [];
+      var packItems = out[4].items || [];
+      if (out[2].session) realSessionId = String(out[2].session._id || '');
+      var schedules = out[3].schedules || [];
+      if (schedules.length) {
+        nextSchedule = { subject: schedules[0].subject || 'درس', when: new Date(schedules[0].scheduledAt).toLocaleDateString('ar-IQ') };
+      }
+
+      // 1) Real student identity, consents and learning path.
       if (students.length) {
-        realStudent = { name: students[0].name, id: students[0]._id };
-        var perms = students[0].learningPermissions || {};
-        // Only an explicit guardian approval grants the original's media
-        // gate; nothing is auto-granted or auto-started.
+        var s0 = students[0];
+        realStudent = {
+          name: s0.name,
+          id: String(s0._id),
+          stage: s0.stage,
+          grade: s0.grade,
+          subjects: Array.isArray(s0.subjects) ? s0.subjects : [],
+          scores: Array.isArray(s0.scores) ? s0.scores : [],
+          notes: Array.isArray(s0.notes) ? s0.notes : [],
+          progress: s0.progress || {},
+          learningPermissions: s0.learningPermissions || {}
+        };
         try {
-          if (typeof state !== 'undefined' && state) state.consents = core.mapConsents(perms);
+          if (typeof state !== 'undefined' && state) {
+            // Only an explicit guardian approval grants the original's
+            // media gate; nothing is auto-granted or auto-started.
+            state.consents = core.mapConsents(realStudent.learningPermissions);
+            var p = core.studentPath(realStudent, realTeachersRaw);
+            if (p.stage) state.stage = p.stage;
+            if (p.grade) state.grade = p.grade;
+            if (p.subject) state.subject = p.subject;
+            state.teacherId = p.teacherId;
+            // Keep the original's selects coherent: register the student's
+            // real grade/subjects when the standard lists lack them.
+            try {
+              var addedGrade = false;
+              var addedSubject = false;
+              if (typeof stages !== 'undefined' && p.stage && stages[p.stage]) {
+                if (p.grade && stages[p.stage].indexOf(p.grade) === -1) { stages[p.stage].push(p.grade); addedGrade = true; }
+                p.subjects.forEach(function (sub) {
+                  if (typeof subjectMap !== 'undefined' && subjectMap[p.stage] && subjectMap[p.stage].indexOf(sub) === -1) {
+                    subjectMap[p.stage].push(sub); addedSubject = true;
+                  }
+                });
+              }
+              if ((addedGrade || addedSubject) && typeof setOptions === 'function') {
+                if (addedGrade) {
+                  var allGrades = [];
+                  if (typeof stages !== 'undefined') Object.keys(stages).forEach(function (k) { allGrades = allGrades.concat(stages[k] || []); });
+                  if ($id('teacher-grade-filter')) setOptions($id('teacher-grade-filter'), 'كل الصفوف', allGrades);
+                }
+                if (addedSubject) {
+                  var allSubjects = [];
+                  if (typeof subjectMap !== 'undefined') Object.values(subjectMap).forEach(function (list) { allSubjects = allSubjects.concat(list || []); });
+                  allSubjects = allSubjects.filter(function (v, i, a) { return a.indexOf(v) === i; });
+                  if ($id('teacher-subject-filter')) setOptions($id('teacher-subject-filter'), 'كل المواد', allSubjects);
+                }
+              }
+            } catch (e) {}
+          }
         } catch (e) {}
       }
-      if (out[1].session) realSessionId = String(out[1].session._id || '');
+
+      // 2) Real teacher directory (the platform's canonical list via API).
+      if (realTeachersRaw.length) {
+        try {
+          if (typeof teachers !== 'undefined' && Array.isArray(teachers)) {
+            teachers.splice(0, teachers.length);
+            realTeachersRaw.forEach(function (t) {
+              teachers.push({
+                id: t.id, name: t.name, gender: t.gender, subject: t.subject, stage: t.stage,
+                grades: Array.isArray(t.grades) ? t.grades.join('، ') : String(t.grades || ''),
+                experience: t.experience, presence: t.status || 'متاح الآن',
+                language: t.language || 'عربية عراقية', rating: Number(t.rating) || 5
+              });
+            });
+          }
+        } catch (e) {}
+      }
+
+      // 3) Real curriculum: board lessons per subject + library catalog.
+      try {
+        if (typeof lessons !== 'undefined' && lessons) {
+          var subjectList = (realStudent && realStudent.subjects.length) ? realStudent.subjects : Object.keys(lessons);
+          subjectList.forEach(function (sub) {
+            var item = core.pickPackItem(packItems, sub, realStudent && realStudent.stage, realStudent && realStudent.grade);
+            if (item) {
+              lessons[sub] = core.packLesson(item, lessons[sub]);
+              if (item.modelAnswer) realExamKeys[sub] = item.modelAnswer;
+            }
+          });
+        }
+      } catch (e) {}
+      try {
+        if (typeof state !== 'undefined' && state && packItems.length) {
+          var rows = core.packLibrary(packItems);
+          var names = {};
+          rows.forEach(function (r) { names[r.name] = 1; });
+          var local = (Array.isArray(state.library) ? state.library : []).filter(function (x) { return !names[x.name]; });
+          state.library = rows.concat(local);
+        }
+      } catch (e) {}
+
+      // 4) Drive the original's own render functions with the real data.
+      try {
+        if (typeof populatePath === 'function') populatePath();
+        if (typeof renderTeachers === 'function') renderTeachers();
+        if (typeof renderConsent === 'function') renderConsent();
+        if (typeof renderReport === 'function') renderReport();
+        if (typeof renderLibrary === 'function') renderLibrary();
+        if (typeof renderQueue === 'function') renderQueue();
+      } catch (e) {}
+
+      // 5) Real home statistics + per-view DOM patches.
+      var gradeList = [];
+      var subjectSet = [];
+      students.forEach(function (s) {
+        if (s.grade) gradeList.push(s.grade);
+        (Array.isArray(s.subjects) ? s.subjects : []).forEach(function (x) { subjectSet.push(x); });
+      });
+      patchHomeStats({
+        studentCount: students.length,
+        teacherCount: realTeachersRaw.length,
+        grades: gradeList,
+        subjects: subjectSet,
+        lessonCount: packItems.length,
+        examCount: realStudent && realStudent.scores.length || 0,
+        reportCount: realStudent && realStudent.notes.length || 0
+      });
+      patchSeats([]);
+      buildExamExtras();
       if (window.__shnoRenderIntegrationStatus) window.__shnoRenderIntegrationStatus();
-      return Promise.resolve();
-    });
+
+      // 6) Real per-student report data (sessions + learning records).
+      if (realStudent) {
+        get('/api/school/students/' + realStudent.id + '/report').then(function (d) {
+          realReport = d;
+          try { if (typeof renderReport === 'function') renderReport(); } catch (e) {}
+        }).catch(function () {});
+      }
+    }).catch(function () {});
   }
 
   function enhanceTeacherQuestion() {
@@ -424,17 +726,21 @@
   }
 
   function boot() {
+    // Wrap the original's render functions first, so every later re-render
+    // (user filter, save(), consent click, ...) keeps the real-data patches.
+    wrapRender('renderTeachers', patchTeachersView);
+    wrapRender('selectTeacher', patchTeacherProfile);
+    wrapRender('renderReport', patchReportView);
+    wrapRender('renderConsent', patchConsentView);
     try { buildClassroomBar(); } catch (e) {}
     try { buildStatusLine(); } catch (e) {}
     if (!realMode) return;
     window.__shnoAiStatus = null;
-    hydrateTeachers();
-    hydrateConsentsAndSession().then(function () {
-      api('/api/school/ai/status').then(function (d) {
-        window.__shnoAiStatus = d.configured ? ('مهيأ — ' + (d.provider || '')) : 'غير مهيأ (معلم محلي)';
-        if (window.__shnoRenderIntegrationStatus) window.__shnoRenderIntegrationStatus();
-      }).catch(function () {});
-    });
+    hydrateEverything();
+    api('/api/school/ai/status').then(function (d) {
+      window.__shnoAiStatus = d && d.ok === false ? 'خطأ' : (d && d.configured ? ('مهيأ — ' + (d.provider || '')) : 'غير مهيأ (معلم محلي)');
+      if (window.__shnoRenderIntegrationStatus) window.__shnoRenderIntegrationStatus();
+    }).catch(function () {});
     try { enhanceTeacherQuestion(); } catch (e) {}
   }
 

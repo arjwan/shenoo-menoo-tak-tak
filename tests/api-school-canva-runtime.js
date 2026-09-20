@@ -81,6 +81,43 @@ assert(hasIdent(adapter, 'startAudioSession') && hasIdent(adapter, 'startVideoSe
 const clickCount = (adapter.match(/addEventListener\('click'/g) || []).length;
 assert(clickCount >= 3, 'classroom UI is button-driven (no automatic media start)');
 
+// 4b) View wiring: every Canva page is fed with the real account data.
+assert(adapter.includes('/api/school/curriculum/offline-pack'),
+  'adapter uses the real curriculum offline-pack (board + library + exam key)');
+assert(adapter.includes('/api/school/students/'), 'adapter fetches the real per-student report');
+for (const fn of ['populatePath', 'renderTeachers', 'renderConsent', 'renderReport', 'renderLibrary', 'renderQueue']) {
+  assert(adapter.includes(fn), 'adapter drives the original render function ' + fn);
+}
+for (const fn of ['renderTeachers', 'selectTeacher', 'renderReport', 'renderConsent']) {
+  assert(new RegExp("wrapRender\\('" + fn + "'").test(adapter),
+    'adapter re-applies its ' + fn + ' DOM patch after every original render');
+}
+assert(adapter.includes('statistics-title') && adapter.includes('data-template-id="app-tagline"'),
+  'home statistics + tagline are patched to the real account (DOM only)');
+assert(adapter.includes('data-template-id="students-title"'), 'class seats show the real student + live participants');
+assert(adapter.includes('shno-past-scores'), 'exam view lists the real recorded scores');
+assert(adapter.includes('realExamKeys'), 'exam review shows the real model answer from the curriculum');
+assert(adapter.includes('shno-report-real'), 'report view shows the real platform activity log');
+assert(adapter.includes('state.consents = core.mapConsents'), 'real learningPermissions drive the original consent gate');
+assert(adapter.includes('state.teacherId = p.teacherId'), 'learning path preselected from the real student');
+assert(adapter.includes('stages[p.stage].push') || adapter.includes("stages[p.stage].push(p.grade)"),
+  'real student grade registered in the original stage lists when missing');
+assert(adapter.includes("lessons[sub] = core.packLesson"), 'board/exam content replaced by the real curriculum per subject');
+assert(adapter.includes('state.library = rows.concat(local)'), 'library catalog = real curriculum + local files');
+const C2 = require('../school-canva-adapter-core.js');
+for (const fn of ['pickPackItem', 'packLesson', 'packLibrary', 'homeStats', 'formatCount',
+  'studentPath', 'reportPatches', 'consentLogText', 'seatCards']) {
+  assert(typeof C2[fn] === 'function', 'core exports the view mapper ' + fn);
+}
+
+// 4c) The Canva export corrupted two regex literals in the original's inline
+// script (a V8 "Invalid regular expression flags" syntax error that killed the
+// whole app script in every browser). The on-disk file stays byte-identical
+// (SHA gate above); the 2-byte repair is applied in the external serving
+// layer only (GET /api/school-canva/original).
+assert(canvaRoutes.includes('repairCanvaExport') && canvaRoutes.includes('CANVA_EXPORT_REPAIR'),
+  'serving layer carries the documented Canva-export regex repair');
+
 // 5) Core: bidirectional mapping between the original envelope and the
 //    authenticated Socket.IO classroom events.
 const C = require('../school-canva-adapter-core.js');

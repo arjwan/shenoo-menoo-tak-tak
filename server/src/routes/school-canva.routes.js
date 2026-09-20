@@ -12,6 +12,7 @@
 // school-sync.routes.js.
 
 const router = require('express').Router();
+const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 const { requireAuth } = require('../middleware/auth');
@@ -228,12 +229,43 @@ router.post('/operations', requireAuth, async (req, res, next) => {
 // The immutable original is a public design asset (no secrets inside); the
 // loader fetches it through the API so Oracle's root-only static publishing
 // keeps working. Served with no-store so the approved bytes always match.
+//
+// The file on disk is NEVER modified (its SHA-256 stays the approved value
+// and is pinned by the test-suite). The Canva export of this file corrupted
+// two regex literals in the original's own inline script by doubling one
+// escape backslash in each:
+//     restApiUrl.replace(/\\/$/,"")   instead of restApiUrl.replace(/\/$/,"")
+//     path.replace(/^\\//,"")         instead of path.replace(/^\//,"")
+// The stray backslashes make each regex close early, so V8 (any browser)
+// rejects the entire inline script with "Invalid regular expression flags"
+// and none of the original's app code can run. This external serving layer
+// therefore deletes exactly those 2 backslash bytes from the in-memory copy
+// (the author's original code is restored; design/markup/CSS/all other
+// bytes are served exactly as stored). If the file is ever re-exported
+// cleanly, the patterns are absent and the repair is a no-op.
+const CANVA_EXPORT_REPAIR = (function () {
+  const BS = String.fromCharCode(92);
+  return [
+    { from: '/' + BS + BS + '/' + '$' + '/' + ',', to: '/' + BS + '/' + '$' + '/' + ',' },
+    { from: '/' + '^' + BS + BS + '/' + '/' + ',', to: '/' + '^' + BS + '/' + '/' + ',' }
+  ];
+})();
+function repairCanvaExport(html) {
+  let out = String(html || '');
+  for (const r of CANVA_EXPORT_REPAIR) out = out.split(r.from).join(r.to);
+  return out;
+}
 router.get('/original', (_req, res) => {
   res.type('html');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  res.sendFile(path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-original.html'));
+  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-original.html');
+  fs.readFile(file, (err, buf) => {
+    if (err) return res.status(500).json({ ok: false, message: 'فشل تحميل الأصل' });
+    res.end(repairCanvaExport(buf.toString('utf8')));
+  });
 });
 
 module.exports = router;
 module.exports.buildTurnServers = buildTurnServers;
 module.exports.canvaIntegrationConfig = canvaIntegrationConfig;
+module.exports.repairCanvaExport = repairCanvaExport;
