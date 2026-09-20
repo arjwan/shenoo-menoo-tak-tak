@@ -84,6 +84,8 @@ assert(clickCount >= 3, 'classroom UI is button-driven (no automatic media start
 // 4b) View wiring: every Canva page is fed with the real account data.
 assert(adapter.includes('/api/school/curriculum/offline-pack'),
   'adapter uses the real curriculum offline-pack (board + library + exam key)');
+assert(adapter.includes('/api/school/curriculum/catalog'),
+  'adapter falls back to the versioned Iraqi curriculum catalogue');
 assert(adapter.includes('/api/school/students/'), 'adapter fetches the real per-student report');
 for (const fn of ['populatePath', 'renderTeachers', 'renderConsent', 'renderReport', 'renderLibrary', 'renderQueue']) {
   assert(adapter.includes(fn), 'adapter drives the original render function ' + fn);

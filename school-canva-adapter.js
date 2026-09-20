@@ -548,7 +548,20 @@
       get('/api/school/teachers'),
       get('/api/school/sessions/active'),
       get('/api/school/schedules'),
-      get('/api/school/curriculum/offline-pack')
+      Promise.all([
+        get('/api/school/curriculum/offline-pack'),
+        get('/api/school/curriculum/catalog').catch(function () { return { items: [] }; })
+      ]).then(function (curriculumResults) {
+        var pack = curriculumResults[0] || { items: [] };
+        var catalog = curriculumResults[1] || { items: [] };
+        var downloaded = Array.isArray(pack.items) ? pack.items : [];
+        var known = {};
+        downloaded.forEach(function (item) { known[[item.stage, item.grade, item.subject].join('|')] = 1; });
+        var pending = (Array.isArray(catalog.items) ? catalog.items : []).filter(function (item) {
+          return !known[[item.stage, item.grade, item.subject].join('|')];
+        });
+        return { items: downloaded.concat(pending) };
+      })
     ]).then(function (out) {
       var students = out[0].students || [];
       realTeachersRaw = out[1].teachers || [];
