@@ -24,10 +24,32 @@ const mongoose = require('mongoose');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { MongoMemoryServer } = require('mongodb-memory-server-core');
-const { JSDOM, VirtualConsole } = require('jsdom');
+const { JSDOM, VirtualConsole, requestInterceptor } = require('jsdom');
 const vm = require('node:vm');
+const { Agent, fetch: undiciFetch } = require('undici');
 
 process.env.JWT_SECRET = 'test-secret-school-canva-dom';
+// Same Oracle-hardened loopback fetch as cards wiring: never send 127.0.0.1
+// through HTTP(S)_PROXY, never reuse keep-alive sockets on ephemeral Express.
+(function ensureLoopbackNoProxy() {
+  const extra = '127.0.0.1,localhost,::1';
+  for (const key of ['NO_PROXY', 'no_proxy']) {
+    const cur = String(process.env[key] || '');
+    if (!/(?:^|,)\s*127\.0\.0\.1\s*(?:,|$)/i.test(cur)) {
+      process.env[key] = cur ? (cur + ',' + extra) : extra;
+    }
+  }
+})();
+const loopbackAgent = new Agent({
+  keepAliveTimeout: 1,
+  keepAliveMaxTimeout: 1,
+  connections: 1,
+  pipelining: 0
+});
+const nodeFetch = (url, init = {}) => {
+  const headers = Object.assign({}, init.headers || {}, { Connection: 'close' });
+  return undiciFetch(String(url), { ...init, headers, dispatcher: loopbackAgent });
+};
 
 const User = require('../src/models/User');
 const Student = require('../src/models/SchoolStudent');
@@ -42,12 +64,17 @@ const ROOT = path.resolve(__dirname, '..', '..');
 function sha256(p) { return crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'); }
 function read(p) { return fs.readFileSync(p, 'utf8'); }
 
-async function poll(fn, { timeoutMs = 45000, everyMs = 250 } = {}) {
+async function poll(fn, what, { timeoutMs = 45000, everyMs = 250 } = {}) {
   const start = Date.now();
   for (;;) {
-    const v = await fn();
+    let v;
+    try { v = await fn(); } catch (_) { v = null; }
     if (v) return v;
-    if (Date.now() - start > timeoutMs) throw new Error('poll timeout: ' + fn);
+    if (Date.now() - start > timeoutMs) {
+      let label = what;
+      try { if (typeof what === 'function') label = what(); } catch (e) { label = String(what || 'poll'); }
+      throw new Error('poll timeout: ' + label);
+    }
     await new Promise((r) => setTimeout(r, everyMs));
   }
 }
@@ -94,30 +121,76 @@ test('school canva views show the real account data (DOM E2E, original untouched
       file: { url: '/uploads/school-curriculum/dom.pdf', originalName: 'math.pdf', mimeType: 'application/pdf', size: 123 }
     });
 
+    const serverEvents = [];
     app = express();
     app.use(express.json());
+    app.use((req, res, next) => {
+      const u = String(req.originalUrl || req.url || '');
+      if (!u.includes('/api/school')) return next();
+      const start = Date.now();
+      serverEvents.push({ type: 'request', method: req.method, url: u, t: start });
+      res.on('finish', () => serverEvents.push({
+        type: 'response-finish', method: req.method, url: u, status: res.statusCode, ms: Date.now() - start
+      }));
+      res.on('close', () => serverEvents.push({
+        type: 'response-close', method: req.method, url: u, finished: res.writableFinished, ms: Date.now() - start
+      }));
+      next();
+    });
     // Same mounts as the real server.js (the loader fetches /original from
     // the /api/school-canva surface).
     app.use('/api/school', schoolCanvaRoutes);
     app.use('/api/school-canva', schoolCanvaRoutes);
     app.use('/api/school', schoolSyncRoutes);
     app.use('/api/school', schoolRoutes);
+    app.use((err, req, res, next) => {
+      serverEvents.push({ type: 'express-error', url: req.originalUrl || req.url, message: String((err && err.message) || err) });
+      if (res.headersSent) return next(err);
+      res.status(500).json({ ok: false, message: String((err && err.message) || err) });
+    });
     server = app.listen(0, '127.0.0.1');
     await new Promise((resolve) => server.once('listening', resolve));
     baseUrl = `http://127.0.0.1:${server.address().port}`;
+    server.on('clientError', (err, socket) => {
+      serverEvents.push({ type: 'clientError', code: err && err.code, message: err && err.message });
+      try { socket.end('HTTP/1.1 400 Bad Request\r\n\r\n'); } catch (_) {}
+    });
+
+    const authHeaders = { Authorization: 'Bearer ' + token, Connection: 'close' };
+    const api = (p, opts = {}) => nodeFetch(baseUrl + p, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', ...authHeaders, ...(opts.headers || {}) }
+    });
 
     // The authenticated classroom config — exactly what the loader fetches.
-    const cfgRes = await fetch(baseUrl + '/api/school/classroom/config', {
-      headers: { Authorization: 'Bearer ' + token }
-    });
+    const cfgRes = await api('/api/school/classroom/config');
     const config = await cfgRes.json();
     assert.equal(config.ok, true);
+
+    // Probe the REAL teacher directory BEFORE jsdom. Source of the expected 36
+    // is GET /api/school/teachers (canonical teacherSeeds in school.routes.js),
+    // not a DB seed and not a hardcoded UI value. If this fails, the DOM can
+    // never show 36 honestly.
+    const teachersProbe = await api('/api/school/teachers');
+    assert.equal(teachersProbe.status, 200, 'teachers probe HTTP status');
+    const teachersBody = await teachersProbe.json();
+    assert.equal(teachersBody.ok, true, 'teachers probe ok');
+    assert.equal((teachersBody.teachers || []).length, 36,
+      'canonical teacher directory must be 36 (teacherSeeds); got ' + (teachersBody.teachers || []).length);
+    assert.ok(teachersBody.teachers.some((t) => t.name === 'نور السندباد' && String(t.id) === 'teacher-19'),
+      'teacher-19 نور السندباد must exist in directory');
+    const studentsProbe = await (await api('/api/school/students')).json();
+    assert.equal((studentsProbe.students || []).length, 1, 'fixture student must exist before DOM');
+
+    // Absolute same-origin roots for the adapter (ephemeral test origin only).
+    config.restApiUrl = baseUrl + '/api/school';
+    config.pageOrigin = baseUrl + '/school-canva.html';
 
     // Load the original the same way production does: through the serving
     // endpoint /api/school-canva/original (which applies the documented 2-byte
     // Canva-export regex repair to the in-memory copy).
     const diskHtml = read(path.join(ROOT, 'original-assets/school-canva/school-canva-original.html'));
-    const servedRes = await fetch(baseUrl + '/api/school-canva/original');
+    const servedRes = await nodeFetch(baseUrl + '/api/school-canva/original', { headers: { Connection: 'close' } });
     assert.equal(servedRes.status, 200);
     const servedHtml = await servedRes.text();
 
@@ -146,24 +219,104 @@ test('school canva views show the real account data (DOM E2E, original untouched
     const virtualConsole = new VirtualConsole();
     virtualConsole.on('jsdomError', (e) => { jsdomErrors.push(String((e && e.message) || e)); });
 
+    const externalAsset = (url) => /cdn\.tailwindcss\.com|cdn\.jsdelivr\.net\/npm\/lucide|fonts\.googleapis\.com|fonts\.gstatic\.com/i.test(String(url));
+    const interceptors = [
+      requestInterceptor(async (request) => {
+        const url = String(request.url || '');
+        if (externalAsset(url)) {
+          const isCss = /\.css(?:\?|$)/i.test(url) || /fonts\.googleapis\.com/i.test(url);
+          return new Response(isCss ? '/* test stub css */' : '/* test stub js */', {
+            status: 200,
+            headers: { 'Content-Type': isCss ? 'text/css' : 'application/javascript' }
+          });
+        }
+        return undefined;
+      })
+    ];
+
+    const fetchLog = [];
     const dom = new JSDOM(servedHtml, {
       url: baseUrl + '/school-canva.html',
       runScripts: 'dangerously',
       resources: 'usable',
       pretendToBeVisual: true,
       virtualConsole,
+      interceptors,
       beforeParse(window) {
-        // Real network for the page's API calls (same origin as the test server).
-        window.fetch = (input, init) => {
-          const url = typeof input === 'string' ? input : (input && input.url) || '';
-          const abs = /^https?:/i.test(url) ? url : new URL(url, baseUrl).href;
-          return fetch(abs, init);
+        // Bind undici loopback agent explicitly (Connection: close). Bare
+        // global fetch on Oracle can ECONNRESET on keep-alive reuse — same
+        // class of failure that hit cards auto-spectate.
+        const pageBase = baseUrl + '/school-canva.html';
+        window.fetch = (input, init = {}) => {
+          let url = '';
+          try {
+            if (typeof input === 'string') url = input;
+            else if (input && typeof input.url === 'string') url = input.url;
+            else if (input && typeof input.href === 'string') url = input.href;
+          } catch (_) { url = String(input || ''); }
+          let abs;
+          try { abs = /^https?:\/\//i.test(url) ? url : new URL(url, pageBase).href; }
+          catch (e) { return Promise.reject(e); }
+          if (externalAsset(abs)) {
+            return Promise.resolve(new Response('/* stubbed */', {
+              status: 200, headers: { 'Content-Type': 'application/javascript' }
+            }));
+          }
+          if (!abs.startsWith(baseUrl)) {
+            return Promise.reject(Object.assign(new TypeError('fetch failed'), {
+              cause: { code: 'ERR_TEST_ORIGIN_MISMATCH', message: 'refusing non-test origin ' + abs }
+            }));
+          }
+          const method = (init && init.method) || 'GET';
+          // undici does not reliably accept jsdom's Headers class. The school
+          // adapter wraps fetch and sets Authorization via `new Headers(...)`.
+          // Convert to a plain object or undici drops the Bearer → 401 and
+          // teacherCount stays 0 (Oracle + local with this harness).
+          const plain = {};
+          try {
+            const h = init.headers;
+            if (h && typeof h.forEach === 'function') {
+              h.forEach((v, k) => { plain[String(k)] = String(v); });
+            } else if (h && typeof h === 'object') {
+              Object.keys(h).forEach((k) => { plain[k] = String(h[k]); });
+            }
+          } catch (_) {}
+          // Always ensure the harness session token is present for /api/school.
+          if (/\/api\/school/i.test(abs) && token && !plain.Authorization && !plain.authorization) {
+            plain.Authorization = 'Bearer ' + token;
+          }
+          plain.Connection = 'close';
+          const nextInit = Object.assign({}, init, { headers: plain });
+          fetchLog.push({ method, url: abs, t: Date.now(), hasAuth: Boolean(plain.Authorization || plain.authorization) });
+          return nodeFetch(abs, nextInit).then(async (res) => {
+            fetchLog.push({ method, url: abs, status: res.status, t: Date.now(), hasAuth: Boolean(plain.Authorization || plain.authorization) });
+            return res;
+          }).catch((err) => {
+            const cause = err && err.cause;
+            fetchLog.push({
+              method, url: abs, error: String((err && err.message) || err),
+              causeCode: cause && cause.code, causeMessage: cause && cause.message, t: Date.now()
+            });
+            const wrapped = new TypeError('fetch failed');
+            wrapped.cause = {
+              name: cause && cause.name,
+              message: (cause && cause.message) || (err && err.message),
+              code: cause && cause.code,
+              errno: cause && cause.errno,
+              syscall: cause && cause.syscall,
+              resolvedUrl: abs,
+              method,
+              baseUrl
+            };
+            throw wrapped;
+          });
         };
         window.Headers = Headers;
         window.localStorage.setItem('token', token);
         // Stub so the original's DOMContentLoaded survives a CDN failure;
         // the real lucide (if loaded) overwrites it.
         window.lucide = { createIcons: function () {} };
+        window.scrollTo = function () {};
       }
     });
     const doc = dom.window.document;
@@ -185,18 +338,41 @@ test('school canva views show the real account data (DOM E2E, original untouched
     inject(coreSrc);
     inject('window.__SHNO_SCHOOL_CANVA_CONFIG__ = ' + JSON.stringify(config) + ';' + adapterSrc);
 
-    // Wait for the adapter's hydration to patch the home statistics.
-    await poll(async () => doc.getElementById('statistics-title') &&
-      doc.getElementById('statistics-title').textContent.includes('شنو منو'), { timeoutMs: 60000 });
+    // Wait until home stats reflect the REAL teacher directory (36 from
+    // GET /api/school/teachers), not merely the title rewrite. Title can update
+    // before Promise.all hydration finishes on slow/Oracle hosts.
+    function homeStatNumbers() {
+      const section = doc.querySelector('#home-view section[aria-labelledby="statistics-title"]');
+      if (!section) return null;
+      const nums = Array.from(section.querySelectorAll('article')).map((a) => {
+        const p = a.querySelectorAll('p')[0];
+        return p ? p.textContent.trim() : '';
+      });
+      return nums.length ? nums : null;
+    }
+    await poll(() => {
+      const title = doc.getElementById('statistics-title');
+      const nums = homeStatNumbers();
+      return title && title.textContent.includes('شنو منو') && nums && nums[1] === '36' ? nums : null;
+    }, () => {
+      const nums = homeStatNumbers() || [];
+      return 'home stats teacherCount=36 | title=' + JSON.stringify((doc.getElementById('statistics-title') || {}).textContent) +
+        ' stats=' + JSON.stringify(nums) +
+        ' teachersProbe=36' +
+        ' fetchLog=' + JSON.stringify(fetchLog.slice(-20)) +
+        ' serverEvents=' + JSON.stringify(serverEvents.slice(-20)) +
+        ' jsdomErrors=' + JSON.stringify(jsdomErrors.slice(-8));
+    }, { timeoutMs: 60000, everyMs: 100 });
 
     const text = (id) => { const n = doc.getElementById(id); return n ? n.textContent.trim() : null; };
 
     // 1) HOME: real statistics (1 student, 36 platform teachers, real counts)
     //    + real title/tagline. Original markup untouched (7 stat cards still there).
+    //    36 is NOT hardcoded in the UI — it is realTeachersRaw.length from the
+    //    canonical /api/school/teachers directory (already probed above).
     const statSection = doc.querySelector('#home-view section[aria-labelledby="statistics-title"]');
     assert.ok(statSection, 'home statistics section exists');
-    const statNumbers = Array.from(statSection.querySelectorAll('article'))
-      .map((a) => a.querySelectorAll('p')[0].textContent.trim());
+    const statNumbers = homeStatNumbers();
     assert.equal(statNumbers.length, 7);
     assert.equal(statNumbers[0], '1', 'real student count (not the demo 1,248)');
     assert.equal(statNumbers[1], '36', 'real platform teacher directory count');
@@ -282,9 +458,14 @@ test('school canva views show the real account data (DOM E2E, original untouched
     const uncaught = jsdomErrors.filter((e) => /Uncaught/.test(e));
     assert.deepEqual(uncaught, [], 'no uncaught page errors: ' + jsdomErrors.join(' | '));
   } finally {
-    try { if (server && server.closeAllConnections) server.closeAllConnections(); } catch (e) {}
-    if (server) await new Promise((resolve) => server.close(resolve));
-    await mongoose.disconnect();
-    await mongod.stop();
+    if (server) await new Promise((resolve) => server.close(() => resolve()));
+    try { await loopbackAgent.close(); } catch (e) {}
+    try { await mongoose.disconnect(); } catch (e) {}
+    try {
+      await Promise.race([
+        mongod.stop({ doCleanup: true, force: true }).catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, 1500))
+      ]);
+    } catch (e) {}
   }
 });
