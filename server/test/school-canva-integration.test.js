@@ -373,6 +373,114 @@ test('core: demo rule, consent mapping (never auto-grant), stable room id', () =
 });
 
 // ---------------------------------------------------------------------------
+// Pure logic: view-wiring mappers (feed the original's data globals with
+// the guardian's real account data).
+// ---------------------------------------------------------------------------
+test('core: offline-pack item selection prefers subject+stage+grade', () => {
+  const items = [
+    { subject: 'الرياضيات', stage: 'ابتدائي', grade: 'الأول ابتدائي', title: 'A1' },
+    { subject: 'الرياضيات', stage: 'ابتدائي', grade: 'الثاني ابتدائي', title: 'A2' },
+    { subject: 'الرياضيات', stage: 'متوسط', grade: 'الأول متوسط', title: 'A3' },
+    { subject: 'العلوم', stage: 'ابتدائي', grade: 'الأول ابتدائي', title: 'B1' }
+  ];
+  assert.equal(core.pickPackItem(items, 'الرياضيات', 'ابتدائي', 'الثاني ابتدائي').title, 'A2');
+  assert.equal(core.pickPackItem(items, 'الرياضيات', 'ابتدائي', 'غير موجود').title, 'A1', 'falls back to stage match');
+  assert.equal(core.pickPackItem(items, 'الرياضيات', '', '').title, 'A1', 'falls back to first subject match');
+  assert.equal(core.pickPackItem(items, 'الكيمياء', 'ابتدائي', ''), null, 'unknown subject -> null (demo lesson stays)');
+});
+
+test('core: packLesson builds the original board/exam entry from real data', () => {
+  const fallback = { unit: 'u0', lesson: 'l0', points: 'p0', question: 'q0', exam: 'e0', keys: ['k0'] };
+  const full = core.packLesson({
+    chapter: 'الفصل الأول', lesson: 'الكسور', title: 'كسور 1',
+    content: 'محتوى حقيقي', question: 'ما ناتج 1/2 + 1/4؟', modelAnswer: '3/4'
+  }, fallback);
+  assert.equal(full.unit, 'الفصل الأول');
+  assert.equal(full.lesson, 'الكسور');
+  assert.equal(full.points, 'محتوى حقيقي');
+  assert.equal(full.question, 'ما ناتج 1/2 + 1/4؟');
+  assert.equal(full.exam, 'ما ناتج 1/2 + 1/4؟', 'real question doubles as the exam prompt');
+  assert.deepEqual(full.keys, ['3/4'], 'real model answer becomes the grading key');
+
+  const partial = core.packLesson({ title: 'درس بلا تفاصيل' }, fallback);
+  assert.equal(partial.unit, 'u0', 'missing chapter falls back to the demo unit (no empty board)');
+  assert.equal(partial.lesson, 'درس بلا تفاصيل', 'title is used as the lesson name');
+  assert.equal(partial.points, 'p0', 'missing content falls back to the demo points');
+  assert.deepEqual(partial.keys, ['k0'], 'missing model answer keeps the demo keys');
+  assert.equal(core.packLesson({ title: 'درس' }).unit, 'وحدة المنهاج', 'no demo at all -> neutral unit');
+});
+
+test('core: packLibrary produces catalog rows for the original library', () => {
+  const rows = core.packLibrary([
+    { title: 'كتاب الرياضيات', stage: 'ابتدائي', grade: 'الأول ابتدائي', subject: 'الرياضيات', chapter: 'الفصل الأول', lesson: 'الجمع' },
+    { title: 'ورقة أسئلة', verified: false, subject: 'العلوم' }
+  ]);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].name, 'كتاب الرياضيات');
+  assert.equal(rows[0].chapter, 'ابتدائي ← الأول ابتدائي ← الرياضيات ← الفصل الأول ← الجمع');
+  assert.equal(rows[0].status, 'منهاج شنو منو');
+  assert.equal(rows[1].status, 'مرفوع — بانتظار الاعتماد', 'unverified uploads are labelled as pending');
+  assert.deepEqual(core.packLibrary([]), []);
+});
+
+test('core: homeStats maps the real account into the seven home numbers', () => {
+  const stats = core.homeStats({
+    studentCount: 2, teacherCount: 36,
+    grades: ['الأول ابتدائي', 'الأول ابتدائي', 'الثاني متوسط'],
+    subjects: ['الرياضيات', 'العلوم', 'الرياضيات'],
+    lessonCount: 12, examCount: 3, reportCount: 1
+  });
+  assert.deepEqual(stats, [2, 36, 2, 2, 12, 3, 1]);
+  assert.equal(core.formatCount(1248), '1,248');
+  assert.deepEqual(core.homeStats({}), [0, 0, 0, 0, 0, 0, 0], 'no data -> zeros, still real');
+});
+
+test('core: studentPath picks stage/grade/subject and a matching real teacher', () => {
+  const teachers = [
+    { id: 'teacher-1', stage: 'ابتدائي', subject: 'الرياضيات', grades: ['الأول ابتدائي', 'الثاني ابتدائي'] },
+    { id: 'teacher-2', stage: 'ابتدائي', subject: 'العلوم', grades: ['الأول ابتدائي'] },
+    { id: 'teacher-3', stage: 'متوسط', subject: 'الرياضيات', grades: ['الأول متوسط'] }
+  ];
+  const p = core.studentPath({
+    stage: 'ابتدائي', grade: 'الأول ابتدائي', subjects: ['العلوم', 'الرياضيات']
+  }, teachers);
+  assert.equal(p.stage, 'ابتدائي');
+  assert.equal(p.grade, 'الأول ابتدائي');
+  assert.equal(p.subject, 'العلوم', 'first listed subject wins');
+  assert.equal(p.teacherId, 'teacher-2', 'teacher matched by stage+subject+grade');
+  const p2 = core.studentPath({ stage: 'ابتدائي', grade: 'الثالث ابتدائي', subjects: ['الرياضيات'] }, teachers);
+  assert.equal(p2.teacherId, 'teacher-1', 'grade mismatch still matches stage+subject');
+  const p3 = core.studentPath({ stage: 'إعدادي', grade: 'الرابع إعدادي', subjects: ['الفيزياء'] }, teachers);
+  assert.equal(p3.teacherId, '', 'no matching teacher -> empty (honest, no invented teacher)');
+});
+
+test('core: reportPatches replace only the original hard-coded demo values', () => {
+  const patches = core.reportPatches({ studentName: 'زياد كريم', sessions: 5, average: 78.4 });
+  assert.deepEqual(patches, [
+    { from: 'ليان أحمد', to: 'زياد كريم' },
+    { from: 'مدة التعلم: 25 دقيقة (تجريبي)', to: 'الحصص المكتملة: 5 (شنو منو)' },
+    { from: 'نسبة التقدم: 70%', to: 'متوسط الدرجات: 78% (شنو منو)' }
+  ]);
+  assert.equal(core.reportPatches({}).length, 0, 'no real data -> no patches (demo stays)');
+  assert.equal(core.reportPatches({ studentName: 'زياد كريم', sessions: 0, average: 0 }).length, 1, 'zero sessions/average are not shown');
+});
+
+test('core: consentLogText and seatCards', () => {
+  const log = core.consentLogText({ camera: 'موافق عليه', mic: 'بانتظار الموافقة', recording: 'بانتظار الموافقة' });
+  assert.ok(log.includes('الكاميرا: موافق عليه'), log);
+  assert.ok(log.includes('الميكروفون: بانتظار الموافقة'), log);
+  assert.ok(log.includes('من ملف الطالب في شنو منو'), log);
+
+  assert.deepEqual(core.seatCards('زياد', []), [{ name: 'زياد', status: 'طالبك (حقيقي)' }]);
+  const withLive = core.seatCards('زياد', [{ id: 'u1', name: 'زياد' }, { id: 'u2', name: 'أبو زياد' }]);
+  assert.deepEqual(withLive, [
+    { name: 'زياد', status: 'طالبك (حقيقي)' },
+    { name: 'أبو زياد', status: 'متصل الآن' }
+  ], 'the real student is not duplicated by a same-named live participant');
+  assert.deepEqual(core.seatCards('', []), [{ name: 'بانتظار الطلاب', status: '—' }]);
+});
+
+// ---------------------------------------------------------------------------
 // Live Socket.IO round-trip: auth, join/leave, isolation, webrtc relay,
 // reconnect without duplicates (in-memory users, no MongoDB).
 // ---------------------------------------------------------------------------

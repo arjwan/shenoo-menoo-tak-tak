@@ -130,6 +130,142 @@
   }
 
   /**
+   * View wiring (pure mappers only — the browser adapter applies them to the
+   * original's own data globals and DOM so every page shows the real account).
+   */
+
+  /** Pick the best offline-pack item for a subject (stage+grade preferred). */
+  function pickPackItem(items, subject, stage, grade) {
+    items = Array.isArray(items) ? items : [];
+    var matching = items.filter(function (it) { return it && it.subject === subject; });
+    if (!matching.length) return null;
+    return matching.find(function (it) { return it.stage === stage && it.grade === grade; }) ||
+      matching.find(function (it) { return it.stage === stage; }) || matching[0];
+  }
+
+  /**
+   * Build the original's lessons[subject] entry from a real offline-pack
+   * item. Any field the pack does not carry falls back to the demo lesson,
+   * so the original's board/exam machinery keeps working either way.
+   */
+  function packLesson(item, fallback) {
+    item = item || {};
+    fallback = fallback || {};
+    return {
+      unit: item.chapter || fallback.unit || 'وحدة المنهاج',
+      lesson: item.lesson || item.title || fallback.lesson || 'درس من المنهاج',
+      points: item.content || fallback.points || '',
+      question: item.question || fallback.question || '',
+      exam: item.question || fallback.exam || '',
+      keys: item.modelAnswer ? [item.modelAnswer] : (fallback.keys || [])
+    };
+  }
+
+  /** Real curriculum rows for the original's state.library catalog. */
+  function packLibrary(items) {
+    items = Array.isArray(items) ? items : [];
+    return items.map(function (it) {
+      var parts = [it.stage, it.grade, it.subject, it.chapter, it.lesson].filter(Boolean);
+      return {
+        name: it.title || (it.file && it.file.originalName) || 'ملف منهج',
+        chapter: parts.length ? parts.join(' ← ') : 'منهاج شنو منو',
+        status: it.verified === false ? 'مرفوع — بانتظار الاعتماد' : 'منهاج شنو منو'
+      };
+    });
+  }
+
+  /** The seven home statistics (students, teachers, grades, subjects, lessons, exams, reports). */
+  function homeStats(input) {
+    input = input || {};
+    function distinct(arr) {
+      var seen = {};
+      var out = [];
+      (Array.isArray(arr) ? arr : []).forEach(function (x) {
+        x = String(x || '').trim();
+        if (x && !seen[x]) { seen[x] = 1; out.push(x); }
+      });
+      return out;
+    }
+    return [
+      Number(input.studentCount) || 0,
+      Number(input.teacherCount) || 0,
+      distinct(input.grades).length,
+      distinct(input.subjects).length,
+      Number(input.lessonCount) || 0,
+      Number(input.examCount) || 0,
+      Number(input.reportCount) || 0
+    ];
+  }
+
+  function formatCount(n) {
+    try { return Number(n || 0).toLocaleString('en-US'); } catch (e) { return String(n || 0); }
+  }
+
+  /**
+   * Derive the original's learning path (stage/grade/subject/teacher) from a
+   * real student and the platform's real teacher directory.
+   */
+  function studentPath(student, teachers) {
+    student = student || {};
+    teachers = Array.isArray(teachers) ? teachers : [];
+    var stage = String(student.stage || '').trim();
+    var grade = String(student.grade || '').trim();
+    var subjects = (Array.isArray(student.subjects) ? student.subjects : [])
+      .map(function (s) { return String(s || '').trim(); }).filter(Boolean);
+    var subject = subjects[0] || '';
+    var match = teachers.find(function (t) {
+      return t && t.stage === stage && t.subject === subject &&
+        Array.isArray(t.grades) && t.grades.indexOf(grade) !== -1;
+    });
+    if (!match) match = teachers.find(function (t) { return t && t.stage === stage && t.subject === subject; });
+    return {
+      stage: stage,
+      grade: grade,
+      subject: subject,
+      subjects: subjects,
+      teacherId: match ? String(match.id || '') : ''
+    };
+  }
+
+  /** Text replacements for the report view (the original hard-codes demo values). */
+  function reportPatches(data) {
+    data = data || {};
+    var patches = [];
+    if (data.studentName) patches.push({ from: 'ليان أحمد', to: String(data.studentName) });
+    if (Number.isFinite(data.sessions) && data.sessions > 0) {
+      patches.push({ from: 'مدة التعلم: 25 دقيقة (تجريبي)', to: 'الحصص المكتملة: ' + data.sessions + ' (شنو منو)' });
+    }
+    if (Number.isFinite(data.average) && data.average > 0) {
+      patches.push({ from: 'نسبة التقدم: 70%', to: 'متوسط الدرجات: ' + Math.round(data.average) + '% (شنو منو)' });
+    }
+    return patches;
+  }
+
+  /** Consent log line built from the real consent state. */
+  function consentLogText(consents) {
+    var c = consents || {};
+    var labels = { camera: 'الكاميرا', mic: 'الميكروفون', recording: 'التسجيل' };
+    var parts = Object.keys(labels).map(function (k) { return labels[k] + ': ' + (c[k] || 'بانتظار الموافقة'); });
+    return 'سجل الموافقات (من ملف الطالب في شنو منو): ' + parts.join(' | ') + '. لا يتم حفظ صوت أو فيديو أو صور كاميرا.';
+  }
+
+  /** Student-seat cards: the real student first, then live participants. */
+  function seatCards(studentName, participants) {
+    var seats = [];
+    var seen = {};
+    function add(name, status) {
+      name = String((name && (name.name || name.id)) || name || '').trim();
+      if (!name || seen[name]) return;
+      seen[name] = 1;
+      seats.push({ name: name, status: status });
+    }
+    add(studentName, 'طالبك (حقيقي)');
+    (Array.isArray(participants) ? participants : []).forEach(function (p) { add(p, 'متصل الآن'); });
+    if (!seats.length) seats.push({ name: 'بانتظار الطلاب', status: '—' });
+    return seats;
+  }
+
+  /**
    * Deterministic classroom id from the learning context. Stable across
    * reloads/reconnects so the same student+subject always meets in the same
    * room; no secrets derived.
@@ -156,6 +292,15 @@
     isDemoConfig: isDemoConfig,
     mapConsents: mapConsents,
     consentAllowsMedia: consentAllowsMedia,
-    stableRoomId: stableRoomId
+    stableRoomId: stableRoomId,
+    pickPackItem: pickPackItem,
+    packLesson: packLesson,
+    packLibrary: packLibrary,
+    homeStats: homeStats,
+    formatCount: formatCount,
+    studentPath: studentPath,
+    reportPatches: reportPatches,
+    consentLogText: consentLogText,
+    seatCards: seatCards
   };
 });
