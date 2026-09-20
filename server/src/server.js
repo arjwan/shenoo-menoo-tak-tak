@@ -36,7 +36,9 @@ const smartFriendRoutes = require('./routes/smart-friend.routes');
 const smartFriendToolsRoutes = require('./routes/smart-friend-tools.routes');
 const schoolRoutes = require('./routes/school.routes');
 const schoolSyncRoutes = require('./routes/school-sync.routes');
+const schoolCanvaRoutes = require('./routes/school-canva.routes');
 const { attachSocket } = require('./socket');
+const { attachSchoolSocket } = require('./socket-school');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -86,6 +88,11 @@ app.use('/api/consultations', consultationRoutes);
 app.use('/api/astrology', astrologyRoutes);
 app.use('/api/smart-friend/tools', smartFriendToolsRoutes);
 app.use('/api/smart-friend', smartFriendRoutes);
+// Canva school original (immutable) adapter surface: /health, /operations
+// (idempotent), /classroom/config and /original. Mounted before the existing
+// school routers; path-disjoint from them.
+app.use('/api/school', schoolCanvaRoutes);
+app.use('/api/school-canva', schoolCanvaRoutes);
 app.use('/api/school', schoolSyncRoutes);
 app.use('/api/school', schoolRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
@@ -93,4 +100,4 @@ app.use((error, req, res, next) => { if (error instanceof multer.MulterError) re
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
 const port=Number(process.env.PORT||3000);
 async function migrateSmartFriendIndexes(){try{const indexes=await SmartFriend.collection.indexes();const legacy=indexes.find(i=>i.unique&&i.key&&i.key.user===1&&!('slot' in i.key));if(legacy){await SmartFriend.collection.dropIndex(legacy.name);console.log('Removed legacy SmartFriend unique user index:',legacy.name);}await SmartFriend.collection.createIndex({user:1,slot:1},{unique:true,name:'user_1_slot_1'});}catch(error){console.error('SmartFriend index migration failed:',error.message);}}
-connectDB().then(async()=>{await migrateSmartFriendIndexes();const expireRooms=()=>GameRoom.updateMany({isActive:{$ne:false},expiresAt:{$ne:null,$lte:new Date()}},{$set:{isActive:false,'gameState.status':'finished','gameState.updatedAt':new Date()}}).catch(error=>console.error('Game room cleanup failed:',error.message));expireRooms();const cleanupTimer=setInterval(expireRooms,15*60*1000);cleanupTimer.unref();app.set('io',attachSocket(httpServer));httpServer.listen(port,()=>console.log(`Server running on http://localhost:${port}`));}).catch(error=>{console.error('Server startup failed:',error.message);process.exit(1);});
+connectDB().then(async()=>{await migrateSmartFriendIndexes();const expireRooms=()=>GameRoom.updateMany({isActive:{$ne:false},expiresAt:{$ne:null,$lte:new Date()}},{$set:{isActive:false,'gameState.status':'finished','gameState.updatedAt':new Date()}}).catch(error=>console.error('Game room cleanup failed:',error.message));expireRooms();const cleanupTimer=setInterval(expireRooms,15*60*1000);cleanupTimer.unref();const io=attachSocket(httpServer);attachSchoolSocket(io);app.set('io',io);httpServer.listen(port,()=>console.log(`Server running on http://localhost:${port}`));}).catch(error=>{console.error('Server startup failed:',error.message);process.exit(1);});

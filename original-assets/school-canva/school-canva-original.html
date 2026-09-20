@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260918-05-13efa67","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YACgEZulLoA,0","Arial Narrow":"YAGyDvJ_4Ts,0","Arial Rounded MT Bold":"YAFcfoaHu-s,0","Arial":"YAGyDvJ_4Ts,0","Avenir Next":"YAFcfmNq6UY,0","Baloo 2":"YADK30bC6HQ,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Broken Glyph":"YADZ-exUkv0,0","Canva Sans":"YAFdJjTk5UU,1","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAFcfvtOAUY,1","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","Courier Prime":"YAD1aFjegN8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAFdJpU7Kkk,0","Georgia":"YAGzXkO0pEM,0","Ghost Mono":"YAHQutsX00Q,0","Hanken Grotesk":"YAFcfhwp99E,0","Helvetica Neue":"YAFcf6CtJfI,0","Helvetica":"YAFcf6CtJfI,0","IBM Plex Mono":"YAFdJkmvhGI,0","Impact":"YAFcfnjI7Vk,0","Instrument Serif":"YAHFeOnZNEk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YADK3zbC6RM,0","JetBrains Mono":"YAFdJksXcAk,0","Josefin Sans":"YAFdJjvw9Ps,0","Lato":"YAFdJuFCnaw,0","Libre Baskerville":"YACgEUFdPdA,0","Lobster":"YAD8SnSjSFI,0","Lora":"YACgEXvxf8Q,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YAFdtQi73Xs,0","Nunito":"YAFdJoNRMmU,1","Oleo Script":"YACgEQQ14jI,0","Oswald":"YACgEQY10lw,0","Pacifico":"YADLjORQ1u4,0","Phantom Sans":"YAFdJvgJ5TU,0","Playfair Display":"YAFdJhem5V8,1","Plus Jakarta Sans":"YAGvf3_u0_Q,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YAFdJpYtCxE,1","Raleway":"YAFdJhmxbVQ,1","Roboto Slab":"YAFdJswIKAg,0","Rockwell":"YAFcfyVZnN0,0","Rye":"YACgEdQP21k,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Source Serif 4":"YACgEfdj394,0","Space Grotesk":"YADZ-dYEmhg,0","Space Mono":"YADW1-vpsoc,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Trebuchet MS":"YAFcfrglpVA,0","UV Display":"YAEdVfSSpYo,0","UV Sans":"YAFdJvgJ5TU,0","Ubuntu":"YACgERDU--Q,0","Verdana":"YAGzXTctYtQ,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YAD1aFjegN8,0","ui-sans-serif":"YACkoD1yZN0,0"}}');</script><script src="/_sdk/83d6dfdadcd4750a.telemetry_sdk.js" integrity="sha512-XS4Dvzp6vbagZS9vFErihvr8aO3S0tH78KWUefn06fmL4WYqryBtZj/IOLITYj7dFA4gPVvPg1W/JB1DK3uLNQ=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>شنو منو مدرسة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;600;700;800&amp;family=Fraunces:wght@700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#183a3c;--teal:#146c70;--mint:#e3f0eb;--paper:#fff8ed;--coral:#e8795b;--sun:#f7c75d;--line:#cce1db;--muted:#53706f;--blue:#3478b8;--danger:#93452e}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Alegreya Sans",sans-serif;color:var(--ink)}
+    .app-shell{width:100%;min-height:calc(100 * min(var(--vh,1vh),1vh));background:radial-gradient(circle at 5% 2%,#fffdf8 0,#f8f0e5 45%,#e1f0eb 100%)}
+    .soft-card{border:1px solid rgba(20,108,112,.15);box-shadow:0 12px 30px rgba(24,58,60,.08)}
+    .view{display:none}.view.active{display:block;animation:appear .32s ease}
+    .field{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:.7rem .85rem;color:var(--ink);outline:none}
+    .field:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(20,108,112,.15)}
+    .nav-link{border-radius:12px;padding:.6rem .78rem;font-weight:800;transition:.2s}
+    .nav-link:hover,.nav-link.active{background:#146c70;color:#fff}
+    .role-btn.active{background:#146c70!important;color:white!important;border-color:#146c70}
+    .status-chip{display:inline-flex;align-items:center;gap:.4rem;border-radius:999px;padding:.4rem .72rem;font-weight:800;font-size:.92rem}
+    .teacher-card{transition:.2s;border:1px solid #d5e5df}.teacher-card:hover{transform:translateY(-3px);border-color:var(--teal);box-shadow:0 12px 20px rgba(20,108,112,.1)}
+    .teacher-card.selected{outline:3px solid rgba(20,108,112,.22);background:#eff8f5}
+    .board{position:relative;overflow:hidden;background:#183a3c;color:#f7fcf9;border:10px solid #ae7447;box-shadow:inset 0 0 35px rgba(0,0,0,.25)}
+    .board:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px);background-size:34px 34px}
+    .board > *{position:relative;z-index:1}
+    .step{opacity:.45;transition:.25s}.step.current{opacity:1;background:#fff4d9;color:#846019;border-color:#f7c75d}.step.done{opacity:1;background:#e3f0eb;color:#146c70;border-color:#9bcfc5}
+    .toast{display:none}.toast.show{display:flex;animation:rise .25s ease}
+    .hidden-state{display:none!important}
+    .progress-fill{transition:width .4s ease}
+    @keyframes appear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+    @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+  <script src="/_sdk/8de366929c5f3b48.data_sdk.js" type="text/javascript" integrity="sha512-TyQ8k8cZj66xe/aENmn6RyZpdOFZXbAo5+KBG3PeFM+Q4qMTHU8xAqmq4ADClNfPrstgQYV6OzZHwLTnElzB2g=="></script>
+  <script src="/_sdk/0ddbbee1c66b1212.editing_sdk.js" type="text/javascript" integrity="sha512-HQn5LM1yruQSbY78ATUril6QeOJ9xj7KqO64ltLtb4vBwI5Qv3/tloFFOndBPZTNZoeV5xKzuth5y6FTi9crsg=="></script>
+  <script src="/_sdk/765e1fea0cec97ce.resizing_sdk.js" type="text/javascript" integrity="sha512-IRTJnqww0+HQ5V/LlWEQrlD5SrYHaVvaeVoNe8HYQXoaguzUGheSd9+n9s6WOgaTcEH0g37DuINHZ9aqfzWjlw=="></script>
+ </head>
+ <body data-template-id="__page-root" class="w-full" style="background: radial-gradient(rgb(255, 253, 248), rgb(225, 240, 235));">
+  <div class="app-shell w-full">
+   <header data-template-id="top-header" class="canva-header sticky top-0 z-40 border-b border-teal-900/10 bg-[#fffaf2]/95 backdrop-blur" style="background: rgb(255, 250, 242);">
+    <div class="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6">
+     <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#146c70] text-white"><i data-lucide="graduation-cap"></i></span>
+       <div><strong data-template-id="app-title" class="canva-text block font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">شنو منو مدرسة</strong> <small data-template-id="app-tagline" class="canva-text" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">منصة تعلم افتراضية عراقية — نموذج تجريبي قابل للتعديل</small>
+       </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2"><label class="relative"> <span class="sr-only">بحث عام</span> <i data-lucide="search" class="absolute right-3 top-3 h-4 w-4 text-[#53706f]"></i> <input id="global-search" class="field w-48 pr-9 sm:w-60" type="search" placeholder="ابحث عن معلم أو مادة"> </label> <button id="notification-button" type="button" class="relative grid h-10 w-10 place-items-center rounded-xl bg-white text-[#146c70] soft-card" aria-label="الإشعارات"> <i data-lucide="bell" class="h-5 w-5"></i><span id="notification-count" class="absolute -left-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[#e8795b] text-xs font-bold text-white">0</span> </button> <span id="connection-indicator" class="status-chip bg-[#e3f0eb] text-[#146c70]" role="status"><i data-lucide="wifi" class="h-4 w-4"></i><span id="connection-text">متصل</span></span>
+      </div>
+     </div>
+     <nav aria-label="التنقل الرئيسي" class="mt-3 flex gap-2 overflow-x-auto pb-1"><button class="nav-link active" data-view="home-view" type="button">الرئيسية</button> <button class="nav-link" data-view="teachers-view" type="button">المعلمون</button> <button class="nav-link" data-view="path-view" type="button">المراحل والصفوف</button> <button class="nav-link" data-view="library-view" type="button">المناهج</button> <button class="nav-link" data-view="class-view" type="button">الصف الافتراضي</button> <button class="nav-link" data-view="exam-view" type="button">الاختبارات</button> <button class="nav-link" data-view="report-view" type="button">التقارير</button> <button class="nav-link" data-view="consent-view" type="button">موافقات ولي الأمر</button> <button class="nav-link" data-view="settings-view" type="button">الإعدادات</button>
+     </nav>
+    </div>
+   </header>
+   <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+    <section id="home-view" class="view active">
+     <div data-template-id="hero-panel" class="canva-banner soft-card overflow-hidden rounded-[2rem] bg-[#e3f0eb]" style="background: rgb(227, 240, 235);">
+      <div class="grid lg:grid-cols-[1.25fr_.75fr]">
+       <div class="p-6 sm:p-9">
+        <p data-template-id="hero-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">تعلم متصل ودون اتصال</p>
+        <h1 data-template-id="hero-title" class="canva-text mt-2 font-extrabold leading-tight" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">مسار واحد للطالب والمعلم وولي الأمر</h1>
+        <p data-template-id="hero-copy" class="canva-text mt-3 max-w-2xl leading-relaxed" style="color: rgb(83, 112, 111); font-weight: 400; font-style: normal; font-size: 18px;">منصة تجريبية تجمع الصف الافتراضي والاختبارات والتقارير والموافقات، مع حفظ النشاطات التعليمية عند انقطاع الاتصال.</p>
+        <div class="mt-6">
+         <p data-template-id="role-switcher-label" class="canva-text mb-3 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">اختر دورك داخل التجربة</p>
+         <div id="role-switcher" class="grid grid-cols-2 gap-2 sm:grid-cols-4"><button class="role-btn rounded-xl border border-[#cce1db] bg-white px-3 py-3 font-extrabold active" type="button" data-role="طالب">طالب</button> <button class="role-btn rounded-xl border border-[#cce1db] bg-white px-3 py-3 font-extrabold" type="button" data-role="معلم/معلمة">معلم/معلمة</button> <button class="role-btn rounded-xl border border-[#cce1db] bg-white px-3 py-3 font-extrabold" type="button" data-role="ولي أمر">ولي أمر</button> <button class="role-btn rounded-xl border border-[#cce1db] bg-white px-3 py-3 font-extrabold" type="button" data-role="مدير المدرسة">مدير المدرسة</button>
+         </div>
+        </div>
+        <p id="role-message" class="mt-5 rounded-2xl bg-white p-4 font-bold text-[#146c70]" aria-live="polite">أهلاً بك يا طالب، اختر مسارك ثم افتح صفك الافتراضي.</p>
+       </div><img data-template-id="hero-image" loading="lazy" class="canva-image h-64 w-full object-cover lg:h-full" src="canva://MAHVeJUJVqg/1" alt="لقطة شاشة لنموذج منصة تعليمية عربية داخل محرر تصميم">
+      </div>
+     </div>
+     <section class="mt-6" aria-labelledby="statistics-title">
+      <h2 id="statistics-title" data-template-id="statistics-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">نظرة سريعة على النموذج</h2>
+      <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="users" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">1,248</p>
+        <p data-template-id="stat-students" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">طالب وطالبة</p>
+       </article>
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="presentation" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">36</p>
+        <p data-template-id="stat-teachers" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">معلم ومعلمة</p>
+       </article>
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="layers" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">15</p>
+        <p data-template-id="stat-grades" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">صفاً دراسياً</p>
+       </article>
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="book-open" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">8</p>
+        <p data-template-id="stat-subjects" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">مواد تعليمية</p>
+       </article>
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="notebook-tabs" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">214</p>
+        <p data-template-id="stat-lessons" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">درساً</p>
+       </article>
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="clipboard-check" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">48</p>
+        <p data-template-id="stat-exams" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">اختباراً</p>
+       </article>
+       <article class="soft-card rounded-2xl bg-white p-4">
+        <i data-lucide="file-bar-chart" class="h-5 w-5 text-[#146c70]"></i>
+        <p class="mt-3 text-2xl font-extrabold">92</p>
+        <p data-template-id="stat-reports" class="canva-text font-bold text-[#53706f]" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">تقرير متابعة</p>
+       </article>
+      </div>
+     </section>
+     <section data-template-id="sync-banner" class="canva-banner soft-card mt-6 flex flex-col items-start justify-between gap-4 rounded-3xl bg-[#fff8ed] p-5 sm:flex-row sm:items-center" style="background: rgb(255, 248, 237);">
+      <div>
+       <h2 data-template-id="sync-banner-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">الحفظ والمزامنة</h2>
+       <p id="sync-summary" class="mt-1 font-bold text-[#53706f]">لا توجد عمليات بانتظار المزامنة.</p>
+      </div><button id="sync-now" data-template-id="sync-now-button" type="button" class="canva-button rounded-xl px-5 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">مزامنة الآن</button>
+     </section>
+    </section>
+    <section id="path-view" class="view">
+     <div class="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
+      <article data-template-id="path-panel" class="canva-panel soft-card rounded-[2rem] bg-[#fff8ed] p-6 sm:p-8" style="background: rgb(255, 248, 237);">
+       <p data-template-id="path-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">اختيارات مترابطة</p>
+       <h1 data-template-id="path-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">ابدأ من المرحلة ثم الصف ثم المادة</h1>
+       <p data-template-id="path-copy" class="canva-text mt-3 leading-relaxed" style="color: rgb(83, 112, 111); font-weight: 400; font-style: normal; font-size: 18px;">تتغير المواد والمعلمون والدروس والأسئلة فوراً بحسب المسار المختار.</p>
+       <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div>
+         <label for="stage-select" data-template-id="stage-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">المرحلة</label><select id="stage-select" class="field"></select>
+        </div>
+        <div>
+         <label for="grade-select" data-template-id="grade-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">الصف</label><select id="grade-select" class="field" disabled=""></select>
+        </div>
+        <div>
+         <label for="subject-select" data-template-id="subject-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">المادة</label><select id="subject-select" class="field" disabled=""></select>
+        </div>
+        <div>
+         <label for="teacher-select" data-template-id="teacher-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">المعلم أو المعلمة</label><select id="teacher-select" class="field" disabled=""></select>
+        </div>
+       </div>
+       <div class="mt-6 rounded-2xl border border-[#cce1db] bg-white p-4">
+        <p data-template-id="learning-path-label" class="canva-text font-bold text-[#146c70]" style="color: rgb(20, 108, 112); font-weight: 800; font-style: normal; font-size: 16px;">مسار التعلم الحالي</p>
+        <p id="learning-path" class="mt-2 font-extrabold leading-8 text-[#53706f]">المرحلة ← الصف ← المادة ← المعلم ← الوحدة ← الدرس</p>
+       </div><button id="open-class-button" data-template-id="open-class-button" type="button" class="canva-button mt-5 w-full rounded-xl px-5 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">دخول الصف الافتراضي</button>
+      </article>
+      <aside data-template-id="path-side-panel" class="canva-panel soft-card rounded-[2rem] bg-[#e3f0eb] p-6" style="background: rgb(227, 240, 235);">
+       <h2 data-template-id="selected-content-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">المحتوى المرتبط بالمسار</h2>
+       <div id="selected-content" class="mt-5 rounded-3xl bg-white p-5 font-bold leading-8 text-[#53706f]">
+        اختر المرحلة والصف والمادة لعرض الوحدة والدرس المناسبين.
+       </div><img data-template-id="path-image" loading="lazy" class="canva-image mt-5 h-48 w-full rounded-2xl object-cover" src="https://images.pexels.com/photos/10646409/pexels-photo-10646409.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1280" alt="فصل دراسي فارغ مجهز بالمقاعد والسبورة">
+      </aside>
+     </div>
+    </section>
+    <section id="teachers-view" class="view">
+     <article data-template-id="teachers-panel" class="canva-panel soft-card rounded-[2rem] bg-white p-6" style="background: rgb(255, 255, 255);">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+       <div>
+        <p data-template-id="teachers-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">دليل الشخصيات التعليمية الافتراضية</p>
+        <h1 data-template-id="teachers-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">المعلمون والمعلمات</h1>
+       </div>
+       <p id="teacher-count" class="status-chip bg-[#e3f0eb] text-[#146c70]">36 شخصية افتراضية</p>
+      </div>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6"><input id="teacher-search" class="field lg:col-span-2" type="search" placeholder="ابحث بالاسم"> <select id="teacher-stage-filter" class="field"></select> <select id="teacher-grade-filter" class="field"></select> <select id="teacher-subject-filter" class="field"></select> <select id="teacher-sort" class="field"><option value="rating">الفرز: التقييم</option><option value="subject">الفرز: المادة</option><option value="presence">الفرز: التواجد</option></select>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-3"><label class="flex items-center gap-2 rounded-xl bg-[#eff6f3] px-3 py-2 font-bold"><input id="female-filter" type="checkbox"> معلمات فقط</label> <label class="flex items-center gap-2 rounded-xl bg-[#eff6f3] px-3 py-2 font-bold"><input id="male-filter" type="checkbox"> معلمون فقط</label> <label class="flex items-center gap-2 rounded-xl bg-[#eff6f3] px-3 py-2 font-bold"><input id="available-filter" type="checkbox"> متاح الآن</label>
+      </div>
+      <div id="teacher-grid" class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+      <p id="teacher-empty" class="hidden-state mt-6 rounded-2xl bg-[#fff1e8] p-5 font-bold text-[#93452e]">لا توجد نتائج مطابقة. غيّر التصفية أو ابحث باسم آخر.</p>
+     </article>
+     <article id="teacher-profile" data-template-id="teacher-profile-panel" class="canva-panel soft-card mt-6 rounded-[2rem] bg-[#e3f0eb] p-6" style="background: rgb(227, 240, 235);">
+      <p data-template-id="teacher-profile-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">ملف المعلم أو المعلمة</p>
+      <div id="teacher-profile-content" class="mt-4 rounded-3xl bg-white p-6 font-bold text-[#53706f]">
+       اختر معلماً أو معلمة من الدليل لعرض ملفه التعليمي.
+      </div>
+     </article>
+    </section>
+    <section id="class-view" class="view">
+     <div class="grid gap-6 xl:grid-cols-[1.3fr_.7fr]">
+      <article data-template-id="classroom-panel" class="canva-section soft-card rounded-[2rem] bg-[#e3f0eb] p-5 sm:p-6" style="background: rgb(227, 240, 235);">
+       <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+         <div id="teacher-avatar-circle" class="grid h-14 w-14 place-items-center rounded-full bg-[#146c70] text-xl font-extrabold text-white">
+          م
+         </div>
+         <div>
+          <h1 id="class-teacher-name" class="font-extrabold">المعلم الافتراضي</h1>
+          <p id="teacher-state" class="font-bold text-[#53706f]">يستعد للدرس</p>
+         </div>
+        </div><span class="status-chip bg-[#fff4d9] text-[#846019]"><i data-lucide="radio" class="h-4 w-4"></i>محاكاة تعليمية</span>
+       </div>
+       <div class="board mt-5 min-h-[345px] rounded-2xl p-6 sm:p-8">
+        <p data-template-id="board-label" class="canva-text font-bold text-[#f7c75d]" style="color: rgb(247, 199, 93); font-weight: 700; font-style: normal; font-size: 16px;">السبورة الرقمية</p>
+        <h2 id="board-title" class="mt-7 text-2xl font-extrabold sm:text-3xl">اختر مسارك لبدء الدرس</h2>
+        <p id="board-unit" class="mt-2 font-bold text-white/75">الوحدة التعليمية</p>
+        <div id="board-writing" class="mt-7 rounded-xl border border-white/20 bg-white/10 p-4 text-lg font-bold leading-8">
+         ستظهر هنا نقاط الشرح المكتوبة.
+        </div>
+        <div class="mt-5 rounded-xl border border-[#f7c75d]/40 bg-white/10 p-4">
+         <p data-template-id="lesson-question-label" class="canva-text font-bold text-[#f7c75d]" style="color: rgb(247, 199, 93); font-weight: 700; font-style: normal; font-size: 16px;">سؤال الدرس</p>
+         <p id="lesson-question" class="mt-2 text-lg font-bold">اختر مادة لعرض سؤال الدرس.</p>
+        </div>
+       </div>
+       <div class="mt-5 grid gap-2 sm:grid-cols-4"><button id="start-lesson" data-template-id="start-lesson-button" type="button" class="canva-button rounded-xl px-4 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">بدء الدرس</button> <button id="audio-toggle" data-template-id="audio-toggle-button" type="button" class="canva-button rounded-xl bg-white px-4 py-3 font-extrabold text-[#146c70]" style="background: rgb(255, 255, 255); color: rgb(20, 108, 112); font-weight: 800; font-style: normal; font-size: 16px;">تشغيل الشرح الصوتي</button> <button id="raise-hand" data-template-id="raise-hand-button" type="button" class="canva-button rounded-xl bg-[#fff4d9] px-4 py-3 font-extrabold text-[#846019]" style="background: rgb(255, 244, 217); color: rgb(132, 96, 25); font-weight: 800; font-style: normal; font-size: 16px;">رفع اليد</button> <button id="finish-lesson" data-template-id="finish-lesson-button" type="button" class="canva-button rounded-xl bg-[#fff1e8] px-4 py-3 font-extrabold text-[#93452e]" style="background: rgb(255, 241, 232); color: rgb(147, 69, 46); font-weight: 800; font-style: normal; font-size: 16px;">إنهاء الدرس</button>
+       </div>
+       <p id="audio-transcript" class="mt-4 rounded-xl bg-white p-4 font-bold leading-7 text-[#53706f]">البديل النصي: لا يوجد بث حي؛ عند التشغيل تسمع نغمة محاكاة قصيرة ويظهر الشرح مكتوباً على السبورة.</p>
+      </article>
+      <aside data-template-id="lesson-side-panel" class="canva-panel soft-card rounded-[2rem] bg-[#fff8ed] p-5" style="background: rgb(255, 248, 237);">
+       <p data-template-id="lesson-steps-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">مراحل الدرس المحاكى</p>
+       <div id="lesson-steps" class="mt-4 space-y-2">
+        <div class="step rounded-xl border bg-white p-3 font-bold">
+         1. ترحيب
+        </div>
+        <div class="step rounded-xl border bg-white p-3 font-bold">
+         2. شرح
+        </div>
+        <div class="step rounded-xl border bg-white p-3 font-bold">
+         3. كتابة
+        </div>
+        <div class="step rounded-xl border bg-white p-3 font-bold">
+         4. سؤال
+        </div>
+        <div class="step rounded-xl border bg-white p-3 font-bold">
+         5. انتظار الإجابة
+        </div>
+        <div class="step rounded-xl border bg-white p-3 font-bold">
+         6. قراءة وتصحيح
+        </div>
+       </div>
+       <h2 data-template-id="students-title" class="canva-text mt-6 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">مقاعد الطلاب</h2>
+       <div class="mt-3 grid grid-cols-3 gap-2">
+        <div class="rounded-2xl bg-white p-3 text-center font-bold">
+         ليان<br><span class="text-[#146c70]">حاضرة</span>
+        </div>
+        <div class="rounded-2xl bg-white p-3 text-center font-bold">
+         نور<br><span class="text-[#146c70]">حاضر</span>
+        </div>
+        <div class="rounded-2xl bg-white p-3 text-center font-bold">
+         حسن<br><span class="text-[#846019]">رفع اليد</span>
+        </div>
+       </div>
+      </aside>
+     </div>
+     <article data-template-id="student-response-panel" class="canva-panel soft-card mt-6 rounded-3xl bg-white p-6" style="background: rgb(255, 255, 255);">
+      <h2 data-template-id="student-response-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">اسأل أو أرسل إجابتك</h2>
+      <form id="student-question-form" class="mt-4 grid gap-4 lg:grid-cols-[1fr_auto]">
+       <div>
+        <label for="student-question" data-template-id="student-question-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">إجابة كتابية أو سؤال للمعلم المحاكى</label><textarea id="student-question" class="field min-h-24 resize-y" placeholder="اكتب سؤالك أو إجابتك هنا"></textarea>
+       </div><button data-template-id="send-question-button" type="submit" class="canva-button self-end rounded-xl px-5 py-3 font-extrabold" style="background: rgb(232, 121, 91); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">إرسال المشاركة</button>
+      </form>
+      <p id="teacher-reply" class="hidden-state mt-4 rounded-xl bg-[#e3f0eb] p-4 font-bold text-[#146c70]" aria-live="polite"></p>
+     </article>
+    </section>
+    <section id="exam-view" class="view">
+     <div class="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
+      <article data-template-id="exam-panel" class="canva-panel soft-card rounded-[2rem] bg-[#fff8ed] p-6" style="background: rgb(255, 248, 237);">
+       <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+         <p data-template-id="exam-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">اختبار قصير تجريبي</p>
+         <h1 data-template-id="exam-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">اختبر فهمك للفكرة</h1>
+        </div><span id="exam-timer" class="status-chip bg-[#183a3c] text-white">05:00</span>
+       </div>
+       <div class="mt-5 h-3 overflow-hidden rounded-full bg-white">
+        <div id="exam-progress" class="progress-fill h-full w-0 rounded-full bg-[#146c70]"></div>
+       </div>
+       <p id="exam-count" class="mt-2 font-bold text-[#53706f]">السؤال 1 من 1</p>
+       <div class="mt-5 rounded-2xl bg-[#183a3c] p-5 text-lg font-extrabold text-white">
+        <p id="exam-question">اختر مادة لبدء الاختبار.</p>
+       </div><button id="start-exam" data-template-id="start-exam-button" type="button" class="canva-button mt-5 rounded-xl px-5 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">بدء الاختبار</button>
+       <form id="exam-form" class="mt-5 space-y-4">
+        <div>
+         <label for="exam-answer" data-template-id="exam-answer-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">الإجابة المكتوبة</label><textarea id="exam-answer" class="field min-h-24 resize-y" placeholder="اكتب إجابتك"></textarea>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2"><button id="voice-answer" data-template-id="voice-answer-button" type="button" class="canva-button rounded-xl bg-[#e3f0eb] px-4 py-3 font-extrabold text-[#146c70]" style="background: rgb(227, 240, 235); color: rgb(20, 108, 112); font-weight: 800; font-style: normal; font-size: 16px;">إجابة صوتية محاكية</button> <label data-template-id="solution-image-label" class="canva-input flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#9bcfc5] bg-white px-4 py-3 text-center font-extrabold text-[#146c70]" for="solution-image" style="background: rgb(255, 255, 255); color: rgb(20, 108, 112); font-weight: 800; font-style: normal; font-size: 16px;">إرفاق صورة ورقة الحل</label> <input id="solution-image" class="hidden" type="file" accept="image/*">
+        </div><button data-template-id="submit-exam-button" type="submit" class="canva-button rounded-xl px-5 py-3 font-extrabold" style="background: rgb(232, 121, 91); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">إرسال الاختبار للتصحيح</button>
+       </form>
+       <div id="image-preview-wrap" class="hidden-state mt-5 rounded-2xl bg-white p-4">
+        <img id="image-preview" class="max-h-52 w-full rounded-xl object-contain">
+        <p id="image-status" class="mt-3 font-bold text-[#846019]"></p>
+       </div>
+      </article>
+      <aside data-template-id="grading-panel" class="canva-panel soft-card rounded-[2rem] bg-white p-6" style="background: rgb(255, 255, 255);">
+       <p data-template-id="grading-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">مراجعة الإجابة</p>
+       <h2 data-template-id="grading-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">التصحيح المقترح</h2>
+       <div class="mt-5 space-y-4">
+        <div>
+         <label for="suggested-score" data-template-id="score-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">الدرجة المقترحة من 10</label><input id="suggested-score" class="field" type="number" min="0" max="10" value="0">
+        </div>
+        <div>
+         <label for="teacher-notes" data-template-id="grading-notes-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">ملاحظات المعلم</label><textarea id="teacher-notes" class="field min-h-24 resize-y" placeholder="ملاحظات تجريبية قابلة للتعديل"></textarea>
+        </div>
+        <div id="common-mistakes" class="rounded-2xl bg-[#fff4d9] p-4 font-bold text-[#846019]">
+         الأخطاء الشائعة ستظهر بعد إرسال الإجابة.
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+         <button id="manual-grade" data-template-id="manual-grade-button" type="button" class="canva-button rounded-xl bg-[#e3f0eb] px-4 py-3 font-extrabold text-[#146c70]" style="background: rgb(227, 240, 235); color: rgb(20, 108, 112); font-weight: 800; font-style: normal; font-size: 16px;">تعديل يدوياً</button><button id="approve-grade" data-template-id="approve-grade-button" type="button" class="canva-button rounded-xl px-4 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">اعتماد الدرجة</button>
+        </div>
+        <p id="grading-status" class="hidden-state rounded-xl p-4 font-bold" aria-live="polite"></p>
+       </div>
+      </aside>
+     </div>
+    </section>
+    <section id="consent-view" class="view">
+     <article data-template-id="consent-panel" class="canva-panel soft-card rounded-[2rem] bg-[#e3f0eb] p-6 sm:p-8" style="background: rgb(227, 240, 235);">
+      <p data-template-id="consent-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">خصوصية ومراجعة ولي الأمر</p>
+      <h1 data-template-id="consent-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">موافقات ولي الأمر</h1>
+      <p data-template-id="consent-copy" class="canva-text mt-3 max-w-4xl leading-relaxed" style="color: rgb(83, 112, 111); font-weight: 400; font-style: normal; font-size: 18px;">لا تُشغّل الكاميرا أو المايك تلقائياً، ولا تحفظ المنصة الصوت أو الفيديو أو صور الكاميرا افتراضياً. كل بديل كتابي متاح دائماً.</p>
+      <div id="consent-grid" class="mt-6 grid gap-4 md:grid-cols-3"></div>
+      <div class="mt-6 rounded-2xl bg-white p-5">
+       <h2 data-template-id="review-indicators-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">مؤشرات تحتاج مراجعة المعلم</h2>
+       <p data-template-id="review-indicators-copy" class="canva-text mt-2 leading-relaxed" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">هذه المؤشرات لا تثبت الغش ولا تستخدم التعرف على الوجه أو تحليل المشاعر أو القياسات الحيوية. يمكن للطالب اختيار مراجعة يدوية أو بديل كتابي.</p>
+       <p id="consent-log" class="mt-3 rounded-xl bg-[#eff6f3] p-3 font-bold text-[#53706f]">لا توجد موافقات مسجلة بعد.</p>
+      </div>
+     </article>
+    </section>
+    <section id="report-view" class="view">
+     <article data-template-id="report-panel" class="canva-panel soft-card rounded-[2rem] bg-white p-6 sm:p-8" style="background: rgb(255, 255, 255);">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+       <div>
+        <p data-template-id="report-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">تقرير المعلم وولي الأمر</p>
+        <h1 data-template-id="report-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">تقرير متابعة الطالب</h1>
+       </div><span id="report-status" class="status-chip bg-[#fff4d9] text-[#846019]">مسودة</span>
+      </div>
+      <div id="report-content" class="mt-6 grid gap-4 md:grid-cols-2"></div>
+      <div class="mt-6 grid gap-4 lg:grid-cols-3">
+       <div>
+        <label for="strengths" data-template-id="strengths-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">نقاط القوة</label><textarea id="strengths" class="field min-h-24">المشاركة ومحاولة الإجابة.</textarea>
+       </div>
+       <div>
+        <label for="support" data-template-id="support-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">جوانب الدعم</label><textarea id="support" class="field min-h-24">مراجعة خطوات الدرس بهدوء.</textarea>
+       </div>
+       <div>
+        <label for="recommendations" data-template-id="recommendations-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">التوصيات القادمة</label><textarea id="recommendations" class="field min-h-24">حل تمرين قصير إضافي.</textarea>
+       </div>
+      </div>
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><button id="save-report" data-template-id="save-report-button" type="button" class="canva-button rounded-xl px-4 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">حفظ التقرير</button> <button id="send-report" data-template-id="send-report-button" type="button" class="canva-button rounded-xl bg-[#e3f0eb] px-4 py-3 font-extrabold text-[#146c70]" style="background: rgb(227, 240, 235); color: rgb(20, 108, 112); font-weight: 800; font-style: normal; font-size: 16px;">إرسال إلى ولي الأمر</button> <button id="acknowledge-report" data-template-id="acknowledge-report-button" type="button" class="canva-button rounded-xl bg-[#fff4d9] px-4 py-3 font-extrabold text-[#846019]" style="background: rgb(255, 244, 217); color: rgb(132, 96, 25); font-weight: 800; font-style: normal; font-size: 16px;">تأكيد الاطلاع</button> <button id="print-report" data-template-id="print-report-button" type="button" class="canva-button rounded-xl bg-[#fff1e8] px-4 py-3 font-extrabold text-[#93452e]" style="background: rgb(255, 241, 232); color: rgb(147, 69, 46); font-weight: 800; font-style: normal; font-size: 16px;">طباعة أو تنزيل (محاكاة)</button>
+      </div>
+      <div class="mt-6">
+       <h2 data-template-id="activity-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">آخر النشاطات</h2>
+       <div id="activity-list" class="mt-3 space-y-2"></div>
+      </div>
+     </article>
+    </section>
+    <section id="library-view" class="view">
+     <article data-template-id="library-hero" class="canva-banner soft-card overflow-hidden rounded-[2rem] bg-[#e3f0eb]" style="background: rgb(227, 240, 235);">
+      <div class="grid md:grid-cols-[.7fr_1.3fr]">
+       <img data-template-id="library-image" loading="lazy" class="canva-image h-52 w-full object-cover md:h-full" src="https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1280" alt="مكتبة منظمة تحتوي على رفوف كتب متنوعة">
+       <div class="p-6 sm:p-8">
+        <p data-template-id="library-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">مكتبة المناهج</p>
+        <h1 data-template-id="library-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">رتّب المحتوى حسب المرحلة والصف والمادة</h1>
+        <p data-template-id="library-copy" class="canva-text mt-3 leading-relaxed" style="color: rgb(83, 112, 111); font-weight: 400; font-style: normal; font-size: 18px;">المحتوى الظاهر تجريبي. لا تدّعي المنصة تحميل مناهج رسمية ما لم يرفعها المستخدم أو يربطها بمصدر معتمد.</p>
+       </div>
+      </div>
+     </article>
+     <div class="mt-6 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
+      <article data-template-id="upload-panel" class="canva-panel soft-card rounded-[2rem] bg-[#fff8ed] p-6" style="background: rgb(255, 248, 237);">
+       <h2 data-template-id="upload-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">إضافة درس من المنهج</h2>
+       <form id="library-form" class="mt-5 space-y-4">
+        <div>
+         <label for="library-file" data-template-id="library-file-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">ملف PDF أو DOCX أو صورة صفحة</label><input id="library-file" class="field" type="file" accept=".pdf,.doc,.docx,image/*">
+        </div>
+        <div>
+         <label for="library-chapter" data-template-id="library-chapter-label" class="canva-text mb-2 block font-bold" style="color: rgb(24, 58, 60); font-weight: 700; font-style: normal; font-size: 16px;">الفصل أو الوحدة</label><input id="library-chapter" class="field" type="text" placeholder="مثال: الفصل الأول / الوحدة الأولى">
+        </div>
+        <div id="library-file-info" class="hidden-state rounded-xl bg-white p-3 font-bold text-[#53706f]"></div><button data-template-id="add-lesson-button" type="submit" class="canva-button w-full rounded-xl px-5 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">إضافة للمكتبة بانتظار الرفع</button>
+       </form>
+      </article>
+      <article data-template-id="catalog-panel" class="canva-panel soft-card rounded-[2rem] bg-white p-6" style="background: rgb(255, 255, 255);">
+       <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+         <p data-template-id="catalog-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">المحتوى المحفوظ</p>
+         <h2 data-template-id="catalog-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">كتالوج المناهج والدروس</h2>
+        </div><input id="library-search" class="field w-48" type="search" placeholder="بحث بالمكتبة">
+       </div>
+       <div id="catalog-list" class="mt-5 space-y-3"></div>
+      </article>
+     </div>
+    </section>
+    <section id="settings-view" class="view">
+     <article data-template-id="settings-panel" class="canva-panel soft-card rounded-[2rem] bg-white p-6 sm:p-8" style="background: rgb(255, 255, 255);">
+      <p data-template-id="settings-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">اتصال ومزامنة</p>
+      <h1 data-template-id="settings-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 32px;">إدارة العمل دون اتصال</h1>
+      <div class="mt-6 grid gap-5 md:grid-cols-2">
+       <section class="rounded-3xl bg-[#eff6f3] p-5">
+        <h2 data-template-id="sync-queue-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">بانتظار المزامنة</h2>
+        <p id="queue-count" class="mt-3 font-bold text-[#53706f]">0 عمليات بانتظار المزامنة</p><button id="open-queue" data-template-id="open-queue-button" type="button" class="canva-button mt-4 rounded-xl px-4 py-3 font-extrabold" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">عرض قائمة الانتظار</button>
+       </section>
+       <section class="rounded-3xl bg-[#fff8ed] p-5">
+        <h2 data-template-id="connection-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">حالة الاتصال</h2>
+        <p id="last-sync" class="mt-3 font-bold text-[#53706f]">آخر مزامنة: لم تتم بعد</p>
+        <p id="offline-note" class="mt-2 font-bold text-[#53706f]">المحتوى المختار والأنشطة والمسودات محفوظة محلياً.</p>
+       </section>
+      </div>
+      <div id="queue-list" class="mt-6 space-y-3"></div>
+     </article>
+    </section>
+   </main>
+  </div>
+  <div id="toast" class="toast fixed bottom-5 left-5 z-50 max-w-md items-start gap-3 rounded-2xl border border-[#9bcfc5] bg-[#e3f0eb] p-4 text-[#146c70] shadow-xl" role="status" aria-live="polite">
+   <i data-lucide="circle-check-big" class="shrink-0"></i>
+   <p id="toast-text" class="font-bold"></p>
+  </div>
+  <script>
+    /* إعداد الربط الحقيقي: يتطلب backend وWebSocket وSTUN/TURN وHTTPS وصلاحيات المستخدم. */
+    const DEFAULT_CONFIG = Object.freeze({restApiUrl:"",websocketUrl:"",stunUrl:"",turnServers:[],environment:"demo",requestTimeoutMs:8000,schemaVersion:"1.0"});
+    let CONFIG = {...DEFAULT_CONFIG};
+    const makeId=()=>globalThis.crypto?.randomUUID?.()||`req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    function configureIntegration(values={}){CONFIG={...DEFAULT_CONFIG,...values,turnServers:Array.isArray(values.turnServers)?values.turnServers:[]};return getIntegrationStatus()}
+    const IntegrationLog = { safe(event, details = {}) { console.info(`[integration:${event}]`, { environment: CONFIG.environment, ...details }); } };
+    // الربط الحقيقي يحتاج Backend وWebSocket وSTUN/TURN وHTTPS؛ لا تُضع أسراراً هنا.
+    const integrationFieldsComment="restApiUrl, websocketUrl, stunUrl, turnServers, environment, requestTimeoutMs, schemaVersion";
+    const IntegrationStore = {
+      dbName: "shno-mno-integration", storeName: "operations", db: null,
+      async open() {
+        if (!window.indexedDB) return null;
+        if (this.db) return this.db;
+        return new Promise(resolve => { const req = indexedDB.open(this.dbName, 1); req.onupgradeneeded = () => req.result.createObjectStore(this.storeName, { keyPath: "id" }); req.onsuccess = () => { this.db = req.result; resolve(this.db); }; req.onerror = () => resolve(null); });
+      },
+      async put(value) { const db = await this.open(); if (!db) return false; return new Promise(resolve => { const tx = db.transaction(this.storeName, "readwrite"); tx.objectStore(this.storeName).put(value); tx.oncomplete = () => resolve(true); tx.onerror = () => resolve(false); }); },
+      async get(id) { const db=await this.open(); if(!db)return null; return new Promise(resolve=>{const r=db.transaction(this.storeName).objectStore(this.storeName).get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>resolve(null)}) },
+      async all() { const db=await this.open(); if(!db)return []; return new Promise(resolve=>{const r=db.transaction(this.storeName).objectStore(this.storeName).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>resolve([])}) }
+    };
+    const ExternalAdapter = {
+      ws: null, wsTimer: null, reconnectAttempt: 0, syncLock: false,
+      get demo() { return !CONFIG.restApiUrl && !CONFIG.websocketUrl; },
+      async request(path, options = {}, attempt = 0) {
+        if (!CONFIG.restApiUrl) return { ok: false, demo: true, error: "الوضع التجريبي المحلي" };
+        const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+        const requestId = options.requestId || crypto.randomUUID();
+        try { const response = await fetch(`${CONFIG.restApiUrl.replace(/\\/$/, "")}/${path.replace(/^\\//, "")}`, { ...options, signal: controller.signal, headers: { "Content-Type": "application/json", "X-Request-Id": requestId, ...(options.headers || {}) } }); const text = await response.text(); let data = {}; try { data = text ? JSON.parse(text) : {}; } catch { throw new Error("استجابة الخادم ليست JSON صالحاً"); } if (!response.ok) throw new Error(data.message || "تعذر إكمال الطلب"); return data; } catch (error) { if (attempt < 2) { await new Promise(r => setTimeout(r, 300 * (2 ** attempt))); return this.request(path, options, attempt + 1); } IntegrationLog.safe("request-failed", { path, message: error.message }); throw new Error(error.name === "AbortError" ? "انتهت مهلة الاتصال" : `تعذر الاتصال بالخادم: ${error.message}`); } finally { clearTimeout(timer); }
+      },
+      heartbeatTimer:null, listeners:new Set(), peers:new Map(), mediaStreams:new Map(), roomId:"",
+      connect() { if (!CONFIG.websocketUrl || this.ws) return false; try { this.ws = new WebSocket(CONFIG.websocketUrl); this.ws.onopen = () => { this.reconnectAttempt = 0; this.sendEvent("heartbeat", {}); clearInterval(this.heartbeatTimer); this.heartbeatTimer=setInterval(()=>this.sendEvent("heartbeat", {}),25000); }; this.ws.onmessage = event => { try { const data=JSON.parse(event.data); if(!data||typeof data!=="object")throw new Error("invalid event"); document.dispatchEvent(new CustomEvent("external-event", { detail:data })); this.listeners.forEach(fn=>fn(data)); } catch { IntegrationLog.safe("invalid-ws-message"); } }; this.ws.onclose = () => { clearInterval(this.heartbeatTimer); this.ws = null; if (CONFIG.websocketUrl && this.reconnectAttempt < 3) { const delay = 500 * (2 ** this.reconnectAttempt++); clearTimeout(this.wsTimer); this.wsTimer = setTimeout(() => this.connect(), delay); } }; this.ws.onerror = () => IntegrationLog.safe("ws-error"); return true; } catch { return false; } },
+      disconnect() { clearTimeout(this.wsTimer); clearInterval(this.heartbeatTimer); if (this.ws) this.ws.close(); this.ws = null; this.leaveRoom(this.roomId); },
+      onEvent(fn){if(typeof fn==='function')this.listeners.add(fn);return()=>this.listeners.delete(fn)},
+      sendEvent(type, payload) { if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false; this.ws.send(JSON.stringify({ type, payload, requestId: crypto.randomUUID(), schemaVersion: CONFIG.schemaVersion })); return true; },
+      joinRoom(roomId) { return this.sendEvent("joinRoom", { roomId }); }, leaveRoom(roomId) { return this.sendEvent("leaveRoom", { roomId }); },
+      async syncQueue(queue) { if (this.demo || this.syncLock) return { synced: 0, pending: queue.length }; this.syncLock = true; let synced = 0; try { for (const item of queue) { try { await this.request("operations", { method: "POST", body: JSON.stringify(item), requestId: item.id }); synced++; } catch { break; } } } finally { this.syncLock = false; } return { synced, pending: queue.length - synced }; },
+      getIntegrationStatus() { return { environment: CONFIG.environment, demo: this.demo, rest: Boolean(CONFIG.restApiUrl), websocket: Boolean(CONFIG.websocketUrl), online: navigator.onLine, schemaVersion: CONFIG.schemaVersion }; },
+      async healthCheck() { if (this.demo) return { ok: true, mode: "demo" }; try { return await this.request("health"); } catch (error) { return { ok: false, error: error.message }; } },
+      getMediaCapabilities() { return { mediaDevices: Boolean(navigator.mediaDevices?.getUserMedia), peerConnection: Boolean(window.RTCPeerConnection), secureContext: window.isSecureContext, audio: Boolean(navigator.mediaDevices?.getUserMedia), video: Boolean(navigator.mediaDevices?.getUserMedia) }; },
+      async createPeerConnection(roomId, kind = "audio") { if (!window.RTCPeerConnection) throw new Error("المتصفح لا يدعم الاتصال المباشر"); const peer = new RTCPeerConnection({ iceServers: [...(CONFIG.stunUrl?[{urls:CONFIG.stunUrl}]:[]), ...CONFIG.turnServers] }); peer.onicecandidate = event => event.candidate && this.sendEvent("iceCandidate", { roomId, candidate: event.candidate }); peer.ontrack=event=>document.dispatchEvent(new CustomEvent("external-media",{detail:{roomId,stream:event.streams[0]}})); peer.oniceconnectionstatechange=()=>{if(["failed","closed","disconnected"].includes(peer.iceConnectionState))this.closePeer(roomId)}; const stream = await this.requestMedia(kind); stream.getTracks().forEach(track => peer.addTrack(track, stream)); this.peers.set(roomId,peer);this.mediaStreams.set(roomId,stream); const offer = await peer.createOffer(); await peer.setLocalDescription(offer); this.sendEvent("offer", { roomId, offer }); return { peer, stream }; },
+      closePeer(roomId){const p=this.peers.get(roomId);p?.close();this.peers.delete(roomId);const s=this.mediaStreams.get(roomId);this.stopMedia(s);this.mediaStreams.delete(roomId)},
+      async joinVirtualClass(roomId){this.roomId=roomId;if(this.connect())this.joinRoom(roomId);return Boolean(this.ws)},
+      leaveVirtualClass(){if(this.roomId)this.leaveRoom(this.roomId);this.peers.forEach((_,id)=>this.closePeer(id));this.roomId=""},
+      async startMedia(kind){if(!this.ws||!this.roomId)throw new Error("لا توجد غرفة اتصال");return this.createPeerConnection(this.roomId,kind)},
+      async startAudioSession(){return this.startMedia("audio")}, async startVideoSession(){return this.startMedia("video")}, stopMediaSession(){this.leaveVirtualClass()},
+      async handleSignal(message){const p=this.peers.get(message.roomId);if(!p)return;try{if(message.type==="offer")await this.acceptOffer(p,message.roomId,message.offer);if(message.type==="answer")await p.setRemoteDescription(message.answer);if(message.type==="iceCandidate")await p.addIceCandidate(message.candidate)}catch(e){IntegrationLog.safe("signal-failed",{message:e.message})}},
+      async acceptOffer(peer, roomId, offer) { await peer.setRemoteDescription(offer); const answer = await peer.createAnswer(); await peer.setLocalDescription(answer); this.sendEvent("answer", { roomId, answer }); return answer; },
+      stopMedia(stream) { stream?.getTracks().forEach(track => track.stop()); },
+      async requestMedia(kind) { const consent = state?.consents?.[kind === "audio" ? "mic" : "camera"]; if (consent !== "موافق عليه") throw new Error("تحتاج إلى موافقة ولي الأمر أولاً"); if (!navigator.mediaDevices?.getUserMedia) throw new Error("المتصفح لا يدعم الوسائط"); return navigator.mediaDevices.getUserMedia({ audio: kind === "audio", video: kind === "video" }); }
+    };
+    window.ExternalAdapter = ExternalAdapter;
+    window.getIntegrationStatus = () => ExternalAdapter.getIntegrationStatus();
+    window.healthCheck = () => ExternalAdapter.healthCheck();
+    window.getMediaCapabilities = () => ExternalAdapter.getMediaCapabilities();
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => IntegrationLog.safe("service-worker-unavailable"));
+
+    const STORE = "shno-mno-integrated-v10";
+    const stages = {
+      "ابتدائي":["الأول ابتدائي","الثاني ابتدائي","الثالث ابتدائي","الرابع ابتدائي","الخامس ابتدائي","السادس ابتدائي"],
+      "متوسط":["الأول متوسط","الثاني متوسط","الثالث متوسط"],
+      "إعدادي":["الرابع إعدادي","الخامس إعدادي","السادس إعدادي"]
+    };
+    const subjectMap = {
+      "ابتدائي":["اللغة العربية","الرياضيات","العلوم","اللغة الإنكليزية","التربية الإسلامية","الحاسوب"],
+      "متوسط":["اللغة العربية","الرياضيات","العلوم","اللغة الإنكليزية","الاجتماعيات","الحاسوب"],
+      "إعدادي":["اللغة العربية","الرياضيات","الفيزياء","الكيمياء","الأحياء","اللغة الإنكليزية","الحاسوب"]
+    };
+    const lessons = {
+      "اللغة العربية":{unit:"وحدة القراءة والتعبير",lesson:"الفكرة الرئيسة للنص",points:"نقرأ النص بهدوء، نحدد الكلمات المهمة، ثم نميز الفكرة الرئيسة عن التفاصيل.",question:"ما الفكرة الرئيسة للنص؟ اكتبها في جملة واحدة.",exam:"اكتب جملة اسمية مفيدة تحتوي على مبتدأ وخبر.",keys:["مبتدأ","خبر","فكرة"]},
+      "الرياضيات":{unit:"وحدة الأعداد والعمليات",lesson:"حل المسائل بخطوات",points:"نفهم المعطيات، نختار العملية المناسبة، ثم نتحقق من الناتج.",question:"إذا كان مع ليان ٦ أقلام وأعطتها صديقتها ٤، كم أصبح معها؟",exam:"احسب: ٨ + ٧ = ؟",keys:["15","١٥"]},
+      "العلوم":{unit:"وحدة الاستكشاف العلمي",lesson:"حالات المادة",points:"للمادة حالات مختلفة، والحرارة قد تغير الحالة، ونلاحظ النتيجة ونسجلها.",question:"اذكر مثالاً لمادة سائلة.",exam:"ما الحالة التي تأخذ فيها المادة شكل الإناء؟",keys:["سائلة","السائلة"]},
+      "اللغة الإنكليزية":{unit:"Unit: Everyday English",lesson:"Introducing myself",points:"نستخدم I am للتعريف بالنفس، ونذكر الاسم بوضوح، ونتدرب على النطق.",question:"اكتب: My name is ... باللغة الإنكليزية.",exam:"أكمل: I ___ a student.",keys:["am"]},
+      "التربية الإسلامية":{unit:"وحدة القيم والسلوك",lesson:"الأمانة في حياتنا",points:"الأمانة قيمة مهمة، نحفظ حقوق الآخرين، ونطبقها في المدرسة والبيت.",question:"اذكر موقفاً يدل على الأمانة.",exam:"هل حفظ الأمانة سلوك حسن؟",keys:["نعم"]},
+      "الاجتماعيات":{unit:"وحدة المجتمع والوطن",lesson:"موارد المجتمع",points:"المجتمع يحتاج موارد متنوعة، ونحافظ على الموارد، ونفرق بين الطبيعي والبشري.",question:"اذكر مورداً طبيعياً واحداً.",exam:"هل الماء مورد طبيعي؟",keys:["نعم"]},
+      "الحاسوب":{unit:"وحدة المهارات الرقمية",lesson:"أجزاء الحاسوب",points:"نتعرف على الشاشة ولوحة المفاتيح والفأرة، ونستخدم الجهاز بطريقة آمنة.",question:"ما وظيفة لوحة المفاتيح؟",exam:"هل الفأرة من أجهزة الإدخال؟",keys:["نعم"]},
+      "الفيزياء":{unit:"وحدة القياس والحركة",lesson:"السرعة والمسافة",points:"السرعة ترتبط بالمسافة والزمن، ونستخدم وحدات واضحة، ونراجع المعطيات.",question:"ما الكمية التي تعبّر عن تغير الموقع مع الزمن؟",exam:"هل تقاس المسافة بالمتر؟",keys:["نعم"]},
+      "الكيمياء":{unit:"وحدة المادة والتحولات",lesson:"العناصر والمركبات",points:"العنصر نوع واحد من الذرات، والمركب اتحاد عناصر، ونستخدم الرموز بدقة.",question:"هل الماء عنصر أم مركب؟",exam:"الماء مثال على مركب: صح أم خطأ؟",keys:["صح","صحيح"]},
+      "الأحياء":{unit:"وحدة الكائنات الحية",lesson:"الخلية أساس الحياة",points:"الخلية وحدة بناء الكائن الحي، ولها أجزاء ذات وظائف متنوعة.",question:"ما وحدة بناء الكائنات الحية؟",exam:"الخلية هي وحدة بناء الكائن الحي: صح أم خطأ؟",keys:["صح","صحيح"]}
+    };
+    const teacherSeeds = [
+      ["بيان الرافدين","أنثى","اللغة العربية","ابتدائي","الأول ابتدائي، الثاني ابتدائي",8,"متاح الآن","عربية عراقية",4.9],["رائد دجلة","ذكر","الرياضيات","ابتدائي","الثالث ابتدائي، الرابع ابتدائي",10,"متاح الآن","عربية عراقية",4.8],["سُهى النخيل","أنثى","العلوم","ابتدائي","الرابع ابتدائي، الخامس ابتدائي",7,"في درس","عربية عراقية",4.7],["سامر الوركاء","ذكر","اللغة الإنكليزية","ابتدائي","الخامس ابتدائي، السادس ابتدائي",9,"متاح الآن","عربية وإنكليزية",4.8],["مريم البصرة","أنثى","التربية الإسلامية","ابتدائي","الأول ابتدائي، الثالث ابتدائي",11,"متاح الآن","عربية عراقية",4.9],["قيس بابل","ذكر","الحاسوب","ابتدائي","الرابع ابتدائي، السادس ابتدائي",6,"غير متاح","عربية عراقية",4.6],
+      ["آلاء الموصل","أنثى","اللغة العربية","متوسط","الأول متوسط، الثاني متوسط",8,"متاح الآن","عربية عراقية",4.8],["نزار الفرات","ذكر","الرياضيات","متوسط","الأول متوسط، الثالث متوسط",12,"في درس","عربية عراقية",4.9],["دجى الندى","أنثى","العلوم","متوسط","الثاني متوسط، الثالث متوسط",9,"متاح الآن","عربية عراقية",4.7],["هيثم كركوك","ذكر","اللغة الإنكليزية","متوسط","الأول متوسط، الثالث متوسط",7,"متاح الآن","عربية وإنكليزية",4.6],["شهد السلام","أنثى","الاجتماعيات","متوسط","الأول متوسط، الثاني متوسط",10,"غير متاح","عربية عراقية",4.8],["فراس العراق","ذكر","الحاسوب","متوسط","الثاني متوسط، الثالث متوسط",6,"متاح الآن","عربية عراقية",4.7],
+      ["رنا الرافدين","أنثى","اللغة العربية","إعدادي","الرابع إعدادي، الخامس إعدادي",12,"في درس","عربية عراقية",4.9],["ياسر دجلة","ذكر","الرياضيات","إعدادي","الرابع إعدادي، السادس إعدادي",13,"متاح الآن","عربية عراقية",4.9],["زينب سومر","أنثى","الفيزياء","إعدادي","الرابع إعدادي، الخامس إعدادي",8,"متاح الآن","عربية عراقية",4.8],["باسل نينوى","ذكر","الكيمياء","إعدادي","الخامس إعدادي، السادس إعدادي",11,"في درس","عربية عراقية",4.8],["هبة بغداد","أنثى","الأحياء","إعدادي","الرابع إعدادي، السادس إعدادي",9,"متاح الآن","عربية عراقية",4.7],["مازن الفاو","ذكر","اللغة الإنكليزية","إعدادي","الخامس إعدادي، السادس إعدادي",10,"غير متاح","عربية وإنكليزية",4.7],
+      ["نور السندباد","أنثى","الرياضيات","ابتدائي","الأول ابتدائي، الثاني ابتدائي",5,"متاح الآن","عربية عراقية",4.6],["كرار الندى","ذكر","العلوم","ابتدائي","الثالث ابتدائي، السادس ابتدائي",6,"متاح الآن","عربية عراقية",4.6],["زهراء البصمة","أنثى","الحاسوب","ابتدائي","الثاني ابتدائي، الخامس ابتدائي",5,"في درس","عربية عراقية",4.5],["عمر الجسر","ذكر","التربية الإسلامية","ابتدائي","الرابع ابتدائي، السادس ابتدائي",9,"متاح الآن","عربية عراقية",4.7],["هدى القمر","أنثى","اللغة الإنكليزية","متوسط","الأول متوسط، الثاني متوسط",7,"متاح الآن","عربية وإنكليزية",4.7],["علي الرافدين","ذكر","الاجتماعيات","متوسط","الثاني متوسط، الثالث متوسط",8,"غير متاح","عربية عراقية",4.6],
+      ["لمى كربلاء","أنثى","الرياضيات","متوسط","الأول متوسط، الثاني متوسط",9,"متاح الآن","عربية عراقية",4.8],["حيدر الشط","ذكر","اللغة العربية","متوسط","الثاني متوسط، الثالث متوسط",10,"في درس","عربية عراقية",4.8],["إسراء الزهور","أنثى","الحاسوب","متوسط","الأول متوسط، الثالث متوسط",6,"متاح الآن","عربية عراقية",4.6],["مؤيد السهل","ذكر","العلوم","متوسط","الأول متوسط، الثالث متوسط",8,"متاح الآن","عربية عراقية",4.7],["تالا دجلة","أنثى","الكيمياء","إعدادي","الرابع إعدادي، الخامس إعدادي",7,"في درس","عربية عراقية",4.7],["سجاد الفرات","ذكر","الفيزياء","إعدادي","الخامس إعدادي، السادس إعدادي",10,"متاح الآن","عربية عراقية",4.8],
+      ["بتول الورد","أنثى","الأحياء","إعدادي","الرابع إعدادي، الخامس إعدادي",8,"متاح الآن","عربية عراقية",4.8],["أكرم السراي","ذكر","الحاسوب","إعدادي","الرابع إعدادي، السادس إعدادي",7,"غير متاح","عربية عراقية",4.6],["سارة الياقوت","أنثى","اللغة الإنكليزية","إعدادي","الرابع إعدادي، السادس إعدادي",9,"متاح الآن","عربية وإنكليزية",4.8],["مصطفى الأهوار","ذكر","اللغة العربية","إعدادي","الخامس إعدادي، السادس إعدادي",11,"في درس","عربية عراقية",4.9],["إيمان دجلة","أنثى","الاجتماعيات","متوسط","الأول متوسط، الثالث متوسط",8,"متاح الآن","عربية عراقية",4.7],["وسام الوركاء","ذكر","الرياضيات","إعدادي","الرابع إعدادي، الخامس إعدادي",9,"متاح الآن","عربية عراقية",4.7]
+    ];
+    const teachers = teacherSeeds.map((t,i)=>({id:"teacher-"+i,name:t[0],gender:t[1],subject:t[2],stage:t[3],grades:t[4],experience:t[5],presence:t[6],language:t[7],rating:t[8]}));
+    const $=id=>document.getElementById(id);
+    const state=Object.assign({role:"طالب",stage:"",grade:"",subject:"",teacherId:"",lesson:"",score:0,approved:false,handRaises:0,questions:0,reportStatus:"مسودة",consents:{camera:"بانتظار الموافقة",mic:"بانتظار الموافقة",recording:"بانتظار الموافقة"},queue:[],activities:[],library:[],lastSync:""}, JSON.parse(localStorage.getItem(STORE)||"{}"));
+    let backendRecords=[], audioContext, oscillator, examStarted=false, examSeconds=300, examTimer;
+
+    function save(){localStorage.setItem(STORE,JSON.stringify(state));IntegrationStore.put({id:"state",value:state,status:"pending"});state.queue.forEach(item=>IntegrationStore.put({id:item.id,...item}));renderQueue();renderReport(); }
+    function notify(text){$("toast-text").textContent=text;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),3600)}
+    function option(v,label){const o=document.createElement("option");o.value=v;o.textContent=label||v;return o}
+    function setOptions(select,placeholder,items){select.replaceChildren(option("",placeholder),...items.map(x=>option(x)));select.disabled=!items.length}
+    function showView(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view===id));window.scrollTo({top:0,behavior:"smooth"})}
+    function currentTeacher(){return teachers.find(t=>t.id===state.teacherId)||teachers.find(t=>t.subject===state.subject&&t.stage===state.stage)}
+    function lessonData(){return lessons[state.subject]||null}
+    function addActivity(text){state.activities.unshift({text,time:new Date().toLocaleString("ar-IQ")});state.activities=state.activities.slice(0,8);save()}
+    function updatePath(){
+      const d=lessonData(), t=currentTeacher();
+      $("learning-path").textContent=[state.stage||"المرحلة",state.grade||"الصف",state.subject||"المادة",t?.name||"المعلم",d?.unit||"الوحدة",d?.lesson||"الدرس"].join(" ← ");
+      $("selected-content").textContent=d?`${d.unit} ← ${d.lesson}\n\n${d.points}`:"اختر المرحلة والصف والمادة لعرض الوحدة والدرس المناسبين.";
+      $("board-title").textContent=d?.lesson||"اختر مسارك لبدء الدرس"; $("board-unit").textContent=d?.unit||"الوحدة التعليمية";$("board-writing").textContent=d?.points||"ستظهر هنا نقاط الشرح المكتوبة.";$("lesson-question").textContent=d?.question||"اختر مادة لعرض سؤال الدرس.";$("exam-question").textContent=d?.exam||"اختر مادة لبدء الاختبار.";
+      $("class-teacher-name").textContent=t?.name||"المعلم الافتراضي";$("teacher-avatar-circle").textContent=t?.name?.charAt(0)||"م";
+      save();
+    }
+    function populatePath(){
+      setOptions($("stage-select"),"اختر المرحلة",Object.keys(stages));$("stage-select").value=state.stage;
+      setOptions($("grade-select"),"اختر الصف",stages[state.stage]||[]);$("grade-select").value=state.grade;
+      setOptions($("subject-select"),"اختر المادة",state.grade?subjectMap[state.stage]||[]:[]);$("subject-select").value=state.subject;
+      const ts=teachers.filter(t=>t.stage===state.stage&&t.subject===state.subject&&t.grades.includes(state.grade));
+      $("teacher-select").replaceChildren(option("","اختر المعلم/المعلمة"),...ts.map(t=>option(t.id,`${t.name} — ${t.subject}`)));$("teacher-select").disabled=!ts.length;$("teacher-select").value=state.teacherId;
+      updatePath();
+    }
+    function renderTeachers(){
+      const q=$("teacher-search").value.trim(), st=$("teacher-stage-filter").value, gr=$("teacher-grade-filter").value, su=$("teacher-subject-filter").value, female=$("female-filter").checked,male=$("male-filter").checked,available=$("available-filter").checked,sort=$("teacher-sort").value;
+      let rows=teachers.filter(t=>(!q||t.name.includes(q))&&(!st||t.stage===st)&&(!gr||t.grades.includes(gr))&&(!su||t.subject===su)&&(!female||t.gender==="أنثى")&&(!male||t.gender==="ذكر")&&(!available||t.presence==="متاح الآن"));
+      rows.sort((a,b)=>sort==="rating"?b.rating-a.rating:sort==="subject"?a.subject.localeCompare(b.subject,"ar"):a.presence.localeCompare(b.presence,"ar"));
+      $("teacher-count").textContent=`${rows.length} من ${teachers.length} شخصية افتراضية`;
+      $("teacher-grid").replaceChildren(...rows.map(t=>{const card=document.createElement("button");card.type="button";card.className=`teacher-card text-right rounded-3xl bg-[#fffdf9] p-5 ${state.teacherId===t.id?"selected":""}`;card.innerHTML=`<div class="flex items-start justify-between gap-3"><span class="grid h-11 w-11 place-items-center rounded-full bg-[#e3f0eb] font-extrabold text-[#146c70]">${t.name.charAt(0)}</span><span class="status-chip ${t.presence==="متاح الآن"?"bg-[#e3f0eb] text-[#146c70]":"bg-[#fff4d9] text-[#846019]"}">${t.presence}</span></div><h3 class="mt-4 text-xl font-extrabold">${t.name}</h3><p class="mt-1 font-bold text-[#53706f]">${t.subject} · ${t.stage}</p><p class="mt-2 text-sm font-bold text-[#53706f]">${t.grades}</p><div class="mt-4 flex justify-between font-bold"><span>${t.gender}</span><span>★ ${t.rating}</span><span>${t.experience} سنوات</span></div>`;card.addEventListener("click",()=>selectTeacher(t));return card}));$("teacher-empty").classList.toggle("hidden-state",rows.length>0);
+    }
+    function selectTeacher(t){state.teacherId=t.id;state.stage=t.stage;state.subject=t.subject;if(!state.grade||!t.grades.includes(state.grade))state.grade=t.grades.split("،")[0].trim();populatePath();renderTeachers();$("teacher-profile-content").innerHTML=`<div class="grid gap-5 md:grid-cols-[auto_1fr_auto] md:items-center"><div class="grid h-20 w-20 place-items-center rounded-full bg-[#146c70] text-3xl font-extrabold text-white">${t.name.charAt(0)}</div><div><h2 class="text-2xl font-extrabold text-[#183a3c]">${t.name}</h2><p class="mt-1">شخصية تعليمية افتراضية · ${t.gender} · ${t.language}</p><p class="mt-2"><strong>المادة:</strong> ${t.subject} | <strong>الصفوف:</strong> ${t.grades}</p><p class="mt-2"><strong>الوحدات:</strong> ${lessonData()?.unit||"وحدة تعليمية"} | <strong>الخبرة النموذجية:</strong> ${t.experience} سنوات</p></div><div class="flex flex-col gap-2"><button id="profile-class" class="rounded-xl bg-[#146c70] px-4 py-3 font-extrabold text-white">دخول الصف</button><button id="profile-report" class="rounded-xl bg-[#fff4d9] px-4 py-3 font-extrabold text-[#846019]">عرض التقرير</button></div></div>`;$("profile-class").onclick=()=>showView("class-view");$("profile-report").onclick=()=>showView("report-view");notify(`تم اختيار ${t.name}`)}
+    function updateRole(role){state.role=role;document.querySelectorAll(".role-btn").forEach(b=>b.classList.toggle("active",b.dataset.role===role));$("role-message").textContent=role==="طالب"?"أهلاً بك يا طالب، اختر مسارك ثم افتح صفك الافتراضي.":role==="معلم/معلمة"?"أهلاً بك، تابع الصف والتصحيح والتقرير من لوحة واحدة.":role==="ولي أمر"?"أهلاً بك، تابع تقدم الطالب وراجع الموافقات والتقرير.":"أهلاً بك، راقب المؤشرات التعليمية التجريبية وإدارة المحتوى.";save()}
+    function lessonStep(){
+      const steps=[["يستعد للدرس","مرحباً بكم. سنبدأ بتحديد هدف الدرس."],["يشرح","نشرح الفكرة بأسلوب مبسط مع مثال واضح."],["يكتب","نكتب النقاط الأساسية على السبورة."],["يسأل",lessonData()?.question||"اختر مادة أولاً."],["ينتظر","ننتظر إجابة الطالب ونشجعه على المحاولة."],["يقرأ الإجابة","نقرأ الإجابة المكتوبة باهتمام."],["يصحح","نقدم تغذية راجعة تعليمية لطيفة ونلخص الفكرة."],["أنهى الدرس","أحسنتم، يمكنكم الانتقال إلى الاختبار القصير."]];
+      let i=0;$("start-lesson").disabled=true;
+      const timer=setInterval(()=>{const [status,writing]=steps[i];$("teacher-state").textContent=status;$("board-writing").textContent=writing;document.querySelectorAll("#lesson-steps .step").forEach((s,n)=>{s.classList.toggle("current",n===Math.min(i,5));s.classList.toggle("done",n<Math.min(i,5))});if(i++>=steps.length-1){clearInterval(timer);$("start-lesson").disabled=false;addActivity("اكتمل تسلسل الدرس المحاكى");notify("انتهى الدرس المحاكى. يمكنك بدء الاختبار.")}},1150)
+    }
+    function audioToggle(){
+      if(oscillator){oscillator.stop();oscillator=null;$("audio-toggle").textContent="تشغيل الشرح الصوتي";$("audio-transcript").textContent="تم إيقاف محاكاة الشرح الصوتي. البديل النصي ما زال ظاهراً على السبورة.";return}
+      audioContext=new (window.AudioContext||window.webkitAudioContext)();oscillator=audioContext.createOscillator();const gain=audioContext.createGain();gain.gain.value=.04;oscillator.frequency.value=440;oscillator.connect(gain).connect(audioContext.destination);oscillator.start();$("audio-toggle").textContent="إيقاف الشرح الصوتي";$("audio-transcript").textContent=`البديل النصي: ${lessonData()?.points||"اختر مادة لعرض الشرح."} هذه نغمة محاكاة وليست بثاً حياً.`;setTimeout(()=>{if(oscillator){oscillator.stop();oscillator=null;$("audio-toggle").textContent="تشغيل الشرح الصوتي"}},6000)
+    }
+    function createRecord(type, extra={}){
+      const t=currentTeacher();
+      return {student_name:"ليان أحمد",role:state.role,stage:state.stage,grade:state.grade,subject:state.subject,teacher_name:t?.name||"",teacher_gender:t?.gender||"",last_activity:new Date().toISOString(),lessons_completed:state.activities.filter(a=>a.text.includes("درس")).length,hand_raises:state.handRaises,questions_asked:state.questions,camera_consent:state.consents.camera,mic_consent:state.consents.mic,parent_consent_date:new Date().toISOString(),parent_consent_scope:"تجريبي",parent_consent_status:Object.values(state.consents).join(" | "),question_text:lessonData()?.question||"",answer_text:"",answer_type:type,score:state.score,max_score:10,teacher_feedback:$("teacher-notes")?.value||"",grade_approved:state.approved,exam_session_id:"exam-"+Date.now(),consent_log:$("consent-log")?.textContent||"",attendance:"حاضر",participation_level:"مشارك",strengths:$("strengths")?.value||"",improvements:$("support")?.value||"",recommendations:$("recommendations")?.value||"",report_status:state.reportStatus,parent_note:"",correction_confidence:"محاكاة تحتاج مراجعة",exam_status:"تجريبي",curriculum_file_name:"",curriculum_stage:"",curriculum_grade:"",curriculum_subject:"",curriculum_chapter:"",curriculum_status:"",...extra}
+    }
+    function enqueue(type,extra){state.queue.unshift({id:"q-"+Date.now(),type,record:createRecord(type,extra),status:"بانتظار المزامنة"});save()}
+    function renderConsent(){
+      const info={camera:["الكاميرا","ما سيظهر: صورة مباشرة عند الموافقة فقط","بديل كتابي أو مراجعة يدوية"],mic:["المايك","ما سيظهر: حالة صوت محاكية فقط","بديل إجابة مكتوبة"],recording:["التسجيل","ما سيظهر: سجل نشاط فقط دون حفظ وسائط خام","بديل ملخص مكتوب"]};
+      $("consent-grid").replaceChildren(...Object.entries(info).map(([key,v])=>{const a=document.createElement("article");a.className="rounded-3xl bg-white p-5 soft-card";a.innerHTML=`<div class="flex items-center justify-between"><h2 class="text-xl font-extrabold">${v[0]}</h2><span class="status-chip ${state.consents[key]==="موافق عليه"?"bg-[#e3f0eb] text-[#146c70]":state.consents[key]==="مرفوض"?"bg-[#fff1e8] text-[#93452e]":"bg-[#fff4d9] text-[#846019]"}">${state.consents[key]}</span></div><p class="mt-3 font-bold text-[#53706f]">${v[1]}</p><p class="mt-2 font-bold text-[#53706f]">مدة الاستخدام: جلسة تعليمية واحدة.</p><p class="mt-2 rounded-xl bg-[#eff6f3] p-3 font-bold text-[#146c70]">${v[2]}</p><div class="mt-4 grid grid-cols-2 gap-2"><button data-consent="${key}" data-state="موافق عليه" class="rounded-xl bg-[#146c70] p-2 font-extrabold text-white">موافقة</button><button data-consent="${key}" data-state="مرفوض" class="rounded-xl bg-[#fff1e8] p-2 font-extrabold text-[#93452e]">رفض</button><button data-consent="${key}" data-state="تم سحب الموافقة" class="rounded-xl bg-[#fff4d9] p-2 font-extrabold text-[#846019]">سحب</button><button data-consent="${key}" data-state="تم الإيقاف الفوري" class="rounded-xl bg-[#183a3c] p-2 font-extrabold text-white">إيقاف فوري</button></div>`;return a}));document.querySelectorAll("[data-consent]").forEach(b=>b.onclick=()=>{state.consents[b.dataset.consent]=b.dataset.state;$("consent-log").textContent=`سجل الموافقات: ${Object.entries(state.consents).map(([k,v])=>`${k}: ${v}`).join(" | ")}. لا يتم حفظ صوت أو فيديو أو صور كاميرا.`;enqueue("موافقة ولي الأمر");renderConsent();notify("تم تحديث حالة الموافقة.")})}
+    function renderReport(){
+      const d=lessonData(),t=currentTeacher();$("report-status").textContent=state.reportStatus;
+      $("report-content").innerHTML=`<div class="rounded-2xl bg-[#eff6f3] p-4 font-bold leading-8">الطالب: ليان أحمد<br>المرحلة: ${state.stage||"—"}<br>الصف: ${state.grade||"—"}<br>المادة: ${state.subject||"—"}<br>المعلم: ${t?.name||"—"}</div><div class="rounded-2xl bg-[#fff8ed] p-4 font-bold leading-8">التاريخ: ${new Date().toLocaleDateString("ar-IQ")}<br>الحضور: حاضر<br>مدة التعلم: 25 دقيقة (تجريبي)<br>نسبة التقدم: 70%<br>المشاركة: ${state.handRaises} رفع يد، ${state.questions} أسئلة<br>الدرجة: ${state.score}/10</div>`;
+      $("activity-list").replaceChildren(...(state.activities.length?state.activities:[{text:"لا توجد نشاطات مسجلة بعد.",time:""}]).map(a=>{const p=document.createElement("p");p.className="rounded-xl bg-[#eff6f3] p-3 font-bold text-[#53706f]";p.textContent=`${a.text} ${a.time?"— "+a.time:""}`;return p}))
+    }
+    function renderLibrary(){
+      const q=$("library-search").value||"";const rows=state.library.filter(x=>x.name.includes(q)||x.chapter.includes(q));$("catalog-list").replaceChildren(...(rows.length?rows:[{name:"محتوى تجريبي: "+(lessonData()?.lesson||"اختر مادة"),chapter:`${state.stage||"المرحلة"} ← ${state.grade||"الصف"} ← ${state.subject||"المادة"}`,status:"محتوى تجريبي قابل للتعديل"}]).map(x=>{const a=document.createElement("article");a.className="rounded-2xl border border-[#d5e5df] bg-[#fffdf9] p-4";a.innerHTML=`<h3 class="font-extrabold">${x.name}</h3><p class="mt-1 font-bold text-[#53706f]">${x.chapter}</p><span class="mt-3 inline-block rounded-full bg-[#fff4d9] px-3 py-1 font-bold text-[#846019]">${x.status}</span>`;return a}))
+    }
+    function renderQueue(){$("queue-count").textContent=`${state.queue.length} عمليات بانتظار المزامنة`;$("sync-summary").textContent=state.queue.length?`${state.queue.length} عمليات تعليمية محفوظة محلياً وبانتظار المزامنة.`:"لا توجد عمليات بانتظار المزامنة.";$("queue-list").replaceChildren(...(state.queue.length?state.queue:[{type:"لا توجد عمليات معلقة",status:"المحتوى المحلي جاهز"}]).map(x=>{const p=document.createElement("p");p.className="rounded-2xl bg-[#eff6f3] p-4 font-bold text-[#53706f]";p.textContent=`${x.type} — ${x.status}`;return p}))}
+    async function syncNow(button){
+      if(!navigator.onLine){notify("أنت تعمل دون اتصال. العمليات محفوظة محلياً.");return}
+      if(!window.dataSdk){notify("خدمة حفظ Canva Sheet غير متاحة الآن.");return}
+      button.disabled=true;button.textContent="جارٍ المزامنة…";
+      try{for(const item of [...state.queue]){let result;if(!ExternalAdapter.demo){try{await ExternalAdapter.request("operations",{method:"POST",body:JSON.stringify(item.record),requestId:item.id,headers:{"Idempotency-Key":item.id}});result={isOk:true}}catch{item.status="failed";await IntegrationStore.put({id:item.id,...item});notify("تعذر تأكيد عملية مع الخادم؛ بقيت العملية محلياً.");continue}}else if(window.dataSdk){result=await window.dataSdk.create(item.record)}else{result={isOk:false}}if(!result.isOk){item.status="failed";await IntegrationStore.put({id:item.id,...item});notify("تعذر تأكيد عملية واحدة. بقيت في قائمة المزامنة.");break}state.queue=state.queue.filter(x=>x.id!==item.id);await IntegrationStore.put({id:item.id,status:"synced",record:item.record})}state.lastSync=new Date().toLocaleString("ar-IQ");save();notify("تمت مزامنة العمليات المؤكدة.")}finally{button.disabled=false;button.textContent="مزامنة الآن"}
+    }
+    async function restoreIntegrationState(){const rows=await IntegrationStore.all();const saved=rows.find(x=>x.id==="state");if(saved?.value){Object.assign(state,saved.value);localStorage.setItem(STORE,JSON.stringify(state))}const queued=rows.filter(x=>x.status==="pending"||x.status==="failed").map(x=>x.record&&{id:x.id,type:x.type||"عملية",record:x.record,status:x.status});if(queued.length)state.queue=[...state.queue,...queued.filter(x=>!state.queue.some(q=>q.id===x.id))]}
+    function connection(){const online=navigator.onLine;$("connection-text").textContent=online?"متصل":"دون اتصال";$("connection-indicator").className="status-chip "+(online?"bg-[#e3f0eb] text-[#146c70]":"bg-[#fff1e8] text-[#93452e]");$("last-sync").textContent=state.lastSync?`آخر مزامنة: ${state.lastSync}`:"آخر مزامنة: لم تتم بعد"}
+    document.addEventListener("external-event",e=>{const d=e.detail;if(d?.type)ExternalAdapter.handleSignal(d).catch(()=>{});});
+    window.configureIntegration=configureIntegration;window.getIntegrationStatus=()=>ExternalAdapter.getIntegrationStatus();window.healthCheck=()=>ExternalAdapter.healthCheck();window.getMediaCapabilities=()=>ExternalAdapter.getMediaCapabilities();window.joinVirtualClass=id=>ExternalAdapter.joinVirtualClass(id);window.leaveVirtualClass=()=>ExternalAdapter.leaveVirtualClass();window.startAudioSession=()=>ExternalAdapter.startAudioSession();window.startVideoSession=()=>ExternalAdapter.startVideoSession();window.stopMediaSession=()=>ExternalAdapter.stopMediaSession();
+
+    $("stage-select").onchange=e=>{state.stage=e.target.value;state.grade="";state.subject="";state.teacherId="";populatePath();renderTeachers()}
+    $("grade-select").onchange=e=>{state.grade=e.target.value;state.subject="";state.teacherId="";populatePath();renderTeachers()}
+    $("subject-select").onchange=e=>{state.subject=e.target.value;const t=teachers.find(x=>x.stage===state.stage&&x.subject===state.subject&&x.grades.includes(state.grade));state.teacherId=t?.id||"";populatePath();renderTeachers()}
+    $("teacher-select").onchange=e=>{state.teacherId=e.target.value;updatePath();renderTeachers();save()}
+    document.querySelectorAll(".nav-link").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+    document.querySelectorAll(".role-btn").forEach(b=>b.onclick=()=>updateRole(b.dataset.role));
+    $("open-class-button").onclick=()=>{if(!state.subject||!state.teacherId){notify("اختر المرحلة والصف والمادة والمعلم أولاً.");return}showView("class-view")}
+    $("start-lesson").onclick=lessonStep;$("audio-toggle").onclick=audioToggle;$("finish-lesson").onclick=()=>{if(oscillator){oscillator.stop();oscillator=null}$("teacher-state").textContent="أنهى الدرس";addActivity("أنهى الطالب الدرس التجريبي");enqueue("إنهاء الدرس");notify("تم إنهاء الدرس وحفظ التقدم محلياً.")}
+    $("raise-hand").onclick=()=>{state.handRaises++;addActivity("رفع الطالب يده في الصف");enqueue("رفع يد");notify("تم رفع اليد. سيظهر للمعلم المحاكى في سياق الدرس.")}
+    $("student-question-form").onsubmit=e=>{e.preventDefault();const value=$("student-question").value.trim();if(!value){notify("اكتب سؤالاً أو إجابة أولاً.");return}state.questions++;$("teacher-reply").textContent="رد المعلم المحاكى: أحسنت على المشاركة. راجع النقاط على السبورة ثم جرّب صياغة الإجابة خطوة خطوة.";$("teacher-reply").classList.remove("hidden-state");$("student-question").value="";addActivity("أرسل الطالب سؤالاً أو إجابة");enqueue("إجابة كتابية",{answer_text:value});notify("تم حفظ مشاركتك محلياً.")}
+    $("start-exam").onclick=()=>{if(!state.subject){notify("اختر مادة أولاً.");return}examStarted=true;examSeconds=300;clearInterval(examTimer);examTimer=setInterval(()=>{examSeconds--;const m=String(Math.floor(examSeconds/60)).padStart(2,"0"),s=String(examSeconds%60).padStart(2,"0");$("exam-timer").textContent=`${m}:${s}`;if(examSeconds<=0)clearInterval(examTimer)},1000);$("exam-progress").style.width="15%";notify("بدأ الاختبار التجريبي.")}
+    $("voice-answer").onclick=()=>notify("الإجابة الصوتية محاكاة فقط: استخدم الإجابة المكتوبة كبديل متاح دائماً.")
+    $("solution-image").onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{$("image-preview").src=reader.result;$("image-preview-wrap").classList.remove("hidden-state");$("image-status").textContent="حالة الفحص المحاكى: تحتاج مراجعة المعلم. لا تعتمد الدرجة تلقائياً إذا كانت الصورة غير واضحة."};reader.readAsDataURL(file)}
+    $("exam-form").onsubmit=e=>{e.preventDefault();if(!examStarted){notify("اضغط بدء الاختبار أولاً.");return}const answer=$("exam-answer").value.trim();if(!answer&&!$("solution-image").files.length){notify("أدخل إجابة أو أرفق صورة ورقة الحل.");return}const d=lessonData(),correct=d?.keys.some(k=>answer.toLowerCase().includes(k.toLowerCase()));state.score=correct?10:6;$("suggested-score").value=state.score;$("common-mistakes").textContent=correct?"إجابة مناسبة في التصحيح التجريبي. تبقى المراجعة البشرية متاحة.":"مؤشرات تحتاج مراجعة المعلم: راجع الكلمات الأساسية وخطوات الحل.";$("exam-progress").style.width="100%";$("grading-status").textContent=`درجة مقترحة: ${state.score}/10 — حالة التصحيح: تحتاج مراجعة المعلم.`;$("grading-status").className="mt-4 rounded-xl bg-[#fff4d9] p-4 font-bold text-[#846019]";addActivity("أرسل الطالب اختباراً قصيراً");enqueue("اختبار",{answer_text:answer,score:state.score,exam_status:"بانتظار مراجعة"});notify("تم حفظ إجابة الاختبار ودرجة مقترحة.")}
+    $("manual-grade").onclick=()=>{state.score=Number($("suggested-score").value)||0;state.approved=false;$("grading-status").textContent="تم تعديل الدرجة يدوياً. لا تزال بانتظار الاعتماد.";$("grading-status").className="mt-4 rounded-xl bg-[#e3f0eb] p-4 font-bold text-[#146c70]";save()}
+    $("approve-grade").onclick=()=>{state.score=Number($("suggested-score").value)||0;state.approved=true;$("grading-status").textContent="تم اعتماد الدرجة التجريبية وحفظها في التقرير.";$("grading-status").className="mt-4 rounded-xl bg-[#e3f0eb] p-4 font-bold text-[#146c70]";addActivity("اعتمدت درجة الاختبار");enqueue("اعتماد درجة",{score:state.score,grade_approved:true});save();notify("تم اعتماد الدرجة.")}
+    $("save-report").onclick=()=>{state.reportStatus="مسودة";addActivity("تم حفظ مسودة التقرير");enqueue("مسودة تقرير");save();notify("تم حفظ مسودة التقرير محلياً.")}
+    $("send-report").onclick=()=>{state.reportStatus="أُرسل إلى ولي الأمر";addActivity("أُرسل التقرير إلى ولي الأمر");enqueue("إرسال تقرير");save();notify("تم إرسال التقرير كمحاكاة وحفظه للمزامنة.")}
+    $("acknowledge-report").onclick=()=>{state.reportStatus="تم الاطلاع";addActivity("تم تأكيد الاطلاع على التقرير");save();notify("تم تأكيد الاطلاع على التقرير.")}
+    $("print-report").onclick=()=>notify("محاكاة تنزيل/طباعة: التقرير جاهز للعرض، ولا يتم فتح نافذة طباعة داخل الإطار.")
+    $("library-file").onchange=e=>{const f=e.target.files[0];if(!f)return;$("library-file-info").textContent=`معاينة وصفية: ${f.name} (${Math.round(f.size/1024)} كيلوبايت). عند عدم الاتصال ستكون الحالة بانتظار الرفع.`;$("library-file-info").classList.remove("hidden-state")}
+    $("library-form").onsubmit=e=>{e.preventDefault();const f=$("library-file").files[0],chapter=$("library-chapter").value.trim();if(!f||!chapter){notify("اختر ملفاً واكتب الفصل أو الوحدة أولاً.");return}state.library.unshift({name:f.name,chapter:`${state.stage||"المرحلة"} ← ${state.grade||"الصف"} ← ${state.subject||"المادة"} ← ${chapter}`,status:navigator.onLine?"بانتظار تأكيد الرفع":"بانتظار الرفع"});enqueue("ملف منهج",{curriculum_file_name:f.name,curriculum_stage:state.stage,curriculum_grade:state.grade,curriculum_subject:state.subject,curriculum_chapter:chapter,curriculum_status:"بانتظار الرفع"});$("library-form").reset();$("library-file-info").classList.add("hidden-state");save();renderLibrary();notify("تمت إضافة بيانات الملف للمكتبة.")}
+    $("library-search").oninput=renderLibrary;$("open-queue").onclick=()=>{$("queue-list").scrollIntoView({behavior:"smooth"})};$("sync-now").onclick=e=>syncNow(e.currentTarget)
+    ["teacher-search","teacher-stage-filter","teacher-grade-filter","teacher-subject-filter","teacher-sort","female-filter","male-filter","available-filter","global-search"].forEach(id=>$(id).addEventListener(id.includes("filter")&&id!=="teacher-search"?"change":"input",()=>{if(id==="global-search"){$("teacher-search").value=$(id).value;showView("teachers-view")}renderTeachers()}))
+    async function initData(){if(!window.dataSdk)return;const result=await window.dataSdk.init({onDataChanged(data){backendRecords=Array.isArray(data)?data:[]}});if(!result.isOk)notify("تعذر تأكيد الاتصال بـ Canva Sheet؛ ستبقى البيانات المحلية جاهزة للمزامنة.")}
+    document.addEventListener("DOMContentLoaded",async()=>{
+      await restoreIntegrationState();
+      setOptions($("teacher-stage-filter"),"كل المراحل",Object.keys(stages));setOptions($("teacher-grade-filter"),"كل الصفوف",Object.values(stages).flat());setOptions($("teacher-subject-filter"),"كل المواد",Object.values(subjectMap).flat().filter((v,i,a)=>a.indexOf(v)===i));
+      populatePath();renderTeachers();renderConsent();renderReport();renderLibrary();renderQueue();updateRole(state.role);connection();lucide.createIcons();initData()
+    });
+    let autoSyncLock=false;window.addEventListener("online",async()=>{connection();notify("عاد الاتصال. جارٍ فحص العمليات المحلية.");if(!autoSyncLock&&state.queue.length){autoSyncLock=true;try{await syncNow($("sync-now"))}finally{autoSyncLock=false}}});window.addEventListener("offline",()=>{connection();notify("أنت الآن دون اتصال. سيستمر الحفظ المحلي.")});
+  </script>
+ 
+</body></html>
