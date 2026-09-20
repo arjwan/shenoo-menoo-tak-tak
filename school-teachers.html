@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>المعلمون — شنو منو مدرسة</title>
+<link rel="stylesheet" href="school-app.css?v=20260920-1">
+<script src="auth-guard.js?v=20260920-1"></script>
+</head>
+<body>
+<div class="school-shell">
+<nav class="school-nav" aria-label="تنقل المدرسة">
+  <span class="brand">شنو منو مدرسة</span>
+  <a href="school-index.html" data-nav="index">الرئيسية</a>
+  <a href="school-structure.html" data-nav="structure">الهيكل</a>
+  <a href="school-teachers.html" data-nav="teachers">المعلمون</a>
+  <a href="school-students.html" data-nav="students">الطلاب</a>
+  <a href="school-curriculum.html" data-nav="curriculum">المناهج</a>
+  <a href="school-reader.html" data-nav="reader">القارئ</a>
+  <a href="school-classroom.html" data-nav="classroom">الحصة</a>
+  <a href="school-canva.html">Canva</a>
+</nav>
+
+<section class="school-hero"><h1>دليل المعلمين</h1><p>من واجهة <code>/api/school/teachers</code> الحقيقية.</p>
+<div class="toolbar"><input id="teacher-search" type="search" class="field" placeholder="بحث بالاسم أو المادة"></div>
+</section>
+<section class="school-panel"><div id="teacher-grid" class="grid"></div></section>
+
+<div id="page-status" class="empty" hidden></div>
+</div>
+<script src="school-api-adapter.js?v=20260920-1"></script>
+<script src="school-canva-ui.js?v=20260920-1"></script>
+<script>
+(function(){
+  var link=document.querySelector('[data-nav="teachers"]');
+  if(link) link.classList.add('active');
+  if(!SchoolUI.requireAuth()) return;
+  
+var all=[];
+function render(q){
+  q=String(q||"").trim().toLowerCase();
+  var grid=document.getElementById("teacher-grid"); grid.innerHTML="";
+  var rows=all.filter(function(t){
+    if(!q) return true;
+    return [t.name,t.subject,t.stage,(t.grades||[]).join(" ")].join(" ").toLowerCase().indexOf(q)!==-1;
+  });
+  rows.forEach(function(t){
+    var extra=document.createElement("div");
+    extra.appendChild(SchoolUI.badge(t.status||"", t.status&&t.status.indexOf("غير")>=0?"pending":"ok"));
+    grid.appendChild(SchoolUI.card(t.name, (t.subject||"")+" · "+(t.stage||"")+" · "+(Array.isArray(t.grades)?t.grades.join("، "):""), extra));
+  });
+  if(!rows.length) grid.innerHTML="<div class=\"empty\">لا نتائج.</div>";
+}
+SchoolAPI.teachers().then(function(out){
+  if(!out.ok){ SchoolUI.showError(document.getElementById("page-status"), (out.data&&out.data.message)||("HTTP "+out.status)); return; }
+  all=out.data.teachers||[];
+  render("");
+  document.getElementById("teacher-search").addEventListener("input", function(e){ render(e.target.value); });
+}).catch(function(e){ SchoolUI.showError(document.getElementById("page-status"), e.message); });
+
+})();
+</script>
+</body>
+</html>

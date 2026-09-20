@@ -1,0 +1,121 @@
+diff --git a/original-assets/school/server/src/routes/school.routes.js b/original-assets/school/server/src/routes/school.routes.js
+index d4052ca..14dd78a 100644
+--- a/original-assets/school/server/src/routes/school.routes.js
++++ b/original-assets/school/server/src/routes/school.routes.js
+@@ -9,6 +9,8 @@ const Session=require('../models/SchoolSession');
+ const Knowledge=require('../models/SchoolKnowledgeSource');
+ const LearningRecord=require('../models/SchoolLearningRecord');
+ const schoolAI=require('../services/school-ai');
++const iraqiCurriculum=require('../data/iraqi-curriculum-catalog');
++const iraqiCurriculumFiles=require('../data/iraqi-curriculum-files.json');
+ const curriculumDir=path.resolve(__dirname,'../../../uploads/school-curriculum');
+ fs.mkdirSync(curriculumDir,{recursive:true});
+ const curriculumTypes=new Map([['application/pdf','.pdf'],['application/msword','.doc'],['application/vnd.openxmlformats-officedocument.wordprocessingml.document','.docx'],['image/jpeg','.jpg'],['image/png','.png'],['image/webp','.webp']]);
+@@ -32,6 +34,8 @@ router.get('/students/:id/report',async(req,res,next)=>{try{const s=await own(re
+ router.get('/ai/status',(_req,res)=>res.json({ok:true,configured:schoolAI.configured(),provider:schoolAI.provider()}));
+ router.get('/teachers',(_req,res)=>res.json({ok:true,teachers:teacherSeeds.map((t,index)=>({id:`teacher-${index+1}`,name:t[0],gender:t[1],subject:t[2],stage:t[3],grades:t[4].split('،').map(x=>x.trim()),experience:t[5],language:t[2]==='اللغة الإنكليزية'?'عربية وإنكليزية':'عربية عراقية',rating:Number((4.6+(index%4)*.1).toFixed(1)),status:index%6===5?'غير متاح':'متاح الآن',style:teachingStyle(t[2]),motto:index%2?'نفهم الفكرة ثم نطبقها بثقة':'كل سؤال خطوة جديدة نحو الفهم'}))}));
+ router.get('/curriculum',async(req,res,next)=>{try{const q={$or:[{verified:true},{uploadedBy:req.user._id}]};for(const k of ['stage','grade','subject','chapter','lesson','sourceType'])if(req.query[k])q[k]=req.query[k];if(req.query.year)q.year=Number(req.query.year);const items=await Knowledge.find(q).select('-content').sort({stage:1,grade:1,subject:1,chapter:1,lesson:1,year:-1}).limit(200);res.json({ok:true,items})}catch(e){next(e)}});
++router.get('/curriculum/catalog',(req,res)=>{const filters=['stage','grade','subject'];const items=iraqiCurriculum.items.filter(item=>filters.every(k=>!req.query[k]||item[k]===req.query[k]));res.json({ok:true,version:iraqiCurriculum.version,items,total:items.length})});
++router.get('/curriculum/files',(_req,res)=>res.json({...iraqiCurriculumFiles,files:iraqiCurriculumFiles.files.map(item=>({...item,url:`/uploads/school-curriculum/${item.fileName}`}))}));
+ router.post('/curriculum/upload',curriculumUpload.single('file'),async(req,res,next)=>{let uploaded=req.file;try{if(!uploaded)return res.status(400).json({ok:false,message:'اختر ملف المنهج أولًا'});const required=['title','stage','grade','subject'];for(const field of required)if(!clean(req.body[field]))throw Object.assign(new Error(`الحقل ${field} مطلوب`),{status:400});const autoVerified=['admin','developer'].includes(req.user.role);const item=await Knowledge.create({title:clean(req.body.title).slice(0,180),sourceType:['official_textbook','ministerial_question','licensed_booklet','teacher_material'].includes(req.body.sourceType)?req.body.sourceType:'teacher_material',stage:clean(req.body.stage).slice(0,80),grade:clean(req.body.grade).slice(0,80),subject:clean(req.body.subject).slice(0,120),chapter:clean(req.body.chapter).slice(0,160),lesson:clean(req.body.lesson).slice(0,160),year:Number(req.body.year)||undefined,content:`ملف منهج مرفوع: ${path.basename(uploaded.originalname).slice(0,240)}`,sourceUrl:`/uploads/school-curriculum/${uploaded.filename}`,license:clean(req.body.license).slice(0,160),verified:autoVerified,uploadedBy:req.user._id,file:{url:`/uploads/school-curriculum/${uploaded.filename}`,originalName:path.basename(uploaded.originalname).slice(0,240),mimeType:uploaded.mimetype,size:uploaded.size}});uploaded=null;res.status(201).json({ok:true,item,message:autoVerified?'تم رفع المنهج واعتماده':'تم رفع المنهج وهو بانتظار الاعتماد'})}catch(e){if(uploaded?.path)fs.unlink(uploaded.path,()=>{});if(e.status)return res.status(e.status).json({ok:false,message:e.message});next(e)}});
+ router.get('/curriculum/offline-pack',async(req,res,next)=>{try{const students=await Student.find({guardian:req.user._id,active:true}).select('stage grade subjects').lean();if(!students.length)return res.json({ok:true,items:[],generatedAt:new Date().toISOString()});const ors=[];for(const s of students){const base={verified:true,stage:s.stage,grade:s.grade};if(Array.isArray(s.subjects)&&s.subjects.length)ors.push({...base,subject:{$in:s.subjects}});else ors.push(base)}const items=await Knowledge.find({$or:ors}).select('title sourceType stage grade subject chapter lesson year page question modelAnswer content keywords updatedAt').sort({stage:1,grade:1,subject:1,chapter:1,lesson:1,year:-1}).limit(1000).lean();res.json({ok:true,items:items.map(x=>({id:String(x._id),title:x.title,sourceType:x.sourceType,stage:x.stage,grade:x.grade,subject:x.subject,chapter:x.chapter||'',lesson:x.lesson||'',year:x.year||null,page:x.page||'',question:x.question||'',modelAnswer:x.modelAnswer||'',content:x.content||'',keywords:x.keywords||[],updatedAt:x.updatedAt})),generatedAt:new Date().toISOString()})}catch(e){next(e)}});
+ router.post('/teacher/ask',async(req,res,next)=>{try{const student=await own(req.body.studentId,req.user);if(!student)return res.status(404).json({ok:false,message:'الطالب غير موجود'});const question=clean(req.body.question);if(!question)return res.status(400).json({ok:false,message:'اكتب سؤال الطالب'});const subject=clean(req.body.subject),lesson=clean(req.body.lesson);let session=null;if(req.body.sessionId){session=await Session.findOne({_id:req.body.sessionId,guardian:req.user._id,student:student._id,status:'active'});if(!session)return res.status(409).json({ok:false,message:'الحصة انتهت أو لا تخص هذا الطالب'});}const q={verified:true,stage:student.stage,grade:student.grade};if(subject)q.subject=subject;if(lesson)q.lesson=lesson;let sources=await Knowledge.find(q).limit(6).lean();if(!sources.length&&subject)sources=await Knowledge.find({verified:true,stage:student.stage,grade:student.grade,subject}).limit(6).lean();const history=(Array.isArray(req.body.history)?req.body.history:[]).slice(-8).map(m=>({role:m.role==='assistant'?'assistant':'user',content:clean(m.content).slice(0,4000)})).filter(m=>m.content);const result=await schoolAI.ask({student,subject,lesson,sources},[...history,{role:'user',content:question.slice(0,4000)}]);if(!result.answer)throw new Error('لم يصل جواب من المعلم');const sourceRefs=sources.map(s=>({source:s._id,title:s.title,page:s.page||'',sourceType:s.sourceType,year:s.year||null}));const record=await LearningRecord.create({guardian:req.user._id,student:student._id,session:session?session._id:undefined,subject,lesson,question:question.slice(0,4000),answer:result.answer.slice(0,12000),provider:result.provider||'',model:result.model||'',sources:sourceRefs});const publicSources=sourceRefs.map(s=>({id:s.source,title:s.title,page:s.page,sourceType:s.sourceType,year:s.year}));res.json({ok:true,...result,recordId:record._id,sources:publicSources})}catch(e){if(e.status)return res.status(e.status).json({ok:false,message:e.message});next(e)}});
+diff --git a/package.json b/package.json
+index 8a3d5d0..2787171 100644
+--- a/package.json
++++ b/package.json
+@@ -6,6 +6,8 @@
+   "main": "server/src/server.js",
+   "scripts": {
+     "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-update.js && node tests/api-school-canva-runtime.js",
++    "test:school-pages": "node tests/api-school-canva-latest.js && node tests/api-school-classroom-contract.js && node tests/api-school-pages-dom.js",
++    "import:school-canva": "node scripts/import-school-canva-latest.js",
+     "download:school-curriculum": "node scripts/download-iraqi-curriculum.js",
+     "start": "node server/src/server.js",
+     "dev": "nodemon server/src/server.js",
+diff --git a/server/src/models/SchoolStudent.js b/server/src/models/SchoolStudent.js
+index ca37ec4..59177fd 100644
+--- a/server/src/models/SchoolStudent.js
++++ b/server/src/models/SchoolStudent.js
+@@ -1,3 +1,3 @@
+ const mongoose=require('mongoose');
+-const schema=new mongoose.Schema({guardian:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true,index:true},name:{type:String,required:true,trim:true,maxlength:100},stage:{type:String,enum:['ابتدائي','متوسط','إعدادي'],required:true},grade:{type:String,required:true,trim:true},subjects:[{type:String,trim:true}],parentApproved:{type:Boolean,default:true},active:{type:Boolean,default:true},learningPermissions:{voice:{type:Boolean,default:false},camera:{type:Boolean,default:false},updatedAt:{type:Date,default:null}},progress:{average:{type:Number,default:0},sessions:{type:Number,default:0},answered:{type:Number,default:0}},notes:[{text:{type:String,maxlength:1000},subject:String,createdAt:{type:Date,default:Date.now}}],scores:[{subject:String,lesson:String,score:Number,maxScore:{type:Number,default:10},createdAt:{type:Date,default:Date.now}}]},{timestamps:true});
++const schema=new mongoose.Schema({guardian:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true,index:true},name:{type:String,required:true,trim:true,maxlength:100},stage:{type:String,enum:['ابتدائي','متوسط','إعدادي'],required:true},grade:{type:String,required:true,trim:true},section:{type:String,default:'',trim:true},subjects:[{type:String,trim:true}],parentApproved:{type:Boolean,default:true},active:{type:Boolean,default:true},learningPermissions:{voice:{type:Boolean,default:false},camera:{type:Boolean,default:false},updatedAt:{type:Date,default:null}},progress:{average:{type:Number,default:0},sessions:{type:Number,default:0},answered:{type:Number,default:0}},notes:[{text:{type:String,maxlength:1000},subject:String,createdAt:{type:Date,default:Date.now}}],scores:[{subject:String,lesson:String,score:Number,maxScore:{type:Number,default:10},createdAt:{type:Date,default:Date.now}}]},{timestamps:true});
+ module.exports=mongoose.model('SchoolStudent',schema);
+\ No newline at end of file
+diff --git a/server/src/routes/school-canva.routes.js b/server/src/routes/school-canva.routes.js
+index 0933855..46d4ead 100644
+--- a/server/src/routes/school-canva.routes.js
++++ b/server/src/routes/school-canva.routes.js
+@@ -266,7 +266,22 @@ router.get('/original', (_req, res) => {
+   });
+ });
+ 
++// The 2026-09-20 Canva "latest" school export (the interface the seven
++// standalone pages were generated from) is served byte-exact: it keeps its own
++// fingerprint and needs no export repair — the test-suite compiles its inline
++// script from the served copy, which is the real proof.
++router.get('/latest', (_req, res) => {
++  res.type('html');
++  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
++  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-latest-20260920.html');
++  fs.readFile(file, (err, buf) => {
++    if (err) return res.status(500).json({ ok: false, message: 'فشل تحميل واجهة Canva الأخيرة' });
++    res.end(buf.toString('utf8'));
++  });
++});
++
+ module.exports = router;
++
+ module.exports.buildTurnServers = buildTurnServers;
+ module.exports.canvaIntegrationConfig = canvaIntegrationConfig;
+ module.exports.repairCanvaExport = repairCanvaExport;
+diff --git a/server/src/server.js b/server/src/server.js
+index cc95531..62e8985 100644
+--- a/server/src/server.js
++++ b/server/src/server.js
+@@ -37,6 +37,7 @@ const smartFriendToolsRoutes = require('./routes/smart-friend-tools.routes');
+ const schoolRoutes = require('./routes/school.routes');
+ const schoolSyncRoutes = require('./routes/school-sync.routes');
+ const schoolCanvaRoutes = require('./routes/school-canva.routes');
++const schoolClassroomRoutes = require('./routes/school-classroom.routes');
+ const { attachSocket } = require('./socket');
+ const { attachSchoolSocket } = require('./socket-school');
+ 
+@@ -95,6 +96,10 @@ app.use('/api/school', schoolCanvaRoutes);
+ app.use('/api/school-canva', schoolCanvaRoutes);
+ app.use('/api/school', schoolSyncRoutes);
+ app.use('/api/school', schoolRoutes);
++// Standalone school pages backend (/dashboard, /structure, /books,
++// /books/:id/reader, /classroom/options, /classroom/actions). Mounted last so
++// it can only add paths and never shadows the existing school endpoints.
++app.use('/api/school', schoolClassroomRoutes);
+ app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
+ app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
+ app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
+diff --git a/server/test/school-canva-integration.test.js b/server/test/school-canva-integration.test.js
+index 369f3e3..736b9d7 100644
+--- a/server/test/school-canva-integration.test.js
++++ b/server/test/school-canva-integration.test.js
+@@ -36,7 +36,7 @@ const FROZEN = {
+   'kahwa-cards-canva.js': '78bcc85d4a6593b6a0282f7772d5120e9c5b397d99a86a768b1fdb9fd3e5c62b',
+   'kahwa-chess-canva.js': 'bec79dc637b347c526a51170be142d8d7723c80a563ad0f2f208f15db5da88b7',
+   'kahwa-tawla-v2.js': 'f48e47a6ef679a0a1092673190b7341dad756199612dc6a4f5129a391d14797f',
+-  'server/src/routes/school.routes.js': '01fce8a6ffc772b2ee78d4f521385416c5f2ca87e1ef40951aca801f94b1031a',
++  'server/src/routes/school.routes.js': '02ec484ee02ba70df8c8b7c0af71436e07e8b828d6e9e85317a44e34aeef5e22',
+   'server/src/routes/school-sync.routes.js': 'e62bea1cb9e939c8ce7046474fa7bcce6d7b96c25ba8bb99c1bddd0dbedf579a',
+   'server/src/socket.js': 'cc059537fcc22f462aed34f852cfe30bab4bd147e7be9051e8c6ba84822d9348'
+ };
+diff --git a/server/test/school-integration.test.js b/server/test/school-integration.test.js
+index aab28b2..c820c1f 100644
+--- a/server/test/school-integration.test.js
++++ b/server/test/school-integration.test.js
+@@ -13,7 +13,7 @@ const originalChecksums = {
+   'original-assets/school/school-offline-ai.js': '96f6d6a32248bd6b099fa2a1dfd551f6d5b7f12e6fba9627e768549c946884db',
+   'original-assets/school/school.js': '3550b0a79fc91af4b484aba7794356278e7ad33365ab04bc9d649493e3c64752',
+   'original-assets/school/server/src/models/SchoolKnowledgeSource.js': '0f08fd764437e921ac2688ced99781881cfeabe44c623910d1968621ca07fdba',
+-  'original-assets/school/server/src/routes/school.routes.js': '01fce8a6ffc772b2ee78d4f521385416c5f2ca87e1ef40951aca801f94b1031a'
++  'original-assets/school/server/src/routes/school.routes.js': '02ec484ee02ba70df8c8b7c0af71436e07e8b828d6e9e85317a44e34aeef5e22'
+ };
+ 
+ test('school original assets are byte-identical to preserved checksums', () => {

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الهيكل الدراسي — شنو منو مدرسة</title>
+<link rel="stylesheet" href="school-app.css?v=20260920-1">
+<script src="auth-guard.js?v=20260920-1"></script>
+</head>
+<body>
+<div class="school-shell">
+<nav class="school-nav" aria-label="تنقل المدرسة">
+  <span class="brand">شنو منو مدرسة</span>
+  <a href="school-index.html" data-nav="index">الرئيسية</a>
+  <a href="school-structure.html" data-nav="structure">الهيكل</a>
+  <a href="school-teachers.html" data-nav="teachers">المعلمون</a>
+  <a href="school-students.html" data-nav="students">الطلاب</a>
+  <a href="school-curriculum.html" data-nav="curriculum">المناهج</a>
+  <a href="school-reader.html" data-nav="reader">القارئ</a>
+  <a href="school-classroom.html" data-nav="classroom">الحصة</a>
+  <a href="school-canva.html">Canva</a>
+</nav>
+
+<section class="school-hero"><h1>هيكل المراحل والصفوف</h1><p>مبني من كتالوج المناهج العراقي على الخادم (ليس بيانات تجريبية).</p></section>
+<section class="school-panel"><div id="structure-tree" class="tree"></div></section>
+
+<div id="page-status" class="empty" hidden></div>
+</div>
+<script src="school-api-adapter.js?v=20260920-1"></script>
+<script src="school-canva-ui.js?v=20260920-1"></script>
+<script>
+(function(){
+  var link=document.querySelector('[data-nav="structure"]');
+  if(link) link.classList.add('active');
+  if(!SchoolUI.requireAuth()) return;
+  
+SchoolAPI.structure().then(function(out){
+  var st=document.getElementById("page-status");
+  if(!out.ok){ SchoolUI.showError(st,(out.data&&out.data.message)||("HTTP "+out.status)); return; }
+  var root=document.getElementById("structure-tree"); root.innerHTML="";
+  (out.data.tree||[]).forEach(function(stage){
+    var d=document.createElement("details"); d.open=true;
+    var s=document.createElement("summary"); s.textContent=stage.stage+" ("+(stage.grades||[]).length+" صفوف)"; d.appendChild(s);
+    (stage.grades||[]).forEach(function(g){
+      var gd=document.createElement("details");
+      var gs=document.createElement("summary"); gs.textContent=g.grade+" — "+(g.subjects||[]).length+" مواد"; gd.appendChild(gs);
+      var ul=document.createElement("ul");
+      (g.subjects||[]).forEach(function(sub){ var li=document.createElement("li"); li.textContent=sub; ul.appendChild(li); });
+      gd.appendChild(ul); d.appendChild(gd);
+    });
+    root.appendChild(d);
+  });
+  if(!(out.data.tree||[]).length) root.innerHTML="<div class=\"empty\">الكتالوج فارغ على الخادم.</div>";
+}).catch(function(e){ SchoolUI.showError(document.getElementById("page-status"), e.message); });
+
+})();
+</script>
+</body>
+</html>

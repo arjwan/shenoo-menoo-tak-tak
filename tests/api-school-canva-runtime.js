@@ -52,7 +52,9 @@ assert(!/Authorization/.test(orig), 'original must stay auth-free (adapter adds 
 assert(/auth-guard\.js/.test(loader), 'loader keeps the existing auth guard');
 const order = (s) => loader.indexOf(s);
 assert(order('/api/school/classroom/config') > order('auth-guard.js'), 'config after auth');
-assert(order('/api/school-canva/original') > order('/api/school/classroom/config'), 'original after config');
+assert(order('/api/school-canva/update') > order('/api/school/classroom/config') || order('/api/school-canva/original') > order('/api/school/classroom/config'), 'active Canva UI fetched after config');
+assert(canvaRoutes.includes("router.get('/original'"), 'immutable /original route remains');
+assert(canvaRoutes.includes('school-canva-original.html'), '/original still serves the approved original');
 assert(order('/socket.io/socket.io.js') < order('school-canva-adapter-core.js'), 'socket.io client before core');
 assert(order('school-canva-adapter-core.js') < order('school-canva-adapter.js'), 'core before adapter');
 assert(order('school-canva-adapter.js') > order('frame.srcdoc = html'), 'adapter injected into the original document');
@@ -84,6 +86,12 @@ assert(clickCount >= 3, 'classroom UI is button-driven (no automatic media start
 // 4b) View wiring: every Canva page is fed with the real account data.
 assert(adapter.includes('/api/school/curriculum/offline-pack'),
   'adapter uses the real curriculum offline-pack (board + library + exam key)');
+assert(adapter.includes('/api/school/curriculum/catalog'),
+  'adapter falls back to the versioned Iraqi curriculum catalogue');
+assert(adapter.includes('/api/school/curriculum/files'),
+  'adapter loads the verified 136-file Iraqi curriculum manifest');
+assert(adapter.includes('فتح وقراءة PDF'),
+  'adapter renders a direct PDF reader link for each published book');
 assert(adapter.includes('/api/school/students/'), 'adapter fetches the real per-student report');
 for (const fn of ['populatePath', 'renderTeachers', 'renderConsent', 'renderReport', 'renderLibrary', 'renderQueue']) {
   assert(adapter.includes(fn), 'adapter drives the original render function ' + fn);

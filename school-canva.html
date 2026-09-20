@@ -48,7 +48,7 @@
     .then(function (out) {
       if (out.status === 401) { status('انتهت جلسة الدخول — سجّل الدخول أولًا', true); return null; }
       if (!out.d || out.d.ok !== true) { status('تعذر جلب إعدادات الربط', true); return null; }
-      return fetch('/api/school-canva/original', { headers: { 'Cache-Control': 'no-store' } })
+      return fetch('/api/school-canva/update', { headers: { 'Cache-Control': 'no-store' } })
         .then(function (r) { if (!r.ok) throw new Error('original ' + r.status); return r.text(); })
         .then(function (html) {
           status('جارٍ تجهيز الصف…');
@@ -73,7 +73,7 @@
                 .then(function (txt) { injectText(doc, txt); });
             });
             chain = chain.then(function () {
-              return fetch('/school-canva-adapter.js', { headers: { 'Cache-Control': 'no-store' } })
+              return fetch('/school-canva-adapter.js?v=20260920-update-2', { cache: 'no-store', headers: { 'Cache-Control': 'no-store' } })
                 .then(function (r) { if (!r.ok) throw new Error('adapter ' + r.status); return r.text(); })
                 .then(function (txt) { injectText(doc, 'window.__SHNO_SCHOOL_CANVA_CONFIG__ = ' + JSON.stringify(out.d) + ';' + txt); });
             });

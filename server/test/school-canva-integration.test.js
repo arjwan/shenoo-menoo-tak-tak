@@ -36,7 +36,7 @@ const FROZEN = {
   'kahwa-cards-canva.js': '78bcc85d4a6593b6a0282f7772d5120e9c5b397d99a86a768b1fdb9fd3e5c62b',
   'kahwa-chess-canva.js': 'bec79dc637b347c526a51170be142d8d7723c80a563ad0f2f208f15db5da88b7',
   'kahwa-tawla-v2.js': 'f48e47a6ef679a0a1092673190b7341dad756199612dc6a4f5129a391d14797f',
-  'server/src/routes/school.routes.js': '01fce8a6ffc772b2ee78d4f521385416c5f2ca87e1ef40951aca801f94b1031a',
+  'server/src/routes/school.routes.js': 'cbdebfe9fa9da13c1b6632970d3982c2029d48350c327fde06d3529db2868a69',
   'server/src/routes/school-sync.routes.js': 'e62bea1cb9e939c8ce7046474fa7bcce6d7b96c25ba8bb99c1bddd0dbedf579a',
   'server/src/socket.js': 'cc059537fcc22f462aed34f852cfe30bab4bd147e7be9051e8c6ba84822d9348'
 };
@@ -82,7 +82,7 @@ test('loader page wires auth, config, original, socket.io client and adapter in 
   const loader = read('school-canva.html');
   assert.match(loader, /src="auth-guard\.js/, 'auth guard before anything else');
   assert.match(loader, /\/api\/school\/classroom\/config/, 'fetches authenticated config');
-  assert.match(loader, /\/api\/school-canva\/original/, 'fetches immutable original through the API (Oracle publishes root files only)');
+  assert.match(loader, /\/api\/school-canva\/(original|update)/, 'fetches Canva UI through the API (Oracle publishes root files only)');
   assert.match(loader, /\/socket\.io\/socket\.io\.js/, 'injects the same-origin Socket.IO client');
   assert.match(loader, /school-canva-adapter-core\.js/);
   assert.match(loader, /school-canva-adapter\.js/);

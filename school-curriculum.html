@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>المناهج — شنو منو مدرسة</title>
+<link rel="stylesheet" href="school-app.css?v=20260920-1">
+<script src="auth-guard.js?v=20260920-1"></script>
+</head>
+<body>
+<div class="school-shell">
+<nav class="school-nav" aria-label="تنقل المدرسة">
+  <span class="brand">شنو منو مدرسة</span>
+  <a href="school-index.html" data-nav="index">الرئيسية</a>
+  <a href="school-structure.html" data-nav="structure">الهيكل</a>
+  <a href="school-teachers.html" data-nav="teachers">المعلمون</a>
+  <a href="school-students.html" data-nav="students">الطلاب</a>
+  <a href="school-curriculum.html" data-nav="curriculum">المناهج</a>
+  <a href="school-reader.html" data-nav="reader">القارئ</a>
+  <a href="school-classroom.html" data-nav="classroom">الحصة</a>
+  <a href="school-canva.html">Canva</a>
+</nav>
+
+<section class="school-hero screen" id="curriculum-screen" data-screen="curriculum">
+  <h1>مكتبة المناهج العراقية</h1>
+  <p>الكتالوج (108) ليس معناه 108 كتب محمّلة. الحالة تُحسب من <code>verified</code> و<code>availability</code> و<code>file.url</code>.</p>
+  <div class="toolbar">
+    <input id="library-search" name="library-search" type="search" class="field" placeholder="بحث بالمناهج" aria-label="بحث بالمناهج">
+    <select id="filter-stage" class="field"><option value="">كل المراحل</option></select>
+    <select id="filter-grade" class="field"><option value="">كل الصفوف</option></select>
+    <button type="button" id="reload-books" class="secondary">تحديث</button>
+  </div>
+  <p id="catalog-summary" class="muted"></p>
+</section>
+<section class="school-panel screen" data-screen="catalog">
+  <h2>النتائج</h2>
+  <div id="catalog-list" class="grid"></div>
+</section>
+
+<div id="page-status" class="empty" hidden></div>
+</div>
+<script src="school-api-adapter.js?v=20260920-1"></script>
+<script src="school-canva-ui.js?v=20260920-1"></script>
+<script>
+(function(){
+  var link=document.querySelector('[data-nav="curriculum"]');
+  if(link) link.classList.add('active');
+  if(!SchoolUI.requireAuth()) return;
+  
+var state={items:[]};
+function fillFilters(items){
+  var stages=[...new Set(items.map(function(x){return x.stage;}).filter(Boolean))].sort();
+  var grades=[...new Set(items.map(function(x){return x.grade;}).filter(Boolean))].sort();
+  var s=document.getElementById("filter-stage"), g=document.getElementById("filter-grade");
+  stages.forEach(function(v){ var o=document.createElement("option"); o.value=v; o.textContent=v; s.appendChild(o); });
+  grades.forEach(function(v){ var o=document.createElement("option"); o.value=v; o.textContent=v; g.appendChild(o); });
+}
+function render(){
+  var q=String(document.getElementById("library-search").value||"").trim().toLowerCase();
+  var stage=document.getElementById("filter-stage").value;
+  var grade=document.getElementById("filter-grade").value;
+  var list=document.getElementById("catalog-list"); list.innerHTML="";
+  var rows=state.items.filter(function(it){
+    if(stage && it.stage!==stage) return false;
+    if(grade && it.grade!==grade) return false;
+    if(!q) return true;
+    return [it.title,it.subject,it.grade,it.stage,it.availability].join(" ").toLowerCase().indexOf(q)!==-1;
+  });
+  rows.forEach(function(it){
+    var actions=document.createElement("div");
+    actions.appendChild(SchoolUI.availabilityBadge(it));
+    if(it.file && it.file.url){
+      var a=document.createElement("a"); a.className="btn"; a.href="school-reader.html?id="+encodeURIComponent(it.id); a.textContent="فتح القارئ";
+      actions.appendChild(document.createTextNode(" ")); actions.appendChild(a);
+    }
+    list.appendChild(SchoolUI.card(it.title||it.fileName||"كتاب", (it.stage||"")+" · "+(it.grade||"")+" · "+(it.subject||"")+(it.verified?" · موثّق":""), actions));
+  });
+  if(!rows.length) list.innerHTML="<div class=\"empty\">لا نتائج مطابقة.</div>";
+  var avail=state.items.filter(function(x){return x.availability==="available" && x.file && x.file.url;}).length;
+  SchoolUI.setText("catalog-summary", "المعروض بعد التصفية: "+rows.length+" / الإجمالي من الخادم: "+state.items.length+" · المتاح فعليًا للقراءة: "+avail);
+}
+function load(){
+  return SchoolAPI.books({}).then(function(out){
+    if(!out.ok){ SchoolUI.showError(document.getElementById("page-status"), (out.data&&out.data.message)||("HTTP "+out.status)); return; }
+    state.items=out.data.items||[];
+    // populate filters once
+    if(document.getElementById("filter-stage").options.length<=1) fillFilters(state.items);
+    render();
+  });
+}
+["library-search","filter-stage","filter-grade"].forEach(function(id){
+  document.getElementById(id).addEventListener("input", render);
+  document.getElementById(id).addEventListener("change", render);
+});
+document.getElementById("reload-books").addEventListener("click", function(){ load(); });
+// Critical contract: library-search must exist as a real screen element.
+if(!document.getElementById("library-search")) throw new Error("school-curriculum.html: missing screen element library-search");
+load().catch(function(e){ SchoolUI.showError(document.getElementById("page-status"), e.message); });
+
+})();
+</script>
+</body>
+</html>

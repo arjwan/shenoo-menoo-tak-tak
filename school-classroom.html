@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الحصة — شنو منو مدرسة</title>
+<link rel="stylesheet" href="school-app.css?v=20260920-1">
+<script src="auth-guard.js?v=20260920-1"></script>
+</head>
+<body>
+<div class="school-shell">
+<nav class="school-nav" aria-label="تنقل المدرسة">
+  <span class="brand">شنو منو مدرسة</span>
+  <a href="school-index.html" data-nav="index">الرئيسية</a>
+  <a href="school-structure.html" data-nav="structure">الهيكل</a>
+  <a href="school-teachers.html" data-nav="teachers">المعلمون</a>
+  <a href="school-students.html" data-nav="students">الطلاب</a>
+  <a href="school-curriculum.html" data-nav="curriculum">المناهج</a>
+  <a href="school-reader.html" data-nav="reader">القارئ</a>
+  <a href="school-classroom.html" data-nav="classroom">الحصة</a>
+  <a href="school-canva.html">Canva</a>
+</nav>
+
+<section class="school-hero"><h1>الحصة الافتراضية</h1><p>البدء والإنهاء عبر <code>/api/school/classroom/actions</code> و<code>/sessions</code> — بدون محاكاة محلية.</p></section>
+<section class="school-panel">
+  <form id="class-form" class="toolbar">
+    <select id="class-student" class="field" required></select>
+    <select id="class-stage" class="field"></select>
+    <select id="class-grade" class="field"></select>
+    <select id="class-subject" class="field" required></select>
+    <input id="class-lesson" class="field" placeholder="عنوان الدرس (اختياري)">
+    <button type="submit">بدء الحصة</button>
+    <button type="button" id="end-class" class="secondary">إنهاء الحصة</button>
+  </form>
+  <p id="class-active" class="muted">لا حصة جارية.</p>
+  <div id="class-log" class="empty"></div>
+</section>
+
+<div id="page-status" class="empty" hidden></div>
+</div>
+<script src="school-api-adapter.js?v=20260920-1"></script>
+<script src="school-canva-ui.js?v=20260920-1"></script>
+<script>
+(function(){
+  var link=document.querySelector('[data-nav="classroom"]');
+  if(link) link.classList.add('active');
+  if(!SchoolUI.requireAuth()) return;
+  
+var options=null, active=null;
+function log(msg){ var el=document.getElementById("class-log"); el.textContent=msg; }
+function fillSelect(sel, values, placeholder){
+  sel.innerHTML="";
+  if(placeholder){ var o=document.createElement("option"); o.value=""; o.textContent=placeholder; sel.appendChild(o); }
+  (values||[]).forEach(function(v){ var o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); });
+}
+function refreshSubjects(){
+  var grade=document.getElementById("class-grade").value;
+  var subs=(options&&options.subjectsByGrade&&options.subjectsByGrade[grade])||[];
+  fillSelect(document.getElementById("class-subject"), subs, "المادة");
+}
+function refreshGrades(){
+  var stage=document.getElementById("class-stage").value;
+  var grades=(options&&options.gradesByStage&&options.gradesByStage[stage])||[];
+  fillSelect(document.getElementById("class-grade"), grades, "الصف");
+  refreshSubjects();
+}
+function showActive(session){
+  active=session;
+  if(!session){ SchoolUI.setText("class-active","لا حصة جارية."); return; }
+  var name=session.student&&session.student.name||"";
+  SchoolUI.setText("class-active", "حصة جارية: "+(session.subject||"")+" — "+name+" (id="+session._id+")");
+}
+SchoolAPI.classroomOptions().then(function(out){
+  if(!out.ok){ SchoolUI.showError(document.getElementById("page-status"), (out.data&&out.data.message)||("HTTP "+out.status)); return; }
+  options=out.data;
+  var stu=document.getElementById("class-student"); stu.innerHTML="";
+  (options.students||[]).forEach(function(s){
+    var o=document.createElement("option"); o.value=s._id; o.textContent=s.name+" — "+s.grade; stu.appendChild(o);
+  });
+  fillSelect(document.getElementById("class-stage"), options.stages||[], "المرحلة");
+  document.getElementById("class-stage").addEventListener("change", refreshGrades);
+  document.getElementById("class-grade").addEventListener("change", refreshSubjects);
+  if((options.stages||[]).length){ document.getElementById("class-stage").value=options.stages[0]; refreshGrades(); }
+  showActive(options.activeSession);
+}).catch(function(e){ SchoolUI.showError(document.getElementById("page-status"), e.message); });
+
+document.getElementById("class-form").addEventListener("submit", function(e){
+  e.preventDefault();
+  var body={
+    action:"start",
+    studentId: document.getElementById("class-student").value,
+    subject: document.getElementById("class-subject").value,
+    lesson: document.getElementById("class-lesson").value
+  };
+  SchoolAPI.classroomAction(body).then(function(out){
+    if(!out.ok){ log((out.data&&out.data.message)||"تعذر بدء الحصة"); return; }
+    showActive(out.data.session); log("بدأت الحصة بنجاح.");
+  });
+});
+document.getElementById("end-class").addEventListener("click", function(){
+  if(!active||!active._id){ log("لا توجد حصة لإنهائها."); return; }
+  SchoolAPI.classroomAction({ action:"end", sessionId: active._id }).then(function(out){
+    if(!out.ok){ log((out.data&&out.data.message)||"تعذر الإنهاء"); return; }
+    showActive(null); log("انتهت الحصة.");
+  });
+});
+
+})();
+</script>
+</body>
+</html>

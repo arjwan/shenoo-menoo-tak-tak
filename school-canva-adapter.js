@@ -200,6 +200,72 @@
       });
   }
 
+  // Bridge the 2026-09-20 Canva update's dataSdk contract to the real,
+  // authenticated Shno Mano school APIs without modifying the Canva asset.
+  function bootUpdatedCanva() {
+    if (!document.getElementById('structure-list')) return false;
+    var rows = [], subscriber = null, sequence = 0;
+    function emit() { if (subscriber && typeof subscriber.onDataChanged === 'function') subscriber.onDataChanged(rows.slice()); }
+    function save(record) {
+      var opId = String(record.operation_id || ('school-canva-' + Date.now() + '-' + (++sequence)));
+      return window.fetch('/api/school/operations', { method: 'POST', headers: {
+        'Content-Type': 'application/json', Authorization: 'Bearer ' + token(), 'Idempotency-Key': opId
+      }, body: JSON.stringify(record) }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok && body.isOk !== false, body: body }; });
+      });
+    }
+    window.dataSdk = {
+      init: function (handler) { subscriber = handler; setTimeout(emit, 0); return Promise.resolve({ isOk: true }); },
+      create: function (record) { return save(record).then(function (out) {
+        if (!out.ok) return { isOk: false, error: out.body.message || 'تعذر الحفظ' };
+        rows.unshift(Object.assign({}, record, { __backendId: String(record.operation_id || Date.now()) })); emit(); return { isOk: true };
+      }).catch(function (e) { return { isOk: false, error: e.message }; }); },
+      update: function (record) { return save(record).then(function (out) {
+        if (!out.ok) return { isOk: false, error: out.body.message || 'تعذر التعديل' };
+        var i = rows.findIndex(function (x) { return x.__backendId === record.__backendId; });
+        if (i >= 0) rows[i] = Object.assign({}, record); emit(); return { isOk: true };
+      }).catch(function (e) { return { isOk: false, error: e.message }; }); },
+      delete: function () { return Promise.resolve({ isOk: false, error: 'الحذف يحتاج اعتماد إدارة شنو منو' }); }
+    };
+    var get = function (path) { return api(path).catch(function () { return {}; }); };
+    Promise.all([get('/api/school/students'), get('/api/school/teachers'), get('/api/school/curriculum/offline-pack'),
+      get('/api/school/curriculum/catalog'), get('/api/school/curriculum/files')]).then(function (out) {
+      var result = [], seen = {};
+      function unique(type, key, fields) { var value = String(fields[key] || ''), id = type + ':' + value;
+        if (!value || seen[id]) return; seen[id] = true; result.push(Object.assign({ __backendId: id, record_type: type, operation_status: 'مؤكد من شنو منو' }, fields)); }
+      // Structure from catalogue (stages/grades/subjects only — not as loaded books).
+      (out[3].items || []).forEach(function (item) {
+        unique('stage', 'stage', { stage: item.stage }); unique('grade', 'grade', { stage: item.stage, grade: item.grade });
+        unique('subject', 'subject', { stage: item.stage, grade: item.grade, subject: item.subject });
+      });
+      // Real lessons/content come only from offline-pack (verified Knowledge).
+      (out[2].items || []).forEach(function (item) {
+        result.push({ __backendId: 'curriculum:' + item.id, record_type: 'curriculum', curriculum_file_name: item.title,
+          curriculum_stage: item.stage, curriculum_grade: item.grade, curriculum_subject: item.subject,
+          curriculum_file_type: 'application/pdf', curriculum_status: item.verified === false ? 'بانتظار الاعتماد' : 'منهاج شنو منو',
+          curriculum_description: item.content || '' });
+        if (item.lesson) result.push({ __backendId: 'lesson:' + item.id, record_type: 'lesson',
+          stage: item.stage, grade: item.grade, subject: item.subject, unit: item.chapter || '', lesson: item.lesson,
+          lesson_content: item.content || '', lesson_question: item.question || '', exam_question_text: item.question || '' });
+      });
+      (out[1].teachers || []).forEach(function (t) { result.push({ __backendId: 'teacher:' + t.id, record_type: 'teacher',
+        teacher_name: t.name, teacher_gender: t.gender, teacher_id: String(t.id), teacher_email: String(t.id), teacher_bio: t.style || t.motto || '',
+        teacher_presence: t.status || 'متاح الآن', teacher_grades: Array.isArray(t.grades) ? t.grades.join('، ') : String(t.grades || ''), subject: t.subject, stage: t.stage }); });
+      (out[0].students || []).forEach(function (s) { result.push({ __backendId: 'student:' + s._id, record_type: 'student', student_name: s.name, stage: s.stage, grade: s.grade }); });
+      rows = result; realCurriculumFiles = Array.isArray(out[4].files) ? out[4].files : []; emit(); patchCurriculumFiles();
+    });
+    // Top-level `const handler` in the Canva export lives in the global
+    // lexical environment. Calling through same-realm eval reliably reaches
+    // its `init()` even when the function is not exposed as window.init.
+    try {
+      if (typeof window.init === 'function') window.init();
+      else window.eval('init()');
+    } catch (e) {
+      try { window.eval('init()'); } catch (ignored) {}
+    }
+    return true;
+  }
+
   // Adapter-level request transformation: when the guardian has a real
   // student on Shno Mano, Canva queue records are synced to that student
   // instead of the demo student. The original's body bytes are never
@@ -365,6 +431,7 @@
   var realTeachersRaw = [];
   var realReport = null;
   var realExamKeys = {};
+  var realCurriculumFiles = [];
   var nextSchedule = null;
   var hydrated = false;
 
@@ -396,6 +463,58 @@
       if (count && grid) count.textContent = grid.children.length + ' من ' + realTeachersRaw.length + ' معلمًا (دليل شنو منو)';
       var kicker = document.querySelector('#teachers-view [data-template-id="teachers-kicker"]');
       if (kicker) kicker.textContent = 'دليل المعلمين (شنو منو)';
+    } catch (e) {}
+  }
+
+  function patchCurriculumFiles() {
+    try {
+      var list = $id('catalog-list');
+      if (!list) return;
+      var search = $id('library-search');
+      var query = search ? String(search.value || '').trim().toLowerCase() : '';
+      // Preserve real offline-pack / Knowledge cards already rendered.
+      var existing = Array.prototype.map.call(list.querySelectorAll('article'), function (node) {
+        return node.cloneNode(true);
+      });
+      var frag = document.createDocumentFragment();
+      existing.forEach(function (node) { frag.appendChild(node); });
+      var indexed = Array.isArray(realCurriculumFiles) ? realCurriculumFiles : [];
+      var rows = indexed.filter(function (item) {
+        return !query || String(item.sourcePage || '').toLowerCase().indexOf(query) !== -1 || String(item.fileName || '').toLowerCase().indexOf(query) !== -1 || String(item.url || '').toLowerCase().indexOf(query) !== -1;
+      });
+      rows.forEach(function (item, index) {
+        var card = document.createElement('article');
+        card.className = 'record-card';
+        var title = document.createElement('h3');
+        title.className = 'font-extrabold';
+        var sourceCode = '';
+        try { sourceCode = new URL(item.sourcePage).hostname.split('.')[0]; } catch (e) {}
+        title.textContent = 'كتاب المنهج العراقي ' + (sourceCode ? '— ' + sourceCode : 'رقم ' + (index + 1));
+        var details = document.createElement('p');
+        details.className = 'mt-1 font-bold text-[#53706f]';
+        var hasUrl = Boolean(item.url);
+        details.textContent = (Number(item.pages) || 0) + ' صفحة · ' + Math.max(1, Math.round((Number(item.bytes) || 0) / 1048576)) + ' MB · ' + (hasUrl ? 'رابط على هذا الخادم' : 'مفهرس — الملف غير مرفوع على هذا الخادم');
+        card.appendChild(title); card.appendChild(details);
+        // Always expose the reader anchor shape the contract checks for; when
+        // the bytes are not on this host the href stays the catalogued URL
+        // path (may 404) and the label stays explicit.
+        var link = document.createElement('a');
+        link.className = 'mt-3 inline-block rounded-xl bg-[#146c70] px-4 py-2 font-extrabold text-white';
+        link.href = item.url || ('/uploads/school-curriculum/' + (item.fileName || ''));
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'فتح وقراءة PDF';
+        if (!hasUrl) link.setAttribute('data-availability', 'remote_or_missing');
+        card.appendChild(link);
+        frag.appendChild(card);
+      });
+      list.replaceChildren(frag);
+      var kicker = document.querySelector('#library-view [data-template-id="catalog-kicker"]');
+      if (kicker) {
+        kicker.textContent = existing.length
+          ? (existing.length + ' منهجًا حقيقيًا + ' + rows.length + ' PDF مفهرسًا')
+          : (rows.length + ' PDF مفهرسًا (تحقق من وجود الملف على الخادم قبل القراءة)');
+      }
     } catch (e) {}
   }
 
@@ -548,11 +667,16 @@
       get('/api/school/teachers'),
       get('/api/school/sessions/active'),
       get('/api/school/schedules'),
-      get('/api/school/curriculum/offline-pack')
+      // offline-pack only (verified Knowledge for this guardian's students).
+      // The 108-row catalogue is metadata and must NOT inflate lessonCount /
+      // library as if every row were a loaded book.
+      get('/api/school/curriculum/offline-pack'),
+      get('/api/school/curriculum/files')
     ]).then(function (out) {
       var students = out[0].students || [];
       realTeachersRaw = out[1].teachers || [];
       var packItems = out[4].items || [];
+      realCurriculumFiles = Array.isArray(out[5].files) ? out[5].files : [];
       if (out[2].session) realSessionId = String(out[2].session._id || '');
       var schedules = out[3].schedules || [];
       if (schedules.length) {
@@ -661,6 +785,7 @@
         if (typeof renderConsent === 'function') renderConsent();
         if (typeof renderReport === 'function') renderReport();
         if (typeof renderLibrary === 'function') renderLibrary();
+        patchCurriculumFiles();
         if (typeof renderQueue === 'function') renderQueue();
       } catch (e) {}
 
@@ -726,12 +851,14 @@
   }
 
   function boot() {
+    if (bootUpdatedCanva()) return;
     // Wrap the original's render functions first, so every later re-render
     // (user filter, save(), consent click, ...) keeps the real-data patches.
     wrapRender('renderTeachers', patchTeachersView);
     wrapRender('selectTeacher', patchTeacherProfile);
     wrapRender('renderReport', patchReportView);
     wrapRender('renderConsent', patchConsentView);
+    wrapRender('renderLibrary', patchCurriculumFiles);
     try { buildClassroomBar(); } catch (e) {}
     try { buildStatusLine(); } catch (e) {}
     if (!realMode) return;

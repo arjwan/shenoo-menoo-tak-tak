@@ -169,7 +169,9 @@
       return {
         name: it.title || (it.file && it.file.originalName) || 'ملف منهج',
         chapter: parts.length ? parts.join(' ← ') : 'منهاج شنو منو',
-        status: it.verified === false ? 'مرفوع — بانتظار الاعتماد' : 'منهاج شنو منو'
+        status: it.availability === 'source_pending'
+          ? 'مفهرس — بانتظار النسخة الرسمية'
+          : (it.verified === false ? 'مرفوع — بانتظار الاعتماد' : 'منهاج شنو منو')
       };
     });
   }
