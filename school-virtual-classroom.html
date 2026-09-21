@@ -79,6 +79,20 @@
   <!-- Lobby Panel (When not in an active room) -->
   <section id="virtualLobby" class="virtual-lobby" hidden>
     <div class="lobby-grid">
+      <!-- Instant Live Demo Launch Banner -->
+      <div class="lobby-card demo-banner-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, #146c70 0%, #0d4a4d 100%); color: #fff; padding: 18px 24px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(20,108,112,0.25);">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size: 34px; background: rgba(255,255,255,0.18); width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">🏫</div>
+          <div>
+            <h3 style="margin: 0 0 4px; font-size: 17px; color: #fff;">المعاينة التفاعلية الفورية للصف الافتراضي النموذجي</h3>
+            <p style="margin: 0; font-size: 13px; opacity: 0.9;">ادخل مباشرة إلى الصف التفاعلي مع المعلمة الافتراضية أ. سارة، وجرّب السبورة الذكية، وأدوات الرسم، والشرح المنهجي الفوري.</p>
+          </div>
+        </div>
+        <button id="directDemoBtn" type="button" class="btn-primary" style="background: #f7a823; color: #1a252c; font-weight: 700; border: none; padding: 10px 22px; border-radius: 10px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+          <span>🚀 دخول الصف النموذجي فوراً</span>
+        </button>
+      </div>
+
       <!-- Create Virtual Class Form -->
       <div class="lobby-card">
         <div class="card-head">
@@ -222,6 +236,7 @@
               <button id="toolHighlighter" type="button" class="tool-btn" title="قلم تحديد شفاف">🖍️</button>
               <button id="toolEraser" type="button" class="tool-btn" title="ممحاة">🧹</button>
               <button id="toolClear" type="button" class="tool-btn danger" title="مسح كل الرسومات">🗑️</button>
+              <button id="toolRtl" type="button" class="tool-btn active" title="محاذاة RTL">➡️ RTL</button>
             </div>
             <div class="toolbar-colors">
               <button type="button" class="color-dot active" data-color="#1565c0" style="background:#1565c0" title="أزرق"></button>
@@ -298,6 +313,7 @@
               <button id="zoomOutBtn" type="button" class="btn-zoom" title="تصغير">🔍−</button>
               <span id="zoomLabel" class="zoom-label">100%</span>
               <button id="zoomInBtn" type="button" class="btn-zoom" title="تكبير">🔍+</button>
+              <button id="maximizeBoardBtn" type="button" class="btn-fullscreen" title="تكبير السبورة">🗖 تكبير السبورة</button>
               <button id="fullscreenBtn" type="button" class="btn-fullscreen" title="ملء الشاشة">⛶</button>
             </div>
           </div>
@@ -374,6 +390,10 @@
         <button id="quickAskBtn" type="button" class="control-btn" title="فتح خانة السؤال">
           <span class="control-icon">❓</span>
           <span class="control-label">إرسال سؤال</span>
+        </button>
+        <button id="screenShareBtn" type="button" class="control-btn" title="مشاركة الشاشة عند السماح">
+          <span class="control-icon">🖥️</span>
+          <span class="control-label">مشاركة الشاشة</span>
         </button>
       </div>
 

@@ -38,7 +38,8 @@ const schoolRoutes = require('./routes/school.routes');
 const schoolSyncRoutes = require('./routes/school-sync.routes');
 const schoolCanvaRoutes = require('./routes/school-canva.routes');
 const schoolLiveRoutes = require('./routes/school-live.routes');
-const schoolClassroomRoutes = require('./routes/school-classroom.routes');
+const schoolVirtualRoutes = require('./routes/school-virtual.routes');
+const schoolManagementRoutes = require('./routes/school-management.routes');
 const { attachSocket } = require('./socket');
 const { attachSchoolSocket } = require('./socket-school');
 
@@ -95,14 +96,15 @@ app.use('/api/smart-friend', smartFriendRoutes);
 // school routers; path-disjoint from them.
 app.use('/api/school', schoolCanvaRoutes);
 app.use('/api/school-canva', schoolCanvaRoutes);
-// REAL CLASSROOM V1: live classroom API; WebRTC signaling is handled by socket-school.js.
+// REAL CLASSROOM V1: live classrooms (/classrooms...), path-disjoint from the
+// existing school routers; Socket.IO presence/signaling lives in socket-school.js.
 app.use('/api/school', schoolLiveRoutes);
+// VIRTUAL CLASSROOM V1: AI virtual teacher classrooms (/virtual/...)
+app.use('/api/school/virtual', schoolVirtualRoutes);
+// SCHOOL MANAGEMENT: Admin, Teachers, Students, Guardians, Consents, Schedules, Exams, Grades, Complaints, Audit
+app.use('/api/school/management', schoolManagementRoutes);
 app.use('/api/school', schoolSyncRoutes);
 app.use('/api/school', schoolRoutes);
-// Standalone school pages backend (/dashboard, /structure, /books,
-// /books/:id/reader, /classroom/options, /classroom/actions). Mounted last so
-// it can only add paths and never shadows the existing school endpoints.
-app.use('/api/school', schoolClassroomRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));

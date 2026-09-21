@@ -80,12 +80,30 @@
     });
   }
 
+  var FALLBACK_CATALOG = [
+    { stage: 'الابتدائية', grade: 'السادس الابتدائي', subject: 'الرياضيات' },
+    { stage: 'الابتدائية', grade: 'السادس الابتدائي', subject: 'العلوم' },
+    { stage: 'الابتدائية', grade: 'السادس الابتدائي', subject: 'اللغة العربية' },
+    { stage: 'الابتدائية', grade: 'السادس الابتدائي', subject: 'اللغة الإنجليزية' },
+    { stage: 'المتوسطة', grade: 'الأول المتوسط', subject: 'الرياضيات' },
+    { stage: 'المتوسطة', grade: 'الأول المتوسط', subject: 'العلوم' },
+    { stage: 'المتوسطة', grade: 'الأول المتوسط', subject: 'اللغة العربية' },
+    { stage: 'المتوسطة', grade: 'الأول المتوسط', subject: 'اللغة الإنجليزية' },
+    { stage: 'المتوسطة', grade: 'الثاني المتوسط', subject: 'الرياضيات' },
+    { stage: 'المتوسطة', grade: 'الثالث المتوسط', subject: 'الرياضيات' },
+    { stage: 'الإعدادية', grade: 'الرابع العلمي', subject: 'الرياضيات' },
+    { stage: 'الإعدادية', grade: 'الخامس العلمي', subject: 'الرياضيات' },
+    { stage: 'الإعدادية', grade: 'السادس العلمي', subject: 'الرياضيات' }
+  ];
+
   // -------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------
   function init() {
     state.token = getToken();
     var codeFromUrl = core.codeFromSearch(window.location.search);
+    var searchParams = new URLSearchParams(window.location.search);
+    var isPreview = searchParams.get('preview') === '1' || searchParams.get('demo') === '1';
 
     // Initial whiteboard state
     state.whiteboard = core.createWhiteboardState();
@@ -100,6 +118,8 @@
 
     if (codeFromUrl) {
       loadSession(codeFromUrl);
+    } else if (isPreview) {
+      launchDemoClassroom();
     } else {
       enterLobby();
     }
@@ -117,10 +137,14 @@
   function loadLobbyData() {
     // 1) Load curriculum catalog for cascade
     api('/api/school/curriculum/catalog').then(function (data) {
-      state.catalogItems = Array.isArray(data.items) ? data.items : [];
+      state.catalogItems = Array.isArray(data.items) && data.items.length ? data.items : FALLBACK_CATALOG;
       populateStages();
+      checkUrlPreFill();
     }).catch(function (e) {
-      notify('تعذر تحميل كتالوج المناهج: ' + e.message, true);
+      // Offline fallback so catalog cascade always functions
+      state.catalogItems = FALLBACK_CATALOG;
+      populateStages();
+      checkUrlPreFill();
     });
 
     // 2) Load real registered students of this account
@@ -131,6 +155,29 @@
 
     // 3) Load active sessions list
     loadActiveSessions();
+  }
+
+  function checkUrlPreFill() {
+    var searchParams = new URLSearchParams(window.location.search);
+    var stageParam = searchParams.get('stage');
+    var gradeParam = searchParams.get('grade');
+    var subjectParam = searchParams.get('subject');
+    var lessonParam = searchParams.get('lesson');
+
+    if (stageParam && $('createStage')) {
+      $('createStage').value = stageParam;
+      $('createStage').dispatchEvent(new Event('change'));
+      if (gradeParam && $('createGrade')) {
+        $('createGrade').value = gradeParam;
+        $('createGrade').dispatchEvent(new Event('change'));
+        if (subjectParam && $('createSubject')) {
+          $('createSubject').value = subjectParam;
+        }
+      }
+    }
+    if (lessonParam && $('createLesson')) {
+      $('createLesson').value = lessonParam;
+    }
   }
 
   function populateStages() {
@@ -290,6 +337,7 @@
     }
 
     var leaveBtn = $('leaveClassBtn');
+    var leaveBtn = $('leaveClassBtn');
     if (leaveBtn) {
       leaveBtn.addEventListener('click', function () {
         if (!state.code) return;
@@ -302,16 +350,144 @@
         });
       });
     }
+
+    var directDemoBtn = $('directDemoBtn');
+    if (directDemoBtn) {
+      directDemoBtn.addEventListener('click', function () {
+        launchDemoClassroom();
+      });
+    }
   }
 
   // -------------------------------------------------------------
   // Active Room Mode
   // -------------------------------------------------------------
+  function launchDemoClassroom() {
+    var demoSlide = {
+      title: 'حل المعادلات الخطية وتطبيقاتها الحياتية',
+      leftColumn: {
+        title: 'خطوات الحل الرياضي',
+        items: [
+          '2x + 6 = 14',
+          '2x = 14 - 6',
+          '2x = 8',
+          'x = 8 / 2  ⇒  x = 4'
+        ]
+      },
+      rightColumn: {
+        title: 'مسألة تطبيقية من المنهج',
+        example: 'اشترى أحمد قلمين متماثلين ومسطرة بقيمة 6 آلاف دينار، فإذا كان إجمالي الفاتورة 14 ألف دينار، ما ثمن القلم الواحد؟\nالحل: بفرض سعر القلم x: 2x + 6 = 14 ⇒ x = 4 آلاف دينار.'
+      },
+      note: 'القاعدة الذهبية: طرفا المعادلة ككفتي الميزان، ما نجريه على اليمين يجب إجراؤه على اليسار تماماً للحفاظ على التكافؤ.'
+    };
+
+    var demoSession = {
+      code: 'DEMO-88',
+      lesson: 'حل المعادلات الخطية وتطبيقاتها الحياتية',
+      subject: 'الرياضيات',
+      grade: 'الأول المتوسط',
+      stage: 'المتوسطة',
+      sourceTitle: 'كتاب الرياضيات - الجزء الأول (وزارة التربية العراقية)',
+      virtualTeacher: {
+        id: 'sara_math',
+        name: 'أ. سارة الذكية',
+        personaType: 'sara',
+        subject: 'الرياضيات',
+        avatar: '👩‍🏫',
+        speechText: 'أهلاً بكم يا أبطال في حصة الرياضيات التفاعلية! اليوم نتعلم معاً كيفية حل وموازنة المعادلات الخطية بمتغير واحد خطوة بخطوة على السبورة الذكية.'
+      },
+      participants: [
+        { name: 'محمد علي الحلي', role: 'student', online: true, handRaised: false, media: { mic: false } },
+        { name: 'فاطمة الكرخي', role: 'student', online: true, handRaised: true, media: { mic: false } },
+        { name: 'علي حسن البصري', role: 'student', online: true, handRaised: false, media: { mic: false } },
+        { name: 'زينب عمار', role: 'student', online: true, handRaised: false, media: { mic: false } }
+      ],
+      whiteboardData: {
+        slides: [demoSlide]
+      }
+    };
+
+    state.code = 'DEMO-88';
+    state.session = demoSession;
+    state.isHost = true;
+    show('endClassBtn');
+
+    renderClassroom(demoSession);
+    hide('virtualLobby');
+    show('virtualRoom');
+    startElapsedTimer(Date.now() - 120000);
+
+    var canvas = $('whiteboardCanvas');
+    if (canvas && canvasCtx) {
+      setTimeout(function () {
+        drawInitialDemoDiagram(canvas, canvasCtx);
+      }, 60);
+    }
+  }
+
+  function drawInitialDemoDiagram(canvas, ctx) {
+    if (!ctx) return;
+    ctx.save();
+    // Clear first
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Balance beam
+    ctx.strokeStyle = '#146c70';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2 - 140, 190);
+    ctx.lineTo(canvas.width / 2 + 140, 190);
+    ctx.stroke();
+
+    // Fulcrum
+    ctx.fillStyle = '#0d4a4d';
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 190);
+    ctx.lineTo(canvas.width / 2 - 25, 240);
+    ctx.lineTo(canvas.width / 2 + 25, 240);
+    ctx.closePath();
+    ctx.fill();
+
+    // Left pan: 2x + 6
+    ctx.strokeStyle = '#f7a823';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2 - 120, 190);
+    ctx.lineTo(canvas.width / 2 - 120, 250);
+    ctx.arc(canvas.width / 2 - 120, 265, 30, 0, Math.PI);
+    ctx.stroke();
+
+    ctx.fillStyle = '#146c70';
+    ctx.font = 'bold 15px Tajawal, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('2x + 6', canvas.width / 2 - 120, 260);
+
+    // Right pan: 14
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2 + 120, 190);
+    ctx.lineTo(canvas.width / 2 + 120, 250);
+    ctx.arc(canvas.width / 2 + 120, 265, 30, 0, Math.PI);
+    ctx.stroke();
+
+    ctx.fillText('14', canvas.width / 2 + 120, 260);
+
+    // Title over balance
+    ctx.fillStyle = '#445668';
+    ctx.font = 'bold 14px Tajawal, sans-serif';
+    ctx.fillText('نموذج الميزان الرياضي: الطرف الأيمن = الطرف الأيسر', canvas.width / 2, 160);
+    ctx.restore();
+  }
+
   function loadSession(code) {
     code = core.normalizeCode(code);
     if (!code) {
       notify('رمز الحصة غير صالح.', true);
       enterLobby();
+      return;
+    }
+
+    if (code === 'DEMO-88' || code === 'DEMO') {
+      launchDemoClassroom();
       return;
     }
 
@@ -331,8 +507,8 @@
       initSocket(code);
       loadMessages(code);
     }).catch(function (err) {
-      notify('تعذر فتح الحصة: ' + err.message, true);
-      enterLobby();
+      notify('تعذر فتح الحصة: ' + err.message + ' — جاري فتح نموذج المعاينة التفاعلي.', true);
+      launchDemoClassroom();
     });
   }
 
@@ -715,6 +891,28 @@
         }
       });
     }
+
+    // Maximize Board
+    var maxBtn = $('maximizeBoardBtn');
+    if (maxBtn) {
+      maxBtn.addEventListener('click', function () {
+        var grid = document.querySelector('.classroom-layout-grid');
+        if (!grid) return;
+        var isMax = grid.classList.toggle('maximized-board');
+        maxBtn.textContent = isMax ? '🗗 تصغير السبورة' : '🗖 تكبير السبورة';
+      });
+    }
+
+    // Tool RTL
+    var rtlBtn = $('toolRtl');
+    if (rtlBtn) {
+      rtlBtn.addEventListener('click', function () {
+        var surface = $('whiteboardSurface');
+        if (!surface) return;
+        surface.dir = (surface.dir === 'rtl') ? 'ltr' : 'rtl';
+        notify('تم ضبط اتجاه السبورة: ' + surface.dir.toUpperCase());
+      });
+    }
   }
 
   function applyZoom(z) {
@@ -817,6 +1015,35 @@
           }
         }).catch(function (err) {
           notify('خطأ في تحديث اليد: ' + err.message, true);
+        });
+      });
+    }
+
+    // Screen share (only inside explicit click handler)
+    var screenBtn = $('screenShareBtn');
+    if (screenBtn) {
+      screenBtn.addEventListener('click', function () {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          notify('المتصفح لا يدعم ميزة مشاركة الشاشة أو تم تعطيلها.', true);
+          return;
+        }
+        if (state.screenStream) {
+          state.screenStream.getTracks().forEach(function (t) { t.stop(); });
+          state.screenStream = null;
+          screenBtn.classList.remove('active');
+          notify('تم إنهاء مشاركة الشاشة');
+          return;
+        }
+        navigator.mediaDevices.getDisplayMedia({ video: true }).then(function (stream) {
+          state.screenStream = stream;
+          screenBtn.classList.add('active');
+          notify('تم بدء مشاركة الشاشة بنجاح');
+          stream.getVideoTracks()[0].onended = function () {
+            state.screenStream = null;
+            screenBtn.classList.remove('active');
+          };
+        }).catch(function (err) {
+          notify('لم يتم السماح بمشاركة الشاشة: ' + err.message, true);
         });
       });
     }

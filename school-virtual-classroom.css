@@ -385,6 +385,15 @@ body.school-virtual-page {
   min-height: 520px;
 }
 
+.classroom-layout-grid.maximized-board {
+  grid-template-columns: 1fr;
+}
+
+.classroom-layout-grid.maximized-board .col-virtual-teacher,
+.classroom-layout-grid.maximized-board .col-tabs-panel {
+  display: none !important;
+}
+
 /* Column 1: Virtual Teacher */
 .col-virtual-teacher {
   display: flex;

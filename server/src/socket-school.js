@@ -33,7 +33,9 @@
 
 const { createClassroomRegistry } = require('./services/school-classroom');
 const Classroom = require('./models/SchoolClassroom');
+const VirtualSession = require('./models/VirtualClassroomSession');
 const live = require('./services/school-live-classroom');
+const vsvc = require('./services/school-virtual-classroom');
 const events = require('./services/school-live-events');
 const { iceServers } = require('./services/school-live-ice');
 
@@ -44,6 +46,8 @@ function attachSchoolSocket(io) {
   // which classroom room (a member stays online until their last socket goes).
   const presence = createClassroomRegistry();
   io.__schoolLivePresence = presence;
+  const virtualPresence = createClassroomRegistry();
+  io.__schoolVirtualPresence = virtualPresence;
 
   const ack = (fn, payload) => { if (typeof fn === 'function') fn(payload); };
 
@@ -196,6 +200,71 @@ function attachSchoolSocket(io) {
     socket.on('school:webrtc:answer', relay('school:webrtc:answer', 'answer'));
     socket.on('school:webrtc:ice', relay('school:webrtc:ice', 'candidate'));
 
+    // Virtual Classroom V1 handlers:
+    const virtualRoom = (code) => `virtual:${vsvc.normalizeCode(code)}`;
+
+    socket.on('school:virtual:join', async (payload = {}, done) => {
+      try {
+        const code = vsvc.normalizeCode(payload.code);
+        if (!code) return ack(done, { ok: false, error: 'رمز الحصة غير صالح' });
+        const session = await VirtualSession.findOne({ code });
+        if (!session) return ack(done, { ok: false, error: 'لا توجد حصة بهذا الرمز' });
+        const p = vsvc.findParticipant(session, user._id);
+        if (!p) return ack(done, { ok: false, error: 'انضم إلى الحصة عبر النظام أولاً' });
+        const room = virtualRoom(code);
+        virtualPresence.join(room, user, socket.id);
+        socket.join(room);
+        const res = vsvc.setOnline(session, user._id, true);
+        if (res.changed) {
+          await session.save();
+          io.to(room).emit('school:virtual:update', { code, session: vsvc.publicSession(session, { roster: true }) });
+        }
+        ack(done, { ok: true, code, session: vsvc.publicSession(session, { roster: true }), you: vsvc.publicParticipant(p) });
+      } catch (e) { ack(done, { ok: false, error: e.message || 'تعذر الانضمام' }); }
+    });
+
+    socket.on('school:virtual:leave', async (payload = {}, done) => {
+      try {
+        const code = vsvc.normalizeCode(payload.code);
+        if (!code) return ack(done, { ok: false, error: 'رمز الحصة غير صالح' });
+        const room = virtualRoom(code);
+        virtualPresence.leave(room, user._id, socket.id);
+        socket.leave(room);
+        if (!virtualPresence.isMember(room, user._id)) {
+          const session = await VirtualSession.findOne({ code });
+          if (session) {
+            const res = vsvc.setOnline(session, user._id, false);
+            if (res.changed) {
+              await session.save();
+              io.to(room).emit('school:virtual:update', { code, session: vsvc.publicSession(session, { roster: true }) });
+            }
+          }
+        }
+        ack(done, { ok: true, code });
+      } catch (e) { ack(done, { ok: false, error: e.message || 'تعذر المغادرة' }); }
+    });
+
+    socket.on('school:virtual:whiteboard', async (payload = {}, done) => {
+      try {
+        const code = vsvc.normalizeCode(payload.code);
+        if (!code) return ack(done, { ok: false, error: 'رمز غير صالح' });
+        const session = await VirtualSession.findOne({ code });
+        if (!session || !vsvc.canManage(session, user)) return ack(done, { ok: false, error: 'forbidden' });
+        if (payload.drawing !== undefined) {
+          const idx = session.whiteboardData?.currentSlide || 0;
+          if (session.whiteboardData?.slides?.[idx]) {
+            session.whiteboardData.slides[idx].drawing = String(payload.drawing).slice(0, 500000);
+          }
+        }
+        if (typeof payload.currentSlide === 'number') {
+          session.whiteboardData.currentSlide = payload.currentSlide;
+        }
+        await session.save();
+        io.to(virtualRoom(code)).emit('school:virtual:whiteboard', { code, whiteboardData: session.whiteboardData });
+        ack(done, { ok: true });
+      } catch (e) { ack(done, { ok: false, error: 'forbidden' }); }
+    });
+
     socket.on('disconnect', async () => {
       const affected = classrooms.removeSocket(user._id, socket.id);
       for (const roomId of affected) {
@@ -213,6 +282,21 @@ function attachSchoolSocket(io) {
           const classroom = await Classroom.findById(id);
           if (classroom) await goOffline(classroom);
         } catch (e) { /* presence cleanup is best-effort on disconnect */ }
+      }
+      // Virtual classrooms cleanup:
+      const vRooms = virtualPresence.removeSocket(user._id, socket.id);
+      for (const room of vRooms) {
+        const code = String(room).replace(/^virtual:/, '');
+        try {
+          const session = await VirtualSession.findOne({ code });
+          if (session) {
+            const res = vsvc.setOnline(session, user._id, false);
+            if (res.changed) {
+              await session.save();
+              io.to(room).emit('school:virtual:update', { code, session: vsvc.publicSession(session, { roster: true }) });
+            }
+          }
+        } catch (e) { /* presence cleanup is best-effort */ }
       }
     });
   });
