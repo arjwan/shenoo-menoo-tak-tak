@@ -266,7 +266,22 @@ router.get('/original', (_req, res) => {
   });
 });
 
+// The 2026-09-20 Canva "latest" school export (the interface the seven
+// standalone pages were generated from) is served byte-exact: it keeps its own
+// fingerprint and needs no export repair — the test-suite compiles its inline
+// script from the served copy, which is the real proof.
+router.get('/latest', (_req, res) => {
+  res.type('html');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-latest-20260920.html');
+  fs.readFile(file, (err, buf) => {
+    if (err) return res.status(500).json({ ok: false, message: 'فشل تحميل واجهة Canva الأخيرة' });
+    res.end(buf.toString('utf8'));
+  });
+});
+
 module.exports = router;
+
 module.exports.buildTurnServers = buildTurnServers;
 module.exports.canvaIntegrationConfig = canvaIntegrationConfig;
 module.exports.repairCanvaExport = repairCanvaExport;

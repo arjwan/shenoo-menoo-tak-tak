@@ -85,11 +85,31 @@ assert(clickCount >= 3, 'classroom UI is button-driven (no automatic media start
 assert(adapter.includes('/api/school/curriculum/offline-pack'),
   'adapter uses the real curriculum offline-pack (board + library + exam key)');
 assert(adapter.includes('/api/school/curriculum/catalog'),
-  'adapter falls back to the versioned Iraqi curriculum catalogue');
+  'adapter loads the versioned Iraqi curriculum catalogue');
 assert(adapter.includes('/api/school/curriculum/files'),
   'adapter loads the verified 136-file Iraqi curriculum manifest');
 assert(adapter.includes('فتح وقراءة PDF'),
   'adapter renders a direct PDF reader link for each published book');
+// Library contract: catalogue is the primary source (joined to the manifest by
+// real ids in core.packLibrary), independent of the guardian's students;
+// offline-pack keeps feeding board/exam only; a reader link exists only for a
+// real manifest url; no demo rows survive once real books exist.
+assert(adapter.includes("get('/api/school/curriculum/catalog').catch") && adapter.includes("get('/api/school/curriculum/files')"),
+  'hydrate fetches catalogue + manifest in parallel with the other school GETs');
+assert(/var librarySource = catalogItems\.length\s*\?\s*catalogItems\.concat/.test(adapter),
+  'library source is the full catalogue first, never the offline-pack');
+assert(adapter.includes('core.packLibrary(librarySource, realCurriculumFiles)'),
+  'library rows are the catalogue joined to the real PDF manifest');
+assert(adapter.includes('core.packLibrary(catalogItems, manifestFiles)'),
+  'data bridge (updated export) builds curriculum records from catalogue ⋈ manifest');
+assert(adapter.includes('if (row.readable && row.url) {') && adapter.includes("link.setAttribute('data-curriculum-pdf', '1')"),
+  'reader link only for a book joined to a real manifest url');
+assert(adapter.includes("card.setAttribute('data-availability', row.readable ? 'available' : 'source_pending')"),
+  'source_pending rows are marked and stay without a reader link');
+assert(adapter.includes('/محتوى تجريبي/.test'), 'demo placeholders are dropped once real books exist');
+assert(adapter.includes('lessonCount: downloaded.length'), 'home lesson count = real verified lessons, not catalogue rows');
+assert(/wrapRender\('renderLibrary', patchCurriculumFiles\)/.test(adapter),
+  'library patch re-applied after every original renderLibrary (both exports)');
 assert(adapter.includes('/api/school/students/'), 'adapter fetches the real per-student report');
 for (const fn of ['populatePath', 'renderTeachers', 'renderConsent', 'renderReport', 'renderLibrary', 'renderQueue']) {
   assert(adapter.includes(fn), 'adapter drives the original render function ' + fn);

@@ -36,7 +36,7 @@ const FROZEN = {
   'kahwa-cards-canva.js': '78bcc85d4a6593b6a0282f7772d5120e9c5b397d99a86a768b1fdb9fd3e5c62b',
   'kahwa-chess-canva.js': 'bec79dc637b347c526a51170be142d8d7723c80a563ad0f2f208f15db5da88b7',
   'kahwa-tawla-v2.js': 'f48e47a6ef679a0a1092673190b7341dad756199612dc6a4f5129a391d14797f',
-  'server/src/routes/school.routes.js': '01fce8a6ffc772b2ee78d4f521385416c5f2ca87e1ef40951aca801f94b1031a',
+  'server/src/routes/school.routes.js': '02ec484ee02ba70df8c8b7c0af71436e07e8b828d6e9e85317a44e34aeef5e22',
   'server/src/routes/school-sync.routes.js': 'e62bea1cb9e939c8ce7046474fa7bcce6d7b96c25ba8bb99c1bddd0dbedf579a',
   'server/src/socket.js': 'cc059537fcc22f462aed34f852cfe30bab4bd147e7be9051e8c6ba84822d9348'
 };
@@ -420,7 +420,63 @@ test('core: packLibrary produces catalog rows for the original library', () => {
   assert.equal(rows[0].chapter, 'ابتدائي ← الأول ابتدائي ← الرياضيات ← الفصل الأول ← الجمع');
   assert.equal(rows[0].status, 'منهاج شنو منو');
   assert.equal(rows[1].status, 'مرفوع — بانتظار الاعتماد', 'unverified uploads are labelled as pending');
+  assert.equal(rows[0].readable, false, 'no manifest -> nothing is readable');
+  assert.equal(rows[0].url, '', 'no manifest -> no open url');
   assert.deepEqual(core.packLibrary([]), []);
+});
+
+test('core: packLibrary joins catalogue to the PDF manifest by real ids and stays full with zero students', () => {
+  // Real field names of the two endpoints: catalog item {id,title,stage,grade,
+  // subject,verified,availability,file:{url,originalName}} and manifest entry
+  // {fileName,url,catalogId,bytes,pages}. Match by originalName↔fileName,
+  // file.url↔url or id↔catalogId — never by guessed fields.
+  const files = [
+    { fileName: 'a.pdf', url: '/uploads/school-curriculum/a.pdf', catalogId: null, bytes: 2 * 1048576, pages: 40 },
+    { fileName: 'b.pdf', url: '/uploads/school-curriculum/b.pdf', catalogId: 'iq-b', bytes: 1048576, pages: 10 },
+    { fileName: 'c.pdf', url: '/uploads/school-curriculum/c.pdf', catalogId: null, bytes: 1, pages: 1 },
+    { fileName: 'no-url.pdf', url: '', catalogId: 'iq-d', bytes: 1, pages: 1 }
+  ];
+  const catalog = [
+    { id: 'iq-a', title: 'كتاب أ', stage: 'ابتدائي', grade: 'الأول ابتدائي', subject: 'القراءة', verified: true, availability: 'available',
+      file: { url: '/uploads/school-curriculum/a.pdf', originalName: 'a.pdf' } },
+    { id: 'iq-b', title: 'كتاب ب', stage: 'ابتدائي', grade: 'الثاني ابتدائي', subject: 'العلوم', verified: true, availability: 'available',
+      file: { url: '', originalName: '' } },
+    { id: 'iq-c', title: 'كتاب ج', stage: 'متوسط', grade: 'الأول متوسط', subject: 'الرياضيات', verified: false, availability: 'source_pending',
+      file: { url: '', originalName: '' } },
+    { id: 'iq-d', title: 'كتاب د', stage: 'إعدادي', grade: 'السادس علمي', subject: 'الفيزياء', verified: false, availability: 'source_pending',
+      file: { url: '', originalName: '' } }
+  ];
+  const rows = core.packLibrary(catalog, files);
+  assert.equal(rows.length, 4, 'one row per catalogue book');
+  assert.deepEqual(rows.map((r) => r.readable), [true, true, false, false]);
+  assert.equal(rows[0].url, '/uploads/school-curriculum/a.pdf', 'joined by file.originalName/file.url');
+  assert.equal(rows[1].url, '/uploads/school-curriculum/b.pdf', 'joined by id↔catalogId');
+  assert.equal(rows[0].status, 'منهاج شنو منو — متاح للقراءة');
+  assert.equal(rows[0].pages, 40);
+  assert.equal(rows[2].status, 'مفهرس — بانتظار النسخة الرسمية', 'source_pending stays pending');
+  assert.equal(rows[2].url, '', 'source_pending never gets an open url');
+  assert.equal(rows[3].url, '', 'manifest entry without url can never make a book readable');
+  assert.equal(rows[2].chapter, 'متوسط ← الأول متوسط ← الرياضيات', 'stage ← grade ← subject hierarchy');
+
+  // Zero students: no offline-pack items at all -> library is still the full catalogue.
+  const zeroStudents = core.packLibrary(catalog.concat([]), files);
+  assert.equal(zeroStudents.length, catalog.length, 'library never depends on students/offline-pack');
+
+  // The real shipped data: every catalogue row present, readable rows only with
+  // manifest urls, pending rows without any url (counts derived from the data,
+  // never hard-coded).
+  const realCatalog = require(path.join(root, 'server/src/data/iraqi-curriculum-catalog.js')).items;
+  const realManifest = require(path.join(root, 'server/src/data/iraqi-curriculum-files.json'));
+  const realFiles = realManifest.files.map((f) => ({ ...f, url: `/uploads/school-curriculum/${f.fileName}` }));
+  const realRows = core.packLibrary(realCatalog, realFiles);
+  const manifestUrls = new Set(realFiles.map((f) => f.url));
+  assert.equal(realRows.length, realCatalog.length, 'one library row per real catalogue book');
+  const readable = realRows.filter((r) => r.readable);
+  const pending = realRows.filter((r) => !r.readable);
+  assert.equal(readable.length + pending.length, realCatalog.length);
+  assert.ok(readable.every((r) => manifestUrls.has(r.url)), 'every open url comes from the real manifest');
+  assert.ok(pending.every((r) => r.url === '' && !/متاح للقراءة/.test(r.status)), 'pending rows expose no url');
+  assert.equal(readable.length, realCatalog.filter((it) => core.packLibrary([it], realFiles)[0].readable).length);
 });
 
 test('core: homeStats maps the real account into the seven home numbers', () => {

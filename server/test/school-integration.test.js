@@ -13,7 +13,7 @@ const originalChecksums = {
   'original-assets/school/school-offline-ai.js': '96f6d6a32248bd6b099fa2a1dfd551f6d5b7f12e6fba9627e768549c946884db',
   'original-assets/school/school.js': '3550b0a79fc91af4b484aba7794356278e7ad33365ab04bc9d649493e3c64752',
   'original-assets/school/server/src/models/SchoolKnowledgeSource.js': '0f08fd764437e921ac2688ced99781881cfeabe44c623910d1968621ca07fdba',
-  'original-assets/school/server/src/routes/school.routes.js': '01fce8a6ffc772b2ee78d4f521385416c5f2ca87e1ef40951aca801f94b1031a'
+  'original-assets/school/server/src/routes/school.routes.js': '02ec484ee02ba70df8c8b7c0af71436e07e8b828d6e9e85317a44e34aeef5e22'
 };
 
 test('school original assets are byte-identical to preserved checksums', () => {

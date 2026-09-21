@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الهيكل الدراسي | شنو منو مدرسة</title>
+  <script>document.documentElement.dataset.theme=(localStorage.getItem('shno-theme')==='dark'||localStorage.getItem('taktak-theme')==='dark')?'dark':'light';</script>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;600;700;800&amp;family=Fraunces:wght@700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="school-app.css?v=20260920-latest">
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js" type="text/javascript"></script>
+  <script src="auth-guard.js?v=20260913-7"></script>
+</head>
+<body data-template-id="__page-root" class="w-full" style="background: radial-gradient(rgb(255, 253, 248), rgb(225, 240, 235));">
+  <div class="school-shell w-full">
+<header data-template-id="top-header" class="canva-header sticky top-0 z-40 border-b border-teal-900/10 bg-[#fffaf2]/95 backdrop-blur" style="background: rgb(255, 250, 242);">
+    <div class="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6">
+     <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+       <button id="menu-button" type="button" aria-label="فتح قائمة التنقل" class="mobile-menu grid h-10 w-10 place-items-center rounded-xl bg-[#e3f0eb] text-[#146c70]"><i data-lucide="menu"></i></button>
+       <div class="grid h-11 w-11 place-items-center rounded-2xl bg-[#146c70] text-white"><i data-lucide="school"></i>
+       </div>
+       <div>
+        <strong data-template-id="app-title" class="canva-text block font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">شنو منو مدرسة</strong> <small data-template-id="app-tagline" class="canva-text" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">إدارة مدرسية مرتبطة بالبيانات المؤكدة فقط</small>
+       </div>
+      </div>
+      <div class="flex items-center gap-2">
+       <span id="connection-chip" class="status-chip bg-[#fff4d9] text-[#846019]" role="status"><i data-lucide="wifi-off" class="h-4 w-4"></i><span id="connection-label">يحتاج إعداد API</span></span> <button id="report-button" data-template-id="report-button" type="button" class="canva-button hidden rounded-xl bg-[#146c70] px-3 py-2 font-extrabold text-white sm:block" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">تقرير المدرسة</button>
+      </div>
+     </div>
+     <nav class="desktop-nav mt-3 flex items-center gap-1 overflow-x-auto pb-1" aria-label="تنقل المدرسة">
+      <button type="button" class="nav-link" data-page="index"><i data-lucide="layout-dashboard" class="h-4 w-4"></i>الرئيسية</button> <button type="button" class="nav-link is-active" data-page="structure"><i data-lucide="network" class="h-4 w-4"></i>الهيكل الدراسي</button> <button type="button" class="nav-link" data-page="teachers"><i data-lucide="users" class="h-4 w-4"></i>المعلمون</button> <button type="button" class="nav-link" data-page="students"><i data-lucide="user-round" class="h-4 w-4"></i>الطلاب</button> <button type="button" class="nav-link" data-page="curriculum"><i data-lucide="library-big" class="h-4 w-4"></i>المناهج</button> <button type="button" class="nav-link" data-page="reader"><i data-lucide="book-open" class="h-4 w-4"></i>القارئ</button> <button type="button" class="nav-link" data-page="classroom"><i data-lucide="presentation" class="h-4 w-4"></i>الصف والحصة</button>
+     </nav>
+    </div>
+   </header>
+<div id="drawer-overlay" class="overlay fixed inset-0 z-40 bg-[#183a3c]/35"></div>
+   <aside id="mobile-drawer" class="drawer fixed inset-y-0 right-0 z-50 w-[86%] max-w-sm bg-[#fffaf2] p-5">
+    <div class="flex items-center justify-between border-b border-teal-900/10 pb-4">
+     <strong data-template-id="drawer-title" class="canva-text font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">مسارات المدرسة</strong> <button id="drawer-close" type="button" aria-label="إغلاق القائمة" class="grid h-10 w-10 place-items-center rounded-xl bg-[#e3f0eb] text-[#146c70]"><i data-lucide="x"></i></button>
+    </div>
+    <nav class="mt-4 space-y-1" aria-label="تنقل الهاتف">
+     <button type="button" class="nav-link w-full" data-page="index">الرئيسية</button> <button type="button" class="nav-link w-full" data-page="structure">الهيكل الدراسي</button> <button type="button" class="nav-link w-full" data-page="teachers">المعلمون والمعلمات</button> <button type="button" class="nav-link w-full" data-page="students">الطلاب والطالبات</button> <button type="button" class="nav-link w-full" data-page="curriculum">مكتبة المناهج</button> <button type="button" class="nav-link w-full" data-page="reader">قارئ الكتاب</button> <button type="button" class="nav-link w-full" data-page="classroom">الصف والحصة</button>
+    </nav>
+   </aside>
+   <main class="page-shell mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
+<div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+     <nav aria-label="مسار التنقل" class="flex items-center gap-2 text-sm font-bold text-[#53706f]"><span>شنو منو مدرسة</span><i data-lucide="chevron-left" class="h-4 w-4"></i><span id="breadcrumb-current">الهيكل الدراسي</span>
+     </nav><span id="last-sync" class="text-sm font-bold text-[#53706f]">آخر مزامنة مؤكدة: لا يوجد</span>
+    </div>
+<section id="screen-collection" class="screen">
+     <article class="soft-card overflow-hidden rounded-[2rem] bg-[#e3f0eb]">
+      <div class="grid md:grid-cols-[1fr_.38fr]">
+       <div class="p-6 sm:p-8">
+        <p id="collection-kicker" class="font-bold text-[#bd751b]"></p>
+        <h1 id="collection-title" class="mt-1 font-extrabold"></h1>
+        <p id="collection-copy" class="mt-3 leading-relaxed text-[#53706f]"></p>
+       </div><img data-template-id="collection-hero-image" loading="lazy" class="canva-image h-44 w-full object-cover md:h-full" src="https://images.pexels.com/photos/5212345/pexels-photo-5212345.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=800" alt="Teacher explaining geometry as students engage in a modern classroom setting."> <img data-template-id="teachers-hero-image" loading="lazy" class="canva-image hidden h-44 w-full object-cover md:h-full" src="https://images.pexels.com/photos/5212345/pexels-photo-5212345.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=800" alt="Teacher explaining geometry as students engage in a modern classroom setting."> <img data-template-id="students-hero-image" loading="lazy" class="canva-image hidden h-44 w-full object-cover md:h-full" src="https://images.pexels.com/photos/17022446/pexels-photo-17022446.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=800" alt="Middle Eastern teenage girls studying in a classroom, wearing hijabs and uniforms, focused and engaged."> <img data-template-id="curriculum-hero-image" loading="lazy" class="canva-image hidden h-44 w-full object-cover md:h-full" src="https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1280" alt="Vibrant collection of books on shelves for reading, research, and education.">
+      </div>
+     </article>
+     <section class="soft-card mt-6 rounded-[1.5rem] bg-white p-5">
+      <form id="filter-form" class="grid gap-3 md:grid-cols-3 lg:grid-cols-5"></form>
+      <div class="mt-4 flex flex-wrap gap-3">
+       <button id="search-button" type="submit" form="filter-form" class="rounded-xl bg-[#146c70] px-4 py-3 font-extrabold text-white">تحميل البيانات المؤكدة</button> <label id="csv-label" class="hidden cursor-pointer rounded-xl bg-[#fff4d9] px-4 py-3 font-extrabold text-[#846019]">اختيار ملف CSV<input id="csv-input" class="hidden" type="file" accept=".csv,text/csv"></label>
+      </div>
+      <p id="form-status" class="status-note mt-3 font-bold text-[#53706f]" role="status"></p>
+     </section>
+     <section class="mt-5 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+      <article class="soft-card rounded-[1.5rem] bg-white p-5">
+       <h2 id="list-heading" class="font-extrabold"></h2>
+       <div id="collection-results" class="mt-4 grid gap-3"></div>
+      </article>
+      <aside class="soft-card rounded-[1.5rem] bg-white p-5">
+       <h2 id="detail-heading" class="font-extrabold"></h2>
+       <div id="detail-results" class="state-box mt-4"></div>
+      </aside>
+     </section>
+    </section>
+   </main>
+  </div>
+<div id="report-modal" class="modal fixed inset-0 z-[60] items-center justify-center bg-[#183a3c]/45 p-4" role="dialog" aria-modal="true" aria-labelledby="report-title">
+   <div class="max-h-[85%] w-full max-w-3xl overflow-y-auto rounded-[2rem] bg-[#fffaf2] p-6 shadow-2xl">
+    <div class="flex items-start justify-between gap-4">
+     <div>
+      <p data-template-id="report-kicker" class="canva-text font-bold text-[#bd751b]" style="color: rgb(189, 117, 27); font-weight: 700; font-style: normal; font-size: 16px;">تشخيص وتشغيل فعلي</p>
+      <h2 id="report-title" data-template-id="report-title" class="canva-text mt-1 font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 24px;">تقرير حالة المدرسة</h2>
+     </div><button id="report-close" type="button" aria-label="إغلاق التقرير" class="grid h-10 w-10 place-items-center rounded-xl bg-[#e3f0eb] text-[#146c70]"><i data-lucide="x"></i></button>
+    </div>
+    <div id="report-content" class="mt-5 grid gap-3"></div><button id="diagnostic-button" data-template-id="diagnostic-button" type="button" class="canva-button mt-5 rounded-xl bg-[#146c70] px-5 py-3 font-extrabold text-white" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">تشغيل الاختبار التشخيصي</button>
+   </div>
+  </div>
+<div id="toast" class="toast fixed bottom-5 left-5 z-[80] max-w-md items-start gap-3 rounded-2xl border border-[#9bcfc5] bg-[#e3f0eb] p-4 text-[#146c70] shadow-xl" role="status"><i data-lucide="info" class="mt-1 h-5 w-5"></i>
+   <p id="toast-text" class="font-bold"></p>
+  </div>
+<footer class="school-standalone-footer" data-template-id="standalone-footer">
+  <p class="font-bold text-[#53706f]">صفحات المدرسة المستقلة — كل صفحة تعمل وحدها وترتبط بنفس واجهة المدرسة وبيانات شنو منو المؤكدة.</p>
+  <nav aria-label="تنقل صفحات المدرسة المستقلة"><a href="school-index.html">الرئيسية</a><a href="school-structure.html" aria-current="page">الهيكل الدراسي</a><a href="school-teachers.html">المعلمون والمعلمات</a><a href="school-students.html">الطلاب والطالبات</a><a href="school-curriculum.html">مكتبة المناهج</a><a href="school-reader.html">قارئ الكتاب</a><a href="school-classroom.html">الصف والحصة</a><a href="school.html">مدرسة شنو منو (الصفحة السابقة)</a><a href="school-canva.html">تصميم Canva الكامل</a><a href="taktak.html">شنو منو</a></nav>
+</footer>
+  <script>window.__SHNO_SCHOOL_PAGE__="structure";</script>
+  <script src="school-api-adapter.js?v=20260920-latest"></script>
+  <script src="school-canva-ui.js?v=20260920-latest"></script>
+</body></html>

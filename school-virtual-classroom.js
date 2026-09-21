@@ -1,0 +1,1139 @@
+'use strict';
+
+/**
+ * school-virtual-classroom.js
+ *
+ * Client runtime for AI Virtual Teacher Classroom V1.
+ * Coordinates real Iraqi curriculum binding, whiteboard drawing/zooming,
+ * honest Q&A and chat, user-initiated camera/mic controls, and Socket.IO presence.
+ */
+(function () {
+  var core = window.SchoolVirtualTeacherCore;
+  if (!core) {
+    console.error('SchoolVirtualTeacherCore not loaded.');
+    return;
+  }
+
+  // State
+  var state = {
+    token: '',
+    user: null,
+    code: '',
+    session: null,
+    isHost: false,
+    timerInterval: null,
+    whiteboard: null,
+    catalogItems: [],
+    students: [],
+    devices: core.initialDevicesState(),
+    localStream: null,
+    speechSynthesisActive: true,
+    socket: null
+  };
+
+  // Helper selectors
+  var $ = function (id) { return document.getElementById(id); };
+
+  function show(id) { var el = $(id); if (el) el.hidden = false; }
+  function hide(id) { var el = $(id); if (el) el.hidden = true; }
+
+  function notify(msg, isError) {
+    var box = $('virtualMessage');
+    if (!box) return;
+    box.textContent = msg;
+    box.style.backgroundColor = isError ? '#ffebee' : '#fff3cd';
+    box.style.color = isError ? '#c62828' : '#856404';
+    box.style.borderColor = isError ? '#ef9a9a' : '#ffeeba';
+    box.hidden = false;
+    setTimeout(function () { box.hidden = true; }, 6000);
+  }
+
+  function getToken() {
+    try {
+      if (window.SocialApi && typeof window.SocialApi.getToken === 'function') {
+        var t = window.SocialApi.getToken();
+        if (t) return t;
+      }
+    } catch (e) {}
+    return localStorage.getItem('token') || localStorage.getItem('auth_token') || '';
+  }
+
+  function api(url, opts) {
+    opts = opts || {};
+    var headers = opts.headers || {};
+    if (state.token) headers.Authorization = 'Bearer ' + state.token;
+    if (opts.body && typeof opts.body === 'object') {
+      headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(opts.body);
+    }
+    opts.headers = headers;
+    return fetch(url, opts).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          var err = new Error(data && data.message ? data.message : 'HTTP ' + res.status);
+          err.status = res.status;
+          err.data = data;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  // -------------------------------------------------------------
+  // Initialization
+  // -------------------------------------------------------------
+  function init() {
+    state.token = getToken();
+    var codeFromUrl = core.codeFromSearch(window.location.search);
+
+    // Initial whiteboard state
+    state.whiteboard = core.createWhiteboardState();
+    setupWhiteboardCanvas();
+
+    // Bind event listeners
+    bindLobbyEvents();
+    bindWhiteboardToolbar();
+    bindMediaControls();
+    bindQuestionControls();
+    bindSettingsControls();
+
+    if (codeFromUrl) {
+      loadSession(codeFromUrl);
+    } else {
+      enterLobby();
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Lobby Mode
+  // -------------------------------------------------------------
+  function enterLobby() {
+    hide('virtualRoom');
+    show('virtualLobby');
+    loadLobbyData();
+  }
+
+  function loadLobbyData() {
+    // 1) Load curriculum catalog for cascade
+    api('/api/school/curriculum/catalog').then(function (data) {
+      state.catalogItems = Array.isArray(data.items) ? data.items : [];
+      populateStages();
+    }).catch(function (e) {
+      notify('تعذر تحميل كتالوج المناهج: ' + e.message, true);
+    });
+
+    // 2) Load real registered students of this account
+    api('/api/school/students').then(function (data) {
+      state.students = Array.isArray(data.students) ? data.students : [];
+      populateStudentsSelect();
+    }).catch(function () {});
+
+    // 3) Load active sessions list
+    loadActiveSessions();
+  }
+
+  function populateStages() {
+    var stageSelect = $('createStage');
+    if (!stageSelect) return;
+    stageSelect.innerHTML = '<option value="">اختر المرحلة الدراسية</option>';
+    var c = core.cascade(state.catalogItems, {});
+    c.stages.forEach(function (st) {
+      var opt = document.createElement('option');
+      opt.value = st;
+      opt.textContent = st;
+      stageSelect.appendChild(opt);
+    });
+  }
+
+  function populateStudentsSelect() {
+    var sel = $('joinStudent');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">أنا بنفسي (حسابي الحالي)</option>';
+    state.students.forEach(function (s) {
+      var opt = document.createElement('option');
+      opt.value = s._id || s.id;
+      opt.textContent = s.name + ' (' + s.stage + ' — ' + s.grade + ')';
+      sel.appendChild(opt);
+    });
+  }
+
+  function loadActiveSessions() {
+    var box = $('activeSessionsBox');
+    if (!box) return;
+    api('/api/school/virtual/sessions/active').then(function (d) {
+      var list = Array.isArray(d.sessions) ? d.sessions : [];
+      if (!list.length) {
+        box.innerHTML = '<p class="empty-state-text">لا توجد حصص افتراضية نشطة حالياً.</p>';
+        return;
+      }
+      box.innerHTML = '';
+      list.forEach(function (s) {
+        var chip = document.createElement('div');
+        chip.className = 'session-chip';
+        chip.innerHTML = '<div><b>' + (s.subject || 'مادة') + ':</b> ' + (s.lesson || 'درس') + ' <small>(' + s.grade + ')</small></div>' +
+          '<span class="badge">' + s.code + '</span>';
+        chip.addEventListener('click', function () {
+          loadSession(s.code);
+        });
+        box.appendChild(chip);
+      });
+    }).catch(function () {
+      box.innerHTML = '<p class="empty-state-text">تعذر جلب الحصص المتاحة.</p>';
+    });
+  }
+
+  function bindLobbyEvents() {
+    var stageSelect = $('createStage');
+    var gradeSelect = $('createGrade');
+    var subjectSelect = $('createSubject');
+
+    if (stageSelect) {
+      stageSelect.addEventListener('change', function () {
+        var stage = stageSelect.value;
+        gradeSelect.innerHTML = '<option value="">اختر الصف</option>';
+        subjectSelect.innerHTML = '<option value="">اختر المادة</option>';
+        subjectSelect.disabled = true;
+
+        if (!stage) {
+          gradeSelect.disabled = true;
+          return;
+        }
+
+        var c = core.cascade(state.catalogItems, { stage: stage });
+        c.grades.forEach(function (g) {
+          var opt = document.createElement('option');
+          opt.value = g;
+          opt.textContent = g;
+          gradeSelect.appendChild(opt);
+        });
+        gradeSelect.disabled = false;
+      });
+    }
+
+    if (gradeSelect) {
+      gradeSelect.addEventListener('change', function () {
+        var stage = stageSelect.value;
+        var grade = gradeSelect.value;
+        subjectSelect.innerHTML = '<option value="">اختر المادة</option>';
+
+        if (!grade) {
+          subjectSelect.disabled = true;
+          return;
+        }
+
+        var c = core.cascade(state.catalogItems, { stage: stage, grade: grade });
+        c.subjects.forEach(function (sub) {
+          var opt = document.createElement('option');
+          opt.value = sub;
+          opt.textContent = sub;
+          subjectSelect.appendChild(opt);
+        });
+        subjectSelect.disabled = false;
+      });
+    }
+
+    var createForm = $('createVirtualForm');
+    if (createForm) {
+      createForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var stage = stageSelect.value;
+        var grade = gradeSelect.value;
+        var subject = subjectSelect.value;
+        var lesson = ($('createLesson').value || '').trim();
+        var profileId = $('selectProfile').value;
+        var dialect = $('selectDialect').value;
+
+        if (!stage || !grade || !subject || !lesson) {
+          notify('يرجى ملء جميع الحقول من المنهج الحقيقي أولاً.', true);
+          return;
+        }
+
+        api('/api/school/virtual/sessions', {
+          method: 'POST',
+          body: {
+            stage: stage,
+            grade: grade,
+            subject: subject,
+            lesson: lesson,
+            profileId: profileId,
+            dialect: dialect
+          }
+        }).then(function (res) {
+          notify('تم بدء الحصة الافتراضية بنجاح!');
+          loadSession(res.code);
+        }).catch(function (err) {
+          notify('خطأ في بدء الحصة: ' + err.message, true);
+        });
+      });
+    }
+
+    var joinForm = $('joinVirtualForm');
+    if (joinForm) {
+      joinForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var code = core.normalizeCode($('joinCodeInput').value);
+        var studentId = $('joinStudent').value;
+        if (!code) {
+          notify('رمز الحصة يجب أن يتكون من 6 أحرف صالحة.', true);
+          return;
+        }
+        api('/api/school/virtual/sessions/' + encodeURIComponent(code) + '/join', {
+          method: 'POST',
+          body: { studentId: studentId || undefined }
+        }).then(function () {
+          loadSession(code);
+        }).catch(function (err) {
+          notify('تعذر الانضمام: ' + err.message, true);
+        });
+      });
+    }
+
+    var leaveBtn = $('leaveClassBtn');
+    if (leaveBtn) {
+      leaveBtn.addEventListener('click', function () {
+        if (!state.code) return;
+        api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/leave', {
+          method: 'POST',
+          body: {}
+        }).finally(function () {
+          cleanupSession();
+          enterLobby();
+        });
+      });
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Active Room Mode
+  // -------------------------------------------------------------
+  function loadSession(code) {
+    code = core.normalizeCode(code);
+    if (!code) {
+      notify('رمز الحصة غير صالح.', true);
+      enterLobby();
+      return;
+    }
+
+    api('/api/school/virtual/sessions/' + encodeURIComponent(code)).then(function (data) {
+      state.code = code;
+      state.session = data.session;
+      renderClassroom(data.session);
+      hide('virtualLobby');
+      show('virtualRoom');
+
+      // Update URL without reloading
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', '?code=' + code);
+      }
+
+      startElapsedTimer(data.session.startedAt);
+      initSocket(code);
+      loadMessages(code);
+    }).catch(function (err) {
+      notify('تعذر فتح الحصة: ' + err.message, true);
+      enterLobby();
+    });
+  }
+
+  function renderClassroom(session) {
+    // 1) Metadata bar
+    $('metaLesson').innerHTML = '<b>الدرس:</b> ' + (session.lesson || 'غير محدد');
+    $('metaSubject').innerHTML = '<b>المادة:</b> ' + (session.subject || 'غير محدد');
+    $('metaGrade').innerHTML = '<b>الصف:</b> ' + (session.grade || 'غير محدد');
+    $('metaSource').textContent = '📖 ' + (session.sourceTitle || session.sourceBookName || 'المنهج العراقي');
+
+    // 2) Top Teacher Quick Indicator
+    var teacher = session.virtualTeacher || {};
+    $('topTeacherName').textContent = teacher.name || 'أ. سارة الذكية';
+
+    // 3) Left Teacher Panel
+    $('teacherDisplayName').textContent = teacher.name || 'أ. سارة الذكية';
+    $('teacherRoleTag').textContent = teacher.title || 'معلم رياضيات افتراضي';
+    var dialectObj = core.getDialect(teacher.dialect);
+    $('teacherDialectLabel').textContent = dialectObj.name;
+
+    // 4) Check Host Role for End Button
+    // If authenticated user is host, show End Session button
+    api('/api/school/virtual/sessions/mine').then(function (d) {
+      if (d && d.hosting && d.hosting.code === session.code) {
+        state.isHost = true;
+        show('endClassBtn');
+      } else {
+        state.isHost = false;
+        hide('endClassBtn');
+      }
+    }).catch(function () {});
+
+    // 5) Whiteboard Render
+    if (session.whiteboardData && Array.isArray(session.whiteboardData.slides) && session.whiteboardData.slides.length) {
+      state.whiteboard = core.createWhiteboardState(session.whiteboardData.slides);
+      renderWhiteboardSlide();
+    }
+
+    // 6) Participants List
+    renderParticipants(session.participants || []);
+  }
+
+  function renderParticipants(participants) {
+    var list = $('studentsList');
+    var carousel = $('studentsCarousel');
+    var countEl = $('participantsCount');
+    if (!list) return;
+
+    var students = participants.filter(function (p) {
+      return p.role === 'student' && !p.leftAt;
+    });
+
+    if (countEl) countEl.textContent = String(students.length + 1); // +1 for AI Teacher
+
+    if (!students.length) {
+      list.innerHTML = '';
+      show('studentsEmptyState');
+      if (carousel) {
+        carousel.innerHTML = '';
+        show('carouselEmptyState');
+      }
+      return;
+    }
+
+    hide('studentsEmptyState');
+    if (carousel) hide('carouselEmptyState');
+
+    list.innerHTML = '';
+    if (carousel) carousel.innerHTML = '';
+
+    students.forEach(function (s) {
+      // Roster row
+      var item = document.createElement('div');
+      item.className = 'roster-item';
+      var micIcon = s.media && s.media.mic ? '🎙️' : '🔇';
+      var handIcon = s.handRaised ? '✋' : '';
+      item.innerHTML = '<div class="roster-avatar">👤</div>' +
+        '<div class="roster-info">' +
+          '<div class="roster-name">' + s.name + '</div>' +
+          '<div class="roster-sub">' + (s.online ? 'متصل' : 'غير متصل') + '</div>' +
+        '</div>' +
+        '<div class="roster-icons"><span>' + handIcon + '</span><span>' + micIcon + '</span></div>';
+      list.appendChild(item);
+
+      // Carousel tile
+      if (carousel) {
+        var tile = document.createElement('div');
+        tile.className = 'carousel-tile';
+        tile.innerHTML = '<div class="carousel-avatar">👤</div>' +
+          '<div class="carousel-name" title="' + s.name + '">' + s.name + '</div>' +
+          '<div class="carousel-status-icons"><span>' + handIcon + '</span><span>' + micIcon + '</span></div>';
+        carousel.appendChild(tile);
+      }
+    });
+  }
+
+  function startElapsedTimer(startTime) {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    var start = startTime ? new Date(startTime).getTime() : Date.now();
+    var timerEl = $('elapsedTimer');
+
+    function update() {
+      var diff = Math.floor((Date.now() - start) / 1000);
+      var m = Math.floor(diff / 60);
+      var s = diff % 60;
+      var strM = m < 10 ? '0' + m : String(m);
+      var strS = s < 10 ? '0' + s : String(s);
+      if (timerEl) timerEl.textContent = strM + ':' + strS;
+    }
+    update();
+    state.timerInterval = setInterval(update, 1000);
+  }
+
+  function cleanupSession() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    stopMediaTracks();
+    if (state.socket) {
+      try {
+        state.socket.emit('school:virtual:leave', { code: state.code });
+        state.socket.disconnect();
+      } catch (e) {}
+      state.socket = null;
+    }
+    state.code = '';
+    state.session = null;
+  }
+
+  window.addEventListener('pagehide', cleanupSession);
+  window.addEventListener('beforeunload', cleanupSession);
+
+  // -------------------------------------------------------------
+  // Whiteboard Canvas & Slide Render
+  // -------------------------------------------------------------
+  var canvasCtx = null;
+  var isDrawing = false;
+  var lastX = 0;
+  var lastY = 0;
+
+  function setupWhiteboardCanvas() {
+    var canvas = $('whiteboardCanvas');
+    if (!canvas) return;
+    canvasCtx = canvas.getContext('2d');
+
+    function getCoords(e) {
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width / rect.width;
+      var scaleY = canvas.height / rect.height;
+      var clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      var clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    function startDraw(e) {
+      if (state.whiteboard.getTool() === 'select') return;
+      isDrawing = true;
+      var pos = getCoords(e);
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function draw(e) {
+      if (!isDrawing || !canvasCtx) return;
+      var pos = getCoords(e);
+      var tool = state.whiteboard.getTool();
+
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(lastX, lastY);
+      canvasCtx.lineTo(pos.x, pos.y);
+
+      if (tool === 'eraser') {
+        canvasCtx.globalCompositeOperation = 'destination-out';
+        canvasCtx.lineWidth = state.whiteboard.getStrokeSize();
+      } else if (tool === 'highlighter') {
+        canvasCtx.globalCompositeOperation = 'source-over';
+        canvasCtx.strokeStyle = 'rgba(255, 235, 59, 0.4)';
+        canvasCtx.lineWidth = state.whiteboard.getStrokeSize();
+      } else {
+        canvasCtx.globalCompositeOperation = 'source-over';
+        canvasCtx.strokeStyle = state.whiteboard.getColor();
+        canvasCtx.lineWidth = state.whiteboard.getStrokeSize();
+      }
+
+      canvasCtx.lineCap = 'round';
+      canvasCtx.lineJoin = 'round';
+      canvasCtx.stroke();
+
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function stopDraw() {
+      if (isDrawing && canvas) {
+        isDrawing = false;
+        try {
+          var dataUrl = canvas.toDataURL();
+          state.whiteboard.pushHistory(dataUrl);
+        } catch (e) {}
+      }
+    }
+
+    canvas.addEventListener('pointerdown', startDraw);
+    canvas.addEventListener('pointermove', draw);
+    canvas.addEventListener('pointerup', stopDraw);
+    canvas.addEventListener('pointercancel', stopDraw);
+  }
+
+  function renderWhiteboardSlide() {
+    var slide = state.whiteboard.getCurrentSlide();
+    var idx = state.whiteboard.getCurrentSlideIndex();
+    var total = state.whiteboard.getTotalSlides();
+
+    $('slideIndicator').textContent = (idx + 1) + ' / ' + total;
+    $('boardLessonTitle').textContent = slide.title || 'عنوان الدرس';
+
+    // Left Column
+    if (slide.leftColumn) {
+      $('boardLeftTitle').textContent = slide.leftColumn.title || '';
+      var leftItemsEl = $('boardLeftItems');
+      leftItemsEl.innerHTML = '';
+      (slide.leftColumn.items || []).forEach(function (it) {
+        var div = document.createElement('div');
+        div.className = 'math-item';
+        div.textContent = it;
+        leftItemsEl.appendChild(div);
+      });
+    }
+
+    // Right Column
+    if (slide.rightColumn) {
+      $('boardRightTitle').textContent = slide.rightColumn.title || '';
+      if (slide.example) {
+        $('boardRightExample').innerHTML = '<div class="example-title">مثال:</div><div class="example-body">' + slide.example + '</div>';
+        show('boardRightExample');
+      } else {
+        hide('boardRightExample');
+      }
+    }
+
+    // Note Box
+    if (slide.note) {
+      $('boardNoteText').textContent = slide.note;
+      show('boardNoteBox');
+    } else {
+      hide('boardNoteBox');
+    }
+
+    // Clear and restore drawing
+    if (canvasCtx && $('whiteboardCanvas')) {
+      canvasCtx.clearRect(0, 0, $('whiteboardCanvas').width, $('whiteboardCanvas').height);
+      if (slide.drawing) {
+        var img = new Image();
+        img.onload = function () {
+          canvasCtx.drawImage(img, 0, 0);
+        };
+        img.src = slide.drawing;
+      }
+    }
+  }
+
+  function bindWhiteboardToolbar() {
+    var toolBtns = ['toolSelect', 'toolPen', 'toolHighlighter', 'toolEraser'];
+    toolBtns.forEach(function (btnId) {
+      var btn = $(btnId);
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        toolBtns.forEach(function (id) { if ($(id)) $(id).classList.remove('active'); });
+        btn.classList.add('active');
+        var tool = btnId.replace('tool', '').toLowerCase();
+        state.whiteboard.setTool(tool);
+      });
+    });
+
+    // Colors
+    var colorDots = document.querySelectorAll('.color-dot');
+    colorDots.forEach(function (dot) {
+      dot.addEventListener('click', function () {
+        colorDots.forEach(function (d) { d.classList.remove('active'); });
+        dot.classList.add('active');
+        state.whiteboard.setColor(dot.dataset.color);
+        // Switch back to pen if on eraser
+        if (state.whiteboard.getTool() === 'eraser') {
+          $('toolPen').click();
+        }
+      });
+    });
+
+    // Clear
+    var clearBtn = $('toolClear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        if (canvasCtx && $('whiteboardCanvas')) {
+          canvasCtx.clearRect(0, 0, $('whiteboardCanvas').width, $('whiteboardCanvas').height);
+          state.whiteboard.clearDrawing();
+        }
+      });
+    }
+
+    // Undo & Redo
+    var undoBtn = $('undoBtn');
+    if (undoBtn) {
+      undoBtn.addEventListener('click', function () {
+        var canvas = $('whiteboardCanvas');
+        if (!canvas || !canvasCtx) return;
+        var prev = state.whiteboard.undo(canvas.toDataURL());
+        if (prev) {
+          var img = new Image();
+          img.onload = function () {
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasCtx.drawImage(img, 0, 0);
+          };
+          img.src = prev;
+        } else {
+          canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      });
+    }
+
+    var redoBtn = $('redoBtn');
+    if (redoBtn) {
+      redoBtn.addEventListener('click', function () {
+        var canvas = $('whiteboardCanvas');
+        if (!canvas || !canvasCtx) return;
+        var next = state.whiteboard.redo(canvas.toDataURL());
+        if (next) {
+          var img = new Image();
+          img.onload = function () {
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasCtx.drawImage(img, 0, 0);
+          };
+          img.src = next;
+        }
+      });
+    }
+
+    // Pagination
+    var prevBtn = $('prevSlideBtn');
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function () {
+        if (state.whiteboard.prevSlide()) renderWhiteboardSlide();
+      });
+    }
+    var nextBtn = $('nextSlideBtn');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function () {
+        if (state.whiteboard.nextSlide()) renderWhiteboardSlide();
+      });
+    }
+
+    // Zoom
+    var zoomInBtn = $('zoomInBtn');
+    if (zoomInBtn) {
+      zoomInBtn.addEventListener('click', function () {
+        var z = state.whiteboard.zoomIn();
+        applyZoom(z);
+      });
+    }
+    var zoomOutBtn = $('zoomOutBtn');
+    if (zoomOutBtn) {
+      zoomOutBtn.addEventListener('click', function () {
+        var z = state.whiteboard.zoomOut();
+        applyZoom(z);
+      });
+    }
+
+    // Fullscreen
+    var fsBtn = $('fullscreenBtn');
+    if (fsBtn) {
+      fsBtn.addEventListener('click', function () {
+        var surface = $('whiteboardSurface');
+        if (!document.fullscreenElement) {
+          if (surface.requestFullscreen) surface.requestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+        }
+      });
+    }
+  }
+
+  function applyZoom(z) {
+    $('zoomLabel').textContent = z + '%';
+    var content = $('whiteboardContent');
+    if (content) {
+      content.style.transform = 'scale(' + (z / 100) + ')';
+      content.style.transformOrigin = 'top right';
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Camera & Mic Controls (Explicit User-Action Only, No Recording)
+  // -------------------------------------------------------------
+  function bindMediaControls() {
+    var micBtn = $('micBtn');
+    var camBtn = $('camBtn');
+    var handBtn = $('handBtn');
+    var endBtn = $('endClassBtn');
+
+    // Microphone toggle
+    if (micBtn) {
+      micBtn.addEventListener('click', function () {
+        if (state.devices.mic) {
+          // Stop mic
+          stopAudioTracks();
+          state.devices.mic = false;
+          micBtn.classList.remove('active');
+          $('micLabel').textContent = 'تشغيل المايك';
+          sendMediaState();
+        } else {
+          // Explicit user click triggers getUserMedia
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            notify('المتصفح لا يدعم الوصول للمايك.', true);
+            return;
+          }
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+            state.devices.mic = true;
+            micBtn.classList.add('active');
+            $('micLabel').textContent = 'إيقاف المايك';
+            // Store tracks
+            if (!state.localStream) state.localStream = stream;
+            else stream.getAudioTracks().forEach(function (t) { state.localStream.addTrack(t); });
+            sendMediaState();
+          }).catch(function (err) {
+            notify('تعذر تشغيل المايك: ' + err.message, true);
+          });
+        }
+      });
+    }
+
+    // Camera toggle
+    if (camBtn) {
+      camBtn.addEventListener('click', function () {
+        if (state.devices.camera) {
+          // Stop camera
+          stopVideoTracks();
+          state.devices.camera = false;
+          camBtn.classList.remove('active');
+          $('camLabel').textContent = 'تشغيل الكاميرا';
+          hide('localVideoContainer');
+          sendMediaState();
+        } else {
+          // Explicit user click triggers getUserMedia
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            notify('المتصفح لا يدعم الوصول للكاميرا.', true);
+            return;
+          }
+          navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+            state.devices.camera = true;
+            camBtn.classList.add('active');
+            $('camLabel').textContent = 'إيقاف الكاميرا';
+            show('localVideoContainer');
+            var vid = $('localVideo');
+            if (vid) vid.srcObject = stream;
+            // Store tracks
+            if (!state.localStream) state.localStream = stream;
+            else stream.getVideoTracks().forEach(function (t) { state.localStream.addTrack(t); });
+            sendMediaState();
+          }).catch(function (err) {
+            notify('تعذر تشغيل الكاميرا: ' + err.message, true);
+          });
+        }
+      });
+    }
+
+    // Hand raise
+    if (handBtn) {
+      handBtn.addEventListener('click', function () {
+        if (!state.code) return;
+        var currentlyRaised = handBtn.classList.contains('active');
+        api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/hand', {
+          method: 'POST',
+          body: { raised: !currentlyRaised }
+        }).then(function (res) {
+          if (res.participant && res.participant.handRaised) {
+            handBtn.classList.add('active');
+          } else {
+            handBtn.classList.remove('active');
+          }
+        }).catch(function (err) {
+          notify('خطأ في تحديث اليد: ' + err.message, true);
+        });
+      });
+    }
+
+    // End class
+    if (endBtn) {
+      endBtn.addEventListener('click', function () {
+        if (!state.code || !confirm('هل أنت متأكد من رغبتك في إنهاء هذه الحصة الافتراضية؟')) return;
+        api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/end', {
+          method: 'POST',
+          body: {}
+        }).then(function () {
+          notify('تم إنهاء الحصة الافتراضية.');
+          cleanupSession();
+          enterLobby();
+        }).catch(function (err) {
+          notify('تعذر إنهاء الحصة: ' + err.message, true);
+        });
+      });
+    }
+  }
+
+  function stopAudioTracks() {
+    if (state.localStream) {
+      state.localStream.getAudioTracks().forEach(function (t) { t.stop(); });
+    }
+  }
+
+  function stopVideoTracks() {
+    if (state.localStream) {
+      state.localStream.getVideoTracks().forEach(function (t) { t.stop(); });
+    }
+    var vid = $('localVideo');
+    if (vid) vid.srcObject = null;
+  }
+
+  function stopMediaTracks() {
+    stopAudioTracks();
+    stopVideoTracks();
+    state.localStream = null;
+    state.devices = core.initialDevicesState();
+    if ($('micBtn')) {
+      $('micBtn').classList.remove('active');
+      $('micLabel').textContent = 'تشغيل المايك';
+    }
+    if ($('camBtn')) {
+      $('camBtn').classList.remove('active');
+      $('camLabel').textContent = 'تشغيل الكاميرا';
+    }
+    hide('localVideoContainer');
+  }
+
+  function sendMediaState() {
+    if (!state.code) return;
+    api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/media', {
+      method: 'POST',
+      body: {
+        camera: state.devices.camera,
+        mic: state.devices.mic
+      }
+    }).catch(function () {});
+  }
+
+  // -------------------------------------------------------------
+  // Q&A and Chat Handling
+  // -------------------------------------------------------------
+  function bindQuestionControls() {
+    var form = $('questionForm');
+    var input = $('questionInput');
+    var voiceBtn = $('voiceQuestionBtn');
+    var quickBtn = $('quickAskBtn');
+
+    // Tab buttons
+    var tabPart = $('tabBtnParticipants');
+    var tabChat = $('tabBtnChat');
+    if (tabPart && tabChat) {
+      tabPart.addEventListener('click', function () {
+        tabPart.classList.add('active');
+        tabChat.classList.remove('active');
+        $('tabContentParticipants').classList.add('active');
+        $('tabContentChat').classList.remove('active');
+      });
+      tabChat.addEventListener('click', function () {
+        tabChat.classList.add('active');
+        tabPart.classList.remove('active');
+        $('tabContentChat').classList.add('active');
+        $('tabContentParticipants').classList.remove('active');
+      });
+    }
+
+    if (quickBtn) {
+      quickBtn.addEventListener('click', function () {
+        if (tabChat) tabChat.click();
+        if (input) input.focus();
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var text = (input.value || '').trim();
+        if (!text || !state.code) return;
+        input.value = '';
+
+        api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/questions', {
+          method: 'POST',
+          body: { text: text, isVoice: false }
+        }).then(function (res) {
+          hide('aiUnavailableBanner');
+          if (res.question) appendMessage(res.question);
+          if (res.answer) {
+            appendMessage(res.answer);
+            speakAiAnswer(res.answer.text);
+          }
+        }).catch(function (err) {
+          if (err.status === 503) {
+            show('aiUnavailableBanner');
+            if (err.data && err.data.question) appendMessage(err.data.question);
+          } else {
+            notify('خطأ في إرسال السؤال: ' + err.message, true);
+          }
+        });
+      });
+    }
+
+    // Voice question button
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', function () {
+        var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          notify('ميزة التعرف الصوتي غير مدعومة في متصفحك. استخدم كتابة السؤال نصياً.', true);
+          return;
+        }
+        var rec = new SpeechRec();
+        rec.lang = 'ar-IQ';
+        rec.interimResults = false;
+        voiceBtn.textContent = '🔴';
+        rec.onresult = function (ev) {
+          var transcript = ev.results[0][0].transcript;
+          if (input) input.value = transcript;
+          voiceBtn.textContent = '🎤';
+        };
+        rec.onerror = function () {
+          voiceBtn.textContent = '🎤';
+        };
+        rec.onend = function () {
+          voiceBtn.textContent = '🎤';
+        };
+        rec.start();
+      });
+    }
+
+    // Speech bubble speak button
+    var speakBtn = $('speakSpeechBtn');
+    if (speakBtn) {
+      speakBtn.addEventListener('click', function () {
+        var text = $('speechText').textContent;
+        speakAiAnswer(text);
+      });
+    }
+
+    // Toggle teacher voice
+    var voiceToggleBtn = $('toggleTeacherVoiceBtn');
+    if (voiceToggleBtn) {
+      voiceToggleBtn.addEventListener('click', function () {
+        state.speechSynthesisActive = !state.speechSynthesisActive;
+        if (state.speechSynthesisActive) {
+          voiceToggleBtn.classList.add('active');
+          $('teacherVoiceIcon').textContent = '🔊';
+          $('teacherVoiceText').textContent = 'صوت المعلم مفعّل';
+        } else {
+          voiceToggleBtn.classList.remove('active');
+          $('teacherVoiceIcon').textContent = '🔇';
+          $('teacherVoiceText').textContent = 'صوت المعلم مكتوم';
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
+        }
+      });
+    }
+  }
+
+  function loadMessages(code) {
+    api('/api/school/virtual/sessions/' + encodeURIComponent(code) + '/messages').then(function (d) {
+      var messages = Array.isArray(d.messages) ? d.messages : [];
+      var box = $('chatMessagesBox');
+      if (!box) return;
+      box.innerHTML = '';
+      if (!messages.length) {
+        show('chatEmptyState');
+        return;
+      }
+      hide('chatEmptyState');
+      messages.forEach(function (m) {
+        appendMessage(m);
+      });
+    }).catch(function () {});
+  }
+
+  function appendMessage(m) {
+    hide('chatEmptyState');
+    var box = $('chatMessagesBox');
+    if (!box) return;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (m.senderType === 'teacher_ai' ? 'teacher-msg' : 'student-msg');
+
+    var time = new Date(m.timestamp || Date.now());
+    var timeStr = time.getHours() + ':' + (time.getMinutes() < 10 ? '0' : '') + time.getMinutes();
+
+    bubble.innerHTML = '<div class="msg-sender">' + m.senderName + ' <span class="msg-time">' + timeStr + '</span></div>' +
+      '<div class="msg-text">' + m.text + '</div>';
+
+    box.appendChild(bubble);
+    box.scrollTop = box.scrollHeight;
+
+    // If teacher speech bubble update
+    if (m.senderType === 'teacher_ai') {
+      $('speechText').textContent = m.text;
+    }
+  }
+
+  function speakAiAnswer(text) {
+    if (!state.speechSynthesisActive || !window.speechSynthesis || !text) return;
+    try {
+      window.speechSynthesis.cancel();
+      var utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ar-IQ';
+      utterance.pitch = 1.0;
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {}
+  }
+
+  // -------------------------------------------------------------
+  // Settings & Personas Modal
+  // -------------------------------------------------------------
+  function bindSettingsControls() {
+    var openBtn = $('openSettingsBtn');
+    var switchBtn = $('switchTeacherBtn');
+    var modal = $('settingsModal');
+    var closeBtn = $('closeSettingsBtn');
+    var saveBtn = $('saveSettingsBtn');
+
+    function openModal() {
+      if (!modal) return;
+      populateModalProfiles();
+      show('settingsModal');
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (switchBtn) switchBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', function () { hide('settingsModal'); });
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        hide('settingsModal');
+        notify('تم تحديث إعدادات المعلم الافتراضي.');
+      });
+    }
+  }
+
+  function populateModalProfiles() {
+    var box = $('modalProfilesList');
+    if (!box) return;
+    box.innerHTML = '';
+    core.PROFILES.forEach(function (p) {
+      var div = document.createElement('div');
+      div.className = 'profile-option-row';
+      div.style.cssText = 'padding:10px;border:1px solid #d0e7e7;border-radius:8px;margin-bottom:8px;background:#f0f7f7;display:flex;align-items:center;gap:12px;cursor:pointer;';
+      div.innerHTML = '<div style="font-size:24px;">👩‍🏫</div>' +
+        '<div style="flex:1;"><b>' + p.name + '</b> <span style="font-size:11px;background:#e0f2f1;color:#146c70;padding:2px 6px;border-radius:6px;">' + p.label + '</span>' +
+        '<div style="font-size:12px;color:#53706f;">' + p.title + '</div></div>';
+      box.appendChild(div);
+    });
+  }
+
+  // -------------------------------------------------------------
+  // Socket.IO Presence and Events
+  // -------------------------------------------------------------
+  function initSocket(code) {
+    if (typeof io !== 'function') return;
+    try {
+      var origin = (window.SocialApi && window.SocialApi.baseUrl) || window.location.origin;
+      state.socket = io(origin, {
+        auth: { token: state.token },
+        query: { token: state.token },
+        reconnection: false
+      });
+
+      state.socket.on('connect', function () {
+        state.socket.emit('school:virtual:join', { code: code });
+      });
+
+      state.socket.on('school:virtual:update', function (data) {
+        if (data && data.session && data.code === state.code) {
+          renderParticipants(data.session.participants || []);
+        }
+      });
+
+      state.socket.on('school:virtual:message', function (data) {
+        if (data && data.message && data.code === state.code) {
+          appendMessage(data.message);
+        }
+      });
+
+      state.socket.on('school:virtual:ended', function (data) {
+        if (data && data.code === state.code) {
+          notify('أنهى المعلم هذه الحصة الافتراضية.');
+          cleanupSession();
+          enterLobby();
+        }
+      });
+    } catch (e) {}
+  }
+
+  // Auto-init on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();

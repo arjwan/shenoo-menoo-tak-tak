@@ -5,7 +5,12 @@
   "description": "Shno Mano Tak Tak Iraqi platform",
   "main": "server/src/server.js",
   "scripts": {
-    "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-update.js && node tests/api-school-canva-runtime.js",
+    "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-library-catalog.js && node tests/api-school-canva-integration-adapter.js && node tests/api-school-canva-update.js && node tests/api-school-canva-runtime.js",
+    "test:school-pages": "node tests/api-school-canva-latest.js && node tests/api-school-classroom-contract.js && node tests/api-school-pages-dom.js",
+    "test:school-wiring": "node --test server/test/school-canva-view-wiring.test.js",
+    "test:school-live": "node --test server/test/school-live-classroom.test.js server/test/school-live-page.test.js && node tests/api-school-live-core.js",
+    "test:school-server": "node --test server/test/school-canva-integration.test.js server/test/school-canva-runtime.test.js server/test/school-canva-view-wiring.test.js server/test/school-live-classroom.test.js server/test/school-live-page.test.js server/test/school-integration.test.js",
+    "import:school-canva": "node scripts/import-school-canva-latest.js",
     "download:school-curriculum": "node scripts/download-iraqi-curriculum.js",
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
