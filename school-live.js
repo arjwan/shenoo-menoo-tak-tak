@@ -29,7 +29,7 @@
     socket: null,
     peers: new Map(), // userId -> { pc, audio, video, pendingIce: [] }
     local: { stream: null, videoTrack: null, audioTrack: null },
-    handRaised: false, tiles: new Map()
+    handRaised: false, tiles: new Map(), everOnline: {}
   };
 
   function msg(text, bad) {
@@ -52,6 +52,15 @@
     fill($('createGrade'), c.grades, 'الصف'); $('createGrade').value = grade; $('createGrade').disabled = !stage;
     var subject = $('createSubject').value;
     fill($('createSubject'), c.subjects, 'المادة'); $('createSubject').value = c.subjects.indexOf(subject) === -1 ? '' : subject; $('createSubject').disabled = !grade;
+  }
+
+  // A pupil's tile is drawn only once they are actually connected (online).
+  // We remember the pupils we have seen online so a dropped connection is
+  // still shown as "غير متصل" instead of vanishing — but a pupil who only
+  // REST-joined (socket still connecting) is not drawn before it arrives:
+  // their name appearing in the grid is the teacher's "متصل" moment.
+  function markEverOnline(participants) {
+    (participants || []).forEach(function (p) { if (p && p.online) state.everOnline[String(p.userId)] = true; });
   }
 
   function renderJoinAs() {
@@ -111,6 +120,7 @@
   // ------------------------------------------------------------------- room
   function enter(data, role) {
     state.classroom = data.classroom; state.code = data.classroom.code;
+    markEverOnline(data.classroom.participants);
     state.iceServers = Array.isArray(data.iceServers) && data.iceServers.length ? data.iceServers : state.iceServers;
     state.you = data.you || (data.classroom.participants || []).find(function (p) { return p.userId === me; }) || { userId: me, role: role, name: state.accountName, permissions: { camera: true, voice: true } };
     state.handRaised = Boolean(state.you.handRaised);
@@ -126,6 +136,7 @@
   function applyClassroom(classroom) {
     if (!classroom || classroom.code !== state.code) return;
     state.classroom = classroom;
+    markEverOnline(classroom.participants);
     var mine = (classroom.participants || []).find(function (p) { return p.userId === me; });
     if (mine) {
       var wasMuted = state.you && state.you.mutedByTeacher;
@@ -166,7 +177,7 @@
   }
 
   function renderGrid() {
-    var tiles = core.studentTiles(state.classroom);
+    var tiles = core.studentTiles(state.classroom).filter(function (t) { return t.online || state.everOnline[t.userId]; });
     var grid = $('studentGrid');
     var seen = {};
     tiles.forEach(function (t) {
@@ -451,7 +462,7 @@
   function leaveRoom(text, bad) {
     stopCamera(); stopMic(); closeAllPeers();
     if (state.socket) { try { state.socket.emit('school:classroom:leave', { code: state.code }); state.socket.disconnect(); } catch (e) { /* ignore */ } state.socket = null; }
-    state.tiles.forEach(function (el) { el.remove(); }); state.tiles.clear();
+    state.tiles.forEach(function (el) { el.remove(); }); state.tiles.clear(); state.everOnline = {};
     show('playBtn', false);
     state.classroom = null; state.you = null; state.code = ''; state.handRaised = false;
     show('room', false); show('lobby', true);
