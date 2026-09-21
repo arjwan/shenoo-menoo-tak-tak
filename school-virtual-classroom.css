@@ -1242,3 +1242,8 @@ body.school-virtual-page {
     gap: 8px;
   }
 }
+
+/* Modal visibility: HTML hidden must override .virtual-modal display:flex */
+.virtual-modal[hidden] {
+  display: none !important;
+}
