@@ -200,6 +200,252 @@
       });
   }
 
+  // ---------------------------------------------------------------------
+  // 1b) window.ShnoManoIntegrationAdapter — the integration contract the
+  //     2026-09-21 Canva school page (school-canva.html root page) discovers:
+  //       const api = () => window.ShnoManoIntegrationAdapter || window.apiClient
+  //       invoke([...candidates], {...payload, signal}) / has([...candidates])
+  //     Every function below is one the page actually asks for (first match
+  //     of its candidate lists): dashboard, cascade (getGrades /
+  //     getDependentOptions), collections (searchStructure / searchTeachers /
+  //     searchStudents / searchCurriculum), reader (getReaderUrl), classroom
+  //     (getClassroomOptions / classroomAction) and the diagnostic probes
+  //     (getStages / getSubjects / getLessons). Each is bound to the real,
+  //     authenticated school API; the library is catalogue ⋈ manifest via
+  //     core.packLibrary and never depends on the account's students.
+  //     No import function is exposed: the backend has no teacher-import
+  //     endpoint, so the page keeps reporting that truthfully.
+  //     The object is created synchronously at load so the page's own
+  //     DOMContentLoaded handler (refreshConnection/changePage) finds it.
+  // ---------------------------------------------------------------------
+  var integrationCache = {};
+  function integrationRequest(path, options) {
+    options = options || {};
+    var headers = { Authorization: 'Bearer ' + token() };
+    if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+    if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
+    return window.fetch(path, {
+      method: options.method || 'GET',
+      headers: headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: options.signal,
+      cache: 'no-store'
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok || d.ok === false || d.isOk === false) {
+          var err = new Error(d.message || d.error || ('HTTP ' + r.status));
+          err.status = r.status;
+          throw err;
+        }
+        return d;
+      });
+    });
+  }
+  function abortError() {
+    try { return new DOMException('The operation was aborted.', 'AbortError'); } catch (e) {
+      var err = new Error('The operation was aborted.'); err.name = 'AbortError'; return err;
+    }
+  }
+  /**
+   * Run `work` for one page invocation. Reference data (catalogue, manifest,
+   * teacher directory) is memoised for the page session and never aborted;
+   * the page's AbortSignal still wins: an outdated invocation rejects with an
+   * AbortError instead of resolving stale rows into the selects.
+   */
+  function guarded(signal, work) {
+    return Promise.resolve().then(work).then(function (value) {
+      if (signal && signal.aborted) throw abortError();
+      return value;
+    }, function (error) {
+      if (signal && signal.aborted) throw abortError();
+      throw error;
+    });
+  }
+  function integrationRef(name, path, pick) {
+    if (!integrationCache[name]) {
+      integrationCache[name] = integrationRequest(path).then(pick).catch(function (e) {
+        delete integrationCache[name];
+        throw e;
+      });
+    }
+    return integrationCache[name];
+  }
+  function refCatalog() { return integrationRef('catalog', '/api/school/curriculum/catalog', function (d) { return Array.isArray(d.items) ? d.items : []; }); }
+  function refFiles() { return integrationRef('files', '/api/school/curriculum/files', function (d) { return Array.isArray(d.files) ? d.files : []; }); }
+  function refTeachers() { return integrationRef('teachers', '/api/school/teachers', function (d) { return Array.isArray(d.teachers) ? d.teachers : []; }); }
+  function refLibrary() {
+    // Primary library source: catalogue ⋈ manifest by real ids — independent of the account's students / offline-pack.
+    return Promise.all([refCatalog(), refFiles()]).then(function (out) { return core.packLibrary(out[0], out[1]); });
+  }
+  function liveStudents(signal) { return integrationRequest('/api/school/students', { signal: signal }).then(function (d) { return Array.isArray(d.students) ? d.students : []; }); }
+  function livePack(signal) {
+    // Verified lessons for THIS guardian's students (lesson text only — never the library gate).
+    return integrationRequest('/api/school/curriculum/offline-pack', { signal: signal })
+      .then(function (d) { return Array.isArray(d.items) ? d.items : []; })
+      .catch(function (e) { if (e && e.name === 'AbortError') throw e; return []; });
+  }
+  function liveSession(signal) {
+    return integrationRequest('/api/school/sessions/active', { signal: signal })
+      .then(function (d) { return d.session || null; })
+      .catch(function (e) { if (e && e.name === 'AbortError') throw e; return null; });
+  }
+  function withoutSignal(payload) {
+    var out = {};
+    Object.keys(payload || {}).forEach(function (k) { if (k !== 'signal') out[k] = payload[k]; });
+    return out;
+  }
+  function integrationFail(message, status) {
+    var err = new Error(message);
+    if (status) err.status = status;
+    throw err;
+  }
+  function distinctRows(type, values) {
+    var seen = {}, rows = [];
+    values.forEach(function (v) { if (v && !seen[v]) { seen[v] = 1; rows.push({ type: type, id: v, name: v }); } });
+    return rows;
+  }
+  function dependentOptions(payload) {
+    payload = payload || {};
+    return guarded(payload.signal, function () {
+      return Promise.all([refCatalog(), livePack(payload.signal)]).then(function (out) {
+        return { items: core.structureOptions(out[0], out[1], withoutSignal(payload)) };
+      });
+    });
+  }
+  function liveClassrooms(signal) {
+    // REAL live classrooms hosted by real accounts (REAL CLASSROOM V1); none -> [] (honest empty).
+    return integrationRequest('/api/school/classrooms/live', { signal: signal })
+      .then(function (d) { return Array.isArray(d.classrooms) ? d.classrooms : []; })
+      .catch(function (e) { if (e && e.name === 'AbortError') throw e; return []; });
+  }
+  function liveVirtualClassrooms(signal) {
+    return integrationRequest('/api/school/virtual/sessions/active', { signal: signal })
+      .then(function (d) { return Array.isArray(d.sessions) ? d.sessions : []; })
+      .catch(function (e) { if (e && e.name === 'AbortError') throw e; return []; });
+  }
+  function classroomOptions(payload) {
+    payload = payload || {};
+    return guarded(payload.signal, function () {
+      return Promise.all([refCatalog(), livePack(payload.signal), refTeachers(), liveClassrooms(payload.signal), liveVirtualClassrooms(payload.signal)]).then(function (out) {
+        return { items: core.classroomOptions(out[0], out[1], out[2], withoutSignal(payload), out[3], out[4]) };
+      });
+    });
+  }
+  window.ShnoManoIntegrationAdapter = {
+    // Home: real counts from the account + catalogue/manifest (no role is exposed by the API -> none claimed).
+    getDashboard: function (payload) {
+      payload = payload || {};
+      var signal = payload.signal;
+      return guarded(signal, function () {
+        return Promise.all([
+          liveStudents(signal), refTeachers(), refLibrary(), liveSession(signal),
+          integrationRequest('/api/school/schedules', { signal: signal }).then(function (d) { return Array.isArray(d.schedules) ? d.schedules : []; }).catch(function (e) { if (e && e.name === 'AbortError') throw e; return []; }),
+          integrationRequest('/api/users/me', { signal: signal }).then(function (d) { return d.user || null; }).catch(function (e) { if (e && e.name === 'AbortError') throw e; return null; }),
+          liveClassrooms(signal)
+        ]).then(function (out) {
+          var data = { metrics: core.dashboardMetrics({ students: out[0], teachers: out[1], libraryRows: out[2], session: out[3], schedules: out[4], liveClassrooms: out[6] }) };
+          if (out[5] && out[5].id) data.account = { id: String(out[5].id), name: out[5].displayName || out[5].fullName || '' };
+          return data;
+        });
+      });
+    },
+    // Hierarchy: stage -> grade -> (section) -> subject -> unit, from the real catalogue only.
+    getStages: function (payload) {
+      payload = payload || {};
+      return guarded(payload.signal, function () {
+        return refCatalog().then(function (items) { return { items: distinctRows('stage', items.map(function (it) { return it.stage; })) }; });
+      });
+    },
+    getGrades: dependentOptions,
+    getDependentOptions: dependentOptions,
+    getSubjects: function (payload) {
+      payload = payload || {};
+      var filters = withoutSignal(payload);
+      if (filters.stage || filters['room-stage']) {
+        return dependentOptions(payload).then(function (d) { return { items: d.items.filter(function (r) { return r.type === 'subject'; }) }; });
+      }
+      return guarded(payload.signal, function () {
+        return refCatalog().then(function (items) { return { items: distinctRows('subject', items.map(function (it) { return it.subject; })) }; });
+      });
+    },
+    getLessons: function (payload) {
+      payload = payload || {};
+      var filters = withoutSignal(payload);
+      if (filters.stage || filters['room-stage']) {
+        return classroomOptions(payload).then(function (d) { return { items: d.items.filter(function (r) { return r.type === 'lesson'; }) }; });
+      }
+      return guarded(payload.signal, function () {
+        return livePack(payload.signal).then(function (pack) {
+          return { items: pack.filter(function (k) { return k && k.lesson; }).map(function (k) { return { type: 'lesson', id: 'knowledge:' + k.id, name: k.lesson, subject: k.subject }; }) };
+        });
+      });
+    },
+    // Collections.
+    searchStructure: function (payload) {
+      payload = payload || {};
+      return guarded(payload.signal, function () {
+        return refCatalog().then(function (items) { return { items: core.structureRows(items, withoutSignal(payload)) }; });
+      });
+    },
+    searchTeachers: function (payload) {
+      payload = payload || {};
+      return guarded(payload.signal, function () {
+        return Promise.all([refTeachers(), refCatalog()]).then(function (out) { return { items: core.teacherRows(out[0], out[1], withoutSignal(payload)) }; });
+      });
+    },
+    searchStudents: function (payload) {
+      payload = payload || {};
+      return guarded(payload.signal, function () {
+        return Promise.all([liveStudents(payload.signal), refCatalog()]).then(function (out) { return { items: core.studentRows(out[0], out[1], withoutSignal(payload)) }; });
+      });
+    },
+    searchCurriculum: function (payload) {
+      payload = payload || {};
+      return guarded(payload.signal, function () {
+        return Promise.all([refLibrary(), refCatalog()]).then(function (out) { return { items: core.curriculumRows(out[0], out[1], withoutSignal(payload)) }; });
+      });
+    },
+    // Reader: only the real manifest url; source_pending books never get one.
+    getReaderUrl: function (payload) {
+      payload = payload || {};
+      return guarded(payload.signal, function () {
+        return refLibrary().then(function (rows) {
+          var result = core.readerResult(rows, payload.fileId);
+          if (!result.ok) integrationFail(result.message);
+          return result;
+        });
+      });
+    },
+    // Classroom.
+    getClassroomOptions: classroomOptions,
+    classroomAction: function (payload) {
+      payload = payload || {};
+      var signal = payload.signal;
+      return guarded(signal, function () {
+        return Promise.all([refCatalog(), livePack(signal), liveStudents(signal), liveSession(signal)]).then(function (out) {
+          var plan = core.classroomActionPlan({ payload: withoutSignal(payload), items: out[0], packItems: out[1], students: out[2], session: out[3] });
+          if (plan.kind === 'refuse') integrationFail(plan.message);
+          // REAL live classroom (classroom:<CODE>): the live engine decides (server-side roles).
+          if (plan.kind === 'live.join') return integrationRequest('/api/school/classrooms/' + encodeURIComponent(plan.code) + '/join', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'live.hand') return integrationRequest('/api/school/classrooms/' + encodeURIComponent(plan.code) + '/hand', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'live.end') return integrationRequest('/api/school/classrooms/' + encodeURIComponent(plan.code) + '/end', { method: 'POST', body: {}, signal: signal });
+          // Virtual Classroom (virtual:<CODE>):
+          if (plan.kind === 'virtual.join') return integrationRequest('/api/school/virtual/sessions/' + encodeURIComponent(plan.code) + '/join', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'virtual.hand') return integrationRequest('/api/school/virtual/sessions/' + encodeURIComponent(plan.code) + '/hand', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'virtual.end') return integrationRequest('/api/school/virtual/sessions/' + encodeURIComponent(plan.code) + '/end', { method: 'POST', body: {}, signal: signal });
+          if (plan.kind === 'session.start') return integrationRequest('/api/school/sessions/start', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'note') return integrationRequest('/api/school/students/' + encodeURIComponent(plan.studentId) + '/notes', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'session.complete') return integrationRequest('/api/school/sessions/' + encodeURIComponent(plan.sessionId) + '/complete', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'operation') return integrationRequest('/api/school/operations', { method: 'POST', body: plan.record, idempotencyKey: plan.record.operation_id, signal: signal });
+          integrationFail('إجراء غير مدعوم.');
+        });
+      });
+    }
+  };
+  function isIntegrationPage() {
+    return Boolean(document.getElementById('connection-chip') && document.getElementById('filter-form') && document.getElementById('dashboard-results'));
+  }
+
   // Bridge the 2026-09-20 Canva update's dataSdk contract to the real,
   // authenticated Shno Mano school APIs without modifying the Canva asset.
   function bootUpdatedCanva() {
@@ -233,27 +479,45 @@
       var result = [], seen = {};
       function unique(type, key, fields) { var value = String(fields[key] || ''), id = type + ':' + value;
         if (!value || seen[id]) return; seen[id] = true; result.push(Object.assign({ __backendId: id, record_type: type, operation_status: 'مؤكد من شنو منو' }, fields)); }
-      // Structure from catalogue (stages/grades/subjects only — not as loaded books).
-      (out[3].items || []).forEach(function (item) {
+      // Library source of truth: GET /api/school/curriculum/catalog (108 books,
+      // independent of the guardian's students) joined to the verified PDF
+      // manifest GET /api/school/curriculum/files by real ids only. offline-pack
+      // stays the board/exam/lesson source and never gates the library.
+      var catalogItems = Array.isArray(out[3].items) ? out[3].items : [];
+      var manifestFiles = Array.isArray(out[4].files) ? out[4].files : [];
+      var libraryRows = core.packLibrary(catalogItems, manifestFiles);
+      catalogItems.forEach(function (item, index) {
         unique('stage', 'stage', { stage: item.stage }); unique('grade', 'grade', { stage: item.stage, grade: item.grade });
         unique('subject', 'subject', { stage: item.stage, grade: item.grade, subject: item.subject });
-      });
-      // Real lessons/content come only from offline-pack (verified Knowledge).
-      (out[2].items || []).forEach(function (item) {
-        result.push({ __backendId: 'curriculum:' + item.id, record_type: 'curriculum', curriculum_file_name: item.title,
+        var row = libraryRows[index] || {};
+        result.push({ __backendId: 'catalog:' + item.id, record_type: 'curriculum', curriculum_file_name: item.title,
           curriculum_stage: item.stage, curriculum_grade: item.grade, curriculum_subject: item.subject,
-          curriculum_file_type: 'application/pdf', curriculum_status: item.verified === false ? 'بانتظار الاعتماد' : 'منهاج شنو منو',
-          curriculum_description: item.content || '' });
-        if (item.lesson) result.push({ __backendId: 'lesson:' + item.id, record_type: 'lesson',
-          stage: item.stage, grade: item.grade, subject: item.subject, unit: item.chapter || '', lesson: item.lesson,
-          lesson_content: item.content || '', lesson_question: item.question || '', exam_question_text: item.question || '' });
+          curriculum_unit: item.chapter || '', curriculum_lesson: item.lesson || '',
+          curriculum_file_type: row.readable ? 'PDF' : 'مفهرس',
+          curriculum_file_size: row.readable ? libraryFileSize(row) : 'لا يوجد ملف على هذا الخادم بعد',
+          curriculum_status: row.status || 'منهاج شنو منو', curriculum_description: item.content || '',
+          curriculum_file_url: row.readable ? row.url : '', curriculum_readable: Boolean(row.readable) });
       });
       (out[1].teachers || []).forEach(function (t) { result.push({ __backendId: 'teacher:' + t.id, record_type: 'teacher',
         teacher_name: t.name, teacher_gender: t.gender, teacher_id: String(t.id), teacher_email: String(t.id), teacher_bio: t.style || t.motto || '',
         teacher_presence: t.status || 'متاح الآن', teacher_grades: Array.isArray(t.grades) ? t.grades.join('، ') : String(t.grades || ''), subject: t.subject, stage: t.stage }); });
+      (out[2].items || []).forEach(function (item) { if (item.lesson) result.push({ __backendId: 'lesson:' + item.id, record_type: 'lesson',
+        stage: item.stage, grade: item.grade, subject: item.subject, unit: item.chapter || '', lesson: item.lesson,
+        lesson_content: item.content || '', lesson_question: item.question || '', exam_question_text: item.question || '' }); });
       (out[0].students || []).forEach(function (s) { result.push({ __backendId: 'student:' + s._id, record_type: 'student', student_name: s.name, stage: s.stage, grade: s.grade }); });
-      rows = result; realCurriculumFiles = Array.isArray(out[4].files) ? out[4].files : []; emit(); patchCurriculumFiles();
+      rows = result; realCurriculumFiles = manifestFiles; if (libraryRows.length) realLibraryRows = libraryRows; emit(); patchCurriculumFiles();
     });
+    // Keep the library's real PDF links across the export's own re-renders
+    // (data changes call renderAll() -> renderLibrary(); the search box calls
+    // the function reference it bound at load, so listen to the input too).
+    wrapRender('renderLibrary', patchCurriculumFiles);
+    try {
+      var librarySearch = document.getElementById('library-search');
+      if (librarySearch && !librarySearch.__shnoLibraryPatched) {
+        librarySearch.__shnoLibraryPatched = true;
+        librarySearch.addEventListener('input', function () { patchCurriculumFiles(); });
+      }
+    } catch (e) {}
     // Top-level `const handler` in the Canva export lives in the global
     // lexical environment. Calling through same-realm eval reliably reaches
     // its `init()` even when the function is not exposed as window.init.
@@ -304,9 +568,37 @@
   function buildClassroomBar() {
     var view = document.getElementById('class-view');
     if (!view || document.getElementById('shno-classroom-bar')) return;
-    var bar = el('div', 'margin-top:18px;border:2px solid #146c70;border-radius:20px;background:#fffdf9;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;');
+    var bar = el('div', 'margin-top:18px;border:2px solid #146c70;border-radius:20px;background:#fffdf9;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;');
     bar.id = 'shno-classroom-bar';
-    var title = el('b', 'color:#183a3c;font-size:16px;', '🔗 الصف الافتراضي (شنو منو)');
+    var title = el('b', 'color:#183a3c;font-size:15px;display:inline-flex;align-items:center;gap:6px;', '🏫 خيارات الحصة:');
+    
+    // Explicit, prominent entry buttons (never hidden or crammed in lesson card)
+    var liveBtn = el('a', 'border:2px solid #146c70;border-radius:12px;background:#146c70;color:#ffffff;font-weight:800;padding:10px 16px;text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.1);', '🎙️ دخول صف مع معلم حقيقي');
+    liveBtn.id = 'shno-entry-real-classroom';
+    liveBtn.target = '_top';
+    liveBtn.href = 'school-live.html';
+
+    var virtualBtn = el('a', 'border:2px solid #0f766e;border-radius:12px;background:#e0f2f1;color:#0f3f42;font-weight:800;padding:10px 16px;text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.06);', '🤖 دخول الصف الافتراضي AI');
+    virtualBtn.id = 'shno-entry-virtual-classroom';
+    virtualBtn.target = '_top';
+    virtualBtn.href = 'school-virtual-classroom.html';
+
+    function updateClassroomLinks() {
+      var stateRef = null;
+      try { stateRef = (typeof state !== 'undefined') ? state : null; } catch (e) {}
+      var p = new URLSearchParams();
+      if (stateRef && stateRef.stage) p.set('stage', stateRef.stage);
+      if (stateRef && stateRef.grade) p.set('grade', stateRef.grade);
+      if (stateRef && stateRef.subject) p.set('subject', stateRef.subject);
+      if (stateRef && stateRef.lesson) p.set('lesson', stateRef.lesson);
+      if (realSessionId) p.set('sessionId', realSessionId);
+      var qs = p.toString();
+      virtualBtn.href = 'school-virtual-classroom.html' + (qs ? '?' + qs : '');
+      liveBtn.href = 'school-live.html' + (qs ? '?' + qs : '');
+    }
+    virtualBtn.addEventListener('click', updateClassroomLinks);
+    liveBtn.addEventListener('click', updateClassroomLinks);
+
     ui.joinBtn = el('button', 'border:0;border-radius:12px;background:#146c70;color:#fff;font-weight:800;padding:10px 16px;cursor:pointer;', 'دخول الصف');
     ui.joinBtn.type = 'button';
     ui.participantsEl = el('span', 'color:#53706f;font-weight:700;font-size:14px;', 'لم يتم الانضمام بعد');
@@ -318,7 +610,10 @@
     videoBtn.title = 'يعمل فقط بعد موافقة ولي الأمر وإذن الجهاز';
     var mediaBox = el('div', 'width:100%;display:none;');
     mediaBox.id = 'shno-classroom-media';
-    bar.appendChild(title); bar.appendChild(ui.joinBtn); bar.appendChild(ui.participantsEl);
+    bar.appendChild(title);
+    bar.appendChild(liveBtn);
+    bar.appendChild(virtualBtn);
+    bar.appendChild(ui.joinBtn); bar.appendChild(ui.participantsEl);
     bar.appendChild(audioBtn); bar.appendChild(videoBtn); bar.appendChild(mediaBox);
     view.appendChild(bar);
 
@@ -432,6 +727,7 @@
   var realReport = null;
   var realExamKeys = {};
   var realCurriculumFiles = [];
+  var realLibraryRows = [];
   var nextSchedule = null;
   var hydrated = false;
 
@@ -466,54 +762,90 @@
     } catch (e) {}
   }
 
+  function libraryFileSize(row) {
+    var pages = Number(row.pages) || 0;
+    var mb = Math.max(1, Math.round((Number(row.bytes) || 0) / 1048576));
+    return (pages ? pages + ' صفحة · ' : '') + mb + ' MB';
+  }
+
+  /** Real library rows: catalogue ⋈ manifest first; indexed PDFs alone only when no catalogue reached us. */
+  function currentLibraryRows() {
+    if (realLibraryRows.length) return realLibraryRows;
+    if (typeof state !== 'undefined' && state && Array.isArray(state.library)) {
+      var fromState = state.library.filter(function (x) { return x && x.name && !/محتوى تجريبي/.test(String(x.name) + ' ' + String(x.status || '')); });
+      if (fromState.length) return fromState;
+    }
+    // Last resort: the verified manifest itself (real url required, real names when the index carries them).
+    return realCurriculumFiles.filter(function (f) { return f && f.url; }).map(function (f, index) {
+      return {
+        name: f.catalogTitle || f.pageTitle || ('كتاب المنهج العراقي رقم ' + (index + 1)),
+        chapter: [f.mappedStage, f.mappedGrade, f.mappedSubject].filter(Boolean).join(' ← ') || 'ملف PDF مفهرس',
+        status: 'منهاج شنو منو — متاح للقراءة',
+        url: f.url, readable: true, pages: f.pages || 0, bytes: f.bytes || 0, fileName: f.fileName || ''
+      };
+    });
+  }
+
   function patchCurriculumFiles() {
     try {
       var list = $id('catalog-list');
       if (!list) return;
+      var source = currentLibraryRows();
+      if (!source.length) return; // nothing real reached us: leave the original untouched (no demo rows injected)
       var search = $id('library-search');
       var query = search ? String(search.value || '').trim().toLowerCase() : '';
-      // Preserve real offline-pack / Knowledge cards already rendered.
-      var existing = Array.prototype.map.call(list.querySelectorAll('article'), function (node) {
-        return node.cloneNode(true);
+      var rows = source.filter(function (row) {
+        if (!query) return true;
+        return [row.name, row.chapter, row.status, row.stage, row.grade, row.subject, row.fileName].some(function (v) {
+          return String(v || '').toLowerCase().indexOf(query) !== -1;
+        });
       });
+      // Keep the original's own card design: reuse the class of a card it rendered.
+      var sample = list.querySelector('article');
+      var cardClass = sample && sample.className ? sample.className : 'record-card';
       var frag = document.createDocumentFragment();
-      existing.forEach(function (node) { frag.appendChild(node); });
-      var indexed = Array.isArray(realCurriculumFiles) ? realCurriculumFiles : [];
-      var rows = indexed.filter(function (item) {
-        return !query || String(item.sourcePage || '').toLowerCase().indexOf(query) !== -1 || String(item.fileName || '').toLowerCase().indexOf(query) !== -1 || String(item.url || '').toLowerCase().indexOf(query) !== -1;
-      });
-      rows.forEach(function (item, index) {
+      rows.forEach(function (row) {
         var card = document.createElement('article');
-        card.className = 'record-card';
+        card.className = cardClass;
+        card.setAttribute('data-availability', row.readable ? 'available' : 'source_pending');
         var title = document.createElement('h3');
         title.className = 'font-extrabold';
-        var sourceCode = '';
-        try { sourceCode = new URL(item.sourcePage).hostname.split('.')[0]; } catch (e) {}
-        title.textContent = 'كتاب المنهج العراقي ' + (sourceCode ? '— ' + sourceCode : 'رقم ' + (index + 1));
-        var details = document.createElement('p');
-        details.className = 'mt-1 font-bold text-[#53706f]';
-        var hasUrl = Boolean(item.url);
-        details.textContent = (Number(item.pages) || 0) + ' صفحة · ' + Math.max(1, Math.round((Number(item.bytes) || 0) / 1048576)) + ' MB · ' + (hasUrl ? 'رابط على هذا الخادم' : 'مفهرس — الملف غير مرفوع على هذا الخادم');
-        card.appendChild(title); card.appendChild(details);
-        // Always expose the reader anchor shape the contract checks for; when
-        // the bytes are not on this host the href stays the catalogued URL
-        // path (may 404) and the label stays explicit.
-        var link = document.createElement('a');
-        link.className = 'mt-3 inline-block rounded-xl bg-[#146c70] px-4 py-2 font-extrabold text-white';
-        link.href = item.url || ('/uploads/school-curriculum/' + (item.fileName || ''));
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.textContent = 'فتح وقراءة PDF';
-        if (!hasUrl) link.setAttribute('data-availability', 'remote_or_missing');
-        card.appendChild(link);
+        title.textContent = row.name;
+        var pathLine = document.createElement('p');
+        pathLine.className = 'mt-1 font-bold text-[#53706f]';
+        pathLine.textContent = row.chapter || 'منهاج شنو منو';
+        var status = document.createElement('span');
+        status.className = 'mt-3 inline-block rounded-full bg-[#fff4d9] px-3 py-1 font-bold text-[#846019]';
+        status.textContent = row.status;
+        card.appendChild(title); card.appendChild(pathLine);
+        if (row.readable && row.url) {
+          var details = document.createElement('p');
+          details.className = 'mt-2 text-sm';
+          details.textContent = libraryFileSize(row) + ' · PDF موثّق SHA-256';
+          card.appendChild(details);
+        }
+        card.appendChild(status);
+        if (row.readable && row.url) {
+          // Reader link ONLY for a real PDF url coming from /api/school/curriculum/files.
+          var link = document.createElement('a');
+          link.className = 'mt-3 inline-block rounded-xl bg-[#146c70] px-4 py-2 font-extrabold text-white';
+          link.href = row.url;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.setAttribute('data-curriculum-pdf', '1');
+          link.textContent = 'فتح وقراءة PDF';
+          card.appendChild(document.createElement('br'));
+          card.appendChild(link);
+        }
         frag.appendChild(card);
       });
       list.replaceChildren(frag);
       var kicker = document.querySelector('#library-view [data-template-id="catalog-kicker"]');
       if (kicker) {
-        kicker.textContent = existing.length
-          ? (existing.length + ' منهجًا حقيقيًا + ' + rows.length + ' PDF مفهرسًا')
-          : (rows.length + ' PDF مفهرسًا (تحقق من وجود الملف على الخادم قبل القراءة)');
+        var readable = source.filter(function (r) { return r.readable; }).length;
+        var pending = source.length - readable;
+        kicker.textContent = source.length + ' كتابًا في كتالوج المنهج العراقي · ' + readable + ' PDF متاح للقراءة على خادم شنو منو' +
+          (pending ? ' · ' + pending + ' بانتظار النسخة الرسمية' : '');
       }
     } catch (e) {}
   }
@@ -667,16 +999,33 @@
       get('/api/school/teachers'),
       get('/api/school/sessions/active'),
       get('/api/school/schedules'),
-      // offline-pack only (verified Knowledge for this guardian's students).
-      // The 108-row catalogue is metadata and must NOT inflate lessonCount /
-      // library as if every row were a loaded book.
+      // offline-pack (verified Knowledge for THIS guardian's students) feeds
+      // board/exam/lessons; the versioned catalogue + verified PDF manifest are
+      // fetched in parallel and are the library's primary source, so the
+      // library is complete even for an account with zero students.
       get('/api/school/curriculum/offline-pack'),
+      get('/api/school/curriculum/catalog').catch(function () { return { items: [] }; }),
       get('/api/school/curriculum/files')
     ]).then(function (out) {
       var students = out[0].students || [];
       realTeachersRaw = out[1].teachers || [];
-      var packItems = out[4].items || [];
-      realCurriculumFiles = Array.isArray(out[5].files) ? out[5].files : [];
+      var downloaded = Array.isArray(out[4].items) ? out[4].items : [];
+      var catalogItems = Array.isArray(out[5].items) ? out[5].items : [];
+      realCurriculumFiles = Array.isArray(out[6].files) ? out[6].files : [];
+      // Board/exam candidates: downloaded lessons first, then catalogue rows for
+      // stage/grade/subject combinations the offline-pack does not cover.
+      var known = {};
+      downloaded.forEach(function (item) { known[[item.stage, item.grade, item.subject].join('|')] = 1; });
+      var packItems = downloaded.concat(catalogItems.filter(function (item) {
+        return !known[[item.stage, item.grade, item.subject].join('|')];
+      }));
+      // Library: full catalogue first (primary), then verified downloaded
+      // items that are not already catalogue books (never the other way round).
+      var catalogIds = {}, catalogTitles = {};
+      catalogItems.forEach(function (item) { catalogIds[String(item.id)] = 1; catalogTitles[String(item.title || '')] = 1; });
+      var librarySource = catalogItems.length
+        ? catalogItems.concat(downloaded.filter(function (item) { return !catalogIds[String(item.id)] && !catalogTitles[String(item.title || '')]; }))
+        : downloaded;
       if (out[2].session) realSessionId = String(out[2].session._id || '');
       var schedules = out[3].schedules || [];
       if (schedules.length) {
@@ -769,11 +1118,15 @@
         }
       } catch (e) {}
       try {
-        if (typeof state !== 'undefined' && state && packItems.length) {
-          var rows = core.packLibrary(packItems);
+        var rows = core.packLibrary(librarySource, realCurriculumFiles);
+        if (rows.length) realLibraryRows = rows;
+        if (typeof state !== 'undefined' && state && rows.length) {
           var names = {};
           rows.forEach(function (r) { names[r.name] = 1; });
-          var local = (Array.isArray(state.library) ? state.library : []).filter(function (x) { return !names[x.name]; });
+          // Keep the guardian's own local files; drop the original's demo placeholders once real books exist.
+          var local = (Array.isArray(state.library) ? state.library : []).filter(function (x) {
+            return x && !names[x.name] && !/محتوى تجريبي/.test(String(x.name || '') + ' ' + String(x.status || ''));
+          });
           state.library = rows.concat(local);
         }
       } catch (e) {}
@@ -801,7 +1154,9 @@
         teacherCount: realTeachersRaw.length,
         grades: gradeList,
         subjects: subjectSet,
-        lessonCount: packItems.length,
+        // "درساً" counts real verified lessons for this guardian's students;
+        // catalogue books are library rows, not loaded lessons.
+        lessonCount: downloaded.length,
         examCount: realStudent && realStudent.scores.length || 0,
         reportCount: realStudent && realStudent.notes.length || 0
       });
@@ -851,6 +1206,9 @@
   }
 
   function boot() {
+    // 2026-09-21 page: it drives itself through window.ShnoManoIntegrationAdapter
+    // (installed above, synchronously). No DOM patching of the older exports here.
+    if (isIntegrationPage()) return;
     if (bootUpdatedCanva()) return;
     // Wrap the original's render functions first, so every later re-render
     // (user filter, save(), consent click, ...) keeps the real-data patches.

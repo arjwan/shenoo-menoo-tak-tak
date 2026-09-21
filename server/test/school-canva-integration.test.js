@@ -412,15 +412,38 @@ test('core: packLesson builds the original board/exam entry from real data', () 
 
 test('core: packLibrary produces catalog rows for the original library', () => {
   const rows = core.packLibrary([
-    { title: 'كتاب الرياضيات', stage: 'ابتدائي', grade: 'الأول ابتدائي', subject: 'الرياضيات', chapter: 'الفصل الأول', lesson: 'الجمع' },
+    { title: 'كتاب الرياضيات', stage: 'ابتدائي', grade: 'الأول ابتدائي', subject: 'الرياضيات', chapter: 'الفصل الأول', lesson: 'الجمع', verified: true, availability: 'available', file: { url: '/uploads/school-curriculum/math.pdf', originalName: 'math.pdf' } },
     { title: 'ورقة أسئلة', verified: false, subject: 'العلوم' }
+  ], [
+    { fileName: 'math.pdf', url: '/uploads/school-curriculum/math.pdf', bytes: 10, pages: 2 }
   ]);
   assert.equal(rows.length, 2);
   assert.equal(rows[0].name, 'كتاب الرياضيات');
   assert.equal(rows[0].chapter, 'ابتدائي ← الأول ابتدائي ← الرياضيات ← الفصل الأول ← الجمع');
-  assert.equal(rows[0].status, 'منهاج شنو منو');
-  assert.equal(rows[1].status, 'مرفوع — بانتظار الاعتماد', 'unverified uploads are labelled as pending');
+  assert.equal(rows[0].readable, true, 'joined PDF is readable');
+  assert.equal(rows[0].url, '/uploads/school-curriculum/math.pdf');
+  assert.match(rows[0].status, /متاح للقراءة/);
+  assert.equal(rows[1].readable, false);
+  assert.equal(rows[1].status, 'مرفوع — بانتظار الاعتماد', 'unverified uploads without file are labelled as pending');
   assert.deepEqual(core.packLibrary([]), []);
+});
+
+test('core: packLibrary joins catalog to files and stays full with zero students (no offline-pack)', () => {
+  const catalog = [
+    { id: 'iq-a', title: 'كتاب أ', stage: 'ابتدائي', grade: 'الأول ابتدائي', subject: 'القراءة', verified: true, availability: 'available', file: { url: '/uploads/school-curriculum/a.pdf', originalName: 'a.pdf' } },
+    { id: 'iq-b', title: 'كتاب ب', stage: 'متوسط', grade: 'الأول متوسط', subject: 'الرياضيات', verified: false, availability: 'source_pending', file: { url: '', originalName: '', size: 0 } }
+  ];
+  const files = [
+    { fileName: 'a.pdf', url: '/uploads/school-curriculum/a.pdf', catalogId: 'iq-a', bytes: 100, pages: 5 },
+    { fileName: 'orphan.pdf', url: '/uploads/school-curriculum/orphan.pdf', catalogId: null, bytes: 50, pages: 3 }
+  ];
+  const rows = core.packLibrary(catalog, files);
+  assert.equal(rows.length, 2, 'library rows come from catalog, not student offline-pack');
+  assert.equal(rows[0].readable, true);
+  assert.equal(rows[0].url, '/uploads/school-curriculum/a.pdf');
+  assert.equal(rows[1].readable, false, 'pending catalog row has no open button url');
+  assert.equal(rows[1].url, '');
+  assert.match(rows[1].status, /بانتظار/);
 });
 
 test('core: homeStats maps the real account into the seven home numbers', () => {

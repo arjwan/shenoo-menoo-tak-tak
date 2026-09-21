@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>إضافة وتعيين معلم حقيقي — مدرسة شنو منو</title>
+  <script>
+    document.documentElement.dataset.theme = (localStorage.getItem('shno-theme') === 'dark' || localStorage.getItem('taktak-theme') === 'dark') ? 'dark' : 'light';
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
+  <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
+  <link rel="stylesheet" href="school-admin.css?v=20260921-1">
+  <script src="auth-guard.js?v=20260913-7"></script>
+  <style>
+    .step-card {
+      background: var(--admin-card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--admin-border);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--admin-shadow);
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--admin-primary);
+      color: #fff;
+      font-weight: 800;
+      margin-left: 8px;
+    }
+    .selected-user-card {
+      margin-top: 10px;
+      padding: 12px 16px;
+      background: var(--admin-primary-light);
+      border-radius: 8px;
+      border: 1px solid var(--admin-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .schedule-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .schedule-grid-table th, .schedule-grid-table td {
+      border: 1px solid var(--admin-border);
+      padding: 8px 12px;
+      text-align: right;
+    }
+    .invite-box {
+      margin-top: 12px;
+      padding: 14px;
+      background: #fffbeb;
+      border: 1px dashed #f59e0b;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body class="school-admin-body">
+
+  <header class="admin-header">
+    <div class="brand-section">
+      <h1>👩‍🏫 شاشة إضافة وتعيين معلم حقيقي</h1>
+      <div class="brand-links">
+        <a href="school-admin.html" class="brand-link-btn">← لوحة الإدارة المدرسية</a>
+        <a href="school-student-add.html" class="brand-link-btn">🎒 تسجيل طالب جديد</a>
+        <a href="school-guardian-consents.html" class="brand-link-btn">👨‍👩‍👧 موافقات ولي الأمر</a>
+        <a href="school-live.html" class="brand-link-btn">🎙️ الصف المباشر</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-container" style="max-width: 950px;">
+    
+    <div id="teacherAlert" class="admin-alert" hidden>
+      <span id="teacherAlertText"></span>
+      <button type="button" class="btn-sm btn-secondary" onclick="document.getElementById('teacherAlert').hidden=true">✕</button>
+    </div>
+
+    <form id="standaloneAddTeacherForm" class="admin-form">
+
+      <!-- Step 1: User Account Link -->
+      <div class="step-card">
+        <h3><span class="step-badge">1</span> ربط المعلم بحساب مستخدم حقيقي في شنو منو</h3>
+        <p class="text-muted">ممنوع إنشاء هويات أو حسابات وهمية. يجب ربط المعلم بحساب Shno Mano حقيقي <code>userId</code> مفعّل في النظام.</p>
+        
+        <div class="form-group">
+          <label for="teacherUserSearch">البحث عن الحساب بالاسم، الهاتف، اسم المستخدم، أو كود الصداقة:</label>
+          <input type="text" id="teacherUserSearch" class="form-control" placeholder="اكتب اسم المستخدم أو الهاتف للبحث الفوري..." autocomplete="off">
+          <input type="hidden" id="selectedTeacherUserId" required>
+          <div id="teacherUserSearchDropdown" class="user-search-results" hidden></div>
+        </div>
+
+        <div id="selectedTeacherUserPreview" class="selected-user-card" hidden>
+          <div>
+            <b id="previewTeacherUserName"></b>
+            <div id="previewTeacherUserMeta" style="font-size:0.85rem;color:var(--admin-text-muted);"></div>
+          </div>
+          <button type="button" id="clearTeacherUserBtn" class="btn btn-sm btn-secondary">اختيار حساب آخر</button>
+        </div>
+
+        <!-- Invitation Mechanism if User Account is not found -->
+        <div class="invite-box" id="inviteMechanismBox">
+          <b>ℹ️ لم تجد حساب المعلم بعد؟</b>
+          <p style="margin:4px 0 8px;">إذا لم يكن المعلم مسجلاً في شنو منو، لا تقم باختراع حساب وهمي. بدلاً من ذلك، شارك معه رابط الانضمام الرسمي أو كود المدرسة لإنشاء حسابه أولاً ثم تعيينه هنا مباشرة:</p>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="teacherInviteLinkInput" class="form-control" value="https://shino-mino-tak-tak.duckdns.org/signup.html?school_invite=teacher" readonly>
+            <button type="button" class="btn btn-sm btn-secondary" id="copyInviteLinkBtn">📋 نسخ رابط الدعوة</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Teacher Personal & Contact Details -->
+      <div class="step-card">
+        <h3><span class="step-badge">2</span> البيانات المهنية ووسيلة التواصل</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="teacherName">الاسم المهني الكامل للمعلم:</label>
+            <input type="text" id="teacherName" class="form-control" placeholder="مثال: أ. رافد الفرات الموسوي" required>
+          </div>
+          <div class="form-group">
+            <label for="teacherGender">الجنس:</label>
+            <select id="teacherGender" class="form-control" required>
+              <option value="ذكر">ذكر</option>
+              <option value="أنثى">أنثى</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="teacherPhone">رقم هاتف المعلم المعتمد للتواصل:</label>
+            <input type="tel" id="teacherPhone" class="form-control" placeholder="مثال: 07701234567" required>
+          </div>
+          <div class="form-group">
+            <label for="teacherStatus">حالة الحساب المبدئية:</label>
+            <select id="teacherStatus" class="form-control">
+              <option value="active">مفعّل ونشط (Active)</option>
+              <option value="archived">مؤرشف / غير نشط (Archived)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Teaching Assignment (Stages, Grades, Sections, Subjects) -->
+      <div class="step-card">
+        <h3><span class="step-badge">3</span> التكليف الأكاديمي والمواد والمراحل</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="teacherStages">المراحل الدراسية المكلف بها (مفصولة بفاصلة):</label>
+            <input type="text" id="teacherStages" class="form-control" placeholder="مثال: ابتدائي، متوسط" value="ابتدائي" required>
+          </div>
+          <div class="form-group">
+            <label for="teacherGrades">الصفوف الدراسية (مفصولة بفاصلة):</label>
+            <input type="text" id="teacherGrades" class="form-control" placeholder="مثال: الخامس ابتدائي، السادس ابتدائي" value="السادس ابتدائي" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="teacherSections">الشعب المكلف بها (مفصولة بفاصلة):</label>
+            <input type="text" id="teacherSections" class="form-control" placeholder="مثال: أ، ب، ج" value="أ، ب" required>
+          </div>
+          <div class="form-group">
+            <label for="teacherSubjects">المواد التي يدرّسها المعلم (مفصولة بفاصلة):</label>
+            <input type="text" id="teacherSubjects" class="form-control" placeholder="مثال: الرياضيات، العلوم" value="الرياضيات" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Weekly Class Schedule Slots -->
+      <div class="step-card">
+        <h3><span class="step-badge">4</span> جدول الحصص الأسبوعي المعتمد</h3>
+        <p class="text-muted">أضف مواعيد الحصص المنتظمة لربطها بجدول المدرسة ولوحة الطالب:</p>
+        
+        <div class="form-row" style="align-items:flex-end;">
+          <div class="form-group">
+            <label for="slotDay">اليوم:</label>
+            <select id="slotDay" class="form-control">
+              <option value="الأحد">الأحد</option>
+              <option value="الإثنين">الإثنين</option>
+              <option value="الثلاثاء">الثلاثاء</option>
+              <option value="الأربعاء">الأربعاء</option>
+              <option value="الخميس">الخميس</option>
+              <option value="السبت">السبت</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="slotStart">من الساعة:</label>
+            <input type="time" id="slotStart" class="form-control" value="08:30">
+          </div>
+          <div class="form-group">
+            <label for="slotEnd">إلى الساعة:</label>
+            <input type="time" id="slotEnd" class="form-control" value="09:15">
+          </div>
+          <div class="form-group">
+            <label for="slotSubject">المادة:</label>
+            <input type="text" id="slotSubject" class="form-control" placeholder="المادة" value="الرياضيات">
+          </div>
+          <div class="form-group">
+            <label for="slotGrade">الصف والشعبة:</label>
+            <input type="text" id="slotGrade" class="form-control" placeholder="الصف والشعبة" value="السادس ابتدائي - أ">
+          </div>
+          <button type="button" id="addScheduleSlotBtn" class="btn btn-secondary" style="height:42px;">➕ إضافة للحصة</button>
+        </div>
+
+        <table class="schedule-grid-table">
+          <thead>
+            <tr>
+              <th>اليوم</th>
+              <th>الوقت</th>
+              <th>المادة</th>
+              <th>الصف والشعبة</th>
+              <th>حذف</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleSlotsTbody">
+            <tr><td colspan="5" style="text-align:center;color:var(--admin-text-muted);">لم يتم إضافة حصص في الجدول بعد.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Permissions Briefing -->
+      <div class="step-card" style="background: #f8fafc; border-left: 4px solid var(--admin-primary);">
+        <h4 style="margin-top:0;">🛡️ صلاحيات المعلم المعتمد بعد التسجيل:</h4>
+        <ul style="font-size:0.9rem;padding-right:20px;margin-bottom:0;">
+          <li>رؤية طلابه المسندين فقط أو طلاب مرحلته دون الاطلاع على صفوف غير مصرحة.</li>
+          <li>تسجيل حضور وغياب الطلاب وتوثيق الملاحظات التقييمية.</li>
+          <li>رصد الدرجات والتقييمات وحفظها فورياً في السجل الأكاديمي الدائم.</li>
+          <li>تحديد موعد حصة مباشرة <code>LIVE_CLASS</code> أو مراجعة أو اختبار في الوقت الذي يختاره ضمن مواده.</li>
+          <li>النظام يخطر إدارة المدرسة والطلاب تلقائياً فور تحديد الاختبار.</li>
+          <li><b>حماية الخصوصية:</b> المعلم لا يستطيع تجاوز رفض ولي الأمر لأي إذن أو تشغيل مايك/كاميرا الطالب قسرياً.</li>
+        </ul>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 40px;">
+        <a href="school-admin.html" class="btn btn-secondary">إلغاء والعودة</a>
+        <button type="submit" id="submitAddTeacherBtn" class="btn btn-primary" style="padding: 12px 28px; font-size: 1.05rem;">💾 تسجيل واعتماد المعلم الحقيقي</button>
+      </div>
+
+    </form>
+
+    <!-- Success Result Card -->
+    <div id="teacherSuccessCard" class="step-card" style="border: 2px solid var(--admin-success); background: #f0fdf4;" hidden>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <span style="font-size:2rem;">🎉</span>
+        <div>
+          <h3 style="margin:0;color:var(--admin-success);">تم تسجيل المعلم الحقيقي بنجاح واعتماده في المدرسة!</h3>
+          <p id="teacherSuccessSummaryText" style="margin:4px 0 0;font-size:0.95rem;"></p>
+        </div>
+      </div>
+      <div class="pane-actions" style="margin-top: 16px;">
+        <a href="school-admin.html" class="btn btn-primary">العودة للوحة الإدارة</a>
+        <button type="button" id="registerAnotherTeacherBtn" class="btn btn-secondary">تسجيل معلم آخر</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    (function () {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      const $ = (id) => document.getElementById(id);
+      const escapeHtml = (s) => String(s || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+      function alertMsg(txt, isErr = false) {
+        const box = $('teacherAlert');
+        $('teacherAlertText').textContent = txt;
+        box.className = 'admin-alert ' + (isErr ? 'alert-danger' : 'alert-success');
+        box.hidden = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      async function api(path, opts = {}) {
+        const res = await fetch('/api/school/management' + path, {
+          ...opts,
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) }
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.message || 'خطأ في الخادم (' + res.status + ')');
+        return d;
+      }
+
+      // Live Search for Real User
+      let searchTimer = null;
+      $('teacherUserSearch').addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        const drop = $('teacherUserSearchDropdown');
+        if (q.length < 2) { drop.hidden = true; return; }
+        searchTimer = setTimeout(async () => {
+          try {
+            const res = await api('/users/search?q=' + encodeURIComponent(q));
+            if (!res.users || !res.users.length) {
+              drop.innerHTML = '<div style="padding:10px;text-align:center;color:#64748b;">لا يوجد حساب مطابق. يمكنك دعوة المعلم لإنشاء حساب عبر الرابط أدناه.</div>';
+              drop.hidden = false;
+              return;
+            }
+            drop.innerHTML = res.users.map((u) => `
+              <div class="search-item" data-id="${u._id}" data-name="${escapeHtml(u.fullName || u.username)}" data-phone="${escapeHtml(u.phone || '')}" data-meta="${escapeHtml(u.email || u.phone || '')}">
+                <div><b>${escapeHtml(u.fullName || u.username)}</b> <small>@${escapeHtml(u.username)}</small></div>
+                <span class="role-pill role-${u.role}">${u.role}</span>
+              </div>
+            `).join('');
+            drop.hidden = false;
+            drop.querySelectorAll('.search-item').forEach((item) => {
+              item.addEventListener('click', () => {
+                $('selectedTeacherUserId').value = item.dataset.id;
+                $('previewTeacherUserName').textContent = item.dataset.name;
+                $('previewTeacherUserMeta').textContent = item.dataset.meta;
+                $('selectedTeacherUserPreview').hidden = false;
+                $('teacherName').value = item.dataset.name;
+                $('teacherPhone').value = item.dataset.phone;
+                $('teacherUserSearch').value = '';
+                drop.hidden = true;
+              });
+            });
+          } catch { drop.hidden = true; }
+        }, 300);
+      });
+
+      $('clearTeacherUserBtn').addEventListener('click', () => {
+        $('selectedTeacherUserId').value = '';
+        $('selectedTeacherUserPreview').hidden = true;
+      });
+
+      $('copyInviteLinkBtn').addEventListener('click', () => {
+        navigator.clipboard.writeText($('teacherInviteLinkInput').value);
+        alertMsg('تم نسخ رابط دعوة المعلم إلى الحافظة.');
+      });
+
+      // Schedule Slots
+      const slots = [];
+      $('addScheduleSlotBtn').addEventListener('click', () => {
+        const day = $('slotDay').value;
+        const startTime = $('slotStart').value;
+        const endTime = $('slotEnd').value;
+        const subject = $('slotSubject').value;
+        const grade = $('slotGrade').value;
+        if (!subject || !grade) { alertMsg('المادة والصف مطلوبان للحصة', true); return; }
+        slots.push({ day, startTime, endTime, subject, grade, stage: 'ابتدائي', section: 'أ' });
+        renderSlots();
+      });
+
+      function renderSlots() {
+        const tbody = $('scheduleSlotsTbody');
+        if (!slots.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--admin-text-muted);">لم يتم إضافة حصص في الجدول بعد.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = slots.map((s, idx) => `
+          <tr>
+            <td><b>${escapeHtml(s.day)}</b></td>
+            <td>${escapeHtml(s.startTime)} - ${escapeHtml(s.endTime)}</td>
+            <td>${escapeHtml(s.subject)}</td>
+            <td>${escapeHtml(s.grade)}</td>
+            <td><button type="button" class="btn btn-sm btn-danger remove-slot-btn" data-idx="${idx}">حذف</button></td>
+          </tr>
+        `).join('');
+
+        tbody.querySelectorAll('.remove-slot-btn').forEach((b) => {
+          b.addEventListener('click', () => {
+            slots.splice(Number(b.dataset.idx), 1);
+            renderSlots();
+          });
+        });
+      }
+
+      // Submit Form
+      $('standaloneAddTeacherForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const userId = $('selectedTeacherUserId').value;
+        if (!userId) {
+          alertMsg('يجب اختيار حساب مستخدم حقيقي مسجل في شنو منو أولاً.', true);
+          return;
+        }
+        try {
+          const res = await api('/teachers', {
+            method: 'POST',
+            body: JSON.stringify({
+              userId,
+              name: $('teacherName').value,
+              gender: $('teacherGender').value,
+              phone: $('teacherPhone').value,
+              stages: $('teacherStages').value.split('،').map((s) => s.trim()).filter(Boolean),
+              grades: $('teacherGrades').value.split('،').map((g) => g.trim()).filter(Boolean),
+              sections: $('teacherSections').value.split('،').map((sec) => sec.trim()).filter(Boolean),
+              subjects: $('teacherSubjects').value.split('،').map((sub) => sub.trim()).filter(Boolean),
+              scheduleSlots: slots
+            })
+          });
+
+          $('standaloneAddTeacherForm').hidden = true;
+          const t = res.teacher;
+          $('teacherSuccessSummaryText').textContent = `تم تعيين ${t.name} كمعلم معتمد لمواد (${(t.subjects || []).join('، ')}) للمراحل (${(t.stages || []).join('، ')}).`;
+          $('teacherSuccessCard').hidden = false;
+        } catch (err) {
+          alertMsg(err.message, true);
+        }
+      });
+
+      $('registerAnotherTeacherBtn').addEventListener('click', () => {
+        $('standaloneAddTeacherForm').reset();
+        $('selectedTeacherUserId').value = '';
+        $('selectedTeacherUserPreview').hidden = true;
+        slots.length = 0;
+        renderSlots();
+        $('standaloneAddTeacherForm').hidden = false;
+        $('teacherSuccessCard').hidden = true;
+      });
+    })();
+  </script>
+</body>
+</html>

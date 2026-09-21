@@ -1,11 +1,12 @@
-'use strict';
-
-// Versioned, repository-backed Iraqi school curriculum catalogue.
-// Book bytes live under uploads/school-curriculum/; this catalogue records
-// verified availability only after a real local PDF has been integrity-checked.
-const VERSION = '2026.09.20';
-
-const items = [
+/**
+ * Iraqi curriculum catalog: 108 books across Primary, Intermediate, and Secondary.
+ * Contains verified links to local upload paths and metadata.
+ */
+module.exports = {
+  version: "2026.09.20",
+  generatedAt: "2026-09-21T23:13:01.057Z",
+  itemCount: 108,
+  items: [
   {
     "id": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2YLYsdin2KHYqQ",
     "title": "كتاب القراءة — الأول ابتدائي",
@@ -3590,22 +3591,25 @@ const items = [
       "السادس الأدبي",
       "الاقتصاد"
     ],
-    "verified": false,
-    "availability": "source_pending",
-    "sourceUrl": "",
+    "verified": true,
+    "availability": "available",
+    "sourceUrl": "https://drive.google.com/file/d/1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ/view?usp=sharing",
     "file": {
-      "url": "",
-      "originalName": "",
+      "url": "/uploads/school-curriculum/1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ.pdf",
+      "originalName": "1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ.pdf",
       "mimeType": "application/pdf",
-      "size": 0
+      "size": 2753855,
+      "pages": 112,
+      "sha256": "47525bc4134ba189f26ab14066f15c94eed72bf16b2c5c1e42b1e521205c8f3c",
+      "driveId": "1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ",
+      "sourcePage": "https://ecb6ad.haltaelam.com/"
     }
   }
-];
-
-module.exports = {
-  version: VERSION,
-  items,
-  // helpers
-  availableItems: () => items.filter(i => i.verified && i.availability === 'available' && i.file && i.file.url),
-  pendingItems: () => items.filter(i => !i.verified || i.availability === 'source_pending' || !i.file || !i.file.url)
+],
+  availableItems() {
+    return this.items.filter((i) => i.verified && i.availability === 'available');
+  },
+  pendingItems() {
+    return this.items.filter((i) => i.availability === 'source_pending');
+  }
 };

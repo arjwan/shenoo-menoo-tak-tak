@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>أولياء الأمور وسجل الموافقات — مدرسة شنو منو</title>
+  <script>
+    document.documentElement.dataset.theme = (localStorage.getItem('shno-theme') === 'dark' || localStorage.getItem('taktak-theme') === 'dark') ? 'dark' : 'light';
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
+  <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
+  <link rel="stylesheet" href="school-admin.css?v=20260921-1">
+  <script src="auth-guard.js?v=20260913-7"></script>
+  <style>
+    .guardian-card {
+      background: var(--admin-card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--admin-border);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--admin-shadow);
+    }
+    .consent-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .consent-item-card {
+      padding: 16px 20px;
+      background: var(--admin-bg);
+      border: 1px solid var(--admin-border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      transition: all 0.2s;
+    }
+    .consent-item-card.granted {
+      border-right: 6px solid var(--admin-success);
+      background: rgba(22, 163, 74, 0.04);
+    }
+    .consent-item-card.denied {
+      border-right: 6px solid var(--admin-danger);
+      background: rgba(220, 38, 38, 0.04);
+    }
+    .consent-header-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .consent-icon {
+      font-size: 1.8rem;
+    }
+    .security-notice-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      color: #1e40af;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body class="school-admin-body">
+
+  <header class="admin-header">
+    <div class="brand-section">
+      <h1>👨‍👩‍👧 أولياء الأمور وسجل الموافقات القابل للتدقيق</h1>
+      <div class="brand-links">
+        <a href="school-admin.html" class="brand-link-btn">← لوحة الإدارة المدرسية</a>
+        <a href="school-student-add.html" class="brand-link-btn">🎒 تسجيل طالب</a>
+        <a href="school-teacher-add.html" class="brand-link-btn">👩‍🏫 إضافة معلم</a>
+        <a href="school-virtual-classroom.html" class="brand-link-btn">🤖 الصف الافتراضي AI</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-container" style="max-width: 1000px;">
+
+    <!-- Strict Privacy & Audit Guarantees Notice -->
+    <div class="security-notice-box">
+      <h3 style="margin:0 0 6px;color:#1e3a8a;font-size:1.1rem;">🛡️ القواعد الصارمة لحماية خصوصية وموافقات ولي الأمر (Guardian Consents):</h3>
+      <ul style="margin:0;padding-right:20px;">
+        <li><b>لا توجد موافقة مفعلة افتراضياً:</b> جميع الصلاحيات مغلقة <code>FALSE</code> كخيار افتراضي لحماية خصوصية الطفل (Opt-in فقط).</li>
+        <li><b>المعلم لا يستطيع تجاوز الرفض:</b> قرار ولي الأمر ملزم للنظام ولن يتمكن أي معلم أو مسؤول من فتح المايك أو الكاميرا في حال الرفض.</li>
+        <li><b>الأجهزة متوقفة دائماً عند الدخول:</b> حتى في حال منح الموافقة، تظل الكاميرا والمايك <code>OFF</code> ولا يعملان إلا بضغطة صريحة من الطالب نفسه داخل الحصة.</li>
+        <li><b>سجل تدقيق دائم ومؤرخ:</b> كل قرار يُحفظ مع توثيق (من وافق، الطالب المعني، نوع الموافقة، التاريخ والوقت، ونص الإصدار المعتمد).</li>
+      </ul>
+    </div>
+
+    <div id="consentsAlert" class="admin-alert" hidden>
+      <span id="consentsAlertText"></span>
+      <button type="button" class="btn-sm btn-secondary" onclick="document.getElementById('consentsAlert').hidden=true">✕</button>
+    </div>
+
+    <!-- Student Selector -->
+    <div class="guardian-card">
+      <div class="pane-header" style="margin-bottom:0;">
+        <div>
+          <h3 style="margin:0;">اختر الطالب لعرض سجل موافقات ولي أمره:</h3>
+          <p class="text-muted" style="margin:4px 0 0;">اختر طالباً مسجلاً لاستعراض حالته والقرارات الموثقة لولي أمره.</p>
+        </div>
+        <div style="min-width: 300px;">
+          <select id="studentSelectDropdown" class="form-control">
+            <option value="">جارٍ تحميل الطلاب...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Student & Guardian Profile Badge -->
+    <div id="studentProfileHeaderCard" class="guardian-card" style="background:var(--admin-primary-light);border:1px solid var(--admin-primary);" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 id="activeStudentName" style="margin:0;font-size:1.3rem;color:var(--admin-primary-dark);"></h2>
+          <p id="activeStudentMeta" style="margin:4px 0 0;font-size:0.9rem;color:var(--admin-text);"></p>
+        </div>
+        <div id="activeGuardianBadge" style="text-align:left;">
+          <div style="font-weight:700;">ولي الأمر المسؤول: <span id="activeGuardianName"></span></div>
+          <div id="activeGuardianContact" style="font-size:0.85rem;color:var(--admin-text-muted);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 Detailed Consents Checklist -->
+    <div id="consentsDetailSection" class="guardian-card" hidden>
+      <div class="pane-header">
+        <h3>📋 سجل الموافقات السبعة الصريحة للطالب</h3>
+        <span class="role-pill role-guardian">موثقة في قاعدة البيانات</span>
+      </div>
+
+      <div id="consentsGrid" class="consent-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="noStudentSelectedCard" class="guardian-card" style="text-align:center;padding:40px;">
+      <span style="font-size:2.5rem;">👨‍👩‍👧</span>
+      <h3>يرجى اختيار طالب من القائمة أعلاه</h3>
+      <p class="text-muted">لعرض قائمة الموافقات وتعديل إذن الميكروفون، الكاميرا، الصفوف المباشرة، وحفظ الأسئلة.</p>
+    </div>
+
+  </main>
+
+  <script>
+    (function () {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      const $ = (id) => document.getElementById(id);
+      const escapeHtml = (s) => String(s || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+      function alertMsg(txt, isErr = false) {
+        const box = $('consentsAlert');
+        $('consentsAlertText').textContent = txt;
+        box.className = 'admin-alert ' + (isErr ? 'alert-danger' : 'alert-success');
+        box.hidden = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      async function api(path, opts = {}) {
+        const res = await fetch('/api/school/management' + path, {
+          ...opts,
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) }
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.message || 'خطأ في الخادم (' + res.status + ')');
+        return d;
+      }
+
+      const CONSENT_METADATA = {
+        microphone: {
+          icon: '🎙️',
+          title: 'استخدام الميكروفون (التحدث الصوتي)',
+          desc: 'السماح للطالب بالتحدث وطرح الأسئلة شفهياً. يظل المايك مغلقاً دائماً حتى يضغط الطالب على زر التحدث بنفسه داخل الحصة.',
+          legalText: 'أوافق بصفتي ولي أمر الطالب على استخدام الميكروفون للمشاركة الصفية التفاعلية.'
+        },
+        camera: {
+          icon: '📷',
+          title: 'استخدام الكاميرا (المعاينة المحلية للحضور)',
+          desc: 'السماح بعرض صورة الطالب محلياً للتأكد من حضوره. تظل الكاميرا متوقفة دائماً ولا يتم تسجيل أو رفع أي فيديو لخوادم خارجية.',
+          legalText: 'أوافق على تشغيل كاميرا الجهاز لإثبات الحضور والتفاعل الصفي المباشر.'
+        },
+        live_classroom_participation: {
+          icon: '👥',
+          title: 'المشاركة في الصفوف المباشرة مع المعلم الحقيقي',
+          desc: 'إذن حضور الحصص التفاعلية الحية التي يقدمها المعلمون الحقيقيون على المنصة.',
+          legalText: 'أوافق على حضور الطالب في الحصص المباشرة المعلنة في جدول المدرسة.'
+        },
+        virtual_teacher_participation: {
+          icon: '🤖',
+          title: 'المشاركة في حصص المعلم الافتراضي (AI)',
+          desc: 'إذن الاستفادة من الشرح التفاعلي على السبورة الذكية مع شخصيات المعلم الافتراضي.',
+          legalText: 'أوافق على تفاعل الطالب مع شخصيات المعلم الافتراضي الذكي للشرح ومتابعة السبورة.'
+        },
+        ai_voice_usage: {
+          icon: '🗣️',
+          title: 'استخدام الصوت مع الذكاء الاصطناعي (Voice AI)',
+          desc: 'السماح للذكاء الاصطناعي بنطق الإجابة والشرح صوتياً وتلقي الأسئلة الشفهية.',
+          legalText: 'أوافق على الاستماع إلى الإجابات المنطوقة من المعلم الافتراضي.'
+        },
+        save_learning_qa: {
+          icon: '💾',
+          title: 'حفظ الأسئلة والأجوبة التعليمية في السجل الأكاديمي',
+          desc: 'حفظ استفسارات الطالب وإجابات المعلم عليها في سجله الدائم ليتمكن من مراجعتها لاحقاً.',
+          legalText: 'أوافق على أرشفة الأسئلة التعليمية لغايات المراجعة والتقييم الأكاديمي.'
+        },
+        school_notifications: {
+          icon: '🔔',
+          title: 'إشعارات المدرسة ومواعيد الحصص والاختبارات',
+          desc: 'إرسال تنبيهات المواعيد وجدول الامتحانات وملاحظات المعلمين إلى حساب ولي الأمر.',
+          legalText: 'أوافق على استلام الإشعارات والتنبيهات المدرسية المتعلقة بمسيرة الطالب.'
+        }
+      };
+
+      let studentsList = [];
+
+      async function loadStudentsDropdown() {
+        try {
+          const res = await api('/students');
+          studentsList = res.students || [];
+          const sel = $('studentSelectDropdown');
+          if (!studentsList.length) {
+            sel.innerHTML = '<option value="">لا يوجد طلاب مسجلون حالياً</option>';
+            return;
+          }
+          sel.innerHTML = '<option value="">اختر طالباً من القائمة لعرض الموافقات...</option>' + studentsList.map((s) => `
+            <option value="${s._id}">${escapeHtml(s.name)} — ${escapeHtml(s.grade)} (شعبة ${escapeHtml(s.section || 'أ')})</option>
+          `).join('');
+
+          // If query param ?studentId=... auto select
+          const urlParams = new URLSearchParams(window.location.search);
+          const qStudentId = urlParams.get('studentId');
+          if (qStudentId && studentsList.some((s) => s._id === qStudentId)) {
+            sel.value = qStudentId;
+            selectStudent(qStudentId);
+          }
+        } catch (err) {
+          alertMsg(err.message, true);
+        }
+      }
+
+      $('studentSelectDropdown').addEventListener('change', function () {
+        selectStudent(this.value);
+      });
+
+      async function selectStudent(studentId) {
+        if (!studentId) {
+          $('studentProfileHeaderCard').hidden = true;
+          $('consentsDetailSection').hidden = true;
+          $('noStudentSelectedCard').hidden = false;
+          return;
+        }
+
+        const student = studentsList.find((s) => s._id === studentId);
+        if (!student) return;
+
+        $('activeStudentName').textContent = student.name;
+        $('activeStudentMeta').textContent = `المرحلة: ${student.stage} · الصف: ${student.grade} · الشعبة: ${student.section || 'أ'}`;
+        $('activeGuardianName').textContent = student.guardian?.fullName || student.guardian?.username || 'ولي أمر معتمد';
+        $('activeGuardianContact').textContent = student.guardian?.phone || student.guardian?.email || 'حساب شنو منو مفعّل';
+
+        $('noStudentSelectedCard').hidden = true;
+        $('studentProfileHeaderCard').hidden = false;
+        $('consentsDetailSection').hidden = false;
+
+        await renderStudentConsents(studentId);
+      }
+
+      async function renderStudentConsents(studentId) {
+        const grid = $('consentsGrid');
+        grid.innerHTML = '<div style="padding:20px;text-align:center;">جارٍ جلب السجل الموثق للموافقات...</div>';
+
+        try {
+          const res = await api(`/students/${studentId}/consents`);
+          const consents = res.consents || [];
+
+          grid.innerHTML = consents.map((c) => {
+            const meta = CONSENT_METADATA[c.consentType] || { icon: '🔒', title: c.consentType, desc: c.text, legalText: c.text };
+            const isGranted = c.granted === true;
+            return `
+              <div class="consent-item-card ${isGranted ? 'granted' : 'denied'}">
+                <div class="consent-header-info">
+                  <span class="consent-icon">${meta.icon}</span>
+                  <div>
+                    <h4 style="margin:0 0 4px;font-size:1.05rem;color:var(--admin-text);">${meta.title}</h4>
+                    <p style="margin:0 0 6px;font-size:0.85rem;color:var(--admin-text-muted);">${meta.desc}</p>
+                    <div style="font-size:0.75rem;color:var(--admin-text-muted);line-height:1.4;">
+                      <b>النص المعتمد:</b> <em>"${escapeHtml(c.text || meta.legalText)}"</em><br>
+                      <b>حالة الموافقة:</b> <span style="font-weight:800;color:${isGranted ? '#15803d' : '#b91c1c'};">${isGranted ? '✅ موافقة ممنوحة (GRANTED)' : '❌ غير موافق — مرفوضة (DENIED)'}</span>
+                      ${c.decidedAt ? ` · تاريخ القرار: ${new Date(c.decidedAt).toLocaleString('ar-IQ')}` : ' · (الوضع الافتراضي: غير مفعل)'}
+                      · الإصدار: <code>${escapeHtml(c.version || '2026-09-21-v1')}</code>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="text-align:left;min-width:140px;">
+                  <button type="button" class="btn btn-sm ${isGranted ? 'btn-danger' : 'btn-primary'} toggle-consent-action-btn" data-type="${c.consentType}" data-current="${isGranted}" style="width:100%;justify-content:center;">
+                    ${isGranted ? '🚫 إلغاء الموافقة' : '✔️ منح الموافقة'}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          grid.querySelectorAll('.toggle-consent-action-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              const cType = btn.dataset.type;
+              const cur = btn.dataset.current === 'true';
+              const nextStatus = !cur;
+              const meta = CONSENT_METADATA[cType];
+              try {
+                await api(`/students/${studentId}/consents`, {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    consentType: cType,
+                    granted: nextStatus,
+                    text: meta ? meta.legalText : `موافقة ولي الأمر على ${cType}`,
+                    version: '2026-09-21-v1'
+                  })
+                });
+                alertMsg(`تم توثيق قرار ${nextStatus ? 'منح الموافقة' : 'إلغاء الموافقة'} لـ (${meta?.title || cType}) بنجاح.`);
+                renderStudentConsents(studentId);
+              } catch (err) {
+                alertMsg(err.message, true);
+              }
+            });
+          });
+        } catch (err) {
+          grid.innerHTML = `<div style="color:var(--admin-danger);padding:20px;">تعذر تحميل الموافقات: ${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      loadStudentsDropdown();
+    })();
+  </script>
+</body>
+</html>

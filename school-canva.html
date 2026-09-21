@@ -22,7 +22,11 @@
 <body>
 <div class="sc-wrap">
   <div class="sc-bar">
-    <div><a href="school.html">← المدرسة الحالية</a> · <b>مدرسة Canva (مربوطة)</b></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <a href="school.html">← المدرسة الحالية</a> · <b>مدرسة Canva (مربوطة)</b>
+      <a href="school-live.html" id="canvaTopLiveBtn" style="border:1px solid #146c70;border-radius:8px;background:#146c70;color:#ffffff;padding:5px 12px;text-decoration:none;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:4px;">🎙️ دخول صف مع معلم حقيقي</a>
+      <a href="school-virtual-classroom.html" id="canvaTopVirtualBtn" style="border:1px solid #0f766e;border-radius:8px;background:#e0f2f1;color:#0f3f42;padding:5px 12px;text-decoration:none;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:4px;">🤖 دخول الصف الافتراضي AI</a>
+    </div>
     <div id="sc-status" class="sc-status">جارٍ التحميل…</div>
   </div>
   <iframe id="sc-frame" title="مدرسة شنو منو — Canva" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
@@ -48,7 +52,7 @@
     .then(function (out) {
       if (out.status === 401) { status('انتهت جلسة الدخول — سجّل الدخول أولًا', true); return null; }
       if (!out.d || out.d.ok !== true) { status('تعذر جلب إعدادات الربط', true); return null; }
-      return fetch('/api/school-canva/update', { headers: { 'Cache-Control': 'no-store' } })
+      return fetch('/api/school-canva/original', { headers: { 'Cache-Control': 'no-store' } })
         .then(function (r) { if (!r.ok) throw new Error('original ' + r.status); return r.text(); })
         .then(function (html) {
           status('جارٍ تجهيز الصف…');

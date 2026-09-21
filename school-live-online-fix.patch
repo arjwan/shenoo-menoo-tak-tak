@@ -1,0 +1,30 @@
+diff --git a/school-live.js b/school-live.js
+index f879d64..25cdc25 100644
+--- a/school-live.js
++++ b/school-live.js
+@@ -214,6 +214,13 @@
+     socket.on('school:classroom:update', function (d) { if (d && d.code === state.code) applyClassroom(d.classroom); });
+     socket.on('school:classroom:peer', function (d) {
+       if (!d || d.code !== state.code) return;
++      if (state.classroom && Array.isArray(state.classroom.participants)) {
++        var p = state.classroom.participants.find(function (x) { return x.userId === d.userId; });
++        if (p && p.online !== Boolean(d.online)) {
++          p.online = Boolean(d.online);
++          renderRoom();
++        }
++      }
+       if (state.you.role === 'teacher') { if (!d.online) closePeer(d.userId); }
+       else if (d.role === 'teacher') { if (d.online) $('roomStatus').textContent = 'المعلم متصل — بانتظار الصورة'; else closePeer(d.userId); }
+     });
+diff --git a/server/src/routes/school-live.routes.js b/server/src/routes/school-live.routes.js
+index 677dede..0170cb4 100644
+--- a/server/src/routes/school-live.routes.js
++++ b/server/src/routes/school-live.routes.js
+@@ -134,7 +134,6 @@ router.post('/classrooms/:code/join', async (req, res, next) => {
+     if (!result.ok) return reply(res, result);
+     if (result.changed) {
+       await classroom.save();
+-      events.emitUpdate(io(req), classroom);
+     }
+     res.status(result.rejoined === false ? 201 : 200).json({
+       ok: true,
