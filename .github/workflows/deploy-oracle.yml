@@ -73,6 +73,12 @@ jobs:
           fi
 
           # Publish all root web assets used by the site and games.
+          # Remove only retired, verified-unreferenced backup pages. Normal
+          # production data and still-linked legacy pages are preserved.
+          sudo rm -f \
+            "$webroot/school-canva.before-adapter-loader.html" \
+            "$webroot/school-canva.before-latest-20260921-034822.html"
+
           find . -maxdepth 1 -type f \( \
             -name '*.html' -o -name '*.css' -o -name '*.js' -o \
             -name '*.json' -o -name '*.xml' -o -name '*.webmanifest' -o \

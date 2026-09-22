@@ -32,6 +32,7 @@ const schoolAI = require('../services/school-ai');
 const catalog = require('../data/iraqi-curriculum-catalog');
 const manifest = require('../data/iraqi-curriculum-files.json');
 const linkedCurriculum = require('../services/iraqi-curriculum-linked');
+const { activateSchoolAccess, schoolAccessView } = require('../services/school-access');
 
 router.use(requireAuth);
 
@@ -107,6 +108,7 @@ function buildStructure(params, students, knowledge) {
 
 router.get('/dashboard', async (req, res, next) => {
   try {
+    await activateSchoolAccess(req.user);
     const [students, activeSessions, completedSessions, verifiedKnowledge, schedules] = await Promise.all([
       guardianStudents(req),
       Session.countDocuments({ guardian: req.user._id, status: 'active' }),
@@ -140,7 +142,16 @@ router.get('/dashboard', async (req, res, next) => {
       { label: 'ملاحظات المعلم', value: notes },
       { label: 'المواعيد المجدولة', value: schedules }
     ];
-    res.json({ ok: true, metrics, account: { role: req.user.role }, generatedAt: new Date().toISOString() });
+    res.json({
+      ok: true,
+      metrics,
+      account: {
+        platformRole: req.user.role,
+        fullName: req.user.displayName || req.user.fullName,
+        school: schoolAccessView(req.user)
+      },
+      generatedAt: new Date().toISOString()
+    });
   } catch (error) {
     next(error);
   }
