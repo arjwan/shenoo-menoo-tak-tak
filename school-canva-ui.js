@@ -24,6 +24,7 @@
     students: "school-students.html", curriculum: "school-curriculum.html",
     reader: "school-reader.html", classroom: "school-classroom.html"
   };
+  var PAGES = Object.keys(PAGE_FILES);
   var SCREEN_FOR = {
     index: "screen-index", structure: "screen-collection", teachers: "screen-collection",
     students: "screen-collection", curriculum: "screen-collection",

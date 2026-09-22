@@ -109,6 +109,7 @@ assert.ok(css.includes('.school-standalone-footer'), 'standalone additions missi
 // 7) The shared UI layer keeps the approved screens and only talks to the
 //    adapter; it never carries demo content of its own.
 const ui = read('school-canva-ui.js');
+assert.ok(ui.includes('var PAGES = Object.keys(PAGE_FILES)'), 'standalone navigation pages must be defined before binding');
 for (const spec of PAGES) assert.ok(ui.includes(spec.file), 'UI navigation map is missing ' + spec.file);
 for (const name of ['messageFor', 'setStatus', 'loading', 'toast', 'loadDashboard', 'buildCollection', 'loadCollection', 'loadReader', 'buildClassroom', 'loadRoomOptions', 'classAction', 'diagnostic', 'report']) {
   assert.ok(ui.includes('function ' + name), 'approved UI behaviour missing: ' + name);
