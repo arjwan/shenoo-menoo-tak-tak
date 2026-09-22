@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>شنو منو مدرسة — Canva</title>
+<script>document.documentElement.dataset.theme=(localStorage.getItem('shno-theme')==='dark'||localStorage.getItem('taktak-theme')==='dark')?'dark':'light';</script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
+<link rel="stylesheet" href="theme-pages.css?v=20260913-2">
+<script src="auth-guard.js?v=20260913-7"></script>
+<style>
+  html,body{height:100%;margin:0;background:#0b1220}
+  .sc-wrap{height:100vh;display:flex;flex-direction:column}
+  .sc-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#0e1a2b;color:#dce7f5;font:600 14px "Noto Sans Arabic",system-ui,sans-serif}
+  .sc-bar a{color:#7fd1ff;text-decoration:none}
+  .sc-status{font-weight:700;color:#9fe8c9}
+  #sc-frame{flex:1;width:100%;border:0;background:#f6f8fb}
+  html[data-theme="light"] .sc-bar{background:#eef4f9;color:#17324a}
+</style>
+</head>
+<body>
+<div class="sc-wrap">
+  <div class="sc-bar">
+    <div><a href="school.html">← المدرسة الحالية</a> · <b>مدرسة Canva (مربوطة)</b></div>
+    <div id="sc-status" class="sc-status">جارٍ التحميل…</div>
+  </div>
+  <iframe id="sc-frame" title="مدرسة شنو منو — Canva" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+<script>
+(function () {
+  'use strict';
+  var frame = document.getElementById('sc-frame');
+  var statusEl = document.getElementById('sc-status');
+  var token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+  function status(text, bad) { statusEl.textContent = text; statusEl.style.color = bad ? '#ff9d9d' : ''; }
+
+  function injectText(doc, text) {
+    var s = doc.createElement('script');
+    s.textContent = text;
+    (doc.head || doc.documentElement).appendChild(s);
+  }
+
+  fetch('/api/school/classroom/config', { headers: { Authorization: 'Bearer ' + token } })
+    .then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; });
+    })
+    .then(function (out) {
+      if (out.status === 401) { status('انتهت جلسة الدخول — سجّل الدخول أولًا', true); return null; }
+      if (!out.d || out.d.ok !== true) { status('تعذر جلب إعدادات الربط', true); return null; }
+      return fetch('/api/school-canva/original', { headers: { 'Cache-Control': 'no-store' } })
+        .then(function (r) { if (!r.ok) throw new Error('original ' + r.status); return r.text(); })
+        .then(function (html) {
+          status('جارٍ تجهيز الصف…');
+          frame.srcdoc = html;
+          frame.addEventListener('load', function onLoaded() {
+            frame.removeEventListener('load', onLoaded);
+            var doc = frame.contentDocument;
+            if (!doc) return;
+            var chain = Promise.resolve();
+            chain = chain.then(function () {
+              return new Promise(function (resolve) {
+                var s = doc.createElement('script');
+                s.src = '/socket.io/socket.io.js';
+                s.onload = resolve;
+                s.onerror = resolve; // adapter falls back to demo mode without the bridge
+                (doc.head || doc.documentElement).appendChild(s);
+              });
+            });
+            chain = chain.then(function () {
+              return fetch('/school-canva-adapter-core.js', { headers: { 'Cache-Control': 'no-store' } })
+                .then(function (r) { if (!r.ok) throw new Error('core ' + r.status); return r.text(); })
+                .then(function (txt) { injectText(doc, txt); });
+            });
+            chain = chain.then(function () {
+              return fetch('/school-canva-adapter.js?v=20260920-update-2', { cache: 'no-store', headers: { 'Cache-Control': 'no-store' } })
+                .then(function (r) { if (!r.ok) throw new Error('adapter ' + r.status); return r.text(); })
+                .then(function (txt) { injectText(doc, 'window.__SHNO_SCHOOL_CANVA_CONFIG__ = ' + JSON.stringify(out.d) + ';' + txt); });
+            });
+            chain.then(function () {
+              status('متصل — ' + (out.d.environment || 'production') + ' · REST ' + (out.d.restApiUrl || ''));
+            }).catch(function (e) {
+              status('تعذر تحميل طبقة الربط: ' + e.message + ' (يعمل الأصل في الوضع التجريبي)', true);
+            });
+          });
+        });
+    })
+    .catch(function (e) { status('تعذر التجهيز: ' + e.message, true); });
+})();
+</script>
+</body>
+</html>

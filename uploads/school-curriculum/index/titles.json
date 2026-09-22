@@ -1,0 +1,821 @@
+{
+  "version": 1,
+  "books": {
+    "1ugtWInqi8S-reTElSAd5r2AXmFUoEQQ2.pdf": {
+      "title": "كتاب الاخلاقية الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاخلاقية الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://akb1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.238Z"
+    },
+    "1sJeiG6dMLvhJiOcdXcnhRnRV0A9bop4d.pdf": {
+      "title": "كتاب العربي الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العربي الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://arb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.285Z"
+    },
+    "1CaOc0rBurruXMbbVAkShAvz7eDas4V-Y.pdf": {
+      "title": "كتاب العربي الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العربي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://arb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.342Z"
+    },
+    "1HlIHRTSmpZG1IIboTaltZVVokkiXNSmg.pdf": {
+      "title": "كتاب العربي الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العربي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://arb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.346Z"
+    },
+    "109tea8wcXqDTE3zE6dbGSu3Bx26u9CAM.pdf": {
+      "title": "كتاب العربي الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العربي الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://arb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.394Z"
+    },
+    "1_a4w-bSbsdZJWRCWjLhmkfgApcrsbQk2.pdf": {
+      "title": "كتاب العربي السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العربي السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://arb6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.404Z"
+    },
+    "1Nw0IaeqGm51WinFCQKkvQXK1CZNATSe3.pdf": {
+      "title": "كتاب العربي الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العربي الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://arb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.415Z"
+    },
+    "16srCnJ3Tg3AklT0avA9W_2EwuTIBg74r.pdf": {
+      "title": "كتاب الاخلاقية الاول متوسط - المنهج العراقي",
+      "pageTitle": "كتاب الاخلاقية الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://akb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:54.437Z"
+    },
+    "17b_5X0YenmSKFsJ5waNZSyVF5HLHhYLC.pdf": {
+      "title": "كتاب الاحياء الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاحياء الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://bib1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.129Z"
+    },
+    "1TfBMokeTGyL7-4X6JaPYbaN4wUCMYJMv.pdf": {
+      "title": "كتاب الاحياء الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاحياء الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://bib2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.147Z"
+    },
+    "1ObDiHKSTzfdH4h87v0zjZ-Ugtjy8ZgKO.pdf": {
+      "title": "كتاب الاحياء الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاحياء الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://bib5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.288Z"
+    },
+    "1E8vMjk42zYI8iwxE5eFhE_ja1Ph5lhrG.pdf": {
+      "title": "كتاب الاحياء الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاحياء الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://bib3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.291Z"
+    },
+    "1oJA2Heni6Oe9LCyvqJ7EKpov4CZMexCW.pdf": {
+      "title": "كتاب الاحياء الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاحياء الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://bib4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.298Z"
+    },
+    "1AElUHD7KFA9g8QvSNLR3mq18J8qEn_5r.pdf": {
+      "title": "كتاب الكيمياء الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكيمياء الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://chb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.304Z"
+    },
+    "1_bfLTpP9DPFf9o8l316pcWSjekEoIKa_.pdf": {
+      "title": "كتاب الكيمياء الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكيمياء الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://chb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.354Z"
+    },
+    "15c7vFuGh2WT-3zVQVvYPdjVzClEtmtSR.pdf": {
+      "title": "كتاب الاحياء السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاحياء السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://bib6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:55.359Z"
+    },
+    "1g34V40gbuXNKT10tFGt2OS6tBtBziVlt.pdf": {
+      "title": "كتاب الكيمياء الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكيمياء الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://chb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.046Z"
+    },
+    "1tloqiZRK_AeHeCu3zQ9XnH6IqPjUUvYq.pdf": {
+      "title": "كتاب الكيمياء الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكيمياء الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://chb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.151Z"
+    },
+    "1Szlr2xbi7ivaim0ZbHJ6U_6NV3Sf1G7a.pdf": {
+      "title": "كتاب الكيمياء السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكيمياء السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://chb6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.216Z"
+    },
+    "11TWAt2d62idEOG0BlwMh87THMrr8aB7J.pdf": {
+      "title": "كتاب الحاسوب الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الحاسوب الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://cob5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.218Z"
+    },
+    "1hDxBpX0h_L8WkqQk_81TAc_mhePTMA_W.pdf": {
+      "title": "كتاب الحاسوب الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الحاسوب الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://cob4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.226Z"
+    },
+    "1Q8RID3EikRtakV-NeDiWypEFfd8WNRDC.pdf": {
+      "title": "كتاب الحاسوب الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الحاسوب الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://cob1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.238Z"
+    },
+    "1-oiKMTJxHU3vIn3Zl6u_EBoX9mDtH-2I.pdf": {
+      "title": "كتاب الكيمياء الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكيمياء الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://chb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.260Z"
+    },
+    "1BLTQBwxPpYyZZ1f7iTM8bbfpmS48ODgS.pdf": {
+      "title": "كتاب الحاسوب الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الحاسوب الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://cob2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.307Z"
+    },
+    "1ma3C52Bm94sFOOVqIkPIdmiCGl7Ejw99.pdf": {
+      "title": "كتاب الاقتصاد الخامس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاقتصاد الخامس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://ecb5ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:56.898Z"
+    },
+    "1-FLrmZmDfOLoxh47eYCPnWCK1f4CcDR3.pdf": {
+      "title": "كتاب نشاط الانكليزي الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.033Z"
+    },
+    "1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ.pdf": {
+      "title": "كتاب الاجتماع السادس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماع السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://ecb6ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.036Z"
+    },
+    "1cSBakRQ8dvycXyoL-IGLfbD3YuJ6jaEn.pdf": {
+      "title": "كتاب نشاط الانكليزي الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.111Z"
+    },
+    "1oyk0CP2EpYAH8PT9LpirYsua0N1DvvqP.pdf": {
+      "title": "كتاب نشاط الانكليزي الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.147Z"
+    },
+    "1uUqy4egLScXQ618bc0ynoi-UQdSdrvWO.pdf": {
+      "title": "كتاب نشاط الانكليزي الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.164Z"
+    },
+    "1qcYh1Vx3W5Qs6VAnDo0biC2Pf3Fl66em.pdf": {
+      "title": "كتاب نشاط الانكليزي الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.194Z"
+    },
+    "1023glMzt0ajMcaPT-JdLWkqa1G7rERTD.pdf": {
+      "title": "كتاب نشاط الانكليزي الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.199Z"
+    },
+    "1ZAecXGz82Ub7AmRILJ5wyvOdwlOMEYaZ.pdf": {
+      "title": "كتاب نشاط الانكليزي الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.739Z"
+    },
+    "1Ljuhp_m6OFRzHB3NO0arSHCEHY0ieuEB.pdf": {
+      "title": "كتاب نشاط الانكليزي الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.907Z"
+    },
+    "1Ph31Q_l9dSpq50dUQgOAVFYQxyBLIzZf.pdf": {
+      "title": "كتاب نشاط الانكليزي الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:57.913Z"
+    },
+    "1WClbsxm9zoFvFm_g7tp8O8kNDzMNOdB0.pdf": {
+      "title": "كتاب نشاط الانكليزي الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.027Z"
+    },
+    "1ZqH-ZHT2C6cqS-Ud2m_43Xa89PFmcWRr.pdf": {
+      "title": "كتاب نشاط الانكليزي السادس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab6ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.037Z"
+    },
+    "18QHzq390pXIonQMy-hBCJp5hUGiTsJCF.pdf": {
+      "title": "كتاب الانكليزي الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.047Z"
+    },
+    "1AXlhEx5zeA2PUfiDsxJGQXaksFyQiVsc.pdf": {
+      "title": "كتاب الانكليزي الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.070Z"
+    },
+    "1yEWy4uW6sjY-SPJB2cpE4S4_YiCiNXZ0.pdf": {
+      "title": "كتاب نشاط الانكليزي السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enab6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.098Z"
+    },
+    "1fLZBPEG9bgczvcZvxN2jBSuNR0pMMne9.pdf": {
+      "title": "كتاب الانكليزي الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.636Z"
+    },
+    "1gjmF4BkLbfDNQ4aSBps2YLwkJ8Whlb6A.pdf": {
+      "title": "كتاب الانكليزي الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.780Z"
+    },
+    "1OoGkfd-A94UTgIHEhlyKQYt2VvK5Df3v.pdf": {
+      "title": "كتاب الانكليزي الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.795Z"
+    },
+    "1iK2v3h-Q0Avn5CKOxUq8XTiQg_SLr9KN.pdf": {
+      "title": "كتاب الانكليزي الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.881Z"
+    },
+    "18L2vHor4ZnRg3bAioFjIrP_OAbfptIom.pdf": {
+      "title": "كتاب الانكليزي الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.923Z"
+    },
+    "1ai0EnaTKctWp_NuOfQvjXiLWLt-NbgUZ.pdf": {
+      "title": "كتاب الانكليزي الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.928Z"
+    },
+    "1sbFi8uAP35zFSjav93bXoCDoEjOYZa0h.pdf": {
+      "title": "كتاب الانكليزي الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.956Z"
+    },
+    "1_Rs159GJB3UKzjHjAoDmDfx3nAHEYcC0.pdf": {
+      "title": "كتاب الانكليزي الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:58.994Z"
+    },
+    "1S_tlxcBOTTPOAIvIP9dsoVyHOtK1I1_u.pdf": {
+      "title": "كتاب الانكليزي السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.570Z"
+    },
+    "1nGn8_KxVs2y-xWFqqUBcaHE3Z9k5AzzE.pdf": {
+      "title": "كتاب الانكليزي السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الانكليزي السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.670Z"
+    },
+    "1pjX1iSOA0QX9p-36KhJYdBIIDeak35Jy.pdf": {
+      "title": "كتاب نشاط الانكليزي محلول السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط الانكليزي محلول السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://enhb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.732Z"
+    },
+    "1EWq60HjNaF-qhK7aUMzlTM5aW3Q9xyz2.pdf": {
+      "title": "كتاب الفرنسي الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفرنسي الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://frb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.791Z"
+    },
+    "1LtIcFgPPMwQvEP9nd0CWukJsdFSL3vY2.pdf": {
+      "title": "كتاب الفرنسي الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفرنسي الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://frb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.798Z"
+    },
+    "1hpw5m2MWFCG7kmdsil_mokJL4BGlyarx.pdf": {
+      "title": "كتاب الفرنسي الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفرنسي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://frb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.832Z"
+    },
+    "13UGlatauNK0a3pPJQm7IlxgpIoBT8kLf.pdf": {
+      "title": "كتاب الفرنسي الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفرنسي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://frb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:18:59.850Z"
+    },
+    "1t8EGkpCnRhcxFcB_2UiR3QHnR0nXBF5v.pdf": {
+      "title": "كتاب الفرنسي السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفرنسي السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://frb6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.442Z"
+    },
+    "1QjGRXWJeZEeZyxBiPqEzBV43n4lstWBj.pdf": {
+      "title": "كتاب الجغرافية الرابع ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الجغرافية الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://gob4ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.532Z"
+    },
+    "13RltkaXjMCroIWXaOUcnEnsRCWuqB16t.pdf": {
+      "title": "كتاب الجغرافية الخامس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الجغرافية الخامس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://gob5ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.585Z"
+    },
+    "1mwwFLVIlDkd52y9fPx53z2s6ezhUIMwl.pdf": {
+      "title": "كتاب علم الارض الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب علم الارض الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://gob5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.668Z"
+    },
+    "1UxG_BUXk6fW1xwTsHB3-e53t1PnGWe6b.pdf": {
+      "title": "كتاب التاريخ الرابع ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب التاريخ الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://hsb4ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.691Z"
+    },
+    "1srCKPZK3_tV1tV50HAoEt_slgvrQWmFg.pdf": {
+      "title": "كتاب الجغرافية السادس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الجغرافية السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://gob6ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.733Z"
+    },
+    "1n_oyROEEAbOS6szdFFHAajAmwNfK2sJy.pdf": {
+      "title": "كتاب التاريخ الخامس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب التاريخ الخامس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://hsb5ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:00.820Z"
+    },
+    "1CZyujaRFnGHeNTRXnHZVRPSLdFF4FBFU.pdf": {
+      "title": "كتاب التاريخ السادس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب التاريخ السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://hsb6ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.372Z"
+    },
+    "1wuzBVWLLKFfdT4eaw7SMQH73HT0gaSwu.pdf": {
+      "title": "كتاب الاجتماعيات الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماعيات الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.445Z"
+    },
+    "1tIyMRRRi-3KgC1kZhMMOv3Zu-NR0Dmp-.pdf": {
+      "title": "كتاب الاجتماعيات الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماعيات الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.465Z"
+    },
+    "1DJA3Cz03hwBsVubMhlixKMtq2_kpEcmF.pdf": {
+      "title": "كتاب الاجتماعيات الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماعيات الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.532Z"
+    },
+    "1vF8j_OIt-fk2q654waQ7BbUwi14fTqxz.pdf": {
+      "title": "كتاب الاجتماع الرابع ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماع الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb4ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.592Z"
+    },
+    "1XxlWljt1fhXPBtoWg4wYdm_pQtI4z6Tc.pdf": {
+      "title": "كتاب الاجتماعيات الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماعيات الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.632Z"
+    },
+    "1RVz091kMA7w-XEn0f19WjTxMKzY4WE1g.pdf": {
+      "title": "كتاب الاجتماعيات الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماعيات الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:01.692Z"
+    },
+    "1qB5kJuih2TrN-4IL4pIM8MploPnOX0BD.pdf": {
+      "title": "كتاب الاجتماعيات السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاجتماعيات السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://igb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.234Z"
+    },
+    "1nVM1dhoZJJ2kwYwMLRMlFfo3a70rOKrD.pdf": {
+      "title": "كتاب الاسلامية الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.341Z"
+    },
+    "1vPIz7JbjlfZBAXJQe95jBAypa_YuSxr8.pdf": {
+      "title": "كتاب الاسلامية الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.386Z"
+    },
+    "12Z5ldx61jvFa-pdQ7cucDZBzeMI5IE2n.pdf": {
+      "title": "كتاب الاسلامية الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.405Z"
+    },
+    "1x_Owtc4vbYHtWcjAbjehQ9jGTwPPUexe.pdf": {
+      "title": "كتاب الاسلامية الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.460Z"
+    },
+    "1iIoCA9vUMjsYLGcYB3bG9ghH1yJTtA3j.pdf": {
+      "title": "كتاب الاسلامية الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.553Z"
+    },
+    "15NPcseijUBb75ESOYb1zdfdTXcK-it0g.pdf": {
+      "title": "كتاب الاسلامية الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:02.576Z"
+    },
+    "1c_zbbsvUhfpufz-FBTXmopZNA2GqkdVR.pdf": {
+      "title": "كتاب الاسلامية الرابع ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb4ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.143Z"
+    },
+    "1Qa6FOlInBlFlafEon5rtHvU4DWbQEdhn.pdf": {
+      "title": "كتاب الاسلامية الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.269Z"
+    },
+    "1QD4MKjg-JRNzmyDUOvAXsArKqU1FWSoD.pdf": {
+      "title": "كتاب الاسلامية الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.284Z"
+    },
+    "1w2fJPg5IX-81ht2atoVPRSir9evzkD9c.pdf": {
+      "title": "كتاب الاسلامية الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.297Z"
+    },
+    "1i1kD6ws-XJpG8_rIr4FTf-nc1grFNJGP.pdf": {
+      "title": "كتاب الاسلامية السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.409Z"
+    },
+    "1a_VcmloZrQIJv9D7dmOXKOubK3sSI5Zb.pdf": {
+      "title": "كتاب الاسلامية السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.415Z"
+    },
+    "1FGIDlW9FfFriKY3GGwkd5UQ8tRjH8xe6.pdf": {
+      "title": "كتاب الاسلامية الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الاسلامية الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://isb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:03.455Z"
+    },
+    "18rATzLGoPiY3PN1ATIB734TeEhHTom0d.pdf": {
+      "title": "كتاب الكردي الرابع ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكردي الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://krb4ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.128Z"
+    },
+    "1EnT-h07QHvqMb0cfOZUmU2oF2X5HEhRi.pdf": {
+      "title": "كتاب الكردي الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكردي الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://krb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.134Z"
+    },
+    "1sfVcAm2bzI_reNiMgF0LnSAfg6sspfFI.pdf": {
+      "title": "كتاب الكردي الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الكردي الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://krb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.191Z"
+    },
+    "1ohJZlWvvnZ-d_fQSVL7iTjdEY5EeaQU6.pdf": {
+      "title": "كتاب الرياضيات الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.231Z"
+    },
+    "1VQy3aIsgXYrP9TBibfV6TKM570AmqFtj.pdf": {
+      "title": "كتاب الرياضيات الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.281Z"
+    },
+    "1viIM-aFxIeekqlMWGj55ECG5vDSf5Fxw.pdf": {
+      "title": "كتاب الرياضيات الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.323Z"
+    },
+    "1bvAcXQ_bJe5I7sAXYU45sXK81Y5iu0FV.pdf": {
+      "title": "كتاب الرياضيات الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:04.342Z"
+    },
+    "1x2XtEK97fBrP-Fuw1fzRtbXVI5mHQfw9.pdf": {
+      "title": "كتاب الرياضيات الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.065Z"
+    },
+    "1xNgqWX9h2189GZeoLB8fGT2c5ctfCo-4.pdf": {
+      "title": "كتاب الرياضيات الرابع ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الرابع ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab4ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.112Z"
+    },
+    "1Lh_eddKMm-6Sx5vgYbELzqLDTXeZ82kW.pdf": {
+      "title": "كتاب الرياضيات الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.117Z"
+    },
+    "1yole_xx2CDZRwlaZ2G4nS-u1uIPTPo6o.pdf": {
+      "title": "كتاب الرياضيات الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.132Z"
+    },
+    "1VUy4npgWtuhJXFRLuUPkeOjRoeFsKr64.pdf": {
+      "title": "كتاب الرياضيات الخامس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الخامس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab5ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.183Z"
+    },
+    "1ciJBefTfDhpQ5aScaHmd218ME7Wpkb_q.pdf": {
+      "title": "كتاب الرياضيات الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.188Z"
+    },
+    "1KSixY7KOfG6zkjLQUPFcnck149hAozpU.pdf": {
+      "title": "كتاب الرياضيات الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.234Z"
+    },
+    "1z43l3wERXzT-egGjs_2puQM54lVaAQ30.pdf": {
+      "title": "كتاب الرياضيات الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.954Z"
+    },
+    "1VdXtdsx8uUYgVRHEHlqm-LonDz3LSmFC.pdf": {
+      "title": "كتاب الرياضيات السادس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات السادس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab6ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:05.997Z"
+    },
+    "1qvYJnF__-cQg47cagZAXgIXV1EoZo_27.pdf": {
+      "title": "كتاب الرياضيات السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.004Z"
+    },
+    "1SFE2frCT3DtwuNgp2vyIhEV5-VM836YT.pdf": {
+      "title": "كتاب تمارين الرياضيات الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب تمارين الرياضيات الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://matb2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.035Z"
+    },
+    "1SSmMfZYvWCkEDfk-lfCWT3ni4LbrZl-a.pdf": {
+      "title": "كتاب تمارين الرياضيات الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب تمارين الرياضيات الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://matb1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.053Z"
+    },
+    "1eaBAXCfeFfspUFOgYy-DC-x2uuZZMqqw.pdf": {
+      "title": "كتاب الرياضيات السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الرياضيات السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://mab6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.055Z"
+    },
+    "1rMFsFuJSbDLYO17R-4_wzx5Dj_01dJvD.pdf": {
+      "title": "كتاب تمارين الرياضيات الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب تمارين الرياضيات الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://matb3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.183Z"
+    },
+    "1g0_IfvcDt8OUi5u_66B_CzIgbuCobbog.pdf": {
+      "title": "كتاب تمارين الرياضيات الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب تمارين الرياضيات الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://matb4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.829Z"
+    },
+    "1T7b4sdD0-3TQvub0M-HH3gCDNnGtNm3z.pdf": {
+      "title": "كتاب تمارين الرياضيات الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب تمارين الرياضيات الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://matb5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.873Z"
+    },
+    "1eWnIMdPE901ff1owadlzwuHNH_rElBYg.pdf": {
+      "title": "كتاب تمارين الرياضيات السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب تمارين الرياضيات السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://matb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.892Z"
+    },
+    "1q7QCkKiQf0dcB_AN_lbeRPoKdX1ROqlw.pdf": {
+      "title": "كتاب الفيزياء الثاني متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفيزياء الثاني متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://pyb2sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.924Z"
+    },
+    "1NhsTq-A0qT3bqDhlLCyWjc_EtQWPRyCr.pdf": {
+      "title": "كتاب الفلسفة الخامس ادبي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفلسفة الخامس ادبي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://plb5ad.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:06.926Z"
+    },
+    "1fzmlpY35T-nc_EEFLhtf0caZvbJ5vCtm.pdf": {
+      "title": "كتاب الفيزياء الثالث متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفيزياء الثالث متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://pyb3sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.029Z"
+    },
+    "19AkvbGaHa6gIffTsTHoyca1Yi5JrNnxG.pdf": {
+      "title": "كتاب الفيزياء الأول متوسط 2026 - 2027",
+      "pageTitle": "كتاب الفيزياء الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://pyb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.050Z"
+    },
+    "1KatH3sJSdZVRtxjh4WvX60r_mYCcXl1W.pdf": {
+      "title": "كتاب الفيزياء الخامس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفيزياء الخامس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://pyb5al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.716Z"
+    },
+    "1xg-c5roQGqc8T2xC3jIihvGhTH8Vs3Kl.pdf": {
+      "title": "كتاب الفيزياء الرابع علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفيزياء الرابع علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://pyb4al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.717Z"
+    },
+    "1KLKUU-6NqSLk68txNZOvrjXZQMYAsI92.pdf": {
+      "title": "كتاب القواعد الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القواعد الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qob5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.792Z"
+    },
+    "1ejJ_IGKTBvXtnWhRdvxx5lD7CoykWB7Z.pdf": {
+      "title": "كتاب الفيزياء السادس علمي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفيزياء السادس علمي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://pyb6al.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.812Z"
+    },
+    "1D0H2HFkgFtrUkfu9_jfqPlDSPuqV8gHv.pdf": {
+      "title": "كتاب القواعد الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القواعد الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qob4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.907Z"
+    },
+    "1POyExJU-KWzrWTNtXBNb4V5QaXKTnIZJ.pdf": {
+      "title": "كتاب القواعد السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القواعد السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qob6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.971Z"
+    },
+    "1zM3D1AUpzxzhiytq3vVmyYOnSGJqM4lP.pdf": {
+      "title": "كتاب القراءة الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القراءة الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qrb1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:07.980Z"
+    },
+    "1hX263Pr8NUNHLUokm_dxklapZNbsWwey.pdf": {
+      "title": "كتاب القراءة الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القراءة الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qrb3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.581Z"
+    },
+    "1JIa29yJ_Ld9A_Oe31n7lgScUSiCAEhYG.pdf": {
+      "title": "كتاب القراءة الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القراءة الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qrb2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.633Z"
+    },
+    "1S9P_4htwstxFyk5RKoccW4bnN9DPlwo6.pdf": {
+      "title": "كتاب القراءة الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القراءة الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qrb5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.675Z"
+    },
+    "1Ea8lcedAR_7JPhiwVGLu1J4QizhxXDIR.pdf": {
+      "title": "كتاب القراءة الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القراءة الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qrb4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.731Z"
+    },
+    "1YsbcKHGfzCO6d1d0aXykdh1SOFsTnnH6.pdf": {
+      "title": "كتاب القراءة السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب القراءة السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://qrb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.807Z"
+    },
+    "1e1TGmQX5RVQgyEeb7gHslt328UEpwJFX.pdf": {
+      "title": "كتاب نشاط العلوم الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط العلوم الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scab1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.841Z"
+    },
+    "117MuokgO4X-sri5OP69GX4hQXSxawFDZ.pdf": {
+      "title": "كتاب نشاط العلوم الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط العلوم الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scab2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:08.941Z"
+    },
+    "1gNkRMv0ToIJEeEfLpdpQZ4Aex1P4r-bV.pdf": {
+      "title": "كتاب نشاط العلوم الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط العلوم الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scab3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.436Z"
+    },
+    "1rJ-2jjQM5LdQNmWMq0kjpJfZW9IuoEQj.pdf": {
+      "title": "كتاب نشاط العلوم الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط العلوم الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scab4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.498Z"
+    },
+    "1t410bKRHPExvnBgs9iPu1JjHhEoOOHmq.pdf": {
+      "title": "كتاب نشاط العلوم السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط العلوم السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scab6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.582Z"
+    },
+    "1cSZp8Uszg1hKZb7te8FbNZY0r6eZyqSM.pdf": {
+      "title": "كتاب نشاط العلوم الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب نشاط العلوم الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scab5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.634Z"
+    },
+    "10h-L5LKKVQM9XvqknVtzhPPUXIjhqviF.pdf": {
+      "title": "كتاب العلوم الثاني ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العلوم الثاني ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scb2pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.670Z"
+    },
+    "1w0_8y7osEzGCST5Kj_b8HtL9gRnHqBcu.pdf": {
+      "title": "كتاب العلوم الاول ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العلوم الاول ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scb1pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.696Z"
+    },
+    "1L_LHQS1Q8S-1R4J7h3-SlDl4IvZMv0ry.pdf": {
+      "title": "كتاب العلوم الثالث ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العلوم الثالث ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scb3pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:09.813Z"
+    },
+    "10N1acdhtc1HPkvPKjyeKfsy-WQ_q4GUk.pdf": {
+      "title": "كتاب العلوم الرابع ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العلوم الرابع ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scb4pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:10.334Z"
+    },
+    "19GKZ3aOWyBZlPipgK7tVdIWXuHNEbM4u.pdf": {
+      "title": "كتاب العلوم الخامس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العلوم الخامس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scb5pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:10.362Z"
+    },
+    "13zLlyffzFlZn6B5Z-qsZWleBp1c3KwGd.pdf": {
+      "title": "كتاب العلوم السادس ابتدائي 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب العلوم السادس ابتدائي 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://scb6pr.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:10.465Z"
+    },
+    "1ezQhjSp-iy5WH5w7B9KFHC7oz9IIg7Di.pdf": {
+      "title": "كتاب الفرنسي الاول متوسط 2026 - 2027 - المنهج العراقي",
+      "pageTitle": "كتاب الفرنسي الاول متوسط 2026 - 2027 - المنهج العراقي - موقع طلاب العراق",
+      "sourcePage": "https://frb1sc.haltaelam.com/",
+      "fetchedAt": "2026-09-22T00:19:19.978Z"
+    }
+  }
+}

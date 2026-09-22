@@ -1,0 +1,33 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الحصة المباشرة — شنو منو مدرسة</title><script>document.documentElement.dataset.theme=(localStorage.getItem('shno-theme')==='dark'||localStorage.getItem('taktak-theme')==='dark')?'dark':'light';</script><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7"><link rel="stylesheet" href="theme-pages.css?v=20260913-2"><link rel="stylesheet" href="school.css?v=20260913-7"><link rel="stylesheet" href="school-live.css?v=20260921-1"><script src="auth-guard.js?v=20260913-7"></script></head><body><main class="school school-live"><header><a href="school.html">← شنو منو مدرسة</a><div><h1>🎙️📷 الحصة المباشرة</h1><p>معلم حقيقي وطلاب حقيقيون بالصوت والصورة — بحساب شنو منو نفسه.</p></div></header>
+<div id="liveMessage" class="message" hidden></div>
+<p id="privacyNote" class="privacy-note">🔒 الكاميرا والمايك متوقفان عند الدخول ولا يعملان إلا بضغطة منك بعد إذن المتصفح. لا تسجيل للصوت أو الفيديو ولا تحليل للوجوه في هذه النسخة.</p>
+
+<section id="authPanel" class="panel" hidden><h3>سجّل الدخول أولاً</h3><p>الحصة المباشرة تعمل بحساب شنو منو الحقيقي. <a href="signin.html">تسجيل الدخول</a></p></section>
+
+<section id="lobby" hidden>
+  <section class="panel"><div class="panel-head"><div><h3>👩‍🏫 أنا المعلم — أنشئ حصة مباشرة</h3><p>الحصة تُربط بحسابك وبالمرحلة والصف والمادة من المنهج العراقي. سيحصل الطلاب على رمز حقيقي للانضمام.</p></div></div>
+    <form id="createForm"><select id="createStage" required><option value="">المرحلة</option></select><select id="createGrade" required disabled><option value="">الصف</option></select><select id="createSubject" required disabled><option value="">المادة</option></select><input id="createLesson" maxlength="160" placeholder="الدرس (اختياري)"><button id="createBtn" type="submit">إنشاء الحصة</button></form>
+  </section>
+  <section class="panel"><div class="panel-head"><div><h3>🎒 أنا الطالب — انضم إلى حصة</h3><p>اختر الطالب الحقيقي من ملفات ولي الأمر أو ادخل بحسابك، ثم اختر حصة مباشرة أو اكتب الرمز.</p></div></div>
+    <form id="joinForm"><select id="joinAs"><option value="">أنا بنفسي</option></select><input id="joinCode" maxlength="12" placeholder="رمز الحصة" autocomplete="off"><button id="joinBtn" type="submit">انضمام</button></form>
+    <p id="pupilHint" class="hint" hidden></p>
+    <div id="liveList" class="live-list"><p class="empty">جارٍ البحث عن الحصص المباشرة...</p></div>
+  </section>
+</section>
+
+<section id="room" hidden>
+  <section class="panel room-head"><div><h3 id="roomTitle"></h3><p id="roomMeta"></p><p id="roomStatus" class="room-status"></p></div><div class="room-code"><span>رمز الحصة</span><b id="roomCode"></b><small id="roomCount"></small></div></section>
+  <div id="cameraIndicator" class="camera-indicator" hidden>🔴 الكاميرا تعمل — يراك المشاركون في الحصة</div>
+  <div id="micIndicator" class="camera-indicator mic" hidden>🎙️ المايك يعمل</div>
+
+  <section class="panel controls"><button id="camBtn" type="button">📷 تشغيل الكاميرا</button><button id="micBtn" type="button">🎙️ تشغيل المايك</button><button id="handBtn" type="button" hidden>✋ رفع اليد</button><button id="leaveBtn" type="button" class="danger" hidden>خروج من الحصة</button><button id="endBtn" type="button" class="danger" hidden>إنهاء الحصة</button><button id="playBtn" type="button" hidden>▶ تشغيل صوت وصورة الحصة</button><span id="controlHint" class="hint"></span></section>
+
+  <section class="stage">
+    <figure class="tile self"><video id="localVideo" autoplay playsinline muted></video><figcaption><b id="selfName"></b><span id="selfBadges"></span></figcaption></figure>
+    <figure id="teacherTile" class="tile teacher" hidden><video id="teacherVideo" autoplay playsinline></video><figcaption><b id="teacherName"></b><span id="teacherBadges"></span></figcaption></figure>
+  </section>
+
+  <section id="teacherPanel" class="panel" hidden><div class="panel-head"><div><h3>الطلاب الحاضرون</h3><p>الاسم الحقيقي تحت كل صورة. الكتم والإخراج يُنفَّذان على الخادم فوراً.</p></div></div><div id="studentGrid" class="student-grid"></div><p id="gridEmpty" class="empty">لا يوجد طلاب حاضرون بعد — شارك الرمز</p></section>
+</section>
+</main>
+<script src="social-api.js?v=20260916-identity-7"></script><script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script><script src="school-live-core.js?v=20260921-1"></script><script src="school-live.js?v=20260921-1"></script></body></html>
