@@ -116,14 +116,17 @@ async function runTests() {
   }
   console.log('✓ 5. استرجاع دقيق لكل مادة مع أرقام الصفحات والمقتطفات المنهجية');
 
-  // Test 6: Honesty and failure logging (no hallucination)
+  // Test 6: Honesty, failure logging, and reliable OCR processing
   assert.equal(indexReport.pdfsScannedWithoutText, 35, 'Must report exactly 35 scanned image PDFs');
   assert.equal(indexReport.failures.length, 35, 'Failure report must detail all 35 scanned PDFs');
   for (const f of indexReport.failures) {
     assert.ok(f.fileName && f.fileName.endsWith('.pdf'));
     assert.equal(f.reason, 'Scanned image PDF: no extractable text stream');
   }
-  console.log('✓ 6. الصدق والنزاهة الأكاديمية: تسجيل الملفات المصورة (35 ملفاً) في تقرير الأخطاء بدون اختلاق نصوص');
+  assert.equal(indexReport.ocrProcessed, 35, 'Must process all 35 scanned image PDFs with OCR');
+  assert.equal(indexReport.ocrSuccessful, 35, 'All 35 scanned image PDFs extracted text via OCR');
+  assert.ok(indexReport.ocrPagesExtracted > 4500, `Expected > 4500 OCR pages, got ${indexReport.ocrPagesExtracted}`);
+  console.log('✓ 6. الصدق والنزاهة الأكاديمية: معالجة 35 ملفاً مصوراً عبر OCR وتوثيق كافة النتائج بدقة');
 
   // Test 7: MongoDB SchoolKnowledgeSource idempotent integration
   let mongod = null;

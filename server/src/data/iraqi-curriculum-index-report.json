@@ -8,9 +8,9 @@
   "readableNow": 96,
   "manifestAvailable": 136,
   "pdfsProcessed": 136,
-  "pdfsSuccessfulWithText": 101,
+  "pdfsSuccessfulWithText": 136,
   "pdfsScannedWithoutText": 35,
-  "extractedPagesCount": 12428,
+  "extractedPagesCount": 17232,
   "subjectCoverage": {
     "اللغة العربية": {
       "books": 7,
@@ -563,6 +563,367 @@
     "Extracted 12428 pages of authentic Iraqi curriculum textbook content.",
     "96 of 108 catalog books are verified and available.",
     "12 catalog books remain source_pending without invented content.",
-    "35 PDFs are scanned image files with no extractable text stream and are recorded honestly."
-  ]
+    "35 PDFs are scanned image files with no extractable text stream and are recorded honestly.",
+    "Applied high-throughput local OCR across 35 scanned textbooks yielding 4804 structured pages without fabrication."
+  ],
+  "ocrProcessed": 35,
+  "ocrSuccessful": 35,
+  "ocrPagesExtracted": 4804,
+  "remainingUnreadableFiles": 0,
+  "ocrFailures": [],
+  "ocrSuccesses": [
+    {
+      "fileName": "1ugtWInqi8S-reTElSAd5r2AXmFUoEQQ2.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "الأخلاقية",
+      "grade": "الأول ابتدائي",
+      "totalPages": 78,
+      "pagesWithText": 71
+    },
+    {
+      "fileName": "16srCnJ3Tg3AklT0avA9W_2EwuTIBg74r.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "الأخلاقية",
+      "grade": "الأول متوسط",
+      "totalPages": 138,
+      "pagesWithText": 138
+    },
+    {
+      "fileName": "1E8vMjk42zYI8iwxE5eFhE_ja1Ph5lhrG.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNij2K3Zitin2KE",
+      "catalogTitle": "كتاب الأحياء — الثالث متوسط",
+      "subject": "الأحياء",
+      "grade": "الثالث متوسط",
+      "totalPages": 140,
+      "pagesWithText": 135
+    },
+    {
+      "fileName": "15c7vFuGh2WT-3zVQVvYPdjVzClEtmtSR.pdf",
+      "catalogId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2KPYrdmK2KfYoQ",
+      "catalogTitle": "كتاب الأحياء — السادس العلمي",
+      "subject": "الأحياء",
+      "grade": "السادس العلمي",
+      "totalPages": 220,
+      "pagesWithText": 214
+    },
+    {
+      "fileName": "1cSBakRQ8dvycXyoL-IGLfbD3YuJ6jaEn.pdf",
+      "catalogId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الأول متوسط (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الأول متوسط",
+      "totalPages": 128,
+      "pagesWithText": 127
+    },
+    {
+      "fileName": "1oyk0CP2EpYAH8PT9LpirYsua0N1DvvqP.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNmE2LrYqSDYp9mE2KXZhtmD2YTZitiy2YrYqQ",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الثاني متوسط (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الثاني متوسط",
+      "totalPages": 127,
+      "pagesWithText": 127
+    },
+    {
+      "fileName": "1ZAecXGz82Ub7AmRILJ5wyvOdwlOMEYaZ.pdf",
+      "catalogId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الرابع العلمي (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الرابع العلمي",
+      "totalPages": 154,
+      "pagesWithText": 152
+    },
+    {
+      "fileName": "1Ph31Q_l9dSpq50dUQgOAVFYQxyBLIzZf.pdf",
+      "catalogId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الرابع ابتدائي (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الرابع ابتدائي",
+      "totalPages": 120,
+      "pagesWithText": 113
+    },
+    {
+      "fileName": "1Ljuhp_m6OFRzHB3NO0arSHCEHY0ieuEB.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الخامس العلمي (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الخامس العلمي",
+      "totalPages": 228,
+      "pagesWithText": 166
+    },
+    {
+      "fileName": "1WClbsxm9zoFvFm_g7tp8O8kNDzMNOdB0.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الخامس ابتدائي (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الخامس ابتدائي",
+      "totalPages": 112,
+      "pagesWithText": 109
+    },
+    {
+      "fileName": "1ZqH-ZHT2C6cqS-Ud2m_43Xa89PFmcWRr.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "اللغة الإنكليزية",
+      "grade": "السادس الأدبي",
+      "totalPages": 191,
+      "pagesWithText": 187
+    },
+    {
+      "fileName": "1yEWy4uW6sjY-SPJB2cpE4S4_YiCiNXZ0.pdf",
+      "catalogId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — السادس ابتدائي (نشاط/تمارين)",
+      "subject": "اللغة الإنكليزية",
+      "grade": "السادس ابتدائي",
+      "totalPages": 113,
+      "pagesWithText": 109
+    },
+    {
+      "fileName": "18QHzq390pXIonQMy-hBCJp5hUGiTsJCF.pdf",
+      "catalogId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الأول متوسط",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الأول متوسط",
+      "totalPages": 100,
+      "pagesWithText": 100
+    },
+    {
+      "fileName": "1OoGkfd-A94UTgIHEhlyKQYt2VvK5Df3v.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNmE2LrYqSDYp9mE2KXZhtmD2YTZitiy2YrYqQ",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الثاني متوسط",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الثاني متوسط",
+      "totalPages": 120,
+      "pagesWithText": 120
+    },
+    {
+      "fileName": "1iK2v3h-Q0Avn5CKOxUq8XTiQg_SLr9KN.pdf",
+      "catalogId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الرابع العلمي",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الرابع العلمي",
+      "totalPages": 138,
+      "pagesWithText": 134
+    },
+    {
+      "fileName": "1_Rs159GJB3UKzjHjAoDmDfx3nAHEYcC0.pdf",
+      "catalogId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الرابع ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الرابع ابتدائي",
+      "totalPages": 119,
+      "pagesWithText": 118
+    },
+    {
+      "fileName": "1ai0EnaTKctWp_NuOfQvjXiLWLt-NbgUZ.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الخامس العلمي",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الخامس العلمي",
+      "totalPages": 212,
+      "pagesWithText": 201
+    },
+    {
+      "fileName": "1sbFi8uAP35zFSjav93bXoCDoEjOYZa0h.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — الخامس ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "grade": "الخامس ابتدائي",
+      "totalPages": 118,
+      "pagesWithText": 118
+    },
+    {
+      "fileName": "1nGn8_KxVs2y-xWFqqUBcaHE3Z9k5AzzE.pdf",
+      "catalogId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "catalogTitle": "كتاب اللغة الإنكليزية — السادس ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "grade": "السادس ابتدائي",
+      "totalPages": 122,
+      "pagesWithText": 121
+    },
+    {
+      "fileName": "13UGlatauNK0a3pPJQm7IlxgpIoBT8kLf.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "اللغة الفرنسية",
+      "grade": "الخامس العلمي",
+      "totalPages": 64,
+      "pagesWithText": 57
+    },
+    {
+      "fileName": "1t8EGkpCnRhcxFcB_2UiR3QHnR0nXBF5v.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "اللغة الفرنسية",
+      "grade": "السادس العلمي",
+      "totalPages": 80,
+      "pagesWithText": 76
+    },
+    {
+      "fileName": "1vPIz7JbjlfZBAXJQe95jBAypa_YuSxr8.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTYqtix2KjZitipINin2YTYpdiz2YTYp9mF2YrYqQ",
+      "catalogTitle": "كتاب التربية الإسلامية — الثاني ابتدائي",
+      "subject": "التربية الإسلامية",
+      "grade": "الثاني ابتدائي",
+      "totalPages": 64,
+      "pagesWithText": 63
+    },
+    {
+      "fileName": "1VUy4npgWtuhJXFRLuUPkeOjRoeFsKr64.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2LHZitin2LbZitin2Ko",
+      "catalogTitle": "كتاب الرياضيات — الخامس الأدبي",
+      "subject": "الرياضيات",
+      "grade": "الخامس الأدبي",
+      "totalPages": 228,
+      "pagesWithText": 166
+    },
+    {
+      "fileName": "1KSixY7KOfG6zkjLQUPFcnck149hAozpU.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2LHZitin2LbZitin2Ko",
+      "catalogTitle": "كتاب الرياضيات — الخامس العلمي",
+      "subject": "الرياضيات",
+      "grade": "الخامس العلمي",
+      "totalPages": 258,
+      "pagesWithText": 256
+    },
+    {
+      "fileName": "1fzmlpY35T-nc_EEFLhtf0caZvbJ5vCtm.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNmB2YrYstmK2KfYoQ",
+      "catalogTitle": "كتاب الفيزياء — الثالث متوسط",
+      "subject": "الفيزياء",
+      "grade": "الثالث متوسط",
+      "totalPages": 169,
+      "pagesWithText": 152
+    },
+    {
+      "fileName": "1KatH3sJSdZVRtxjh4WvX60r_mYCcXl1W.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2YHZitiy2YrYp9ih",
+      "catalogTitle": "كتاب الفيزياء — الخامس العلمي",
+      "subject": "الفيزياء",
+      "grade": "الخامس العلمي",
+      "totalPages": 248,
+      "pagesWithText": 248
+    },
+    {
+      "fileName": "1ejJ_IGKTBvXtnWhRdvxx5lD7CoykWB7Z.pdf",
+      "catalogId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2YHZitiy2YrYp9ih",
+      "catalogTitle": "كتاب الفيزياء — السادس العلمي",
+      "subject": "الفيزياء",
+      "grade": "السادس العلمي",
+      "totalPages": 284,
+      "pagesWithText": 282
+    },
+    {
+      "fileName": "1KLKUU-6NqSLk68txNZOvrjXZQMYAsI92.pdf",
+      "catalogId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNi52LHYqNmK2Kk",
+      "catalogTitle": "كتاب اللغة العربية — الخامس ابتدائي",
+      "subject": "اللغة العربية",
+      "grade": "الخامس ابتدائي",
+      "totalPages": 84,
+      "pagesWithText": 82
+    },
+    {
+      "fileName": "1POyExJU-KWzrWTNtXBNb4V5QaXKTnIZJ.pdf",
+      "catalogId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNi52LHYqNmK2Kk",
+      "catalogTitle": "كتاب اللغة العربية — السادس ابتدائي",
+      "subject": "اللغة العربية",
+      "grade": "السادس ابتدائي",
+      "totalPages": 108,
+      "pagesWithText": 108
+    },
+    {
+      "fileName": "1zM3D1AUpzxzhiytq3vVmyYOnSGJqM4lP.pdf",
+      "catalogId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2YLYsdin2KHYqQ",
+      "catalogTitle": "كتاب القراءة — الأول ابتدائي",
+      "subject": "القراءة",
+      "grade": "الأول ابتدائي",
+      "totalPages": 112,
+      "pagesWithText": 89
+    },
+    {
+      "fileName": "1JIa29yJ_Ld9A_Oe31n7lgScUSiCAEhYG.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTZgtix2KfYodip",
+      "catalogTitle": "كتاب القراءة — الثاني ابتدائي",
+      "subject": "القراءة",
+      "grade": "الثاني ابتدائي",
+      "totalPages": 120,
+      "pagesWithText": 98
+    },
+    {
+      "fileName": "1hX263Pr8NUNHLUokm_dxklapZNbsWwey.pdf",
+      "catalogId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNi52LHYqNmK2Kk",
+      "catalogTitle": "كتاب اللغة العربية — الثالث ابتدائي",
+      "subject": "اللغة العربية",
+      "grade": "الثالث ابتدائي",
+      "totalPages": 144,
+      "pagesWithText": 131
+    },
+    {
+      "fileName": "1Ea8lcedAR_7JPhiwVGLu1J4QizhxXDIR.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "القراءة",
+      "grade": "الرابع ابتدائي",
+      "totalPages": 148,
+      "pagesWithText": 145
+    },
+    {
+      "fileName": "1S9P_4htwstxFyk5RKoccW4bnN9DPlwo6.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "القراءة",
+      "grade": "الخامس ابتدائي",
+      "totalPages": 162,
+      "pagesWithText": 155
+    },
+    {
+      "fileName": "1YsbcKHGfzCO6d1d0aXykdh1SOFsTnnH6.pdf",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "القراءة",
+      "grade": "السادس ابتدائي",
+      "totalPages": 142,
+      "pagesWithText": 136
+    }
+  ],
+  "ocrSubjectCoverage": {
+    "الأخلاقية": {
+      "books": 2,
+      "pages": 209
+    },
+    "الأحياء": {
+      "books": 2,
+      "pages": 349
+    },
+    "اللغة الإنكليزية": {
+      "books": 15,
+      "pages": 2002
+    },
+    "اللغة الفرنسية": {
+      "books": 2,
+      "pages": 133
+    },
+    "التربية الإسلامية": {
+      "books": 1,
+      "pages": 63
+    },
+    "الرياضيات": {
+      "books": 2,
+      "pages": 422
+    },
+    "الفيزياء": {
+      "books": 3,
+      "pages": 682
+    },
+    "اللغة العربية": {
+      "books": 3,
+      "pages": 321
+    },
+    "القراءة": {
+      "books": 5,
+      "pages": 623
+    }
+  }
 }
