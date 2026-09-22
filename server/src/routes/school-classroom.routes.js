@@ -31,6 +31,8 @@ const Schedule = require('../models/SchoolSchedule');
 const schoolAI = require('../services/school-ai');
 const catalog = require('../data/iraqi-curriculum-catalog');
 const manifest = require('../data/iraqi-curriculum-files.json');
+const linkedCurriculum = require('../services/iraqi-curriculum-linked');
+const { activateSchoolAccess, schoolAccessView } = require('../services/school-access');
 
 router.use(requireAuth);
 
@@ -106,6 +108,7 @@ function buildStructure(params, students, knowledge) {
 
 router.get('/dashboard', async (req, res, next) => {
   try {
+    await activateSchoolAccess(req.user);
     const [students, activeSessions, completedSessions, verifiedKnowledge, schedules] = await Promise.all([
       guardianStudents(req),
       Session.countDocuments({ guardian: req.user._id, status: 'active' }),
@@ -139,7 +142,16 @@ router.get('/dashboard', async (req, res, next) => {
       { label: 'ملاحظات المعلم', value: notes },
       { label: 'المواعيد المجدولة', value: schedules }
     ];
-    res.json({ ok: true, metrics, account: { role: req.user.role }, generatedAt: new Date().toISOString() });
+    res.json({
+      ok: true,
+      metrics,
+      account: {
+        platformRole: req.user.role,
+        fullName: req.user.displayName || req.user.fullName,
+        school: schoolAccessView(req.user)
+      },
+      generatedAt: new Date().toISOString()
+    });
   } catch (error) {
     next(error);
   }
@@ -178,23 +190,28 @@ router.get('/books', async (req, res, next) => {
     const items = [];
     const seen = {};
 
-    for (const item of manifest.files) {
+    for (const item of linkedCurriculum.files) {
+      if (stage && item.stage !== stage) continue;
+      if (grade && item.grade !== grade) continue;
+      if (subject && item.subject !== subject) continue;
       let host = item.sourcePage;
       try { host = new URL(item.sourcePage).hostname; } catch (error) { /* keep the raw page as the label */ }
-      const title = 'كتاب المنهج العراقي — ' + host;
+      const title = item.title || 'كتاب المنهج العراقي — ' + host;
       if (query && title.toLowerCase().indexOf(query) === -1 && item.driveId.indexOf(query) === -1) continue;
-      if (narrow && !query) continue; // the manifest carries no grade/subject metadata yet
+      if (narrow && !item.catalogId) continue;
       if (seen[item.driveId]) continue;
       seen[item.driveId] = true;
       items.push({
         id: 'file:' + item.driveId, fileId: 'file:' + item.driveId, title,
-        sourcePage: item.sourcePage, url: curriculumUrl(item), pages: item.pages, bytes: item.bytes,
-        year: manifest.catalogVersion, status: 'ok', sourceType: 'official_textbook',
-        indexingStatus: 'موثّق SHA-256 ومفهرس'
+        sourcePage: item.sourcePage, url: item.url, textUrl: item.textUrl,
+        stage: item.stage, grade: item.grade, subject: item.subject,
+        pages: item.pages, bytes: item.bytes,
+        year: manifest.catalogVersion, status: item.textAvailable ? 'نص مفهرس' : 'بانتظار النص', sourceType: 'official_textbook',
+        indexingStatus: item.textAvailable ? 'نص الكتاب مفهرس ومربوط بالمنهج' : 'ملف موثّق SHA-256'
       });
     }
 
-    for (const item of catalog.items) {
+    for (const item of linkedCurriculum.catalogItems) {
       if (stage && item.stage !== stage) continue;
       if (grade && item.grade !== grade) continue;
       if (subject && item.subject !== subject) continue;
@@ -205,8 +222,9 @@ router.get('/books', async (req, res, next) => {
       items.push({
         id: key, fileId: key, title: item.title, stage: item.stage, grade: item.grade,
         subject: item.subject, year: item.year, content: item.content, status: item.availability,
+        url: item.file && item.file.url, textUrl: item.textUrl,
         sourceType: item.sourceType,
-        indexingStatus: item.availability === 'source_pending' ? 'العنوان مفهرس والملف قيد التوفير' : 'متوفر'
+        indexingStatus: item.indexingStatus || 'العنوان مفهرس والملف قيد التوفير'
       });
     }
 
@@ -247,15 +265,16 @@ router.get('/books/:id/reader', async (req, res, next) => {
     const id = clean(req.params.id);
     if (id.indexOf('file:') === 0) {
       const driveId = id.slice(5);
-      const item = manifest.files.find((file) => file.driveId === driveId);
+      const item = linkedCurriculum.files.find((file) => file.driveId === driveId);
       if (!item) return res.status(404).json({ ok: false, message: 'ملف المنهج غير موجود في فهرس المنصة' });
+      if (!item.url) return res.status(404).json({ ok: false, message: 'مصدر قراءة الكتاب غير متوفر' });
       let host = item.sourcePage;
       try { host = new URL(item.sourcePage).hostname; } catch (error) { /* keep raw */ }
-      const url = curriculumUrl(item);
+      const url = item.url;
       return res.json({
-        ok: true, url, downloadUrl: url, canDownload: true,
-        title: 'كتاب المنهج العراقي — ' + host, pageCount: item.pages,
-        year: manifest.catalogVersion, indexingStatus: 'موثّق SHA-256 ومفهرس'
+        ok: true, url, downloadUrl: '', canDownload: false,
+        title: item.title || 'كتاب المنهج العراقي — ' + host, pageCount: item.pages,
+        textUrl: item.textUrl, year: manifest.catalogVersion, indexingStatus: 'نص الكتاب مفهرس ومربوط بالمنهج'
       });
     }
 
@@ -275,8 +294,12 @@ router.get('/books/:id/reader', async (req, res, next) => {
     }
 
     if (id.indexOf('catalog:') === 0) {
-      const item = catalog.items.find((row) => 'catalog:' + row.id === id);
+      const item = linkedCurriculum.catalogItems.find((row) => 'catalog:' + row.id === id);
       if (!item) return res.status(404).json({ ok: false, message: 'العنوان غير موجود في فهرس المنهج' });
+      const file = linkedCurriculum.files.find((row) => row.catalogId === item.id);
+      if (file && file.url) return res.json({ ok: true, url: file.url, downloadUrl: '', canDownload: false,
+        title: item.title, pageCount: file.pages, textUrl: file.textUrl,
+        year: manifest.catalogVersion, indexingStatus: 'نص الكتاب مفهرس ومربوط بالمنهج' });
       return res.status(404).json({ ok: false, message: 'العنوان مفهرس في المنصة وملف الكتاب قيد التوفير' });
     }
 

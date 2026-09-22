@@ -60,7 +60,11 @@
   if (!document.querySelector('script[data-platform-upgrades]')) { var upgrades=document.createElement('script'); upgrades.src='platform-upgrades.js?v=20260913-3'; upgrades.defer=true; upgrades.setAttribute('data-platform-upgrades','1'); document.head.appendChild(upgrades); }
 
   var token=localStorage.getItem('token')||sessionStorage.getItem('token');
-  if (!token) { window.location.replace('signin.html'); return; }
+  if (!token) {
+    var isSchoolPage=/\/(?:school(?:-[^/]+)?\.html)$/i.test(location.pathname);
+    window.location.replace(isSchoolPage?'school-signin.html':'signin.html');
+    return;
+  }
 
   if (!document.querySelector('script[data-shno-presence]')) { var presence=document.createElement('script'); presence.src='presence-client.js?v=20260913-1'; presence.defer=true; presence.setAttribute('data-shno-presence','1'); document.head.appendChild(presence); }
 

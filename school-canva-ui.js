@@ -181,7 +181,7 @@
     document.querySelectorAll(".screen").forEach(function (screen) { screen.hidden = screen.id !== wanted; });
     document.querySelectorAll("[data-page]").forEach(function (button) { button.classList.toggle("is-active", button.dataset.page === page); });
     if ($("breadcrumb-current")) $("breadcrumb-current").textContent = pageNames[page];
-    document.title = pageNames[page] + " | شنو منو مدرسة";
+    document.title = pageNames[page] + " | مدرسة سومر الشاملة";
     if (page === "index") loadDashboard();
     if (["structure", "teachers", "students", "curriculum"].indexOf(page) !== -1) buildCollection(page);
     if (page === "reader") loadReader();
@@ -193,6 +193,52 @@
   // ------------------------------------------------------------------------
   // الرئيسية
   // ------------------------------------------------------------------------
+  var roleActionMap = {
+    administration: [
+      ["🏛️", "الهيكل الدراسي", "المراحل والصفوف والمواد", PAGE_FILES.structure],
+      ["👩‍🏫", "إدارة المعلمين", "الكادر والتخصصات", PAGE_FILES.teachers],
+      ["🎓", "إدارة الطلاب", "التسجيل والمتابعة", PAGE_FILES.students],
+      ["📚", "اعتماد المناهج", "الكتب والمحتوى", PAGE_FILES.curriculum]
+    ],
+    teacher: [
+      ["🧑‍🏫", "بدء الحصة", "الصف والحضور والشرح", PAGE_FILES.classroom],
+      ["📚", "مناهجي", "المحتوى والمواد", PAGE_FILES.curriculum],
+      ["🎓", "طلابي", "القوائم والتقدم", PAGE_FILES.students],
+      ["📖", "قارئ الكتاب", "فتح الدرس والصفحة", PAGE_FILES.reader]
+    ],
+    student: [
+      ["🧑‍🏫", "صفي الدراسي", "دخول الحصة الحالية", PAGE_FILES.classroom],
+      ["📖", "كتابي", "متابعة القراءة", PAGE_FILES.reader],
+      ["📚", "موادي", "المنهج والدروس", PAGE_FILES.curriculum]
+    ],
+    guardian: [
+      ["🎓", "الأبناء", "الملفات والتقدم", PAGE_FILES.students],
+      ["👩‍🏫", "المعلمون", "الكادر التعليمي", PAGE_FILES.teachers],
+      ["🧑‍🏫", "الحصة", "الحضور والمتابعة", PAGE_FILES.classroom],
+      ["🗓️", "الجداول والموافقات", "المواعيد وصلاحيات التعلم", "school.html"]
+    ],
+    guest: [
+      ["📚", "استعراض المناهج", "محتوى متاح للزائر", PAGE_FILES.curriculum],
+      ["👩‍🏫", "التعرف على المعلمين", "الكادر والتخصصات", PAGE_FILES.teachers],
+      ["📖", "القارئ", "مواد القراءة المتاحة", PAGE_FILES.reader]
+    ]
+  };
+  function renderRoleActions(role, status) {
+    var box = $("role-actions-list"), title = $("role-actions-title"), kicker = $("role-actions-kicker");
+    if (!box) return;
+    var roleNames = { administration: "الإدارة", teacher: "المعلم", student: "الطالب", guardian: "ولي الأمر", guest: "الضيف" };
+    var actions = roleActionMap[role] || roleActionMap.guardian;
+    if (title) title.textContent = "لوحة " + (roleNames[role] || "المستخدم");
+    if (kicker) kicker.textContent = status === "expired" ? "انتهت الفترة المجانية — بياناتك محفوظة" : "مساحتك المدرسية";
+    box.replaceChildren();
+    actions.forEach(function (item) {
+      var link = document.createElement("a");
+      link.className = "role-action"; link.href = item[3];
+      var icon = document.createElement("span"); icon.className = "role-action-icon"; icon.textContent = item[0]; icon.setAttribute("aria-hidden", "true");
+      var copy = document.createElement("span"), strong = document.createElement("b"), small = document.createElement("small");
+      strong.textContent = item[1]; small.textContent = item[2]; copy.append(strong, small); link.append(icon, copy); box.appendChild(link);
+    });
+  }
   function loadDashboard() {
     var cards = $("dashboard-results"), home = $("home-state");
     loading(cards); loading(home, "جارٍ التحقق من لوحة المدرسة…");
@@ -210,7 +256,14 @@
         b.textContent = String(metric.value == null ? "لم يُحسم" : metric.value);
         card.append(a, b); cards.appendChild(card);
       });
-      setStatus(home, data && data.account && data.account.role ? "الدور الحالي المؤكد: " + data.account.role : "اكتمل الطلب دون معلومات حساب مصرح بها.");
+      var school = data && data.account && data.account.school;
+      var roleNames = { administration: "الإدارة", teacher: "المعلم", student: "الطالب", guardian: "ولي الأمر", guest: "الضيف" };
+      var statusNames = { trial: "تجربة مجانية", subscribed: "مشترك", expired: "انتهت التجربة", suspended: "موقوف" };
+      if (school && school.role) {
+        var trial = school.status === "trial" ? " · متبقي " + school.remainingDays + " يومًا" : "";
+        setStatus(home, "مرحبًا " + (data.account.fullName || "بك") + " · " + (roleNames[school.role] || school.role) + " · " + (statusNames[school.status] || school.status) + trial);
+        renderRoleActions(school.role, school.status);
+      } else setStatus(home, "اكتمل الطلب دون معلومات حساب مصرح بها.");
     }).catch(function (error) {
       var m = messageFor(error);
       setStatus(cards, m, error.code === "CONFIG" ? "warn" : "error");
@@ -260,6 +313,13 @@
       else form.appendChild(makeSelect(field, { grade: "الصف", section: "الشعبة", subject: "المادة", unit: "الوحدة أو الفصل" }[field], [], true));
     });
     if (form) form.onsubmit = function (e) { e.preventDefault(); loadCollection(info); };
+    if (info.kind === "Curriculum" && $("library-search")) {
+      $("library-search").oninput = function () {
+        var query = $("query");
+        if (query) query.value = this.value;
+        loadCollection(info);
+      };
+    }
     if ($("stage")) $("stage").onchange = function () { cascade(info, "stage"); };
     ["grade", "section", "subject"].forEach(function (id) {
       if ($(id)) $(id).onchange = function () { cascade(info, id); };
@@ -459,6 +519,15 @@
         }
         state.lastReaderUrl = url;
         if (result.downloadUrl && result.canDownload === true && download) {
+          download.disabled = false;
+          download.onclick = function () { window.open(result.downloadUrl, "_blank", "noopener"); };
+        }
+      })
+      .catch(function (error) {
+        setStatus(meta, messageFor(error), error.code === "CONFIG" ? "warn" : "error");
+        setStatus(viewer, messageFor(error), "error");
+      });
+  }
 
   // ------------------------------------------------------------------------
   // الصف والحصة
@@ -531,13 +600,6 @@
     window.speechSynthesis.speak(utterance);
   }
 
-          download.disabled = false;
-          download.onclick = function () { window.open(result.downloadUrl, "_blank", "noopener"); };
-        }
-      })
-      .catch(function (error) {
-        setStatus(meta, messageFor(error), error.code === "CONFIG" ? "warn" : "error");
-
   // ------------------------------------------------------------------------
   // تقرير الحالة والاختبار التشخيصي
   // ------------------------------------------------------------------------
@@ -604,6 +666,23 @@
     if ($("report-close")) $("report-close").onclick = function () { if ($("report-modal")) $("report-modal").classList.remove("is-open"); };
     if ($("diagnostic-button")) $("diagnostic-button").onclick = diagnostic;
     if ($("dashboard-retry")) $("dashboard-retry").onclick = loadDashboard;
+    if ($("school-theme-toggle")) {
+      var themeButton = $("school-theme-toggle");
+      var refreshThemeButton = function () {
+        var dark = document.documentElement.dataset.theme === "dark";
+        themeButton.textContent = dark ? "☀" : "☾";
+        themeButton.setAttribute("aria-label", dark ? "تفعيل الوضع النهاري" : "تفعيل الوضع الليلي");
+        themeButton.title = themeButton.getAttribute("aria-label");
+      };
+      refreshThemeButton();
+      themeButton.onclick = function () {
+        var next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        document.documentElement.dataset.theme = next;
+        localStorage.setItem("shno-theme", next);
+        localStorage.setItem("taktak-theme", next);
+        refreshThemeButton();
+      };
+    }
     if ($("reader-retry")) $("reader-retry").onclick = loadReader;
     if ($("reader-fullscreen")) $("reader-fullscreen").onclick = function () { if ($("pdf-reader") && $("pdf-reader").requestFullscreen) $("pdf-reader").requestFullscreen(); };
   }
@@ -621,7 +700,3 @@
   // Exposed for the DOM test-suite and for embedding the screens elsewhere.
   window.ShnoSchoolCanvaUI = { changePage: changePage, showScreen: showScreen, refreshConnection: refreshConnection, diagnostic: diagnostic, report: report, pageFiles: PAGE_FILES };
 })();
-
-        setStatus(viewer, messageFor(error), "error");
-      });
-  }

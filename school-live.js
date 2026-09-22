@@ -481,7 +481,9 @@
       var results = await Promise.all([
         api('/api/school/curriculum/catalog').catch(function () { return { items: [] }; }),
         api('/api/school/students').catch(function () { return { students: [] }; }),
-        api('/api/school/classrooms/mine'),
+      api('/api/school/classrooms/mine').catch(function () {
+        return { hosting: null, attending: null, iceServers: state.iceServers };
+      }),
         api('/api/users/me').catch(function () { return {}; })
       ]);
       state.catalog = results[0].items || [];

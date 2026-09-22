@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>الدخول | مدرسة سومر الشاملة</title>
+  <link rel="icon" type="image/png" href="school-sumer-logo.png">
+  <script>document.documentElement.dataset.theme=localStorage.getItem('shno-theme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light');</script>
+  <link rel="stylesheet" href="school-portal.css?v=20260922-1">
+</head>
+<body>
+  <main class="portal-shell">
+    <section class="portal-story" aria-labelledby="school-title">
+      <a class="platform-link" href="signin.html">حساب شنو منو الموحد</a>
+      <button id="school-theme-toggle" class="portal-theme-toggle" type="button" aria-label="تفعيل الوضع الليلي">☾</button>
+      <div class="school-mark" aria-hidden="true"><img src="school-sumer-logo.png" alt=""></div>
+      <p class="eyebrow">تعليم عراقي متكامل</p>
+      <h1 id="school-title">مدرسة سومر الشاملة</h1>
+      <p class="lead">صفوف، مناهج، معلمون، جداول ومتابعة ولي الأمر ضمن منصة واحدة تعمل على الهاتف والكمبيوتر.</p>
+      <div class="trial-note"><strong>30 يومًا مجانًا</strong><span>تبدأ عند تفعيل دخولك إلى المدرسة، ولا نحذف بياناتك عند انتهائها.</span></div>
+    </section>
+    <section class="portal-card" aria-labelledby="signin-title">
+      <p class="eyebrow">بوابة المدرسة</p>
+      <h2 id="signin-title">تسجيل الدخول</h2>
+      <p class="muted">استخدم اسم المستخدم أو الهاتف أو البريد نفسه في شنو منو.</p>
+      <form id="school-signin-form">
+        <label>اسم المستخدم أو الهاتف أو البريد<input name="identifier" autocomplete="username" required></label>
+        <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <label class="remember"><input name="remember" type="checkbox" checked> إبقائي مسجلًا على هذا الجهاز</label>
+        <button type="submit">الدخول إلى مدرسة سومر</button>
+      </form>
+      <p id="school-signin-message" class="form-message" role="status" aria-live="polite"></p>
+      <div id="school-session" class="existing-session" hidden>
+        <p>لديك جلسة شنو منو فعالة.</p><a href="school-index.html">متابعة الدخول</a>
+      </div>
+      <p class="signup-copy">ليس لديك حساب؟ <a href="signup.html?source=school">أنشئ حساب شنو منو</a></p>
+    </section>
+  </main>
+  <script src="school-portal.js?v=20260922-1"></script>
+</body>
+</html>

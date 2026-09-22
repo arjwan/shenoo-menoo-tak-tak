@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
   privacyAcceptedAt: { type: Date, default: null },
   privacyVersion: { type: String, default: '2026-09-07' },
   role: { type: String, enum: ['user', 'moderator', 'admin', 'developer'], default: 'user' },
+  schoolAccess: {
+    role: { type: String, enum: ['administration', 'teacher', 'student', 'guardian', 'guest'], default: 'guardian' },
+    status: { type: String, enum: ['not_started', 'trial', 'subscribed', 'expired', 'suspended'], default: 'not_started' },
+    activatedAt: { type: Date, default: null },
+    trialStartedAt: { type: Date, default: null },
+    trialEndsAt: { type: Date, default: null },
+    subscriptionEndsAt: { type: Date, default: null }
+  },
   status: { type: String, enum: ['pending', 'active', 'rejected', 'blocked'], default: 'pending' },
   rejectionReason: { type: String, default: '' },
   approvalSource: { type: String, enum: ['pending', 'automatic', 'developer'], default: 'pending' },

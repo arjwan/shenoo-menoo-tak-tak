@@ -42,6 +42,7 @@ const schoolClassroomRoutes = require('./routes/school-classroom.routes');
 const schoolManagementRoutes = require('./routes/school-management.routes');
 const schoolVirtualRoutes = require('./routes/school-virtual.routes');
 const schoolPortalRoutes = require('./routes/school-portal.routes');
+const schoolIndexedCurriculumRoutes = require('./routes/school-indexed-curriculum.routes');
 const { attachSocket } = require('./socket');
 const { attachSchoolSocket } = require('./socket-school');
 
@@ -101,6 +102,7 @@ app.use('/api/school-canva', schoolCanvaRoutes);
 // REAL CLASSROOM V1: live classroom API; WebRTC signaling is handled by socket-school.js.
 app.use('/api/school', schoolLiveRoutes);
 app.use('/api/school', schoolSyncRoutes);
+app.use('/api/school', schoolIndexedCurriculumRoutes);
 app.use('/api/school', schoolRoutes);
 // Standalone school pages backend (/dashboard, /structure, /books,
 // /books/:id/reader, /classroom/options, /classroom/actions). Mounted last so

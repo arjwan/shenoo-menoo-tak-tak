@@ -73,11 +73,14 @@ for (const spec of UI_PAGES) {
   assert.ok(html.includes('id="' + spec.screen + '"'), spec.file + ' must contain its own screen ' + spec.screen);
   assert.ok(!new RegExp('id="' + spec.screen + '"[^>]*hidden').test(html), spec.file + ': its own screen must not start hidden (blank page)');
   assert.ok(html.includes('id="breadcrumb-current">' + spec.title), spec.file + ': breadcrumb must name the page');
-  assert.ok(html.includes('<title>' + spec.title + ' | شنو منو مدرسة</title>'), spec.file + ': page title missing');
+  assert.ok(html.includes('<title>' + spec.title + ' | مدرسة سومر الشاملة</title>'), spec.file + ': page title missing');
   for (const id of spec.owns) assert.ok(html.includes('id="' + id + '"') || html.includes('data-template-id="' + id + '"'), spec.file + ': missing screen element ' + id);
+  if (spec.page === 'index') assert.ok(html.includes('id="role-actions-list"'), 'school-index.html: role-aware shortcuts missing');
   for (const shared of ['school-app.css', 'school-api-adapter.js', 'school-canva-ui.js', 'auth-guard.js', 'id="connection-chip"', 'id="mobile-drawer"', 'id="report-modal"', 'id="toast"']) {
     assert.ok(html.includes(shared), spec.file + ': missing shared layer ' + shared);
   }
+  assert.ok(html.includes('school-sumer-logo.png'), spec.file + ': official Sumer school logo missing');
+  assert.ok(html.includes('id="school-theme-toggle"'), spec.file + ': light/dark theme control missing');
   assert.ok(html.includes('window.__SHNO_SCHOOL_PAGE__=' + JSON.stringify(spec.page)), spec.file + ': page identity missing');
   assert.ok(!html.includes('/_sdk/'), spec.file + ': Canva-only runtime SDK must not be shipped (console hygiene)');
   const scripts = html.match(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g) || [];

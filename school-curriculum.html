@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مكتبة المناهج | شنو منو مدرسة</title>
+  <title>مكتبة المناهج | مدرسة سومر الشاملة</title>
+  <link rel="icon" type="image/png" href="school-sumer-logo.png">
   <script>document.documentElement.dataset.theme=(localStorage.getItem('shno-theme')==='dark'||localStorage.getItem('taktak-theme')==='dark')?'dark':'light';</script>
   <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;600;700;800&amp;family=Fraunces:wght@700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="school-app.css?v=20260920-latest">
@@ -17,14 +18,13 @@
      <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
        <button id="menu-button" type="button" aria-label="فتح قائمة التنقل" class="mobile-menu grid h-10 w-10 place-items-center rounded-xl bg-[#e3f0eb] text-[#146c70]"><i data-lucide="menu"></i></button>
-       <div class="grid h-11 w-11 place-items-center rounded-2xl bg-[#146c70] text-white"><i data-lucide="school"></i>
-       </div>
+       <div class="school-brand-mark" aria-hidden="true"><img src="school-sumer-logo.png" alt=""></div>
        <div>
-        <strong data-template-id="app-title" class="canva-text block font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">شنو منو مدرسة</strong> <small data-template-id="app-tagline" class="canva-text" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">إدارة مدرسية مرتبطة بالبيانات المؤكدة فقط</small>
+        <strong data-template-id="app-title" class="canva-text block font-extrabold" style="color: rgb(24, 58, 60); font-weight: 800; font-style: normal; font-size: 16px;">مدرسة سومر الشاملة</strong> <small data-template-id="app-tagline" class="canva-text" style="color: rgb(83, 112, 111); font-weight: 700; font-style: normal; font-size: 16px;">إدارة مدرسية مرتبطة بالبيانات المؤكدة فقط</small>
        </div>
       </div>
       <div class="flex items-center gap-2">
-       <span id="connection-chip" class="status-chip bg-[#fff4d9] text-[#846019]" role="status"><i data-lucide="wifi-off" class="h-4 w-4"></i><span id="connection-label">يحتاج إعداد API</span></span> <button id="report-button" data-template-id="report-button" type="button" class="canva-button hidden rounded-xl bg-[#146c70] px-3 py-2 font-extrabold text-white sm:block" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">تقرير المدرسة</button>
+       <span id="connection-chip" class="status-chip bg-[#fff4d9] text-[#846019]" role="status"><i data-lucide="wifi-off" class="h-4 w-4"></i><span id="connection-label">يحتاج إعداد API</span></span> <button id="school-theme-toggle" class="school-theme-toggle" type="button" aria-label="تفعيل الوضع الليلي">☾</button> <button id="report-button" data-template-id="report-button" type="button" class="canva-button hidden rounded-xl bg-[#146c70] px-3 py-2 font-extrabold text-white sm:block" style="background: rgb(20, 108, 112); color: rgb(255, 255, 255); font-weight: 800; font-style: normal; font-size: 16px;">تقرير المدرسة</button>
       </div>
      </div>
      <nav class="desktop-nav mt-3 flex items-center gap-1 overflow-x-auto pb-1" aria-label="تنقل المدرسة">
@@ -43,7 +43,7 @@
    </aside>
    <main class="page-shell mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
 <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-     <nav aria-label="مسار التنقل" class="flex items-center gap-2 text-sm font-bold text-[#53706f]"><span>شنو منو مدرسة</span><i data-lucide="chevron-left" class="h-4 w-4"></i><span id="breadcrumb-current">مكتبة المناهج</span>
+     <nav aria-label="مسار التنقل" class="flex items-center gap-2 text-sm font-bold text-[#53706f]"><span>مدرسة سومر الشاملة</span><i data-lucide="chevron-left" class="h-4 w-4"></i><span id="breadcrumb-current">مكتبة المناهج</span>
      </nav><span id="last-sync" class="text-sm font-bold text-[#53706f]">آخر مزامنة مؤكدة: لا يوجد</span>
     </div>
 <section id="screen-collection" class="screen">
@@ -57,6 +57,8 @@
       </div>
      </article>
      <section class="soft-card mt-6 rounded-[1.5rem] bg-white p-5">
+      <label for="library-search" class="mb-2 block font-bold">ابحث في كتب المنهج</label>
+      <input id="library-search" type="search" class="field mb-4 w-full" placeholder="اسم الكتاب أو المادة أو الصف" autocomplete="off">
       <form id="filter-form" class="grid gap-3 md:grid-cols-3 lg:grid-cols-5"></form>
       <div class="mt-4 flex flex-wrap gap-3">
        <button id="search-button" type="submit" form="filter-form" class="rounded-xl bg-[#146c70] px-4 py-3 font-extrabold text-white">تحميل البيانات المؤكدة</button> <label id="csv-label" class="hidden cursor-pointer rounded-xl bg-[#fff4d9] px-4 py-3 font-extrabold text-[#846019]">اختيار ملف CSV<input id="csv-input" class="hidden" type="file" accept=".csv,text/csv"></label>

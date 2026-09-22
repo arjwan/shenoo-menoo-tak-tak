@@ -13,17 +13,21 @@ const root = path.resolve(__dirname, '..');
 const core = require(path.join(root, 'school-canva-adapter-core.js'));
 const catalog = require(path.join(root, 'server/src/data/iraqi-curriculum-catalog.js'));
 const manifest = require(path.join(root, 'server/src/data/iraqi-curriculum-files.json'));
+const linked = require(path.join(root, 'server/src/services/iraqi-curriculum-linked.js'));
 const adapter = fs.readFileSync(path.join(root, 'school-canva-adapter.js'), 'utf8');
 const routes = fs.readFileSync(path.join(root, 'server/src/routes/school.routes.js'), 'utf8');
 
-const items = Array.isArray(catalog.items) ? catalog.items : [];
-// Same shape the route emits: manifest entry + url on this server.
-const files = manifest.files.map((f) => ({ ...f, url: `/uploads/school-curriculum/${f.fileName}` }));
+const items = linked.catalogItems;
+const files = linked.files;
 
 assert.equal(items.length, 108, 'catalog has 108 records');
 assert.equal(manifest.fileCount, 136, 'files manifest declares 136 PDFs');
 assert.equal(files.length, 136, 'files array length 136');
-assert(files.every((f) => f.fileName && f.url.startsWith('/uploads/school-curriculum/')), 'every manifest entry has a real local url');
+assert(files.every((f) => f.fileName && f.sha256), 'every manifest entry has a verified file identity');
+assert.equal(new Set(files.filter((f) => f.catalogId && f.textAvailable).map((f) => f.catalogId)).size, 92,
+  '92 distinct catalogue books have verified indexed text');
+assert.equal(new Set(files.filter((f) => f.subject === 'الكيمياء' && f.catalogId && f.textAvailable).map((f) => f.catalogId)).size, 6,
+  'six distinct chemistry books are linked');
 
 // The two routes are pure functions of the shipped data: no Student lookup.
 const catalogRoute = routes.slice(routes.indexOf("router.get('/curriculum/catalog'"), routes.indexOf("router.get('/curriculum/files'"));
@@ -39,6 +43,8 @@ const manifestUrls = new Set(files.map((f) => f.url));
 const readable = rows.filter((r) => r.readable);
 const pending = rows.filter((r) => !r.readable);
 assert.equal(readable.length + pending.length, items.length);
+assert.equal(readable.length, 92, 'indexed catalogue books have real source links');
+assert.equal(pending.length, 16, 'only genuinely missing catalogue sources stay pending');
 assert(readable.every((r) => r.url && manifestUrls.has(r.url)), 'every readable url comes from the real manifest');
 assert(readable.every((r) => /متاح للقراءة/.test(r.status)), 'readable rows labelled available');
 assert(pending.every((r) => r.url === '' && !/متاح للقراءة/.test(r.status)), 'non-readable rows expose no open url');

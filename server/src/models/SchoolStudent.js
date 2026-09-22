@@ -9,7 +9,7 @@ const schema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 100 },
   stage: { type: String, enum: ['ابتدائي', 'متوسط', 'إعدادي'], required: true },
   grade: { type: String, required: true, trim: true },
-  section: { type: String, trim: true, default: 'أ' },
+  section:{type:String,default:'',trim:true},
   subjects: [{ type: String, trim: true }],
   assignedTeachers: [{ teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'SchoolTeacher' }, subject: { type: String, trim: true } }],
   assignedVirtualTeacher: { type: mongoose.Schema.Types.ObjectId, ref: 'VirtualTeacherProfile', default: null },

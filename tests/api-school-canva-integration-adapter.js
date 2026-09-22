@@ -39,8 +39,9 @@ const FIXTURE_SHA = '15c8a41092794e19530161ffda485c512565a6307608007033598dc6484
 const core = require(path.join(ROOT, 'school-canva-adapter-core.js'));
 const catalogModule = require(path.join(ROOT, 'server/src/data/iraqi-curriculum-catalog.js'));
 const filesModule = JSON.parse(read(path.join(ROOT, 'server/src/data/iraqi-curriculum-files.json')));
-const catalogItems = catalogModule.items;
-const manifestFiles = filesModule.files.map((f) => ({ ...f, url: `/uploads/school-curriculum/${f.fileName}` }));
+const linked = require(path.join(ROOT, 'server/src/services/iraqi-curriculum-linked.js'));
+const catalogItems = linked.catalogItems;
+const manifestFiles = linked.files;
 
 let passed = 0;
 function check(name, fn) {
@@ -126,7 +127,9 @@ check('library = catalogue ⋈ manifest (independent of students): ' + libraryRo
   assert.equal(core.curriculumRows(libraryRows, catalogItems, {}).length, 108, 'no filter -> full catalogue');
   const readable = libraryRows.filter((r) => r.readable).length;
   const pending = libraryRows.filter((r) => !r.readable).length;
-  console.log('   readable(real PDF on server):', readable, '| pending:', pending);
+  console.log('   readable(verified source):', readable, '| pending:', pending);
+  assert.equal(readable, 92);
+  assert.equal(pending, 16);
   assert.equal(readable + pending, 108);
 });
 check('hierarchy: stage -> grade -> subject -> unit -> book with the page\'s own stage ids', () => {
@@ -157,7 +160,7 @@ check('curriculum rows: fileId/url only for readable PDFs; source_pending has no
   rows.forEach((r) => {
     assert.ok(r.id && r.title, 'row has id/title');
     if (r.readable) {
-      assert.ok(r.fileId && /^\/uploads\/school-curriculum\//.test(r.curriculum_file_url), 'readable -> real /uploads url');
+      assert.ok(r.fileId && manifestFiles.some((file) => file.url === r.curriculum_file_url), 'readable -> verified source url');
     } else {
       assert.equal(r.fileId, undefined, 'pending -> no fileId (page shows no reader link)');
       assert.equal(r.curriculum_file_url, '');

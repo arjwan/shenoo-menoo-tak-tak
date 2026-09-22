@@ -78,16 +78,20 @@ test('original exposes the integration hooks the adapter relies on (sanity)', ()
   ]) assert.ok(html.includes(hook), `original must contain ${hook}`);
 });
 
-test('loader page wires auth, config, original, socket.io client and adapter in order', () => {
+test('active school page loads auth before the adapter; legacy loader keeps its iframe contract', () => {
   const loader = read('school-canva.html');
-  assert.match(loader, /src="auth-guard\.js/, 'auth guard before anything else');
-  assert.match(loader, /\/api\/school\/classroom\/config/, 'fetches authenticated config');
-  assert.match(loader, /\/api\/school-canva\/original/, 'fetches immutable original through the API (Oracle publishes root files only)');
-  assert.match(loader, /\/socket\.io\/socket\.io\.js/, 'injects the same-origin Socket.IO client');
+  assert.match(loader, /src="\/?auth-guard\.js/, 'active page loads the auth guard');
   assert.match(loader, /school-canva-adapter-core\.js/);
   assert.match(loader, /school-canva-adapter\.js/);
+  assert.ok(loader.indexOf('auth-guard.js') < loader.indexOf('school-canva-adapter-core.js'), 'auth loads before the data bridge');
   assert.ok(loader.indexOf('school-canva-adapter-core.js') < loader.indexOf('school-canva-adapter.js'), 'core loads before adapter');
-  assert.match(loader, /frame\.srcdoc\s*=\s*html/, 'original runs in an srcdoc iframe (no republish of the nested file)');
+  if (/frame\.srcdoc\s*=\s*html/.test(loader)) {
+    assert.match(loader, /\/api\/school\/classroom\/config/, 'legacy loader fetches authenticated config');
+    assert.match(loader, /\/api\/school-canva\/original/, 'legacy loader fetches immutable original');
+    assert.match(loader, /\/socket\.io\/socket\.io\.js/, 'legacy loader loads Socket.IO');
+  } else {
+    assert.match(loader, /window\.ShnoManoIntegrationAdapter\s*\|\|\s*window\.apiClient/, 'active page uses the school API bridge');
+  }
   assert.ok(!/token=/.test(loader), 'token must never be placed in a URL');
   assertNoSecrets('school-canva.html');
 });
