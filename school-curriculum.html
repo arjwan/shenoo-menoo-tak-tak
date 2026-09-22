@@ -57,6 +57,8 @@
       </div>
      </article>
      <section class="soft-card mt-6 rounded-[1.5rem] bg-white p-5">
+      <label for="library-search" class="mb-2 block font-bold">ابحث في كتب المنهج</label>
+      <input id="library-search" type="search" class="field mb-4 w-full" placeholder="اسم الكتاب أو المادة أو الصف" autocomplete="off">
       <form id="filter-form" class="grid gap-3 md:grid-cols-3 lg:grid-cols-5"></form>
       <div class="mt-4 flex flex-wrap gap-3">
        <button id="search-button" type="submit" form="filter-form" class="rounded-xl bg-[#146c70] px-4 py-3 font-extrabold text-white">تحميل البيانات المؤكدة</button> <label id="csv-label" class="hidden cursor-pointer rounded-xl bg-[#fff4d9] px-4 py-3 font-extrabold text-[#846019]">اختيار ملف CSV<input id="csv-input" class="hidden" type="file" accept=".csv,text/csv"></label>

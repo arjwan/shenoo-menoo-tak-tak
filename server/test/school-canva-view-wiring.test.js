@@ -43,6 +43,8 @@ const schoolRoutes = require('../src/routes/school.routes');
 // REAL CLASSROOM V1 (live classrooms) — mounted like server.js, between the
 // Canva surface and the existing school routers.
 const schoolLiveRoutes = require('../src/routes/school-live.routes');
+const schoolIndexedCurriculumRoutes = require('../src/routes/school-indexed-curriculum.routes');
+const schoolClassroomRoutes = require('../src/routes/school-classroom.routes');
 const Classroom = require('../src/models/SchoolClassroom');
 
 const ORIGINAL_SHA = '0c8b92caace910cc272f98d921ee4a736c2c87cf84d8fe75324361d3d24e6857';
@@ -109,9 +111,11 @@ test('school canva views show the real account data (DOM E2E, original untouched
     // the /api/school-canva surface).
     app.use('/api/school', schoolCanvaRoutes);
     app.use('/api/school-canva', schoolCanvaRoutes);
-    app.use('/api/school', schoolLiveRoutes);
-    app.use('/api/school', schoolSyncRoutes);
-    app.use('/api/school', schoolRoutes);
+  app.use('/api/school', schoolLiveRoutes);
+  app.use('/api/school', schoolSyncRoutes);
+  app.use('/api/school', schoolIndexedCurriculumRoutes);
+  app.use('/api/school', schoolRoutes);
+  app.use('/api/school', schoolClassroomRoutes);
     // Production serves the repo root statically; the 2026-09-21 page loads
     // the adapter by <script src="/school-canva-adapter(-core).js">.
     app.get(['/school-canva-adapter-core.js', '/school-canva-adapter.js'], (req, res) => res.type('application/javascript').send(read(path.join(ROOT, req.path.slice(1)))));
@@ -219,6 +223,11 @@ test('school canva views show the real account data (DOM E2E, original untouched
     // Wait for the adapter's hydration to patch the home statistics.
     await poll(async () => doc.getElementById('statistics-title') &&
       doc.getElementById('statistics-title').textContent.includes('شنو منو'), { timeoutMs: 60000 });
+    await poll(async () => {
+      const section = doc.querySelector('#home-view section[aria-labelledby="statistics-title"]');
+      const cards = section && section.querySelectorAll('article');
+      return cards && cards.length === 7 && cards[4].querySelectorAll('p')[0].textContent.trim() === '1';
+    }, { timeoutMs: 60000 });
 
     const text = (id) => { const n = doc.getElementById(id); return n ? n.textContent.trim() : null; };
 

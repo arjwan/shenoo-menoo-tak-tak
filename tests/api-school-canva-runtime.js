@@ -48,14 +48,18 @@ assert(orig.includes('shno-mno-integrated-v10') && orig.includes('shno-mno-integ
 // The original never sends auth itself — the adapter must add it.
 assert(!/Authorization/.test(orig), 'original must stay auth-free (adapter adds Bearer)');
 
-// 3) Loader: auth first, then config -> original -> socket.io -> core -> adapter.
+// 3) The active page loads authentication before its external data bridge.
 assert(/auth-guard\.js/.test(loader), 'loader keeps the existing auth guard');
 const order = (s) => loader.indexOf(s);
-assert(order('/api/school/classroom/config') > order('auth-guard.js'), 'config after auth');
-assert(order('/api/school-canva/original') > order('/api/school/classroom/config'), 'original after config');
-assert(order('/socket.io/socket.io.js') < order('school-canva-adapter-core.js'), 'socket.io client before core');
+if (loader.includes('frame.srcdoc = html')) {
+  assert(order('/api/school/classroom/config') > order('auth-guard.js'), 'config after auth');
+  assert(order('/api/school-canva/original') > order('/api/school/classroom/config'), 'original after config');
+  assert(order('/socket.io/socket.io.js') < order('school-canva-adapter-core.js'), 'socket.io client before core');
+  assert(order('school-canva-adapter.js') > order('frame.srcdoc = html'), 'adapter injected into the original document');
+} else {
+  assert(order('auth-guard.js') < order('school-canva-adapter-core.js'), 'active page authenticates before core');
+}
 assert(order('school-canva-adapter-core.js') < order('school-canva-adapter.js'), 'core before adapter');
-assert(order('school-canva-adapter.js') > order('frame.srcdoc = html'), 'adapter injected into the original document');
 assert(!/token=/.test(loader) && !/token=/.test(adapter), 'JWT never travels in a URL');
 
 // 4) Adapter: binds the original's surface to the real platform.

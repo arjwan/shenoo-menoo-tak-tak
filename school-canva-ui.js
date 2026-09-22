@@ -260,6 +260,13 @@
       else form.appendChild(makeSelect(field, { grade: "الصف", section: "الشعبة", subject: "المادة", unit: "الوحدة أو الفصل" }[field], [], true));
     });
     if (form) form.onsubmit = function (e) { e.preventDefault(); loadCollection(info); };
+    if (info.kind === "Curriculum" && $("library-search")) {
+      $("library-search").oninput = function () {
+        var query = $("query");
+        if (query) query.value = this.value;
+        loadCollection(info);
+      };
+    }
     if ($("stage")) $("stage").onchange = function () { cascade(info, "stage"); };
     ["grade", "section", "subject"].forEach(function (id) {
       if ($(id)) $(id).onchange = function () { cascade(info, id); };
