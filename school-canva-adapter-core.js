@@ -577,6 +577,28 @@
     var code = teacherId.slice(LIVE_PREFIX.length).toUpperCase();
     return /^[A-Z0-9]{4,12}$/.test(code) ? code : '';
   }
+  var VIRTUAL_PREFIX = 'virtual:';
+  function virtualCode(teacherId) {
+    teacherId = str(teacherId);
+    if (teacherId.indexOf(VIRTUAL_PREFIX) !== 0) return '';
+    var code = teacherId.slice(VIRTUAL_PREFIX.length).toUpperCase();
+    return /^[A-Z0-9]{4,12}$/.test(code) ? code : '';
+  }
+  function virtualSessionRows(virtualSessions, f) {
+    return (Array.isArray(virtualSessions) ? virtualSessions : []).filter(function (s) {
+      if (!s || s.status !== 'active' || !s.code) return false;
+      if (s.stage !== f.stage) return false;
+      if (f.grades.length && f.grades.indexOf(s.grade) === -1) return false;
+      return !(f.subject && s.subject !== f.subject);
+    }).map(function (s) {
+      var tName = s.virtualTeacher && s.virtualTeacher.name ? s.virtualTeacher.name : 'معلم افتراضي';
+      return { type: 'teacher', id: VIRTUAL_PREFIX + String(s.code).toUpperCase(), name: '🤖 ' + str(tName) + ' (معلم افتراضي / AI) — حصة: ' + str(s.subject) + (s.lesson ? ' / ' + str(s.lesson) : ''), subject: s.subject, virtual: true, code: String(s.code).toUpperCase() };
+    });
+  }
+  function virtualPointerText(s) {
+    var tName = s.virtualTeacher && s.virtualTeacher.name ? s.virtualTeacher.name : 'المعلم الافتراضي';
+    return 'صف افتراضي ذكي مع ' + str(tName) + ' (معلم افتراضي / AI) — ' + str(s.subject) + (s.lesson ? ' / ' + str(s.lesson) : '') + ' — رمز الحصة ' + String(s.code).toUpperCase() + '. السبورة الذكية والأسئلة متاحة عبر: school-virtual-classroom.html?code=' + String(s.code).toUpperCase();
+  }
   /**
    * REAL live classrooms (GET /api/school/classrooms/live) as teacher rows of
    * the Canva classroom page: only classrooms of the chosen stage+grade
@@ -596,7 +618,7 @@
   function livePointerText(c) {
     return 'حصة مباشرة الآن مع ' + str(c.teacherName) + ' — ' + str(c.subject) + (c.lesson ? ' / ' + str(c.lesson) : '') + ' — رمز الحصة ' + String(c.code).toUpperCase() + '. الصوت والصورة يعملان من صفحة الحصة المباشرة: school-live.html?code=' + String(c.code).toUpperCase() + ' (الكاميرا والمايك لا يعملان إلا بضغطة الطالب وبموافقة ولي الأمر).';
   }
-  function classroomOptions(items, packItems, teachers, payload, liveClassrooms) {
+  function classroomOptions(items, packItems, teachers, payload, liveClassrooms, virtualSessions) {
     items = Array.isArray(items) ? items : [];
     packItems = Array.isArray(packItems) ? packItems : [];
     teachers = Array.isArray(teachers) ? teachers : [];
@@ -631,7 +653,8 @@
       if (chosen && str(chosen.content)) rows.push({ type: 'lesson-content', id: 'content:' + chosen.id, name: chosen.lesson, content: str(chosen.content) });
     }
     var liveRows = liveClassroomRows(liveClassrooms, f);
-    var teacherRowsOut = liveRows.concat(teachers.filter(function (t) {
+    var vRows = virtualSessionRows(virtualSessions, f);
+    var teacherRowsOut = liveRows.concat(vRows).concat(teachers.filter(function (t) {
       if (t.stage !== f.stage) return false;
       if (subjectChosen && t.subject !== f.subject) return false;
       return !(Array.isArray(t.grades) && t.grades.length && !t.grades.some(function (g) { return f.grades.indexOf(g) !== -1; }));
@@ -646,6 +669,13 @@
       var contentRow = rows.find(function (r) { return r.type === 'lesson-content' && typeof r.content === 'string' && r.content.trim(); });
       if (contentRow) contentRow.content = contentRow.content + '\n\n' + livePointerText(selectedLive);
       else rows.push({ type: 'live-classroom', id: 'live:' + selectedCode, name: str(selectedLive.teacherName), content: livePointerText(selectedLive), code: selectedCode });
+    }
+    var selectedVCode = virtualCode(f.teacher);
+    var selectedVirtual = selectedVCode ? (Array.isArray(virtualSessions) ? virtualSessions : []).find(function (s) { return s && s.status === 'active' && String(s.code).toUpperCase() === selectedVCode; }) : null;
+    if (selectedVirtual && vRows.some(function (r) { return r.code === selectedVCode; })) {
+      var contentRowV = rows.find(function (r) { return r.type === 'lesson-content' && typeof r.content === 'string' && r.content.trim(); });
+      if (contentRowV) contentRowV.content = contentRowV.content + '\n\n' + virtualPointerText(selectedVirtual);
+      else rows.push({ type: 'virtual-classroom', id: 'virtual:' + selectedVCode, name: str(selectedVirtual.virtualTeacher && selectedVirtual.virtualTeacher.name), content: virtualPointerText(selectedVirtual), code: selectedVCode });
     }
     return rows;
   }
@@ -691,6 +721,16 @@
         return { kind: 'live.join', code: code, body: { studentId: String(students[0]._id || students[0].id) } };
       }
       // participation / question: unchanged below (real note / honest refusal).
+    }
+    var vcode = virtualCode(f.teacher);
+    if (vcode) {
+      if (action === 'end') return { kind: 'virtual.end', code: vcode };
+      if (action === 'hand') return { kind: 'virtual.hand', code: vcode, body: { raised: true } };
+      if (action === 'attendance') {
+        if (!f.stage) return { kind: 'refuse', message: 'اختر المرحلة من المصدر أولاً.' };
+        if (!students.length) return { kind: 'refuse', message: 'لا يوجد طالب مسجل في حسابك لهذه المرحلة والصف — أضف الطالب من صفحة المدرسة أولاً؛ لا يُنشأ طالب تلقائياً.' };
+        return { kind: 'virtual.join', code: vcode, body: { studentId: String(students[0]._id || students[0].id) } };
+      }
     }
     if (action === 'end') {
       var session = input.session;
@@ -776,6 +816,9 @@
     classroomOptions: classroomOptions,
     liveCode: liveCode,
     liveClassroomRows: liveClassroomRows,
+    VIRTUAL_PREFIX: VIRTUAL_PREFIX,
+    virtualCode: virtualCode,
+    virtualSessionRows: virtualSessionRows,
     lessonLabel: lessonLabel,
     classroomActionPlan: classroomActionPlan,
     dashboardMetrics: dashboardMetrics

@@ -204,7 +204,7 @@ test('Virtual Classroom V1 Page: DOM End-to-End', { timeout: 120000 }, async () 
     assert.match(page.text('metaSubject'), /الرياضيات/);
     assert.match(page.text('metaSource'), /كتاب الرياضيات/);
 
-    assert.equal(page.text('teacherDisplayName'), 'أ. سارة الذكية');
+    assert.equal(page.text('teacherDisplayName'), 'ست زهراء');
     assert.ok(page.window.document.querySelector('.teacher-ai-badge').textContent.includes('معلم افتراضي / AI'));
 
     // 5) Whiteboard verified in DOM

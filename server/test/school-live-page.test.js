@@ -87,6 +87,10 @@ async function bootPage(baseUrl, token, tag) {
   const html = read('school-live.html').replace(/<script src="[^"]*"><\/script>/g, '');
   const dom = new JSDOM(html, { url: baseUrl + '/school-live.html', runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(window) {
+      // Node's fetch validates its own AbortSignal brand. Use the Node
+      // controller in jsdom too so the page timeout signal crosses realms.
+      window.AbortController = globalThis.AbortController;
+      window.AbortSignal = globalThis.AbortSignal;
       window.fetch = (input, init) => fetch(/^https?:/i.test(String(input)) ? String(input) : new URL(String(input), baseUrl).href, init);
       window.localStorage.setItem('token', token);
     } });
@@ -140,7 +144,10 @@ test('real classroom v1 page: teacher + real pupil end-to-end in the DOM (signal
 
     // ---- teacher creates a classroom from the real catalogue --------------
     const T = await bootPage(baseUrl, sign(teacher), 'teacher'); pages.push(T);
-    await poll(async () => T.visible('lobby') && T.$('createStage').options.length > 1);
+    await poll(async () => T.visible('lobby') && T.$('createStage').options.length > 1).catch((error) => {
+      error.message += ` | page=${T.text('liveMessage')} | jsdom=${T.errors.join(' ; ')}`;
+      throw error;
+    });
     assert.deepEqual(Array.from(T.$('createStage').options).map((o) => o.value).filter(Boolean), ['ابتدائي', 'متوسط', 'إعدادي']);
     assert.equal(T.$('createGrade').disabled, true);
     T.choose('createStage', 'ابتدائي');
@@ -188,7 +195,7 @@ test('real classroom v1 page: teacher + real pupil end-to-end in the DOM (signal
     assert.equal(S.$('micBtn').disabled, true, 'voice not consented -> mic button disabled');
     assert.match(S.text('controlHint'), /ولي الأمر لم يفعّل الصوت/);
     assert.match(S.text('teacherName'), /أستاذ حسن علي/);
-    await poll(async () => /زياد كريم/.test(T.text('studentGrid')) && /متصل/.test(T.text('studentGrid')));
+    await poll(async () => /زياد كريم/.test(T.text('studentGrid')) && /🟢 متصل/.test(T.text('studentGrid')) && /الحاضرون 1 · متصل 1/.test(T.text('roomCount')));
     assert.equal(T.visible('gridEmpty'), false);
     assert.match(T.text('roomCount'), /الحاضرون 1 · متصل 1/);
 

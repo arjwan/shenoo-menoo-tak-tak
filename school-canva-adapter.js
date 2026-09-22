@@ -318,11 +318,16 @@
       .then(function (d) { return Array.isArray(d.classrooms) ? d.classrooms : []; })
       .catch(function (e) { if (e && e.name === 'AbortError') throw e; return []; });
   }
+  function liveVirtualClassrooms(signal) {
+    return integrationRequest('/api/school/virtual/sessions/active', { signal: signal })
+      .then(function (d) { return Array.isArray(d.sessions) ? d.sessions : []; })
+      .catch(function (e) { if (e && e.name === 'AbortError') throw e; return []; });
+  }
   function classroomOptions(payload) {
     payload = payload || {};
     return guarded(payload.signal, function () {
-      return Promise.all([refCatalog(), livePack(payload.signal), refTeachers(), liveClassrooms(payload.signal)]).then(function (out) {
-        return { items: core.classroomOptions(out[0], out[1], out[2], withoutSignal(payload), out[3]) };
+      return Promise.all([refCatalog(), livePack(payload.signal), refTeachers(), liveClassrooms(payload.signal), liveVirtualClassrooms(payload.signal)]).then(function (out) {
+        return { items: core.classroomOptions(out[0], out[1], out[2], withoutSignal(payload), out[3], out[4]) };
       });
     });
   }
@@ -424,6 +429,9 @@
           if (plan.kind === 'live.join') return integrationRequest('/api/school/classrooms/' + encodeURIComponent(plan.code) + '/join', { method: 'POST', body: plan.body, signal: signal });
           if (plan.kind === 'live.hand') return integrationRequest('/api/school/classrooms/' + encodeURIComponent(plan.code) + '/hand', { method: 'POST', body: plan.body, signal: signal });
           if (plan.kind === 'live.end') return integrationRequest('/api/school/classrooms/' + encodeURIComponent(plan.code) + '/end', { method: 'POST', body: {}, signal: signal });
+          if (plan.kind === 'virtual.join') return integrationRequest('/api/school/virtual/sessions/' + encodeURIComponent(plan.code) + '/join', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'virtual.hand') return integrationRequest('/api/school/virtual/sessions/' + encodeURIComponent(plan.code) + '/hand', { method: 'POST', body: plan.body, signal: signal });
+          if (plan.kind === 'virtual.end') return integrationRequest('/api/school/virtual/sessions/' + encodeURIComponent(plan.code) + '/end', { method: 'POST', body: {}, signal: signal });
           if (plan.kind === 'session.start') return integrationRequest('/api/school/sessions/start', { method: 'POST', body: plan.body, signal: signal });
           if (plan.kind === 'note') return integrationRequest('/api/school/students/' + encodeURIComponent(plan.studentId) + '/notes', { method: 'POST', body: plan.body, signal: signal });
           if (plan.kind === 'session.complete') return integrationRequest('/api/school/sessions/' + encodeURIComponent(plan.sessionId) + '/complete', { method: 'POST', body: plan.body, signal: signal });
@@ -561,7 +569,24 @@
     if (!view || document.getElementById('shno-classroom-bar')) return;
     var bar = el('div', 'margin-top:18px;border:2px solid #146c70;border-radius:20px;background:#fffdf9;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;');
     bar.id = 'shno-classroom-bar';
-    var title = el('b', 'color:#183a3c;font-size:16px;', '🔗 الصف الافتراضي (شنو منو)');
+    var title = el('b', 'color:#183a3c;font-size:15px;display:inline-flex;align-items:center;gap:6px;', '🏫 خيارات الحصة:');
+    var liveBtn = el('a', 'border:2px solid #146c70;border-radius:12px;background:#146c70;color:#ffffff;font-weight:800;padding:10px 16px;text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;', '🎙️ دخول صف مع معلم حقيقي');
+    liveBtn.id = 'shno-entry-real-classroom'; liveBtn.target = '_top'; liveBtn.href = 'school-live.html';
+    var virtualBtn = el('a', 'border:2px solid #0f766e;border-radius:12px;background:#e0f2f1;color:#0f3f42;font-weight:800;padding:10px 16px;text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;', '🤖 دخول الصف الافتراضي AI');
+    virtualBtn.id = 'shno-entry-virtual-classroom'; virtualBtn.target = '_top'; virtualBtn.href = 'school-virtual-classroom.html';
+    function updateClassroomLinks() {
+      var stateRef = null; try { stateRef = (typeof state !== 'undefined') ? state : null; } catch (e) {}
+      var p = new URLSearchParams();
+      if (stateRef && stateRef.stage) p.set('stage', stateRef.stage);
+      if (stateRef && stateRef.grade) p.set('grade', stateRef.grade);
+      if (stateRef && stateRef.subject) p.set('subject', stateRef.subject);
+      if (stateRef && stateRef.lesson) p.set('lesson', stateRef.lesson);
+      if (realSessionId) p.set('sessionId', realSessionId);
+      var qs = p.toString();
+      virtualBtn.href = 'school-virtual-classroom.html' + (qs ? '?' + qs : '');
+      liveBtn.href = 'school-live.html' + (qs ? '?' + qs : '');
+    }
+    virtualBtn.addEventListener('click', updateClassroomLinks); liveBtn.addEventListener('click', updateClassroomLinks);
     ui.joinBtn = el('button', 'border:0;border-radius:12px;background:#146c70;color:#fff;font-weight:800;padding:10px 16px;cursor:pointer;', 'دخول الصف');
     ui.joinBtn.type = 'button';
     ui.participantsEl = el('span', 'color:#53706f;font-weight:700;font-size:14px;', 'لم يتم الانضمام بعد');
@@ -573,7 +598,7 @@
     videoBtn.title = 'يعمل فقط بعد موافقة ولي الأمر وإذن الجهاز';
     var mediaBox = el('div', 'width:100%;display:none;');
     mediaBox.id = 'shno-classroom-media';
-    bar.appendChild(title); bar.appendChild(ui.joinBtn); bar.appendChild(ui.participantsEl);
+    bar.appendChild(title); bar.appendChild(liveBtn); bar.appendChild(virtualBtn); bar.appendChild(ui.joinBtn); bar.appendChild(ui.participantsEl);
     bar.appendChild(audioBtn); bar.appendChild(videoBtn); bar.appendChild(mediaBox);
     view.appendChild(bar);
 

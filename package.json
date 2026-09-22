@@ -9,6 +9,7 @@
     "test:school-pages": "node tests/api-school-canva-latest.js && node tests/api-school-classroom-contract.js && node tests/api-school-pages-dom.js",
     "test:school-wiring": "node --test server/test/school-canva-view-wiring.test.js",
     "test:school-live": "node --test server/test/school-live-classroom.test.js server/test/school-live-page.test.js && node tests/api-school-live-core.js",
+    "test:school-portal": "node --test server/test/sumer-school-portal.test.js",
     "test:school-server": "node --test server/test/school-canva-integration.test.js server/test/school-canva-runtime.test.js server/test/school-canva-view-wiring.test.js server/test/school-live-classroom.test.js server/test/school-live-page.test.js server/test/school-integration.test.js",
     "import:school-canva": "node scripts/import-school-canva-latest.js",
     "download:school-curriculum": "node scripts/download-iraqi-curriculum.js",

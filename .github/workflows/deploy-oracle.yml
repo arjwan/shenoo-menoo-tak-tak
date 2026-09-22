@@ -82,6 +82,18 @@ jobs:
             sudo install -m 0644 "$file" "$webroot/$(basename "$file")"
           done
 
+          # Publish the isolated Sumer School PWA without flattening its
+          # service-worker scope or mixing its assets with the platform root.
+          sudo install -d -m 0755 "$webroot/sumer-school"
+          find sumer-school -type d -print0 | while IFS= read -r -d '' dir; do
+            relative="${dir#sumer-school}"
+            sudo install -d -m 0755 "$webroot/sumer-school$relative"
+          done
+          find sumer-school -type f -print0 | while IFS= read -r -d '' file; do
+            relative="${file#sumer-school/}"
+            sudo install -m 0644 "$file" "$webroot/sumer-school/$relative"
+          done
+
           sudo restorecon -RF "$webroot" || true
           sudo systemctl restart shno-mano-tech.service
           sudo systemctl is-active --quiet shno-mano-tech.service

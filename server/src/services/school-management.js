@@ -271,7 +271,7 @@ async function registerStudent(actorUser, schoolContext, data) {
 
   const student = await SchoolStudent.create({
     guardian: guardian._id,
-    studentUser: studentUser ? studentUser._id : null,
+    ...(studentUser ? { studentUser: studentUser._id } : {}),
     name: String(name).trim(),
     stage,
     grade: String(grade).trim(),

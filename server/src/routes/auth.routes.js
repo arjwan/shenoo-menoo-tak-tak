@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const SchoolEnrollmentRequest = require('../models/SchoolEnrollmentRequest');
 const {
   createVerificationToken,
   deliverOtp,
@@ -57,6 +58,36 @@ function normalizeBirthDate(value) {
   return { valid, value: valid ? parsed : null };
 }
 function requestIp(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
+
+async function saveSchoolEnrollment(user, body) {
+  const requestedRole = String(body.schoolRole || '').trim();
+  if (!requestedRole) return null;
+  if (!['student', 'teacher'].includes(requestedRole)) {
+    const error = new Error('يمكن إنشاء حساب طالب أو معلم فقط من بوابة المدرسة');
+    error.status = 400;
+    throw error;
+  }
+  const subjects = Array.isArray(body.schoolSubjects)
+    ? body.schoolSubjects.map((value) => String(value || '').trim()).filter(Boolean).slice(0, 20)
+    : String(body.schoolSubjects || '').split(/[،,]/).map((value) => value.trim()).filter(Boolean).slice(0, 20);
+  return SchoolEnrollmentRequest.findOneAndUpdate(
+    { user: user._id, requestedRole },
+    {
+      $setOnInsert: { user: user._id, requestedRole },
+      $set: {
+        status: 'pending',
+        stage: ['ابتدائي', 'متوسط', 'إعدادي'].includes(body.schoolStage) ? body.schoolStage : 'ابتدائي',
+        grade: String(body.schoolGrade || '').trim().slice(0, 80),
+        subjects,
+        note: String(body.schoolNote || '').trim().slice(0, 1000),
+        reviewedBy: null,
+        reviewedAt: null,
+        rejectionReason: ''
+      }
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
+}
 
 router.get('/registration-config', (_req, res) => {
   return res.json({
@@ -124,10 +155,12 @@ router.post('/signup', async (req, res) => {
 
     if (!registrationOtpRequired()) {
       await user.save();
+      const schoolRequest = await saveSchoolEnrollment(user, req.body);
       return res.status(201).json({
         ok: true,
         status: 'active',
         verificationRequired: false,
+        schoolRequest: schoolRequest ? { id: schoolRequest._id, requestedRole: schoolRequest.requestedRole, status: schoolRequest.status } : null,
         message: 'تم إنشاء الحساب وتفعيله. يمكنك تسجيل الدخول الآن.'
       });
     }
@@ -140,6 +173,7 @@ router.post('/signup', async (req, res) => {
       return res.status(503).json({ ok: false, message: 'تعذر إرسال رمز التأكيد الآن. لم يُنشأ الحساب؛ حاول لاحقاً.' });
     }
     await user.save();
+    const schoolRequest = await saveSchoolEnrollment(user, req.body);
     const response = {
       ok: true,
       status: 'pending_verification',
@@ -147,11 +181,13 @@ router.post('/signup', async (req, res) => {
       verificationToken: createVerificationToken(user),
       destination: maskDestination(user.email, 'email'),
       expiresInSeconds: Math.floor(otpPolicy().ttlMs / 1000),
+      schoolRequest: schoolRequest ? { id: schoolRequest._id, requestedRole: schoolRequest.requestedRole, status: schoolRequest.status } : null,
       message: 'أرسلنا رمز تأكيد من 6 أرقام إلى بريدك الإلكتروني.'
     };
     if (process.env.NODE_ENV === 'test' && process.env.OTP_DELIVERY_MODE === 'test') response.testCode = code;
     return res.status(201).json(response);
   } catch (error) {
+    if (error && error.status) return res.status(error.status).json({ ok: false, message: error.message });
     if (error && error.code === 11000) return res.status(409).json({ ok: false, message: 'اسم المستخدم أو رقم الهاتف أو البريد مستخدم مسبقاً' });
     console.error('Signup failed:', error.message);
     return res.status(500).json({ ok: false, message: 'حدث خطأ في الخادم' });

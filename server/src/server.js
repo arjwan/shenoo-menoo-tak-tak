@@ -39,6 +39,9 @@ const schoolSyncRoutes = require('./routes/school-sync.routes');
 const schoolCanvaRoutes = require('./routes/school-canva.routes');
 const schoolLiveRoutes = require('./routes/school-live.routes');
 const schoolClassroomRoutes = require('./routes/school-classroom.routes');
+const schoolManagementRoutes = require('./routes/school-management.routes');
+const schoolVirtualRoutes = require('./routes/school-virtual.routes');
+const schoolPortalRoutes = require('./routes/school-portal.routes');
 const { attachSocket } = require('./socket');
 const { attachSchoolSocket } = require('./socket-school');
 
@@ -103,6 +106,12 @@ app.use('/api/school', schoolRoutes);
 // /books/:id/reader, /classroom/options, /classroom/actions). Mounted last so
 // it can only add paths and never shadows the existing school endpoints.
 app.use('/api/school', schoolClassroomRoutes);
+// Sumer School role portal. Namespaced mounts avoid collisions with the
+// legacy guardian routes while exposing the previously unmounted management
+// and virtual-classroom implementations.
+app.use('/api/school/portal', schoolPortalRoutes);
+app.use('/api/school/manage', schoolManagementRoutes);
+app.use('/api/school/virtual', schoolVirtualRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));

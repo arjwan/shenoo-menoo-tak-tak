@@ -1,0 +1,12 @@
+{
+  "name": "مدرسة سومر | شنو منو",
+  "short_name": "سومر",
+  "start_url": "/sumer-school/",
+  "scope": "/sumer-school/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar-IQ",
+  "theme_color": "#07524d",
+  "background_color": "#f4f1e8",
+  "icons": [{ "src": "logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

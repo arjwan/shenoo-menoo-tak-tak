@@ -182,6 +182,8 @@ test('school canva views show the real account data (DOM E2E, original untouched
         pretendToBeVisual: true,
         virtualConsole,
         beforeParse(window) {
+          window.AbortController = globalThis.AbortController;
+          window.AbortSignal = globalThis.AbortSignal;
           // Real network for the page's API calls (same origin as the test server).
           window.fetch = (input, init) => {
             const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -390,6 +392,8 @@ test('school canva views show the real account data (DOM E2E, original untouched
         pretendToBeVisual: true,
         virtualConsole: vc,
         beforeParse(window) {
+          window.AbortController = globalThis.AbortController;
+          window.AbortSignal = globalThis.AbortSignal;
           window.fetch = (input, init) => {
             const url = typeof input === 'string' ? input : (input && input.url) || '';
             return fetch(/^https?:/i.test(url) ? url : new URL(url, baseUrl).href, init);
