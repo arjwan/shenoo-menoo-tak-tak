@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تسجيل طالب جديد — مدرسة شنو منو</title>
+  <script>
+    document.documentElement.dataset.theme = (localStorage.getItem('shno-theme') === 'dark' || localStorage.getItem('taktak-theme') === 'dark') ? 'dark' : 'light';
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
+  <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
+  <link rel="stylesheet" href="school-admin.css?v=20260921-1">
+  <script src="auth-guard.js?v=20260913-7"></script>
+  <style>
+    .step-card {
+      background: var(--admin-card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--admin-border);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--admin-shadow);
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--admin-primary);
+      color: #fff;
+      font-weight: 800;
+      margin-left: 8px;
+    }
+    .selected-user-card {
+      margin-top: 10px;
+      padding: 12px 16px;
+      background: var(--admin-primary-light);
+      border-radius: 8px;
+      border: 1px solid var(--admin-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body class="school-admin-body">
+
+  <header class="admin-header">
+    <div class="brand-section">
+      <h1>🎒 شاشة تسجيل طالب جديد</h1>
+      <div class="brand-links">
+        <a href="school-admin.html" class="brand-link-btn">← لوحة الإدارة المدرسية</a>
+        <a href="school-teacher-add.html" class="brand-link-btn">👩‍🏫 إضافة معلم حقيقي</a>
+        <a href="school-guardian-consents.html" class="brand-link-btn">👨‍👩‍👧 موافقات ولي الأمر</a>
+        <a href="school-virtual-classroom.html" class="brand-link-btn">🤖 الصف الافتراضي AI</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-container" style="max-width: 900px;">
+    
+    <div id="studentAlert" class="admin-alert" hidden>
+      <span id="studentAlertText"></span>
+      <button type="button" class="btn-sm btn-secondary" onclick="document.getElementById('studentAlert').hidden=true">✕</button>
+    </div>
+
+    <form id="standaloneAddStudentForm" class="admin-form">
+
+      <!-- Step 1: Guardian Selection -->
+      <div class="step-card">
+        <h3><span class="step-badge">1</span> اختيار وربط حساب ولي الأمر (حساب حقيقي)</h3>
+        <p class="text-muted">يجب ربط الطالب بحساب ولي أمر مسجل ومفعل في شنو منو. لا يتم إنشاء حسابات عشوائية أو وهمية.</p>
+        
+        <div class="form-group">
+          <label for="guardianSearch">البحث عن ولي الأمر بالاسم، الهاتف، أو اسم المستخدم:</label>
+          <input type="text" id="guardianSearch" class="form-control" placeholder="اكتب اسم ولي الأمر أو هاتفه للبحث الفوري..." autocomplete="off">
+          <input type="hidden" id="selectedGuardianId" required>
+          <div id="guardianSearchDropdown" class="user-search-results" hidden></div>
+        </div>
+
+        <div id="selectedGuardianPreview" class="selected-user-card" hidden>
+          <div>
+            <b id="previewGuardianName"></b>
+            <div id="previewGuardianMeta" style="font-size:0.85rem;color:var(--admin-text-muted);"></div>
+          </div>
+          <button type="button" id="clearGuardianBtn" class="btn btn-sm btn-secondary">تغيير</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Student Academic Information -->
+      <div class="step-card">
+        <h3><span class="step-badge">2</span> البيانات الأكاديمية والشعبة</h3>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="studentFullName">اسم الطالب الكامل (الرباعي واللقب):</label>
+          <input type="text" id="studentFullName" class="form-control" placeholder="مثال: علي حيدر عبد الحسين الموسوي" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="studentStage">المرحلة الدراسية:</label>
+            <select id="studentStage" class="form-control" required>
+              <option value="">اختر المرحلة الدراسية</option>
+              <option value="ابتدائي">ابتدائي</option>
+              <option value="متوسط">متوسط</option>
+              <option value="إعدادي">إعدادي</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="studentGrade">الصف الدراسي:</label>
+            <select id="studentGrade" class="form-control" required disabled>
+              <option value="">اختر المرحلة أولاً</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="studentSection">الشعبة:</label>
+            <input type="text" id="studentSection" class="form-control" placeholder="مثال: أ" value="أ" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+          <label for="studentSubjects">المواد الدراسية المقررة (مفصولة بفاصلة):</label>
+          <input type="text" id="studentSubjects" class="form-control" placeholder="مثال: الرياضيات، اللغة العربية، العلوم، التربية الإسلامية" value="الرياضيات، اللغة العربية، العلوم">
+        </div>
+      </div>
+
+      <!-- Step 3: Teacher Assignment -->
+      <div class="step-card">
+        <h3><span class="step-badge">3</span> الإسناد الأكاديمي والمعلم المشرف</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="selectAssignedTeacher">المعلم الحقيقي المشرف (من الكادر المعتمد):</label>
+            <select id="selectAssignedTeacher" class="form-control">
+              <option value="">بدون إسناد لمعلم حقيقي الآن</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="selectVirtualTeacher">المعلم الافتراضي المسند (AI):</label>
+            <select id="selectVirtualTeacher" class="form-control">
+              <option value="">بدون إسناد لمعلم افتراضي</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Optional Student Account Link -->
+      <div class="step-card">
+        <h3><span class="step-badge">4</span> حساب الطالب في شنو منو (اختياري)</h3>
+        <p class="text-muted">إذا كان لدى الطالب حساب شخصي خاص به على منصة شنو منو، يمكنك ربطه هنا ليتمكن من الدخول المباشر:</p>
+        
+        <div class="form-group">
+          <input type="text" id="studentUserSearch" class="form-control" placeholder="ابحث عن حساب الطالب الشخصي إن وجد..." autocomplete="off">
+          <input type="hidden" id="selectedStudentUserId">
+          <div id="studentUserSearchDropdown" class="user-search-results" hidden></div>
+        </div>
+        <div id="selectedStudentUserPreview" class="selected-user-card" hidden>
+          <div>
+            <b id="previewStudentUserName"></b>
+            <div id="previewStudentUserMeta" style="font-size:0.85rem;color:var(--admin-text-muted);"></div>
+          </div>
+          <button type="button" id="clearStudentUserBtn" class="btn btn-sm btn-secondary">إلغاء الربط</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 40px;">
+        <a href="school-admin.html" class="btn btn-secondary">العودة للوحة الإدارة</a>
+        <button type="submit" id="submitAddStudentBtn" class="btn btn-primary" style="padding: 12px 28px; font-size: 1.05rem;">💾 تسجيل وحفظ الطالب في السجل الدائم</button>
+      </div>
+
+    </form>
+
+    <!-- Success Result Card -->
+    <div id="registrationSuccessCard" class="step-card" style="border: 2px solid var(--admin-success); background: #f0fdf4;" hidden>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <span style="font-size:2rem;">🎉</span>
+        <div>
+          <h3 style="margin:0;color:var(--admin-success);">تم تسجيل الطالب بنجاح وحفظه في السجل الأكاديمي الدائم!</h3>
+          <p id="successSummaryText" style="margin:4px 0 0;font-size:0.95rem;"></p>
+        </div>
+      </div>
+      <div class="pane-actions" style="margin-top: 16px;">
+        <a id="viewPermanentRecordLink" href="school-admin.html" class="btn btn-primary">عرض السجل الأكاديمي للطالب</a>
+        <button type="button" id="registerAnotherStudentBtn" class="btn btn-secondary">تسجيل طالب آخر</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    (function () {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      const $ = (id) => document.getElementById(id);
+      const escapeHtml = (s) => String(s || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+      function alertMsg(txt, isErr = false) {
+        const box = $('studentAlert');
+        $('studentAlertText').textContent = txt;
+        box.className = 'admin-alert ' + (isErr ? 'alert-danger' : 'alert-success');
+        box.hidden = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      async function api(path, opts = {}) {
+        const res = await fetch('/api/school/management' + path, {
+          ...opts,
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) }
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.message || 'خطأ في الخادم (' + res.status + ')');
+        return d;
+      }
+
+      // Stage -> Grade Cascade
+      const gradesByStage = {
+        'ابتدائي': ['الأول ابتدائي', 'الثاني ابتدائي', 'الثالث ابتدائي', 'الرابع ابتدائي', 'الخامس ابتدائي', 'السادس ابتدائي'],
+        'متوسط': ['الأول متوسط', 'الثاني متوسط', 'الثالث متوسط'],
+        'إعدادي': ['الرابع العلمي', 'الرابع الأدبي', 'الخامس العلمي', 'الخامس الأدبي', 'السادس العلمي', 'السادس الأدبي']
+      };
+
+      $('studentStage').addEventListener('change', function () {
+        const stage = this.value;
+        const gSel = $('studentGrade');
+        if (!stage || !gradesByStage[stage]) {
+          gSel.innerHTML = '<option value="">اختر المرحلة أولاً</option>';
+          gSel.disabled = true;
+          return;
+        }
+        gSel.disabled = false;
+        gSel.innerHTML = '<option value="">اختر الصف</option>' + gradesByStage[stage].map((g) => `<option value="${g}">${g}</option>`).join('');
+      });
+
+      // Guardian Search
+      let searchTimer = null;
+      $('guardianSearch').addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        const drop = $('guardianSearchDropdown');
+        if (q.length < 2) { drop.hidden = true; return; }
+        searchTimer = setTimeout(async () => {
+          try {
+            const res = await api('/users/search?q=' + encodeURIComponent(q));
+            if (!res.users || !res.users.length) {
+              drop.innerHTML = '<div style="padding:10px;text-align:center;color:#64748b;">لا يوجد حساب مطابق</div>';
+              drop.hidden = false;
+              return;
+            }
+            drop.innerHTML = res.users.map((u) => `
+              <div class="search-item" data-id="${u._id}" data-name="${escapeHtml(u.fullName || u.username)}" data-meta="${escapeHtml(u.phone || u.email || '')}">
+                <div><b>${escapeHtml(u.fullName || u.username)}</b> <small>@${escapeHtml(u.username)}</small></div>
+                <span class="role-pill role-${u.role}">${u.role}</span>
+              </div>
+            `).join('');
+            drop.hidden = false;
+            drop.querySelectorAll('.search-item').forEach((item) => {
+              item.addEventListener('click', () => {
+                $('selectedGuardianId').value = item.dataset.id;
+                $('previewGuardianName').textContent = item.dataset.name;
+                $('previewGuardianMeta').textContent = item.dataset.meta;
+                $('selectedGuardianPreview').hidden = false;
+                $('guardianSearch').value = '';
+                drop.hidden = true;
+              });
+            });
+          } catch (e) { drop.hidden = true; }
+        }, 300);
+      });
+
+      $('clearGuardianBtn').addEventListener('click', () => {
+        $('selectedGuardianId').value = '';
+        $('selectedGuardianPreview').hidden = true;
+      });
+
+      // Student User Search
+      $('studentUserSearch').addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        const drop = $('studentUserSearchDropdown');
+        if (q.length < 2) { drop.hidden = true; return; }
+        searchTimer = setTimeout(async () => {
+          try {
+            const res = await api('/users/search?q=' + encodeURIComponent(q));
+            if (!res.users || !res.users.length) { drop.hidden = true; return; }
+            drop.innerHTML = res.users.map((u) => `
+              <div class="search-item" data-id="${u._id}" data-name="${escapeHtml(u.fullName || u.username)}">
+                <div><b>${escapeHtml(u.fullName || u.username)}</b> <small>@${escapeHtml(u.username)}</small></div>
+              </div>
+            `).join('');
+            drop.hidden = false;
+            drop.querySelectorAll('.search-item').forEach((item) => {
+              item.addEventListener('click', () => {
+                $('selectedStudentUserId').value = item.dataset.id;
+                $('previewStudentUserName').textContent = item.dataset.name;
+                $('selectedStudentUserPreview').hidden = false;
+                $('studentUserSearch').value = '';
+                drop.hidden = true;
+              });
+            });
+          } catch { drop.hidden = true; }
+        }, 300);
+      });
+
+      $('clearStudentUserBtn').addEventListener('click', () => {
+        $('selectedStudentUserId').value = '';
+        $('selectedStudentUserPreview').hidden = true;
+      });
+
+      // Load teachers and virtual teachers
+      async function initDropdowns() {
+        try {
+          const res = await api('/teachers');
+          const tSel = $('selectAssignedTeacher');
+          (res.realTeachers || []).forEach((t) => {
+            const opt = document.createElement('option');
+            opt.value = t._id;
+            opt.textContent = t.name + ' (' + (t.subjects || []).join('، ') + ')';
+            tSel.appendChild(opt);
+          });
+          const vtSel = $('selectVirtualTeacher');
+          (res.virtualTeachers || []).forEach((vt) => {
+            const opt = document.createElement('option');
+            opt.value = vt._id;
+            opt.textContent = '🤖 ' + vt.name + ' (' + vt.subject + ')';
+            vtSel.appendChild(opt);
+          });
+        } catch (e) { console.warn(e); }
+      }
+      initDropdowns();
+
+      // Submit Form
+      $('standaloneAddStudentForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const guardianId = $('selectedGuardianId').value;
+        if (!guardianId) {
+          alertMsg('يرجى اختيار وتأكيد حساب ولي الأمر من قائمة البحث أولاً.', true);
+          return;
+        }
+        try {
+          const assignedTeachers = [];
+          const tId = $('selectAssignedTeacher').value;
+          if (tId) assignedTeachers.push({ teacher: tId });
+
+          const res = await api('/students', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: $('studentFullName').value,
+              stage: $('studentStage').value,
+              grade: $('studentGrade').value,
+              section: $('studentSection').value,
+              subjects: $('studentSubjects').value.split('،').map((s) => s.trim()).filter(Boolean),
+              guardianId,
+              studentUserId: $('selectedStudentUserId').value || undefined,
+              assignedTeachers,
+              assignedVirtualTeacherId: $('selectVirtualTeacher').value || undefined
+            })
+          });
+
+          $('standaloneAddStudentForm').hidden = true;
+          const s = res.student;
+          $('successSummaryText').textContent = `تم قيد الطالب ${s.name} في المرحلة ${s.stage} - الصف ${s.grade} - الشعبة ${s.section}. تم تحديث السجل الأكاديمي وربطه بولي الأمر.`;
+          $('registrationSuccessCard').hidden = false;
+        } catch (err) {
+          alertMsg(err.message, true);
+        }
+      });
+
+      $('registerAnotherStudentBtn').addEventListener('click', () => {
+        $('standaloneAddStudentForm').reset();
+        $('selectedGuardianId').value = '';
+        $('selectedGuardianPreview').hidden = true;
+        $('selectedStudentUserId').value = '';
+        $('selectedStudentUserPreview').hidden = true;
+        $('standaloneAddStudentForm').hidden = false;
+        $('registrationSuccessCard').hidden = true;
+      });
+    })();
+  </script>
+</body>
+</html>

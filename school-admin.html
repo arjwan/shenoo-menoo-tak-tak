@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>لوحة إدارة المدرسة — مدرسة شنو منو</title>
+  <script>
+    document.documentElement.dataset.theme = (localStorage.getItem('shno-theme') === 'dark' || localStorage.getItem('taktak-theme') === 'dark') ? 'dark' : 'light';
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
+  <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
+  <link rel="stylesheet" href="school-admin.css?v=20260921-1">
+  <script src="auth-guard.js?v=20260913-7"></script>
+</head>
+<body class="school-admin-body">
+
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="brand-section">
+      <h1>🏫 إدارة مدرسة شنو منو الشاملة</h1>
+      <div class="brand-links">
+        <a href="school.html" class="brand-link-btn">← بوابة المدرسة</a>
+        <a href="school-canva.html" class="brand-link-btn">🎨 مدرسة Canva</a>
+        <a href="school-live.html" class="brand-link-btn">🎙️ الصف المباشر</a>
+        <a href="school-virtual-classroom.html" class="brand-link-btn">🤖 الصف الافتراضي AI</a>
+      </div>
+    </div>
+    <div class="user-badge" id="currentUserBadge">
+      <span id="currentUserName">جارٍ التحميل...</span>
+      <span id="currentUserRole" class="role-pill role-manager">مدير</span>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="admin-tabs-nav" aria-label="أقسام الإدارة">
+    <button type="button" class="tab-nav-btn active" data-tab="overview">📊 لوحة التحكم</button>
+    <button type="button" class="tab-nav-btn" data-tab="teachers">👩‍🏫 المعلمون</button>
+    <button type="button" class="tab-nav-btn" data-tab="students">🎒 الطلاب</button>
+    <button type="button" class="tab-nav-btn" data-tab="guardians">👨‍👩‍👧 أولياء الأمور والموافقات</button>
+    <button type="button" class="tab-nav-btn" data-tab="schedules">📅 الجداول والمواعيد</button>
+    <button type="button" class="tab-nav-btn" data-tab="grades">📝 الدرجات والحضور</button>
+    <button type="button" class="tab-nav-btn" data-tab="records">📋 السجلات الدائمة</button>
+    <button type="button" class="tab-nav-btn" data-tab="complaints">✉️ شكاوى أولياء الأمور</button>
+    <button type="button" class="tab-nav-btn" data-tab="audit">📜 سجل العمليات</button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="admin-container">
+    
+    <!-- Status / Notification Alert -->
+    <div id="adminAlert" class="admin-alert" hidden>
+      <span id="adminAlertText"></span>
+      <button type="button" class="btn-sm btn-secondary" onclick="document.getElementById('adminAlert').hidden=true">✕</button>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 1. Overview Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-overview" class="tab-pane active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">👩‍🏫</div>
+          <div class="stat-info">
+            <h4>المعلمون الحقيقيون</h4>
+            <div id="statRealTeachersCount" class="stat-number">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🤖</div>
+          <div class="stat-info">
+            <h4>المعلمون الافتراضيون (AI)</h4>
+            <div id="statVirtualTeachersCount" class="stat-number">3</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎒</div>
+          <div class="stat-info">
+            <h4>الطلاب النشطون</h4>
+            <div id="statStudentsCount" class="stat-number">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👨‍👩‍👧</div>
+          <div class="stat-info">
+            <h4>أولياء الأمور</h4>
+            <div id="statGuardiansCount" class="stat-number">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-info">
+            <h4>الحصص والاختبارات القادمة</h4>
+            <div id="statSchedulesCount" class="stat-number">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✉️</div>
+          <div class="stat-info">
+            <h4>الشكاوى الجديدة</h4>
+            <div id="statComplaintsCount" class="stat-number">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Cards -->
+      <div class="card-panel">
+        <h3>⚡ إجراءات الإدارة السريعة</h3>
+        <div class="pane-actions">
+          <a href="school-teacher-add.html" class="btn btn-primary" id="quickAddTeacherBtn">➕ إضافة معلم حقيقي</a>
+          <a href="school-student-add.html" class="btn btn-primary" id="quickAddStudentBtn">➕ تسجيل طالب جديد</a>
+          <a href="school-guardian-consents.html" class="btn btn-secondary">👨‍👩‍👧 إدارة موافقات أولياء الأمور</a>
+          <button type="button" class="btn btn-secondary" id="quickAddScheduleBtn">📅 جدولة حصة / اختبار</button>
+          <a href="school-virtual-classroom.html" class="btn btn-secondary">🤖 فتح الصف الافتراضي AI</a>
+          <a href="school-live.html" class="btn btn-secondary">🎙️ فتح الصف المباشر</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 2. Teachers Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-teachers" class="tab-pane">
+      <div class="pane-header">
+        <h2>👩‍🏫 إدارة المعلمين الحقيقيين</h2>
+        <div class="pane-actions">
+          <button type="button" class="btn btn-primary" id="openAddTeacherModalBtn">➕ إضافة معلم حقيقي</button>
+        </div>
+      </div>
+
+      <!-- Real Teachers List -->
+      <div class="card-panel">
+        <h3>المعلمون الحقيقيون المعتمدون بالمدرسة</h3>
+        <p class="text-muted">مرتبطون بحسابات مستخدمين حقيقية في شنو منو مع جداول حصص وصلاحيات تدريس.</p>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الحساب المرتبط (User)</th>
+                <th>المواد</th>
+                <th>المراحل والصفوف</th>
+                <th>الشعب</th>
+                <th>الهاتف</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="realTeachersTableBody">
+              <tr><td colspan="8" class="empty-state">جارٍ تحميل قائمة المعلمين الحقيقيين...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Virtual Teachers Section (Clearly separated) -->
+      <div class="card-panel" style="border: 2px solid var(--admin-primary-light);">
+        <div class="pane-header">
+          <h3>🤖 المعلمون الافتراضيون الذكيون (AI Virtual Teachers)</h3>
+          <span class="ai-virtual-badge">معلم افتراضي / AI — منفصل عن الكادر الحقيقي</span>
+        </div>
+        <p class="text-muted">شخصيات افتراضية مخصصة للشرح والسبورة التفاعلية؛ لا تنتحل شخصية معلم حقيقي ومميزة بوسم الذكاء الاصطناعي دائماً.</p>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>الشخصية الافتراضية</th>
+                <th>المادة التخصصية</th>
+                <th>المراحل المدعومة</th>
+                <th>لغة الحوار</th>
+                <th>الوسم الإلزامي</th>
+                <th>الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="virtualTeachersTableBody">
+              <tr><td colspan="6" class="empty-state">جارٍ تحميل قائمة المعلمين الافتراضيين...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 3. Students Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-students" class="tab-pane">
+      <div class="pane-header">
+        <h2>🎒 إدارة الطلاب وشؤون القيد</h2>
+        <div class="pane-actions">
+          <button type="button" class="btn btn-primary" id="openAddStudentModalBtn">➕ تسجيل طالب</button>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="form-row" style="margin-bottom: 16px;">
+          <div class="form-group">
+            <label for="filterStudentStage">المرحلة</label>
+            <select id="filterStudentStage" class="form-control">
+              <option value="">جميع المراحل</option>
+              <option value="ابتدائي">ابتدائي</option>
+              <option value="متوسط">متوسط</option>
+              <option value="إعدادي">إعدادي</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="filterStudentGrade">الصف</label>
+            <input type="text" id="filterStudentGrade" class="form-control" placeholder="بحث بالصف">
+          </div>
+          <div class="form-group">
+            <label for="filterStudentSection">الشعبة</label>
+            <input type="text" id="filterStudentSection" class="form-control" placeholder="الشعبة (أ، ب...)">
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>اسم الطالب</th>
+                <th>المرحلة والصف</th>
+                <th>الشعبة</th>
+                <th>المواد</th>
+                <th>المعلمون المرتبطون</th>
+                <th>المعلم الافتراضي</th>
+                <th>ولي الأمر</th>
+                <th>حالة القيد</th>
+                <th>تاريخ التسجيل</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+              <tr><td colspan="10" class="empty-state">جارٍ تحميل قائمة الطلاب...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 4. Guardians & Consents Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-guardians" class="tab-pane">
+      <div class="pane-header">
+        <h2>👨‍👩‍👧 أولياء الأمور وسجل الموافقات القابل للتدقيق</h2>
+      </div>
+
+      <div class="card-panel">
+        <h3>أولياء الأمور المسجلون</h3>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>اسم ولي الأمر</th>
+                <th>الحساب المرتبط (User)</th>
+                <th>صلة القرابة</th>
+                <th>وسيلة التواصل المسموحة</th>
+                <th>رقم الهاتف</th>
+                <th>الطلاب المرتبطون به</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="guardiansTableBody">
+              <tr><td colspan="7" class="empty-state">جارٍ تحميل قائمة أولياء الأمور...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Auditable Consent Panel -->
+      <div class="card-panel" id="consentAuditPanel">
+        <div class="pane-header">
+          <div>
+            <h3>🔒 سجل موافقات ولي الأمر للطالب (Guardian Consent)</h3>
+            <p class="text-muted">موافقات صريحة وقابلة للتدقيق. لا يوجد خيار موافق عليه افتراضياً (Opt-in فقط). المعلم لا يستطيع تجاوز الرفض.</p>
+          </div>
+          <div class="form-group" style="min-width: 250px;">
+            <select id="consentStudentSelect" class="form-control">
+              <option value="">اختر طالباً لعرض موافقات ولي أمره...</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="consentsContainer" class="consents-list">
+          <p class="empty-state">اختر طالباً من القائمة لعرض سجل موافقات ولي أمره وحالتها الحالية.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 5. Schedules & Calendar Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-schedules" class="tab-pane">
+      <div class="pane-header">
+        <h2>📅 الجداول والمواعيد الموحدة</h2>
+        <div class="pane-actions">
+          <button type="button" class="btn btn-primary" id="openAddScheduleModalBtn">➕ إضافة موعد / اختبار</button>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="form-row" style="margin-bottom: 16px;">
+          <div class="form-group">
+            <label for="filterScheduleType">نوع الموعد</label>
+            <select id="filterScheduleType" class="form-control">
+              <option value="">جميع الأنواع</option>
+              <option value="LIVE_CLASS">حصة مباشرة (LIVE_CLASS)</option>
+              <option value="RECORDED_REPLAY">إعادة مادة مسجلة مصرح بها (RECORDED_REPLAY)</option>
+              <option value="GENERAL_REVIEW">مراجعة عامة (GENERAL_REVIEW)</option>
+              <option value="EXAM">اختبار / امتحان (EXAM)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="filterScheduleStage">المرحلة</label>
+            <select id="filterScheduleStage" class="form-control">
+              <option value="">جميع المراحل</option>
+              <option value="ابتدائي">ابتدائي</option>
+              <option value="متوسط">متوسط</option>
+              <option value="إعدادي">إعدادي</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>النوع</th>
+                <th>العنوان</th>
+                <th>المادة والدرس</th>
+                <th>المرحلة والصف والشعبة</th>
+                <th>المعلم المسؤول</th>
+                <th>الموعد والمدة</th>
+                <th>تفاصيل الاختبار / الإعادة</th>
+                <th>الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="schedulesTableBody">
+              <tr><td colspan="8" class="empty-state">جارٍ تحميل جدول المواعيد...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 6. Grades & Attendance Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-grades" class="tab-pane">
+      <div class="pane-header">
+        <h2>📝 رصد الدرجات وتسجيل الحضور</h2>
+        <div class="pane-actions">
+          <button type="button" class="btn btn-primary" id="openAddGradeModalBtn">➕ رصد درجة جديدة</button>
+          <button type="button" class="btn btn-secondary" id="openAddAttendanceModalBtn">✔️ تسجيل الحضور</button>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <h3>آخر نتائج وتقييمات الطلاب</h3>
+        <p class="text-muted">تُحفظ النتائج بشكل فوري في السجل الأكاديمي الدائم للطالب والمعلم.</p>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>اسم الطالب</th>
+                <th>المادة</th>
+                <th>نوع التقييم</th>
+                <th>العنوان</th>
+                <th>الدرجة</th>
+                <th>المعلم الراصد</th>
+                <th>الملاحظات</th>
+                <th>التاريخ</th>
+              </tr>
+            </thead>
+            <tbody id="recentGradesTableBody">
+              <tr><td colspan="8" class="empty-state">جارٍ تحميل أحدث الدرجات...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 7. Permanent Academic Records Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-records" class="tab-pane">
+      <div class="pane-header">
+        <h2>📋 السجلات الأكاديمية الدائمة (Permanent Records)</h2>
+      </div>
+
+      <div class="card-panel">
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label for="selectStudentForRecord">عرض السجل الأكاديمي الشامل لطالب:</label>
+            <select id="selectStudentForRecord" class="form-control">
+              <option value="">اختر طالباً لعرض سجله الدائم...</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 2;">
+            <label for="selectTeacherForRecord">أو عرض السجل المهني لمعلم:</label>
+            <select id="selectTeacherForRecord" class="form-control">
+              <option value="">اختر معلماً لعرض سجله...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rendered Student Permanent Record Display -->
+      <div id="studentPermanentRecordView" class="card-panel" hidden>
+        <!-- Populated via school-admin.js -->
+      </div>
+
+      <!-- Rendered Teacher Record Display -->
+      <div id="teacherPermanentRecordView" class="card-panel" hidden>
+        <!-- Populated via school-admin.js -->
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 8. Guardian Complaints Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-complaints" class="tab-pane">
+      <div class="pane-header">
+        <h2>✉️ شكاوى وملاحظات أولياء الأمور</h2>
+        <div class="pane-actions" id="guardianComplaintAction">
+          <button type="button" class="btn btn-primary" id="openAddComplaintModalBtn">✍️ تقديم شكوى أو استفسار</button>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ولي الأمر</th>
+                <th>الطالب المعني</th>
+                <th>الموضوع</th>
+                <th>نص الشكوى</th>
+                <th>التاريخ</th>
+                <th>الحالة</th>
+                <th>رد الإدارة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="complaintsTableBody">
+              <tr><td colspan="8" class="empty-state">جارٍ تحميل الشكاوى...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 9. Audit Log Tab -->
+    <!-- ================================================================= -->
+    <section id="pane-audit" class="tab-pane">
+      <div class="pane-header">
+        <h2>📜 سجل العمليات والأمان (Audit Log)</h2>
+      </div>
+
+      <div class="card-panel">
+        <p class="text-muted">سجل دائم غير قابل للتعديل يوثق جميع العمليات الإدارية، التسجيل، الأرشفة، وتغييرات الصلاحيات.</p>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>التاريخ والوقت</th>
+                <th>المُنفّذ (Actor)</th>
+                <th>نوع الإجراء (Action)</th>
+                <th>الهدف (Target)</th>
+                <th>التفاصيل والملاحظات</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogsTableBody">
+              <tr><td colspan="5" class="empty-state">جارٍ تحميل سجل العمليات...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================================================================= -->
+  <!-- MODALS -->
+  <!-- ================================================================= -->
+
+  <!-- Modal: Add Real Teacher -->
+  <div id="modalAddTeacher" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>➕ إضافة وتعيين معلم حقيقي</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formAddTeacher" class="admin-form">
+          <div class="form-group">
+            <label>البحث عن حساب المعلم الحقيقي في شنو منو:</label>
+            <input type="text" id="teacherUserSearchInput" class="form-control" placeholder="اكتب اسم المستخدم أو رقم الهاتف أو كود الصداقة" autocomplete="off" required>
+            <input type="hidden" id="teacherUserId" required>
+            <div id="teacherSearchResults" class="user-search-results" hidden></div>
+            <small class="text-muted">يجب ربط المعلم بحساب حقيقي موجود. لا يتم إنشاء حسابات وهمية.</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherFullName">الاسم الكامل للمعلم:</label>
+              <input type="text" id="teacherFullName" class="form-control" placeholder="اسم المعلم الثلاثي" required>
+            </div>
+            <div class="form-group">
+              <label for="teacherGender">الجنس:</label>
+              <select id="teacherGender" class="form-control">
+                <option value="ذكر">ذكر</option>
+                <option value="أنثى">أنثى</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherPhone">رقم الهاتف / وسيلة التواصل:</label>
+              <input type="tel" id="teacherPhone" class="form-control" placeholder="مثال: 07701234567">
+            </div>
+            <div class="form-group">
+              <label for="teacherStages">المراحل الدراسية (مفصولة بفاصلة):</label>
+              <input type="text" id="teacherStages" class="form-control" placeholder="مثال: ابتدائي، متوسط" value="ابتدائي">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherGrades">الصفوف الدراسية (مفصولة بفاصلة):</label>
+              <input type="text" id="teacherGrades" class="form-control" placeholder="مثال: الأول ابتدائي، الثاني ابتدائي" required>
+            </div>
+            <div class="form-group">
+              <label for="teacherSections">الشعب (مفصولة بفاصلة):</label>
+              <input type="text" id="teacherSections" class="form-control" placeholder="مثال: أ، ب" value="أ">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="teacherSubjects">المواد التي يُدرّسها (مفصولة بفاصلة):</label>
+            <input type="text" id="teacherSubjects" class="form-control" placeholder="مثال: اللغة العربية، الرياضيات" required>
+          </div>
+
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">حفظ وتعيين المعلم</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Register Student -->
+  <div id="modalAddStudent" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>🎒 تسجيل طالب جديد</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formAddStudent" class="admin-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="studentNameInput">اسم الطالب الرباعي:</label>
+              <input type="text" id="studentNameInput" class="form-control" placeholder="اسم الطالب كاملاً" required>
+            </div>
+            <div class="form-group">
+              <label for="studentStageSelect">المرحلة الدراسية:</label>
+              <select id="studentStageSelect" class="form-control" required>
+                <option value="">اختر المرحلة</option>
+                <option value="ابتدائي">ابتدائي</option>
+                <option value="متوسط">متوسط</option>
+                <option value="إعدادي">إعدادي</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="studentGradeInput">الصف الدراسي:</label>
+              <input type="text" id="studentGradeInput" class="form-control" placeholder="مثال: الأول ابتدائي" required>
+            </div>
+            <div class="form-group">
+              <label for="studentSectionInput">الشعبة:</label>
+              <input type="text" id="studentSectionInput" class="form-control" placeholder="الشعبة (مثال: أ)" value="أ" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="studentSubjectsInput">المواد الدراسية (مفصولة بفاصلة):</label>
+            <input type="text" id="studentSubjectsInput" class="form-control" placeholder="مثال: الرياضيات، العلوم، اللغة العربية">
+          </div>
+
+          <div class="form-group">
+            <label>البحث عن حساب ولي الأمر في شنو منو:</label>
+            <input type="text" id="guardianUserSearchInput" class="form-control" placeholder="اكتب اسم ولي الأمر أو رقم الهاتف" autocomplete="off" required>
+            <input type="hidden" id="guardianUserId" required>
+            <div id="guardianSearchResults" class="user-search-results" hidden></div>
+            <small class="text-muted">يجب ربط الطالب بحساب ولي أمر حقيقي مسجل في شنو منو.</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="assignTeacherSelect">إسناد لمعلم حقيقي أساسي (اختياري):</label>
+              <select id="assignTeacherSelect" class="form-control">
+                <option value="">بدون إسناد مباشر حالياً</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="assignVirtualTeacherSelect">إسناد لمعلم افتراضي AI (اختياري):</label>
+              <select id="assignVirtualTeacherSelect" class="form-control">
+                <option value="">بدون إسناد لمعلم افتراضي</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">إتمام تسجيل الطالب</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Schedule Event (Class / Exam / Review / Replay) -->
+  <div id="modalAddSchedule" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📅 إضافة موعد جديد في الجدول المدرسي</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formAddSchedule" class="admin-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="schedTypeSelect">نوع الموعد:</label>
+              <select id="schedTypeSelect" class="form-control" required>
+                <option value="LIVE_CLASS">حصة تفاعلية مباشرة (LIVE_CLASS)</option>
+                <option value="EXAM">اختبار / امتحان (EXAM)</option>
+                <option value="GENERAL_REVIEW">جلسة مراجعة عامة (GENERAL_REVIEW)</option>
+                <option value="RECORDED_REPLAY">إعادة مادة مسجلة مصرح بها (RECORDED_REPLAY)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="schedTitleInput">عنوان الحصة / الاختبار:</label>
+              <input type="text" id="schedTitleInput" class="form-control" placeholder="مثال: اختبار الشهر الأول في الرياضيات" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="schedStageSelect">المرحلة:</label>
+              <select id="schedStageSelect" class="form-control" required>
+                <option value="ابتدائي">ابتدائي</option>
+                <option value="متوسط">متوسط</option>
+                <option value="إعدادي">إعدادي</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="schedGradeInput">الصف:</label>
+              <input type="text" id="schedGradeInput" class="form-control" placeholder="مثال: السادس ابتدائي" required>
+            </div>
+            <div class="form-group">
+              <label for="schedSectionInput">الشعبة:</label>
+              <input type="text" id="schedSectionInput" class="form-control" placeholder="مثال: أ">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="schedSubjectInput">المادة:</label>
+              <input type="text" id="schedSubjectInput" class="form-control" placeholder="مثال: الرياضيات" required>
+            </div>
+            <div class="form-group">
+              <label for="schedLessonInput">عنوان الدرس / الموضوع:</label>
+              <input type="text" id="schedLessonInput" class="form-control" placeholder="مثال: ضرب وقسمة الكسور">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="schedWhenInput">موعد وتاريخ البدء:</label>
+              <input type="datetime-local" id="schedWhenInput" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="schedDurationInput">المدة بالدقائق:</label>
+              <input type="number" id="schedDurationInput" class="form-control" min="10" max="240" value="45" required>
+            </div>
+          </div>
+
+          <!-- Exam Specific Config -->
+          <div id="examConfigFields" class="card-panel" style="background:var(--admin-bg);">
+            <h4>⚙️ تفاصيل الاختبار (يتم إبلاغ الإدارة والطلاب تلقائياً):</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="examMaxScore">الدرجة القصوى:</label>
+                <input type="number" id="examMaxScore" class="form-control" min="1" value="100">
+              </div>
+              <div class="form-group">
+                <label for="examPassScore">درجة النجاح:</label>
+                <input type="number" id="examPassScore" class="form-control" min="1" value="50">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="examInstructions">تعليمات الاختبار:</label>
+              <input type="text" id="examInstructions" class="form-control" placeholder="تعليمات هامة للطلاب قبل البدء">
+            </div>
+          </div>
+
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">حفظ ونشر الموعد</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Grade -->
+  <div id="modalAddGrade" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📝 رصد درجة للطالب</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formAddGrade" class="admin-form">
+          <div class="form-group">
+            <label for="gradeStudentSelect">اختر الطالب:</label>
+            <select id="gradeStudentSelect" class="form-control" required></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="gradeSubjectInput">المادة:</label>
+              <input type="text" id="gradeSubjectInput" class="form-control" placeholder="المادة" required>
+            </div>
+            <div class="form-group">
+              <label for="gradeTypeSelect">نوع التقييم:</label>
+              <select id="gradeTypeSelect" class="form-control" required>
+                <option value="exam">اختبار / امتحان</option>
+                <option value="quiz">اختبار قصير (Quiz)</option>
+                <option value="homework">واجب منزلي</option>
+                <option value="participation">مشاركة صفية</option>
+                <option value="review">تقييم مراجعة</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="gradeTitleInput">عنوان الاختبار / التقييم:</label>
+            <input type="text" id="gradeTitleInput" class="form-control" placeholder="مثال: امتحان نهاية الفصل الأول" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="gradeScoreInput">الدرجة المحققة:</label>
+              <input type="number" id="gradeScoreInput" class="form-control" min="0" step="0.5" required>
+            </div>
+            <div class="form-group">
+              <label for="gradeMaxScoreInput">الدرجة القصوى:</label>
+              <input type="number" id="gradeMaxScoreInput" class="form-control" min="1" value="100" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="gradeNotesInput">ملاحظات المعلم:</label>
+            <input type="text" id="gradeNotesInput" class="form-control" placeholder="ملاحظات تفصيلية أو تشجيعية للطالب">
+          </div>
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">حفظ في السجل الأكاديمي</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Record Attendance -->
+  <div id="modalAddAttendance" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>✔️ تسجيل حضور وغياب الطالب</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formAddAttendance" class="admin-form">
+          <div class="form-group">
+            <label for="attStudentSelect">الطالب:</label>
+            <select id="attStudentSelect" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label for="attStatusSelect">حالة الحضور:</label>
+            <select id="attStatusSelect" class="form-control" required>
+              <option value="present">حاضر (Present)</option>
+              <option value="absent">غائب (Absent)</option>
+              <option value="late">متأخر (Late)</option>
+              <option value="excused">غياب بعذر (Excused)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="attNotesInput">ملاحظات الغياب أو التأخير:</label>
+            <input type="text" id="attNotesInput" class="form-control" placeholder="ملاحظات إضافية">
+          </div>
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">تثبيت الحضور</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Complaint (Guardian) -->
+  <div id="modalAddComplaint" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>✍️ تقديم شكوى أو ملاحظة لإدارة المدرسة</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formAddComplaint" class="admin-form">
+          <div class="form-group">
+            <label for="complaintStudentSelect">الطالب المعني بالشكوى:</label>
+            <select id="complaintStudentSelect" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label for="complaintSubjectInput">الموضوع:</label>
+            <input type="text" id="complaintSubjectInput" class="form-control" placeholder="موضوع الشكوى باختصار" required>
+          </div>
+          <div class="form-group">
+            <label for="complaintBodyInput">تفاصيل الشكوى:</label>
+            <textarea id="complaintBodyInput" class="form-control" placeholder="اشرح تفاصيل الشكوى للإدارة..." required></textarea>
+          </div>
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">إرسال الشكوى</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reply to Complaint (Admin/Manager) -->
+  <div id="modalReplyComplaint" class="admin-modal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>💬 الرد على شكوى ولي الأمر</h3>
+        <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="formReplyComplaint" class="admin-form">
+          <input type="hidden" id="replyComplaintId">
+          <div class="form-group">
+            <label>موضوع الشكوى:</label>
+            <div id="replyComplaintSubjectDisplay" style="font-weight: bold;"></div>
+          </div>
+          <div class="form-group">
+            <label>نص الشكوى:</label>
+            <div id="replyComplaintBodyDisplay" class="text-muted" style="background:var(--admin-bg);padding:10px;border-radius:8px;"></div>
+          </div>
+          <div class="form-group">
+            <label for="replyStatusSelect">تحديث حالة الشكوى:</label>
+            <select id="replyStatusSelect" class="form-control" required>
+              <option value="IN_PROGRESS">قيد المتابعة (IN_PROGRESS)</option>
+              <option value="CLOSED">تمت المعالجة والإغلاق (CLOSED)</option>
+              <option value="NEW">جديدة (NEW)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="replyTextInput">نص رد الإدارة لولي الأمر:</label>
+            <textarea id="replyTextInput" class="form-control" placeholder="اكتب رد الإدارة الرسمي هنا..." required></textarea>
+          </div>
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal>إلغاء</button>
+            <button type="submit" class="btn btn-primary">إرسال الرد وتحديث الحالة</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="school-admin.js?v=20260921-1"></script>
+</body>
+</html>
