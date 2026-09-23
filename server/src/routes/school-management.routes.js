@@ -14,6 +14,32 @@ router.use(requireAuth);
 router.use(attachSchoolContext);
 
 // --------------------------------------------------------------------------
+// Level 2 Security Barrier: Prevent Role Tampering & Privilege Escalation
+// --------------------------------------------------------------------------
+// Platform account roles ('role') are strictly immutable via school management.
+// Any attempt to modify or inject 'role' via school management endpoints
+// is rejected with 403 unless the actor is a platform admin or developer,
+// and developer role cannot be granted except by a developer.
+router.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body && req.body.role !== undefined) {
+    const isPlatformPrivileged = req.user && (req.user.role === 'developer' || req.user.role === 'admin');
+    if (!isPlatformPrivileged) {
+      return res.status(403).json({
+        ok: false,
+        message: 'تعديل أدوار الحسابات محصور بإدارة المنصة العليا (admin/developer) فقط لمنع تصعيد الصلاحيات'
+      });
+    }
+    if (req.body.role === 'developer' && req.user.role !== 'developer') {
+      return res.status(403).json({
+        ok: false,
+        message: 'لا يمكن منح رتبة المطور إلا من قبل مطور معتمد'
+      });
+    }
+  }
+  next();
+});
+
+// --------------------------------------------------------------------------
 // Current User & Context
 // --------------------------------------------------------------------------
 router.get('/me', (req, res) => {

@@ -115,4 +115,18 @@ check('school-admin.html contains all 9 required functional tabs and modal forms
   assert.match(html, /id="formReplyComplaint"/);
 });
 
+// 7) Two-Level Security Barrier for Account Roles
+check('two-level role security barrier: UI has no role modifier, server rejects role tampering', () => {
+  const html = fs.readFileSync(path.join(root, 'school-admin.html'), 'utf8');
+  // UI Level: No select/input/button for changing platform roles
+  assert.doesNotMatch(html, /<select[^>]*name=["']role["']/i, 'UI must not expose role select dropdown');
+  assert.doesNotMatch(html, /<input[^>]*name=["']role["']/i, 'UI must not expose role input field');
+
+  // Server Level: school-management.routes.js enforces Level 2 role escalation guard
+  const routes = fs.readFileSync(path.join(root, 'server/src/routes/school-management.routes.js'), 'utf8');
+  assert.match(routes, /req\.body\.role\s*!==\s*undefined/, 'Routes must inspect req.body.role for tampering');
+  assert.match(routes, /تعديل أدوار الحسابات محصور بإدارة المنصة العليا/, 'Routes must reject role modification by non-admin');
+  assert.match(routes, /لا يمكن منح رتبة المطور إلا من قبل مطور معتمد/, 'Routes must forbid manager from granting developer role');
+});
+
 console.log(`\n${passed} checks passed`);
