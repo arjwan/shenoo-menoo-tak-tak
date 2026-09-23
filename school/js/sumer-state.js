@@ -13,11 +13,13 @@
   'use strict';
 
   var DEFAULT_STATE = {
-    // المصادقة والجلسة
+    // المصادقة والجلسة (لا تخزن كلمات المرور مطلقاً)
     auth: {
       token: null,
       user: null,
-      isAuthenticated: false
+      isAuthenticated: false,
+      loading: false,
+      error: null
     },
 
     // سياق المدرسة الحقيقي المستمد حصراً من الخادم (/api/school/management/me)
@@ -32,6 +34,35 @@
       guardian: null,
       studentProfile: null,
       students: []
+    },
+
+    // حالة التجربة المجانية للطالب (30 يوماً محسوبة من الخادم)
+    trial: {
+      active: false,
+      startedAt: null,
+      endsAt: null,
+      daysRemaining: 0,
+      studentId: null,
+      trialStatus: null
+    },
+
+    // حالة تقديم طلب انضمام المعلم
+    teacherApplication: {
+      status: 'idle', // 'idle' | 'submitting' | 'pending' | 'success' | 'conflict' | 'error'
+      submittedAt: null,
+      application: null,
+      error: null
+    },
+
+    // كتالوج المناهج العراقية الرسمية المعتمدة
+    curriculumCatalog: {
+      items: [],
+      version: null,
+      loading: false,
+      error: null,
+      selectedStage: null,
+      selectedGrade: null,
+      selectedSubject: null
     },
 
     // مساحة العمل النشطة
@@ -159,6 +190,85 @@
     }
   };
 
+  // --------------------------------------------------------------------------
+  // دوال تعديل وإدارة المصادقة (Auth Actions)
+  // --------------------------------------------------------------------------
+  SumerStoreInstance.prototype.setAuth = function (authData) {
+    authData = authData || {};
+    // حماية صارمة: منع تخزين كلمة المرور نهائياً
+    var sanitized = {
+      token: (authData.token !== undefined) ? authData.token : this.state.auth.token,
+      user: (authData.user !== undefined) ? authData.user : this.state.auth.user,
+      isAuthenticated: (authData.isAuthenticated !== undefined)
+        ? Boolean(authData.isAuthenticated)
+        : Boolean(authData.token || this.state.auth.token),
+      loading: Boolean(authData.loading),
+      error: authData.error || null
+    };
+
+    this.state.auth = Object.assign({}, this.state.auth, sanitized);
+    this.notify();
+  };
+
+  // --------------------------------------------------------------------------
+  // دوال إدارة التجربة المجانية (Trial Actions)
+  // --------------------------------------------------------------------------
+  SumerStoreInstance.prototype.setTrial = function (trialData) {
+    trialData = trialData || {};
+    this.state.trial = {
+      active: (trialData.active !== undefined) ? Boolean(trialData.active) : Boolean(trialData.isTrialActive),
+      startedAt: trialData.startedAt || trialData.trialStartedAt || null,
+      endsAt: trialData.endsAt || trialData.trialEndsAt || null,
+      daysRemaining: Number(trialData.daysRemaining || 0),
+      studentId: trialData.studentId || null,
+      trialStatus: trialData.trialStatus || (trialData.active ? 'active' : 'expired')
+    };
+    this.notify();
+  };
+
+  // --------------------------------------------------------------------------
+  // دوال إدارة طلب انضمام المعلم (Teacher Application Actions)
+  // --------------------------------------------------------------------------
+  SumerStoreInstance.prototype.setTeacherApplication = function (appData) {
+    appData = appData || {};
+    this.state.teacherApplication = {
+      status: appData.status || 'idle',
+      submittedAt: appData.submittedAt || (appData.status === 'pending' ? new Date().toISOString() : null),
+      application: appData.application || null,
+      error: appData.error || null
+    };
+    this.notify();
+  };
+
+  // --------------------------------------------------------------------------
+  // دوال إدارة كتالوج المناهج العراقية (Curriculum Catalog Actions)
+  // --------------------------------------------------------------------------
+  SumerStoreInstance.prototype.setCurriculumCatalog = function (catalogData) {
+    catalogData = catalogData || {};
+    this.state.curriculumCatalog = Object.assign({}, this.state.curriculumCatalog, {
+      items: Array.isArray(catalogData.items) ? catalogData.items : this.state.curriculumCatalog.items,
+      version: catalogData.version || this.state.curriculumCatalog.version,
+      loading: (catalogData.loading !== undefined) ? Boolean(catalogData.loading) : this.state.curriculumCatalog.loading,
+      error: (catalogData.error !== undefined) ? catalogData.error : this.state.curriculumCatalog.error
+    });
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setCurriculumFilter = function (stage, grade, subject) {
+    this.state.curriculumCatalog.selectedStage = stage || null;
+    this.state.curriculumCatalog.selectedGrade = grade || null;
+    this.state.curriculumCatalog.selectedSubject = subject || null;
+
+    this.state.curriculum.selectedStage = stage || null;
+    this.state.curriculum.selectedGrade = grade || null;
+    this.state.curriculum.selectedSubject = subject || null;
+
+    this.notify();
+  };
+
+  // --------------------------------------------------------------------------
+  // دوال الثيم والعرض
+  // --------------------------------------------------------------------------
   SumerStoreInstance.prototype.setTheme = function (theme) {
     theme = (theme === 'dark') ? 'dark' : 'light';
     this.state.ui.theme = theme;

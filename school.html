@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="school/css/sumer-tokens.css">
   <link rel="stylesheet" href="school/css/sumer-shell.css">
   <link rel="stylesheet" href="school/css/sumer-components.css">
+  <link rel="stylesheet" href="school/css/sumer-gateway.css">
 </head>
 <body>
   <div id="sumer-app">
@@ -40,17 +41,21 @@
   <script src="school-live-core.js"></script>
 
   <!-- المنظومة البرمجية الموحدة لمدرسة سومر -->
+  <script src="school/js/sumer-api.js"></script>
   <script src="school/js/sumer-state.js"></script>
   <script src="school/js/sumer-ui.js"></script>
+  <script src="school/js/views/view-guest.js"></script>
   <script src="school/js/sumer-router.js"></script>
 
   <script>
-    // تهيئة صدفة مدرسة سومر الموحدة (Phase 5 Bootstrap)
+    // تهيئة صدفة وبوابة مدرسة سومر الموحدة (Phase 6 Bootstrap)
     (function () {
       'use strict';
 
       var store = window.SumerStore;
+      var api = window.SumerAPI;
       var ui = window.SumerUI;
+      var guestView = window.SumerGuestView || window.ViewGuest;
       var router = window.SumerRouter;
 
       if (!store || !ui || !router) {
@@ -66,6 +71,19 @@
       var mobileBarMount = document.getElementById('sumer-mobile-bar-mount');
       var drawerMount = document.getElementById('sumer-drawer-mount');
       var contentMount = document.getElementById('sumer-content-mount');
+
+      var GUEST_ROUTES = [
+        '#welcome',
+        '#guest',
+        '#auth/login',
+        '#auth/register-student',
+        '#auth/apply-teacher',
+        '#curriculum'
+      ];
+
+      function isGuestRoute(routeKey) {
+        return GUEST_ROUTES.indexOf(routeKey) !== -1;
+      }
 
       function renderShell(currentRoute) {
         var state = store.getState();
@@ -103,18 +121,35 @@
         if (drawerBackdrop) drawerBackdrop.onclick = closeDrawer;
       }
 
+      function renderContent(routeKey, contract) {
+        routeKey = routeKey || window.location.hash || '#welcome';
+        if (!contentMount) return;
+
+        if (isGuestRoute(routeKey) && guestView) {
+          guestView.render(routeKey, contentMount);
+        } else {
+          contentMount.innerHTML = ui.renderPlaceholderShell(contract, routeKey);
+        }
+      }
+
       // الاشتراك بتغيرات الحالة لتحديث مكونات الهيكل
       store.subscribe(function () {
         renderShell(window.location.hash);
       });
 
+      // جلب سياق المستخدم الحالي إذا كان التوكن متوفراً
+      if (api && api.getToken()) {
+        api.getMe().then(function (res) {
+          if (res.ok && res.data) {
+            store.setSchoolContext(res.data.schoolContext, res.data.user);
+          }
+        }).catch(function () {});
+      }
+
       // تهيئة موجه المسارات
       router.init(function (routeKey, contract) {
         renderShell(routeKey);
-        // في المرحلة 5: عرض بطاقة الحجز النظيفة (Placeholder Shell) مع نفي البيانات الوهمية
-        if (contentMount) {
-          contentMount.innerHTML = ui.renderPlaceholderShell(contract, routeKey);
-        }
+        renderContent(routeKey, contract);
       });
     })();
   </script>
