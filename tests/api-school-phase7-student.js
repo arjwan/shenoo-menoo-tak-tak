@@ -186,7 +186,13 @@ const mockOverviewContainer = createMockContainer();
 ViewStudent.render('#student/overview', mockOverviewContainer);
 assert.ok(mockOverviewContainer.innerHTML.includes('sumer-loading-state'), 'يجب أن تبدأ الواجهة بحالة تحميل صادقة');
 
-console.log('✓ 5. لوحة مؤشرات الطالب تبدأ بحالة تحميل نظيفة وترتبط بسجلات الطالب الصادقة');
+// فحص مبدأ النزاهة الصارم: صفر سجلات حضور لا يجوز أن يظهر كنسبة 100%
+const mockZeroAttOverview = createMockContainer();
+ViewStudent.renderOverview(mockZeroAttOverview, { student: {}, attendanceRecords: [], gradeRecords: [] });
+assert.ok(!mockZeroAttOverview.innerHTML.includes('100%'), 'صفر سجلات حضور في Overview لا يجوز أن يظهر كـ 100% أبداً');
+assert.ok(mockZeroAttOverview.innerHTML.includes('—'), 'صفر سجلات حضور يجب أن يظهر كـ —');
+
+console.log('✓ 5. لوحة مؤشرات الطالب تبدأ بحالة تحميل نظيفة وترتبط بسجلات الطالب الصادقة (Zero Fake 100% Attendance)');
 
 // --------------------------------------------------------------------------
 // 6. واجهة الملف الأكاديمي (#student/profile) وحالة التجربة 30 يوماً
@@ -202,7 +208,21 @@ assert.equal(trialComputation.isTrialActive, true);
 assert.ok(trialComputation.daysRemaining >= 25);
 assert.equal(trialComputation.isExpired, false);
 
-console.log('✓ 6. حسابات التجربة المدرسية الـ 30 يوماً متطابقة حسابياً بين الواجهة والباك إند');
+// فحص عدم اختراع 30 يوماً عند غياب بيانات الخادم (Missing Trial != 30 Days)
+const missingTrialHeader = ViewStudent.renderStudentHeader({}, '#student/overview');
+assert.ok(!missingTrialHeader.includes('30 يوم') && !missingTrialHeader.includes('متبقي 30'), 'غياب بيانات التجربة لا يجوز أن يفترض 30 يوماً');
+assert.ok(missingTrialHeader.includes('غير متاح'), 'غياب بيانات التجربة يجب أن يعرض شارة وحالة غير متاح');
+
+const mockProfileNoTrial = createMockContainer();
+ViewStudent.renderProfile(mockProfileNoTrial, { student: { name: 'طالب سومري' } });
+assert.ok(mockProfileNoTrial.innerHTML.includes('الأيام المتبقية: <strong>غير متاح</strong>'), 'الملف الأكاديمي يجب أن يعرض غير متاح عند غياب بيانات الخادم');
+
+// فحص عدم تزييف السنة الدراسية hard-coded (Missing AcademicYear != 2026-2027)
+const mockProfileNoYear = createMockContainer();
+ViewStudent.renderProfile(mockProfileNoYear, { student: { name: 'طالب سومري' } });
+assert.ok(!mockProfileNoYear.innerHTML.includes('2026-2027'), 'غياب السنة الدراسية من الخادم لا يجوز أن يضع سنة 2026-2027 hard-coded');
+
+console.log('✓ 6. حسابات التجربة المدرسية والملف الأكاديمي تخلو تماماً من الافتراضات الوهمية (No 30-Day / Academic Year Fallback)');
 
 // --------------------------------------------------------------------------
 // 7. شخصيات المعلمين الافتراضيين الرسمية الثلاث فقط (Sarah, Ali, Mariam)
@@ -220,7 +240,13 @@ virtualProfilesRes.then((res) => {
   assert.ok(!ids.includes('omar-genius'), 'يحظر وجود شخصيات وهمية مثل عمر النابغة');
 });
 
-console.log('✓ 7. قائمة المعلمين الافتراضيين مطابقة للشخصيات الرسمية الثلاث المعتمدة');
+// فحص عدم اختراع هوية المعلم الافتراضي إذا لم يعين للطالب
+const mockOverviewNoVT = createMockContainer();
+ViewStudent.renderOverview(mockOverviewNoVT, { student: { name: 'طالب', assignedTeachers: [] } });
+assert.ok(!mockOverviewNoVT.innerHTML.includes('أ. سارة الذكية'), 'لا يجوز اختراع أ. سارة الذكية عند عدم تعيين معلم افتراضي');
+assert.ok(!mockOverviewNoVT.innerHTML.includes('الرياضيات والعلوم'), 'لا يجوز اختراع تخصص الرياضيات والعلوم');
+
+console.log('✓ 7. قائمة المعلمين الافتراضيين حقيقية ولا يتم اختراع هوية معلم افتراضي غير معين');
 
 // --------------------------------------------------------------------------
 // 8. واجهة مناهج الطالب (#student/curriculum) والتصفية الصادقة
@@ -232,7 +258,13 @@ assert.ok(Array.isArray(iraqiCatalog) && iraqiCatalog.length >= 100, 'كتالو
 const sixthPrimaryBooks = iraqiCatalog.filter(b => b.stage === 'ابتدائي' && b.grade === 'السادس ابتدائي');
 assert.ok(sixthPrimaryBooks.length > 0, 'يجب وجود كتب للسادس ابتدائي');
 
-console.log(`✓ 8. تصفية المناهج تعمل بدقة على كتالوج المناهج العراقي (${iraqiCatalog.length} كتاباً معتمداً)`);
+// فحص عدم عرض كامل الكتالوج كبديل وهمي لمنهج الطالب عند غياب التطابق (Missing Curriculum Match != Full Catalog)
+const mockCurriculumNoMatch = createMockContainer();
+ViewStudent.renderCurriculum(mockCurriculumNoMatch, { stage: 'جامعي', grade: 'سنة أولى' }, [{ stage: 'ابتدائي', grade: 'الأول ابتدائي', title: 'قراءتي للصف الأول' }]);
+assert.ok(mockCurriculumNoMatch.innerHTML.includes('لم يتم ربط كتب منهج صفك بعد'), 'عدم توفر كتب مطابقة يجب أن يعرض حالة فارغة صريحة');
+assert.ok(!mockCurriculumNoMatch.innerHTML.includes('قراءتي للصف الأول'), 'ممنوع عرض كتب مراحل أخرى كبديل وهمي لمنهج الطالب');
+
+console.log(`✓ 8. تصفية المناهج تقتصر على منهج الطالب الحقيقي دون السقوط الوهمي في كامل الكتالوج`);
 
 // --------------------------------------------------------------------------
 // 9. واجهة القارئ الرقمي المزدوج (#student/reader) وتقسيم الشاشة
@@ -242,7 +274,14 @@ assert.ok(sumerStudentCss.includes('.sumer-reader-split'), 'CSS يجب أن يت
 assert.ok(sumerStudentCss.includes('.sumer-reader-ocr-text'), 'CSS يجب أن يتضمن تنسيق نص OCR المستخرج');
 assert.ok(sumerStudentCss.includes('.sumer-reader-pdf-frame'), 'CSS يجب أن يتضمن تنسيق إطار PDF الأصلي');
 
-console.log('✓ 9. تنسيقات القارئ الرقمي المزدوج تدعم تقسيم الشاشة وعرض النصوص المستخرجة وملفات PDF');
+// فحص عدم اختراع 200 صفحة في القارئ المزدوج (Missing totalPages != 200)
+const mockReaderNoPages = createMockContainer();
+ViewStudent.renderReader(mockReaderNoPages, {}, 'test-book-id', 1, {}, {});
+assert.ok(!mockReaderNoPages.innerHTML.includes('من 200'), 'غياب عدد الصفحات لا يجوز أن يفترض 200 صفحة');
+assert.ok(mockReaderNoPages.innerHTML.includes('من —'), 'غياب عدد الصفحات يجب أن يعرض من —');
+assert.ok(mockReaderNoPages.innerHTML.includes('لا يتوفر نص OCR لهذه الصفحة'), 'غياب نص OCR يجب أن يعرض تنبيهاً صريحاً دون اعتبار النص الوهمي محتوى');
+
+console.log('✓ 9. القارئ المزدوج يدعم تقسيم الشاشة وعرض النصوص المستخرجة وملفات PDF بدون تزييف عدد الصفحات (No 200 Pages Fallback)');
 
 // --------------------------------------------------------------------------
 // 10. فهرسة وبحث صفحات المنهج (OCR & Curriculum Search APIs)
@@ -295,7 +334,13 @@ console.log('✓ 13. كشف الدرجات يعتمد على الحساب الص
 assert.ok(viewStudentCode.includes('attendanceRate'), 'سجل الحضور يجب أن يحسب نسبة الحضور الصادقة');
 assert.ok(viewStudentCode.includes('excused'), 'سجل الحضور يجب أن يدعم الغياب بعذر مبرر');
 
-console.log('✓ 14. سجل الحضور والغياب يدعم الحالات الأربع: حاضر، غائب، متأخر، مجاز');
+// فحص مبدأ النزاهة في صفحة الحضور: صفر سجلات حضور لا تعني 100% التزام (Zero Records != 100%)
+const mockAttendanceEmpty = createMockContainer();
+ViewStudent.renderAttendance(mockAttendanceEmpty, {}, { records: [], summary: { total: 0 } });
+assert.ok(!mockAttendanceEmpty.innerHTML.includes('نسبة الالتزام: 100%'), 'صفحة الحضور عند غياب السجلات لا يجوز أن تدعي نسبة الالتزام 100%');
+assert.ok(mockAttendanceEmpty.innerHTML.includes('نسبة الالتزام: —'), 'صفحة الحضور عند غياب السجلات يجب أن تظهر نسبة الالتزام: —');
+
+console.log('✓ 14. سجل الحضور والغياب يدعم الحالات الأربع وينزه مؤشر الحضور من ادعاء 100% عند انعدام السجلات');
 
 // --------------------------------------------------------------------------
 // 15. واجهة مسار التقدم الأكاديمي (#student/progress)
@@ -310,7 +355,7 @@ console.log('✓ 15. مسار التقدم الأكاديمي مربوط بنم�
 // 16. واجهة الجدول الدراسي والحصص (#student/schedule)
 // --------------------------------------------------------------------------
 assert.ok(viewStudentCode.includes('#classroom/live/'), 'الجدول يتضمن روابط دخول الصف المباشر');
-assert.ok(viewStudentCode.includes('LIVE_CLASS'), 'الجدول يدعم الحصص المباشرة');
+assert.ok(viewStudentCode.includes('sch.type'), 'الجدول يدعم نوع الحصة المسجل من الخادم');
 
 console.log('✓ 16. الجدول الدراسي الموحد يربط مواعيد الحصص المباشرة بروابط دخول الصفوف');
 
@@ -337,7 +382,7 @@ for (const term of FORBIDDEN_SURVEILLANCE_TERMS) {
 console.log('✓ 18. الواجهة خالية تماماً من تقنيات المراقبة أو التسجيل القسري المحظورة');
 
 // --------------------------------------------------------------------------
-// 19. حواجز الأمان والعزل بين الطلاب (Student Isolation & Anti-Tampering)
+// 19. حواجز الأمان والعزل بين الطلاب وخلو الكود من أي Fake Academic Fallbacks
 // --------------------------------------------------------------------------
 const managementService = require('../server/src/services/school-management');
 assert.equal(typeof managementService.getStudentPermanentRecord, 'function');
@@ -350,7 +395,16 @@ const mgmtCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/services/school
 assert.ok(mgmtCode.includes('لا يمكنك الاطلاع إلا على سجلك الأكاديمي الخاص فقط'), 'حاجز عزل الطالب مبرمج في getStudentPermanentRecord');
 assert.ok(mgmtCode.includes('غير مصرح لك بالاطلاع على سجل حضور هذا الطالب'), 'حاجز عزل الطالب مبرمج في getStudentAttendanceHistory');
 
-console.log('✓ 19. حواجز العزل الأكاديمي بين الطلاب مطبقة بصرامة لمنع تسريب السجلات أو التلاعب');
+// فحص خلو الكود المصدري تماماً من أي fallback رقمي أو أكاديمي وهمي (No Fake Academic Fallbacks)
+assert.ok(!viewStudentCode.includes('trialDaysRemaining : 30'), 'يحظر وجود fallback افتراضي 30 يوم في الكود');
+assert.ok(!viewStudentCode.includes('totalPages || 200'), 'يحظر وجود fallback افتراضي 200 صفحة في الكود');
+assert.ok(!viewStudentCode.includes("academicYear || '2026-2027'"), 'يحظر وجود سنة دراسية hard-coded في الكود');
+assert.ok(!viewStudentCode.includes("virtualTeacher.name || 'أ. سارة الذكية'"), 'يحظر اختراع اسم أ. سارة الذكية كـ fallback');
+assert.ok(!viewStudentCode.includes("virtualTeacher.subject || 'الرياضيات والعلوم'"), 'يحظر اختراع مادة الرياضيات والعلوم كـ fallback');
+assert.ok(!viewStudentCode.includes('filtered = catalogBooks;'), 'يحظر السقوط في الكتالوج الكامل كبديل لمنهج الطالب');
+assert.ok(!viewStudentCode.includes("totalPages = 200"), 'يحظر تعيين 200 صفحة كقيمة افتراضية');
+
+console.log('✓ 19. حواجز العزل الأكاديمي وخلو الكود التام من أي Fallback رقمي أو أكاديمي وهمي');
 
 // --------------------------------------------------------------------------
 // 20. تحصين الواجهات ضد هجمات الحقن النصي (XSS Escaping)

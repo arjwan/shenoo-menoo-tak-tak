@@ -519,7 +519,7 @@ async function getStudentAttendanceHistory(actorUser, schoolContext, studentId) 
     else if (r.status === 'excused') excused++;
   }
 
-  const attendanceRate = total > 0 ? Math.round(((present + late + excused) / total) * 100) : 100;
+  const attendanceRate = total > 0 ? Math.round(((present + late + excused) / total) * 100) : null;
 
   return {
     studentId: student._id,
@@ -593,7 +593,7 @@ async function getStudentGradesHistory(actorUser, schoolContext, studentId) {
   }
 
   const totalAssessments = records.length;
-  const averageScore = totalAssessments > 0 ? Math.round(totalScorePercentage / totalAssessments) : 0;
+  const averageScore = totalAssessments > 0 ? Math.round(totalScorePercentage / totalAssessments) : null;
 
   return {
     studentId: student._id,

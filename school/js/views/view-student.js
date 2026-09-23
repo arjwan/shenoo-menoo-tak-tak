@@ -50,32 +50,48 @@
 
   /**
    * الترويسة الأكاديمية لمساحة الطالب وشريط التبويبات السريعة
+   * الخادم وحده هو مصدر حقيقة التجربة المدرسية والاشتراك (Zero Fake Data)
    */
   function renderStudentHeader(student, currentRoute) {
     student = student || {};
     var trialInfo = student.trialInfo || {};
-    var remainingDays = trialInfo.daysRemaining !== undefined ? trialInfo.daysRemaining : (student.trialDaysRemaining !== undefined ? student.trialDaysRemaining : 30);
+    var remainingDays = trialInfo.daysRemaining !== undefined
+      ? trialInfo.daysRemaining
+      : (student.trialDaysRemaining !== undefined ? student.trialDaysRemaining : null);
     var isSubscribed = Boolean(student.isSubscribed || (student.subscription && student.subscription.active));
-    var isExpired = trialInfo.isExpired;
+    var isExpired = Boolean(trialInfo.isExpired || student.trialStatus === 'expired');
 
     var trialBannerClass = 'sumer-trial-banner';
-    var trialStatusText = 'فترة تجريبية مجانية: متبقي ' + remainingDays + ' يوم';
-    var trialBadgeVariant = 'teal';
+    var trialStatusText = 'فترة تجريبية مجانية: غير متاح';
+    var trialBadgeVariant = 'neutral';
+    var trialBadgeText = 'غير متاح';
 
     if (isSubscribed) {
       trialStatusText = 'اشتراك أكاديمي نشط ومعتمد';
       trialBadgeVariant = 'success';
+      trialBadgeText = 'مشترك';
     } else if (isExpired) {
       trialBannerClass += ' trial-expired';
       trialStatusText = 'انتهت الفترة التجريبية - يرجى تجديد الاشتراك لمواصلة التعلم';
       trialBadgeVariant = 'danger';
-    } else if (remainingDays <= 5) {
-      trialBannerClass += ' trial-expiring';
-      trialStatusText = 'تنبيه: أوشكت الفترة التجريبية على الانتهاء (متبقي ' + remainingDays + ' أيام)';
-      trialBadgeVariant = 'gold';
+      trialBadgeText = 'منتهي';
+    } else if (remainingDays !== null && remainingDays !== undefined) {
+      if (remainingDays <= 5) {
+        trialBannerClass += ' trial-expiring';
+        trialStatusText = 'تنبيه: أوشكت الفترة التجريبية على الانتهاء (متبقي ' + remainingDays + ' أيام)';
+        trialBadgeVariant = 'gold';
+      } else {
+        trialStatusText = 'فترة تجريبية مجانية: متبقي ' + remainingDays + ' يوم';
+        trialBadgeVariant = 'teal';
+      }
+      trialBadgeText = 'تجريبي';
+    } else {
+      trialStatusText = 'بيانات التجربة المدرسية: غير متاحة من الخادم';
+      trialBadgeVariant = 'neutral';
+      trialBadgeText = 'غير متاح';
     }
 
-    var initials = (student.name || 'طالب').slice(0, 2);
+    var initials = student.name ? student.name.trim().slice(0, 2) : '—';
 
     var html = '<div class="sumer-student-header">';
     html += '  <div class="sumer-student-hero">';
@@ -96,7 +112,7 @@
     html += '        <span class="sumer-card-icon">' + ICONS.clock + '</span>';
     html += '        <strong>' + escapeHtml(trialStatusText) + '</strong>';
     html += '      </div>';
-    html += '      ' + ui.renderBadge({ text: isSubscribed ? 'مشترك' : (isExpired ? 'منتهي' : 'تجريبي'), variant: trialBadgeVariant });
+    html += '      ' + ui.renderBadge({ text: trialBadgeText, variant: trialBadgeVariant });
     html += '    </div>';
     html += '  </div>';
 
@@ -137,21 +153,21 @@
     var submissions = (studentRecord && studentRecord.submissions) || [];
     var schedules = (studentRecord && studentRecord.schedules) || [];
 
-    // حساب إحصائيات الحضور الصادقة
+    // حساب إحصائيات الحضور الصادقة - عدم وجود سجلات لا يعني 100%
     var totalAtt = attendanceRecords.length;
     var presentCount = 0;
     attendanceRecords.forEach(function (r) {
       if (r.status === 'present' || r.status === 'late' || r.status === 'excused') presentCount++;
     });
-    var attRate = totalAtt > 0 ? Math.round((presentCount / totalAtt) * 100) : 100;
+    var attRate = totalAtt > 0 ? Math.round((presentCount / totalAtt) * 100) : null;
 
-    // حساب متوسط الدرجات الصادق
+    // حساب متوسط الدرجات الصادق - عدم وجود درجات لا يعني 0% أو قيمة افتراضية
     var totalGradePct = 0;
     var gradeCount = gradeRecords.length;
     gradeRecords.forEach(function (g) {
       if (g.maxScore > 0) totalGradePct += (g.score / g.maxScore) * 100;
     });
-    var avgGrade = gradeCount > 0 ? Math.round(totalGradePct / gradeCount) : 0;
+    var avgGrade = gradeCount > 0 ? Math.round(totalGradePct / gradeCount) : null;
 
     var html = '<div class="sumer-student-container">';
     html += renderStudentHeader(student, '#student/overview');
@@ -161,16 +177,16 @@
     html += '  <div class="sumer-kpi-card">';
     html += '    <div class="sumer-kpi-icon" style="background-color: var(--sumer-teal-50); color: var(--sumer-teal-600);">' + ICONS.check + '</div>';
     html += '    <div>';
-    html += '      <div class="sumer-kpi-val">' + (totalAtt > 0 ? (attRate + '%') : '100%') + '</div>';
-    html += '      <div class="sumer-kpi-label">نسبة الحضور الأكاديمي (' + totalAtt + ' حصة)</div>';
+    html += '      <div class="sumer-kpi-val">' + (attRate !== null ? (attRate + '%') : '—') + '</div>';
+    html += '      <div class="sumer-kpi-label">نسبة الحضور الأكاديمي ' + (totalAtt > 0 ? ('(' + totalAtt + ' حصة)') : '(لا توجد سجلات بعد)') + '</div>';
     html += '    </div>';
     html += '  </div>';
 
     html += '  <div class="sumer-kpi-card">';
     html += '    <div class="sumer-kpi-icon" style="background-color: var(--sumer-gold-50); color: var(--sumer-gold-600);">' + ICONS.star + '</div>';
     html += '    <div>';
-    html += '      <div class="sumer-kpi-val">' + (gradeCount > 0 ? (avgGrade + '%') : '—') + '</div>';
-    html += '      <div class="sumer-kpi-label">المعدل العام (' + gradeCount + ' تقييمات)</div>';
+    html += '      <div class="sumer-kpi-val">' + (avgGrade !== null ? (avgGrade + '%') : '—') + '</div>';
+    html += '      <div class="sumer-kpi-label">المعدل العام ' + (gradeCount > 0 ? ('(' + gradeCount + ' تقييمات)') : '(لا توجد درجات بعد)') + '</div>';
     html += '    </div>';
     html += '  </div>';
 
@@ -210,14 +226,16 @@
     } else {
       html += '      <div style="display: flex; flex-direction: column; gap: 0.75rem;">';
       schedules.slice(0, 4).forEach(function (sch) {
-        var eventDate = sch.scheduledAt ? new Date(sch.scheduledAt).toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' }) : 'قريباً';
+        var eventDate = sch.scheduledAt ? new Date(sch.scheduledAt).toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' }) : '—';
         html += '        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border: 1px solid var(--sumer-border-color); border-radius: var(--sumer-radius-md); background: var(--sumer-surface-1);">';
         html += '          <div>';
         html += '            <strong>' + escapeHtml(sch.title || sch.subject || 'حصة دراسية') + '</strong>';
         html += '            <div style="font-size: 0.85rem; color: var(--sumer-text-secondary);">' + escapeHtml(sch.subject || '') + ' • ' + escapeHtml(eventDate) + '</div>';
         html += '          </div>';
         html += '          <div style="display: flex; align-items: center; gap: 0.5rem;">';
-        html += '            ' + ui.renderBadge({ text: sch.type || 'LIVE_CLASS', variant: 'teal' });
+        if (sch.type) {
+          html += '            ' + ui.renderBadge({ text: sch.type, variant: 'teal' });
+        }
         if (sch.classroomCode) {
           html += '            <a href="#classroom/live/' + encodeURIComponent(sch.classroomCode) + '" class="sumer-btn sumer-btn-primary sumer-btn-sm">دخول الصف</a>';
         }
@@ -229,7 +247,7 @@
     html += '    </div>';
     html += '  </div>';
 
-    // قسم المعلمون المعينون
+    // قسم المعلمون المعينون - Zero Fake Names
     html += '  <div class="sumer-card">';
     html += '    <div class="sumer-card-header">';
     html += '      <h3 class="sumer-card-title"><span class="sumer-card-icon">' + ICONS.teacher + '</span>كادر التدريس المعتمد</h3>';
@@ -239,8 +257,9 @@
 
     var assignedTeachers = student.assignedTeachers || [];
     var virtualTeacher = student.assignedVirtualTeacher;
+    var hasVirtualTeacher = Boolean(virtualTeacher && (virtualTeacher.name || virtualTeacher.profileId));
 
-    if (assignedTeachers.length === 0 && !virtualTeacher) {
+    if (assignedTeachers.length === 0 && !hasVirtualTeacher) {
       html += ui.renderEmptyState({
         title: 'لم يتم تعيين معلمين بعد',
         description: 'تقوم إدارة المدرسة حالياً بتعيين الكادر التدريسي المخصص لشعبتك.',
@@ -248,25 +267,28 @@
       });
     } else {
       html += '      <div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-      if (virtualTeacher) {
+      if (hasVirtualTeacher) {
         html += '        <div style="padding: 0.75rem; border-radius: var(--sumer-radius-md); background: var(--sumer-teal-50); border: 1px solid var(--sumer-teal-200);">';
         html += '          <div style="display: flex; align-items: center; justify-content: space-between;">';
-        html += '            <strong>' + escapeHtml(virtualTeacher.name || 'أ. سارة الذكية') + '</strong>';
-        html += '            ' + ui.renderBadge({ text: 'معلم افتراضي / AI', variant: 'gold' });
+        html += '            <strong>' + escapeHtml(virtualTeacher.name || virtualTeacher.profileId) + '</strong>';
+        html += '            ' + ui.renderBadge({ text: virtualTeacher.label || 'معلم افتراضي / AI', variant: 'gold' });
         html += '          </div>';
-        html += '          <div style="font-size: 0.85rem; color: var(--sumer-teal-800); margin-top: 0.25rem;">' + escapeHtml(virtualTeacher.subject || 'الرياضيات والعلوم') + '</div>';
+        if (virtualTeacher.subject || virtualTeacher.title) {
+          html += '          <div style="font-size: 0.85rem; color: var(--sumer-teal-800); margin-top: 0.25rem;">' + escapeHtml(virtualTeacher.subject || virtualTeacher.title) + '</div>';
+        }
         html += '        </div>';
       }
 
       assignedTeachers.slice(0, 3).forEach(function (at) {
         var t = at.teacher || at;
+        var tName = t.name || t.fullName || '—';
         html += '        <div style="padding: 0.75rem; border-radius: var(--sumer-radius-md); background: var(--sumer-surface-1); border: 1px solid var(--sumer-border-color);">';
         html += '          <div style="display: flex; align-items: center; justify-content: space-between;">';
-        html += '            <strong>' + escapeHtml(t.name || t.fullName || 'معلم المادة') + '</strong>';
+        html += '            <strong>' + escapeHtml(tName) + '</strong>';
         html += '            ' + ui.renderBadge({ text: 'معلم معتمد', variant: 'teal' });
         html += '          </div>';
-        if (at.subject || (t.subjects && t.subjects.length > 0)) {
-          var subj = at.subject || (Array.isArray(t.subjects) ? t.subjects.join('، ') : t.subjects);
+        var subj = at.subject || (Array.isArray(t.subjects) ? t.subjects.join('، ') : t.subjects);
+        if (subj) {
           html += '          <div style="font-size: 0.85rem; color: var(--sumer-text-secondary); margin-top: 0.25rem;">' + escapeHtml(subj) + '</div>';
         }
         html += '        </div>';
@@ -277,7 +299,6 @@
     html += '  </div>';
 
     html += '</div>'; // نهاية الشبكة
-
     html += '</div>'; // نهاية الحاوية
     container.innerHTML = html;
   }
@@ -290,12 +311,16 @@
     var trialInfo = student.trialInfo || {};
     var guardian = student.guardian || {};
 
+    var remainingDaysText = trialInfo.daysRemaining !== undefined
+      ? (trialInfo.daysRemaining + ' يوم')
+      : (student.trialDaysRemaining !== undefined ? (student.trialDaysRemaining + ' يوم') : 'غير متاح');
+
     var html = '<div class="sumer-student-container">';
     html += renderStudentHeader(student, '#student/profile');
 
     html += '<div class="sumer-grid" style="grid-template-columns: 2fr 1fr; gap: 1.5rem;">';
 
-    // بطاقة المعلومات الأكاديمية
+    // بطاقة المعلومات الأكاديمية - Zero Fake Year / Facts
     html += '  <div class="sumer-card">';
     html += '    <div class="sumer-card-header">';
     html += '      <h3 class="sumer-card-title"><span class="sumer-card-icon">' + ICONS.student + '</span>البيانات الأكاديمية الرسمية</h3>';
@@ -307,7 +332,7 @@
     html += '        <div><span style="color: var(--sumer-text-secondary); font-size: 0.85rem;">المرحلة الدراسية:</span><div style="font-weight: 600;">' + escapeHtml(student.stage || '—') + '</div></div>';
     html += '        <div><span style="color: var(--sumer-text-secondary); font-size: 0.85rem;">الصف الدراسي:</span><div style="font-weight: 600;">' + escapeHtml(student.grade || '—') + '</div></div>';
     html += '        <div><span style="color: var(--sumer-text-secondary); font-size: 0.85rem;">الشعبة:</span><div style="font-weight: 600;">' + escapeHtml(student.section || '—') + '</div></div>';
-    html += '        <div><span style="color: var(--sumer-text-secondary); font-size: 0.85rem;">سنة التسجيل الأكاديمية:</span><div style="font-weight: 600;">' + escapeHtml(student.academicYear || '2026-2027') + '</div></div>';
+    html += '        <div><span style="color: var(--sumer-text-secondary); font-size: 0.85rem;">سنة التسجيل الأكاديمية:</span><div style="font-weight: 600;">' + escapeHtml(student.academicYear || '—') + '</div></div>';
     html += '        <div><span style="color: var(--sumer-text-secondary); font-size: 0.85rem;">الرقم الأكاديمي:</span><div style="font-weight: 600; font-family: monospace;">' + escapeHtml(String(student._id || student.id || '—')) + '</div></div>';
     html += '      </div>';
 
@@ -320,7 +345,7 @@
       });
       html += '        </div>';
     } else {
-      html += '        <p style="color: var(--sumer-text-secondary); font-size: 0.9rem;">تطبق مواد المنهج العراقي الرسمي المعتمد للمرحلة.</p>';
+      html += '        <p style="color: var(--sumer-text-secondary); font-size: 0.9rem;">لم يتم تقييد مواد خاصة بعد. تطبق المواد العامة المعتمدة لمرحلتك.</p>';
     }
     html += '      </div>';
     html += '    </div>';
@@ -344,7 +369,7 @@
     html += '        <div style="font-size: 0.85rem; color: var(--sumer-text-secondary);">';
     html += '          <div>تاريخ البدء: ' + (trialInfo.startDate ? new Date(trialInfo.startDate).toLocaleDateString('ar-IQ') : '—') + '</div>';
     html += '          <div>تاريخ الانتهاء: ' + (trialInfo.expiresAt ? new Date(trialInfo.expiresAt).toLocaleDateString('ar-IQ') : '—') + '</div>';
-    html += '          <div>الأيام المتبقية: <strong>' + (trialInfo.daysRemaining !== undefined ? trialInfo.daysRemaining : 30) + ' يوم</strong></div>';
+    html += '          <div>الأيام المتبقية: <strong>' + escapeHtml(remainingDaysText) + '</strong></div>';
     html += '        </div>';
     html += '      </div>';
     html += '    </div>';
@@ -380,10 +405,10 @@
     } else {
       html += '  <div class="sumer-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">';
       realTeachers.forEach(function (t) {
-        var subjs = Array.isArray(t.subjects) ? t.subjects.join('، ') : (t.subjects || t.specialty || 'مدرس المادة');
+        var subjs = Array.isArray(t.subjects) ? t.subjects.join('، ') : (t.subjects || t.specialty || '—');
         html += '    <div class="sumer-card">';
         html += '      <div class="sumer-card-header">';
-        html += '        <h4 class="sumer-card-title">' + escapeHtml(t.name || t.fullName || 'أستاذ المادة') + '</h4>';
+        html += '        <h4 class="sumer-card-title">' + escapeHtml(t.name || t.fullName || '—') + '</h4>';
         html += '        ' + ui.renderBadge({ text: 'معلم معتمد', variant: 'teal' });
         html += '      </div>';
         html += '      <div class="sumer-card-body">';
@@ -398,33 +423,43 @@
     }
     html += '</div>';
 
-    // المعلمون الافتراضيون بالذكاء الاصطناعي (Strictly 3 Profiles)
+    // المعلمون الافتراضيون بالذكاء الاصطناعي - تؤخذ فقط من API الحقيقي
     html += '<div>';
     html += '  <div style="margin-bottom: 1rem;">';
     html += '    <h3 style="margin: 0; font-size: 1.25rem;"><span class="sumer-card-icon">🤖</span>المعلمون الافتراضيون بالذكاء الاصطناعي (AI Personas)</h3>';
     html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">شخصيات تعليمية ذكية معتمدة وموجهة لتبسيط المفاهيم الصعبة وفق المنهج العراقي على مدار الساعة.</p>';
     html += '  </div>';
 
-    html += '  <div class="sumer-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">';
-    virtualProfiles.forEach(function (p) {
-      html += '    <div class="sumer-card" style="border-top: 3px solid var(--sumer-gold-500);">';
-      html += '      <div class="sumer-card-header">';
-      html += '        <h4 class="sumer-card-title">' + escapeHtml(p.name) + '</h4>';
-      html += '        ' + ui.renderBadge({ text: p.label || 'معلم افتراضي / AI', variant: 'gold' });
-      html += '      </div>';
-      html += '      <div class="sumer-card-body">';
-      html += '        <p style="font-size: 0.9rem; color: var(--sumer-text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">' + escapeHtml(p.title || '') + '</p>';
-      if (p.specialties && p.specialties.length > 0) {
-        html += '        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">';
-        p.specialties.forEach(function (s) {
-          html += '          <span class="sumer-badge badge-neutral" style="font-size: 0.75rem;">' + escapeHtml(s) + '</span>';
-        });
-        html += '        </div>';
-      }
-      html += '      </div>';
-      html += '    </div>';
-    });
-    html += '  </div>';
+    if (virtualProfiles.length === 0) {
+      html += ui.renderEmptyState({
+        title: 'لا تتوفر شخصيات معلمين افتراضيين حالياً',
+        description: 'جاري تحميل ملفات المعلمين الافتراضيين المعتمدة من الخادم.',
+        icon: '🤖'
+      });
+    } else {
+      html += '  <div class="sumer-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">';
+      virtualProfiles.forEach(function (p) {
+        html += '    <div class="sumer-card" style="border-top: 3px solid var(--sumer-gold-500);">';
+        html += '      <div class="sumer-card-header">';
+        html += '        <h4 class="sumer-card-title">' + escapeHtml(p.name || p.profileId || '—') + '</h4>';
+        html += '        ' + ui.renderBadge({ text: p.label || 'معلم افتراضي / AI', variant: 'gold' });
+        html += '      </div>';
+        html += '      <div class="sumer-card-body">';
+        if (p.title) {
+          html += '        <p style="font-size: 0.9rem; color: var(--sumer-text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">' + escapeHtml(p.title) + '</p>';
+        }
+        if (p.specialties && p.specialties.length > 0) {
+          html += '        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">';
+          p.specialties.forEach(function (s) {
+            html += '          <span class="sumer-badge badge-neutral" style="font-size: 0.75rem;">' + escapeHtml(s) + '</span>';
+          });
+          html += '        </div>';
+        }
+        html += '      </div>';
+        html += '    </div>';
+      });
+      html += '  </div>';
+    }
     html += '</div>';
 
     html += '</div>'; // نهاية الحاوية
@@ -433,22 +468,19 @@
 
   // --------------------------------------------------------------------------
   // 4. مناهج مرحلتي الدراسية - Curriculum Filtered Catalog (#student/curriculum)
+  // لا تعرض كامل الكتالوج في مساحة الطالب عند عدم التطابق (Zero Fake Catalog)
   // --------------------------------------------------------------------------
   function renderCurriculum(container, student, catalogBooks) {
     catalogBooks = catalogBooks || [];
     var studentStage = (student && student.stage) || '';
     var studentGrade = (student && student.grade) || '';
 
-    // تصفية الكتب حسب مرحلة وصف الطالب إذا كانت محددة
+    // تصفية حصرية حسب مرحلة وصف الطالب فقط
     var filtered = catalogBooks.filter(function (b) {
-      var matchStage = !studentStage || b.stage === studentStage;
-      var matchGrade = !studentGrade || b.grade === studentGrade;
-      return matchStage && matchGrade;
+      if (studentStage && b.stage !== studentStage) return false;
+      if (studentGrade && b.grade !== studentGrade) return false;
+      return true;
     });
-
-    if (filtered.length === 0) {
-      filtered = catalogBooks; // السقوط في كامل الكتالوج في حال عدم وجود مطابقة صارمة
-    }
 
     var html = '<div class="sumer-student-container">';
     html += renderStudentHeader(student, '#student/curriculum');
@@ -456,17 +488,18 @@
     html += '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">';
     html += '  <div>';
     html += '    <h3 style="margin: 0; font-size: 1.25rem;"><span class="sumer-card-icon">' + ICONS.book + '</span>الكتب المنهجية الرسمية المعتمدة</h3>';
-    html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">كتب وزارة التربية العراقية بصيغتي PDF الرسمية والنص المفهرس للبحث الذكي.</p>';
+    html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">الكتب الدراسية المخصصة لمرحلتك (' + escapeHtml(studentStage || '—') + ' - ' + escapeHtml(studentGrade || '—') + ').</p>';
     html += '  </div>';
     html += '  <div>';
-    html += '    ' + ui.renderBadge({ text: filtered.length + ' كتاب متاح', variant: 'teal' });
+    html += '    ' + ui.renderBadge({ text: filtered.length > 0 ? (filtered.length + ' كتاب متاح') : 'لا توجد كتب', variant: filtered.length > 0 ? 'teal' : 'neutral' });
     html += '  </div>';
     html += '</div>';
 
+    // إذا لم توجد كتب تطابق stage + grade للطالب: اعرض Empty State واضحة دون عرض كامل الكتالوج
     if (filtered.length === 0) {
       html += ui.renderEmptyState({
-        title: 'لا توجد كتب دراسية مفهرسة',
-        description: 'جاري تحميل قائمة الكتب المعتمدة من خادم المناهج.',
+        title: 'لم يتم ربط كتب منهج صفك بعد',
+        description: 'لم نعثر على كتب دراسية مطابقة لمرحلتك الدراسية (' + escapeHtml(studentStage || '—') + ' - ' + escapeHtml(studentGrade || '—') + '). سيتم عرضها فور توفرها واعتمادها.',
         icon: ICONS.book
       });
     } else {
@@ -482,8 +515,8 @@
         html += '  </div>';
         html += '  <div class="sumer-card-body">';
         html += '    <div style="font-size: 0.85rem; color: var(--sumer-text-secondary); display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem;">';
-        html += '      <div>المرحلة: <strong>' + escapeHtml(book.stage || studentStage || 'عام') + '</strong></div>';
-        html += '      <div>الصف: <strong>' + escapeHtml(book.grade || studentGrade || 'عام') + '</strong></div>';
+        html += '      <div>المرحلة: <strong>' + escapeHtml(book.stage || studentStage || '—') + '</strong></div>';
+        html += '      <div>الصف: <strong>' + escapeHtml(book.grade || studentGrade || '—') + '</strong></div>';
         if (book.subject) html += '      <div>المادة: <strong>' + escapeHtml(book.subject) + '</strong></div>';
         html += '    </div>';
         html += '    <div style="display: flex; gap: 0.5rem;">';
@@ -501,6 +534,7 @@
 
   // --------------------------------------------------------------------------
   // 5. القارئ الرقمي المزدوج - Dual OCR & PDF Reader (#student/reader/:id)
+  // لا تخترع عدد صفحات (Zero 200 Fake Pages) ولا نص وهمي يوحي بوجود صفحة
   // --------------------------------------------------------------------------
   function renderReader(container, student, bookId, pageNum, bookData, pageData, viewMode) {
     pageNum = Math.max(1, parseInt(pageNum, 10) || 1);
@@ -508,10 +542,18 @@
     bookData = bookData || {};
     pageData = pageData || {};
 
-    var bookTitle = bookData.title || (pageData && pageData.bookTitle) || 'الكتاب المنهجي العراقي';
-    var totalPages = (pageData && pageData.totalPages) || bookData.totalPages || 200;
+    var bookTitle = bookData.title || (pageData && pageData.bookTitle) || 'الكتاب المنهجي';
+    var totalPages = (pageData && typeof pageData.totalPages === 'number' && pageData.totalPages > 0)
+      ? pageData.totalPages
+      : (typeof bookData.totalPages === 'number' && bookData.totalPages > 0 ? bookData.totalPages : null);
+
     var pdfUrl = (bookData.file && bookData.file.url) || bookData.sourceUrl || '';
-    var ocrContent = (pageData && pageData.content) || 'الصفحة المحددة لا تحتوي على نص مفهرس بعد أو جاري تحميل محتواها...';
+    var ocrContent = (pageData && typeof pageData.content === 'string') ? pageData.content.trim() : '';
+    var hasOcr = Boolean(ocrContent && ocrContent.length > 0);
+
+    var totalPagesDisplay = totalPages !== null ? totalPages : '—';
+    var maxAttr = totalPages !== null ? (' max="' + totalPages + '"') : '';
+    var nextDisabled = (totalPages !== null && pageNum >= totalPages) ? ' disabled' : '';
 
     var html = '<div class="sumer-student-container">';
     html += renderStudentHeader(student, '#student/reader');
@@ -525,13 +567,13 @@
     html += '      <h3 style="margin: 0; font-size: 1.1rem;">' + escapeHtml(bookTitle) + '</h3>';
     html += '    </div>';
 
-    // أزرار التحكم بالصفحات
+    // أزرار التحكم بالصفحات - بدون تزييف الحد الأقصى
     html += '    <div class="sumer-reader-controls">';
     html += '      <button type="button" class="sumer-btn sumer-btn-outline sumer-btn-sm" id="sumer-reader-prev-btn"' + (pageNum <= 1 ? ' disabled' : '') + '>‹ الصفحة السابقة</button>';
     html += '      <span style="font-size: 0.9rem;">صفحة:</span>';
-    html += '      <input type="number" class="sumer-reader-page-input" id="sumer-reader-page-input" value="' + pageNum + '" min="1" max="' + totalPages + '">';
-    html += '      <span style="font-size: 0.9rem; color: var(--sumer-text-secondary);">من ' + totalPages + '</span>';
-    html += '      <button type="button" class="sumer-btn sumer-btn-outline sumer-btn-sm" id="sumer-reader-next-btn"' + (pageNum >= totalPages ? ' disabled' : '') + '>الصفحة التالية ›</button>';
+    html += '      <input type="number" class="sumer-reader-page-input" id="sumer-reader-page-input" value="' + pageNum + '" min="1"' + maxAttr + '>';
+    html += '      <span style="font-size: 0.9rem; color: var(--sumer-text-secondary);">من ' + totalPagesDisplay + '</span>';
+    html += '      <button type="button" class="sumer-btn sumer-btn-outline sumer-btn-sm" id="sumer-reader-next-btn"' + nextDisabled + '>الصفحة التالية ›</button>';
     html += '    </div>';
 
     // أزرار نمط العرض
@@ -565,7 +607,15 @@
       }
       html += '      </div>';
       html += '      <div class="sumer-reader-pane-body" id="sumer-reader-text-container">';
-      html += '        <div class="sumer-reader-ocr-text">' + escapeHtml(ocrContent) + '</div>';
+      if (hasOcr) {
+        html += '        <div class="sumer-reader-ocr-text">' + escapeHtml(ocrContent) + '</div>';
+      } else {
+        html += ui.renderEmptyState({
+          title: 'لا يتوفر نص OCR لهذه الصفحة',
+          description: 'لم يتم استخراج نص مقروء آلياً للصفحة رقم ' + pageNum + '، أو أنها تحتوي على رسوم ومخططات فقط.',
+          icon: ICONS.book
+        });
+      }
       html += '      </div>';
       html += '    </div>';
     }
@@ -581,7 +631,6 @@
       html += '      </div>';
       html += '      <div class="sumer-reader-pane-body" style="padding: 0; background: #525659;">';
       if (pdfUrl) {
-        // ندرج معاينة PDF مع معيار الصفحة
         var frameUrl = pdfUrl + '#page=' + pageNum;
         html += '        <iframe src="' + escapeHtml(frameUrl) + '" class="sumer-reader-pdf-frame" title="نسخة PDF للكتاب"></iframe>';
       } else {
@@ -601,10 +650,13 @@
     container.innerHTML = html;
 
     // ربط مستمعي الأحداث التفاعلية للقارئ
-    attachReaderEvents(bookId, pageNum, totalPages, viewMode);
+    if (typeof document !== 'undefined') {
+      attachReaderEvents(bookId, pageNum, totalPages, viewMode);
+    }
   }
 
   function attachReaderEvents(bookId, currentPage, totalPages, currentMode) {
+    if (typeof document === 'undefined') return;
     var prevBtn = document.getElementById('sumer-reader-prev-btn');
     var nextBtn = document.getElementById('sumer-reader-next-btn');
     var pageInput = document.getElementById('sumer-reader-page-input');
@@ -615,7 +667,8 @@
     var searchInput = document.getElementById('sumer-reader-search-input');
 
     function navigatePage(p) {
-      p = Math.max(1, Math.min(totalPages, p));
+      if (p < 1) p = 1;
+      if (totalPages !== null && p > totalPages) p = totalPages;
       window.location.hash = '#student/reader/' + encodeURIComponent(bookId) + '?page=' + p;
     }
 
@@ -684,7 +737,7 @@
     html += '    <h3 style="margin: 0; font-size: 1.25rem;"><span class="sumer-card-icon">' + ICONS.book + '</span>الواجبات المدرسية والتكاليف</h3>';
     html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">المهام والواجبات الموجهة إليك من معلمي صفك مع سياسة التسليم وإعادة الإرسال قبل التصحيح.</p>';
     html += '  </div>';
-    html += '  <div>' + ui.renderBadge({ text: assignments.length + ' واجب', variant: 'teal' }) + '</div>';
+    html += '  <div>' + ui.renderBadge({ text: assignments.length + ' واجب', variant: assignments.length > 0 ? 'teal' : 'neutral' }) + '</div>';
     html += '</div>';
 
     if (assignments.length === 0) {
@@ -700,18 +753,20 @@
         var sub = submissionsMap[assnId] || null;
         var isGraded = sub && sub.status === 'graded';
         var isSubmitted = sub && (sub.status === 'submitted' || sub.status === 'graded');
-        var dueDate = assn.dueAt ? new Date(assn.dueAt).toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' }) : 'غير محدد';
+        var dueDate = assn.dueAt ? new Date(assn.dueAt).toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' }) : '—';
         var isOverdue = assn.dueAt && new Date() > new Date(assn.dueAt);
 
         html += '<div class="sumer-assignment-item">';
         html += '  <div class="sumer-assignment-meta">';
         html += '    <div style="display: flex; align-items: center; gap: 0.75rem;">';
         html += '      <h4 style="margin: 0; font-size: 1.15rem;">' + escapeHtml(assn.title) + '</h4>';
-        html += '      ' + ui.renderBadge({ text: assn.subject, variant: 'teal' });
+        if (assn.subject) {
+          html += '      ' + ui.renderBadge({ text: assn.subject, variant: 'teal' });
+        }
         html += '    </div>';
         html += '    <div style="display: flex; align-items: center; gap: 0.5rem;">';
         if (isGraded) {
-          html += '      ' + ui.renderBadge({ text: 'تم التصحيح (' + sub.grade + '/' + assn.maxScore + ')', variant: 'success' });
+          html += '      ' + ui.renderBadge({ text: 'تم التصحيح (' + (sub.score !== undefined ? sub.score : '—') + '/' + assn.maxScore + ')', variant: 'success' });
         } else if (isSubmitted) {
           html += '      ' + ui.renderBadge({ text: 'تم التسليم (بانتظار التصحيح)', variant: 'gold' });
         } else if (isOverdue) {
@@ -722,7 +777,7 @@
         html += '    </div>';
         html += '  </div>';
 
-        html += '  <p style="margin: 0; font-size: 0.95rem; color: var(--sumer-text-secondary); line-height: 1.5;">' + escapeHtml(assn.description || 'لا يوجد وصف تفصيلي لهذا الواجب.') + '</p>';
+        html += '  <p style="margin: 0; font-size: 0.95rem; color: var(--sumer-text-secondary); line-height: 1.5;">' + escapeHtml(assn.description || '') + '</p>';
         html += '  <div style="font-size: 0.85rem; color: var(--sumer-text-secondary); display: flex; gap: 1rem;">';
         html += '    <div>الموعد النهائي: <strong>' + escapeHtml(dueDate) + '</strong></div>';
         html += '    <div>الدرجة القصوى: <strong>' + assn.maxScore + ' درجة</strong></div>';
@@ -732,13 +787,15 @@
         if (isGraded) {
           html += '  <div class="sumer-submission-graded">';
           html += '    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">';
-          html += '      <strong>الدرجة المرصودة: ' + sub.grade + ' من ' + assn.maxScore + '</strong>';
+          html += '      <strong>الدرجة المرصودة: ' + (sub.score !== undefined ? sub.score : '—') + ' من ' + assn.maxScore + '</strong>';
           html += '      <span class="sumer-badge badge-neutral">مغلق للتعديل</span>';
           html += '    </div>';
-          if (sub.feedback) {
-            html += '    <div style="font-size: 0.9rem; color: var(--sumer-text-primary);">ملاحظات المعلم: ' + escapeHtml(sub.feedback) + '</div>';
+          if (sub.teacherFeedback || sub.feedback) {
+            html += '    <div style="font-size: 0.9rem; color: var(--sumer-text-primary);">ملاحظات المعلم: ' + escapeHtml(sub.teacherFeedback || sub.feedback) + '</div>';
           }
-          html += '    <div style="font-size: 0.85rem; color: var(--sumer-text-secondary); margin-top: 0.5rem;">إجابتك المسلمة: ' + escapeHtml(sub.content || '') + '</div>';
+          if (sub.content) {
+            html += '    <div style="font-size: 0.85rem; color: var(--sumer-text-secondary); margin-top: 0.5rem;">إجابتك المسلمة: ' + escapeHtml(sub.content) + '</div>';
+          }
           html += '  </div>';
         } else {
           // نموذج التسليم وإعادة الإرسال قبل التصحيح
@@ -764,40 +821,42 @@
     container.innerHTML = html;
 
     // ربط أزرار تسليم الواجبات
-    assignments.forEach(function (assn) {
-      var assnId = assn._id || assn.id;
-      var btn = document.getElementById('sub-btn-' + assnId);
-      var textEl = document.getElementById('sub-text-' + assnId);
-      var msgEl = document.getElementById('sub-msg-' + assnId);
+    if (typeof document !== 'undefined') {
+      assignments.forEach(function (assn) {
+        var assnId = assn._id || assn.id;
+        var btn = document.getElementById('sub-btn-' + assnId);
+        var textEl = document.getElementById('sub-text-' + assnId);
+        var msgEl = document.getElementById('sub-msg-' + assnId);
 
-      if (btn && textEl) {
-        btn.onclick = function () {
-          var val = String(textEl.value || '').trim();
-          if (!val) {
-            if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-danger);">يرجى كتابة نص الإجابة قبل الإرسال.</span>';
-            return;
-          }
-
-          btn.disabled = true;
-          if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-text-secondary);">جاري إرسال التسليم إلى المعلم...</span>';
-
-          api.submitAssignment(assnId, { content: val }).then(function (res) {
-            btn.disabled = false;
-            if (res.ok) {
-              if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-teal-600); font-weight: 600;">تم استلام وتسجيل الواجب بنجاح!</span>';
-              if (res.data && res.data.submission) {
-                store.setStudentSubmission(assnId, res.data.submission);
-              }
-            } else {
-              if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-danger);">' + escapeHtml(res.message || 'تعذر تسليم الواجب.') + '</span>';
+        if (btn && textEl) {
+          btn.onclick = function () {
+            var val = String(textEl.value || '').trim();
+            if (!val) {
+              if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-danger);">يرجى كتابة نص الإجابة قبل الإرسال.</span>';
+              return;
             }
-          }).catch(function (err) {
-            btn.disabled = false;
-            if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-danger);">' + escapeHtml(err.message || 'حدث خطأ في الاتصال أثناء التسليم.') + '</span>';
-          });
-        };
-      }
-    });
+
+            btn.disabled = true;
+            if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-text-secondary);">جاري إرسال التسليم إلى المعلم...</span>';
+
+            api.submitAssignment(assnId, { content: val }).then(function (res) {
+              btn.disabled = false;
+              if (res.ok) {
+                if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-teal-600); font-weight: 600;">تم استلام وتسجيل الواجب بنجاح!</span>';
+                if (res.data && res.data.submission) {
+                  store.setStudentSubmission(assnId, res.data.submission);
+                }
+              } else {
+                if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-danger);">' + escapeHtml(res.message || 'تعذر تسليم الواجب.') + '</span>';
+              }
+            }).catch(function (err) {
+              btn.disabled = false;
+              if (msgEl) msgEl.innerHTML = '<span style="color: var(--sumer-danger);">' + escapeHtml(err.message || 'حدث خطأ في الاتصال أثناء التسليم.') + '</span>';
+            });
+          };
+        }
+      });
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -807,9 +866,14 @@
     gradesData = gradesData || {};
     var records = gradesData.records || [];
     var summary = gradesData.summary || {};
-    var averageScore = summary.averageScore || 0;
-    var totalAssessments = summary.totalAssessments || records.length;
+    var totalAssessments = summary.totalAssessments !== undefined ? summary.totalAssessments : records.length;
+    var averageScore = summary.averageScore !== undefined && summary.averageScore !== null
+      ? summary.averageScore
+      : null;
     var bySubject = summary.bySubject || {};
+
+    var avgBadgeText = averageScore !== null ? ('المعدل العام: ' + averageScore + '%') : 'المعدل العام: —';
+    var avgBadgeVariant = averageScore !== null ? (averageScore >= 75 ? 'success' : (averageScore >= 50 ? 'gold' : 'danger')) : 'neutral';
 
     var html = '<div class="sumer-student-container">';
     html += renderStudentHeader(student, '#student/grades');
@@ -819,9 +883,7 @@
     html += '    <h3 style="margin: 0; font-size: 1.25rem;"><span class="sumer-card-icon">' + ICONS.star + '</span>السجل الأكاديمي للدرجات والتقييمات</h3>';
     html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">كشف درجات الاختبارات، الشفهي، المشاركات، والواجبات المرصودة رسمياً من المعلمين.</p>';
     html += '  </div>';
-    html += '  <div>';
-    html += '    ' + ui.renderBadge({ text: 'المعدل العام: ' + averageScore + '%', variant: averageScore >= 75 ? 'success' : (averageScore >= 50 ? 'gold' : 'danger') });
-    html += '  </div>';
+    html += '  <div>' + ui.renderBadge({ text: avgBadgeText, variant: avgBadgeVariant }) + '</div>';
     html += '</div>';
 
     // بطاقات ملخص المواد
@@ -830,11 +892,12 @@
       html += '<div class="sumer-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">';
       subjectKeys.forEach(function (sKey) {
         var sData = bySubject[sKey];
-        var avg = sData.average || 0;
+        var avg = sData.average !== undefined && sData.average !== null ? sData.average : null;
+        var avgText = avg !== null ? (avg + '%') : '—';
         html += '<div class="sumer-card" style="padding: 1rem;">';
         html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">';
         html += '    <strong>' + escapeHtml(sKey) + '</strong>';
-        html += '    ' + ui.renderBadge({ text: avg + '%', variant: avg >= 75 ? 'success' : 'gold' });
+        html += '    ' + ui.renderBadge({ text: avgText, variant: avg !== null && avg >= 75 ? 'success' : 'gold' });
         html += '  </div>';
         html += '  <div style="font-size: 0.85rem; color: var(--sumer-text-secondary);">' + sData.count + ' تقييمات مرصودة</div>';
         html += '</div>';
@@ -870,8 +933,8 @@
         var teacherName = (r.teacher && (r.teacher.fullName || r.teacher.username)) || 'معلم المادة';
 
         html += '        <tr>';
-        html += '          <td><strong>' + escapeHtml(r.subject) + '</strong></td>';
-        html += '          <td>' + escapeHtml(r.type || 'واجب/اختبار') + '</td>';
+        html += '          <td><strong>' + escapeHtml(r.subject || '—') + '</strong></td>';
+        html += '          <td>' + escapeHtml(r.type || '—') + '</td>';
         html += '          <td>' + r.score + ' / ' + r.maxScore + '</td>';
         html += '          <td>' + ui.renderBadge({ text: pct + '%', variant: pct >= 75 ? 'success' : (pct >= 50 ? 'gold' : 'danger') }) + '</td>';
         html += '          <td style="font-size: 0.85rem; color: var(--sumer-text-secondary);">' + escapeHtml(rDate) + '</td>';
@@ -891,17 +954,23 @@
 
   // --------------------------------------------------------------------------
   // 8. سجل الحضور والغياب - Student Attendance (#student/attendance)
+  // عدم وجود سجلات لا يعني 100% حضور (Zero Fake 100% Attendance)
   // --------------------------------------------------------------------------
   function renderAttendance(container, student, attendanceData) {
     attendanceData = attendanceData || {};
     var records = attendanceData.records || [];
     var summary = attendanceData.summary || {};
-    var total = summary.total || records.length;
+    var total = summary.total !== undefined ? summary.total : records.length;
     var present = summary.present || 0;
     var absent = summary.absent || 0;
     var late = summary.late || 0;
     var excused = summary.excused || 0;
-    var attendanceRate = summary.attendanceRate !== undefined ? summary.attendanceRate : 100;
+    var attendanceRate = total > 0
+      ? (summary.attendanceRate !== undefined && summary.attendanceRate !== null ? summary.attendanceRate : Math.round(((present + late + excused) / total) * 100))
+      : null;
+
+    var rateBadgeText = attendanceRate !== null ? ('نسبة الالتزام: ' + attendanceRate + '%') : 'نسبة الالتزام: —';
+    var rateBadgeVariant = attendanceRate !== null ? (attendanceRate >= 85 ? 'success' : 'gold') : 'neutral';
 
     var html = '<div class="sumer-student-container">';
     html += renderStudentHeader(student, '#student/attendance');
@@ -911,9 +980,7 @@
     html += '    <h3 style="margin: 0; font-size: 1.25rem;"><span class="sumer-card-icon">' + ICONS.check + '</span>سجل الحضور والغياب المدرسي</h3>';
     html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">متابعة دقيقة لانضباط الطالب وحضوره في الحصص المباشرة والأنشطة الصفية.</p>';
     html += '  </div>';
-    html += '  <div>';
-    html += '    ' + ui.renderBadge({ text: 'نسبة الالتزام: ' + attendanceRate + '%', variant: attendanceRate >= 85 ? 'success' : 'gold' });
-    html += '  </div>';
+    html += '  <div>' + ui.renderBadge({ text: rateBadgeText, variant: rateBadgeVariant }) + '</div>';
     html += '</div>';
 
     // بطاقات الإحصاء السريع للحضور
@@ -1009,15 +1076,19 @@
     } else {
       html += '<div class="sumer-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 2rem;">';
       subjectProgress.forEach(function (sp) {
+        var completedSessions = sp.completedSessions !== undefined ? sp.completedSessions : 0;
+        var learningQuestions = sp.learningQuestions !== undefined ? sp.learningQuestions : 0;
+        var gradesCount = sp.gradesCount !== undefined ? sp.gradesCount : 0;
+
         html += '<div class="sumer-card">';
         html += '  <div class="sumer-card-header">';
-        html += '    <h4 class="sumer-card-title">' + escapeHtml(sp.subject) + '</h4>';
-        html += '    ' + ui.renderBadge({ text: sp.completedSessions + ' حصص مكتملة', variant: 'teal' });
+        html += '    <h4 class="sumer-card-title">' + escapeHtml(sp.subject || '—') + '</h4>';
+        html += '    ' + ui.renderBadge({ text: completedSessions + ' حصص مكتملة', variant: completedSessions > 0 ? 'teal' : 'neutral' });
         html += '  </div>';
         html += '  <div class="sumer-card-body">';
         html += '    <div style="font-size: 0.85rem; color: var(--sumer-text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">';
-        html += '      <div>التمارين والأسئلة المجابة: <strong>' + sp.learningQuestions + '</strong></div>';
-        html += '      <div>التقييمات المرصودة: <strong>' + sp.gradesCount + '</strong></div>';
+        html += '      <div>التمارين والأسئلة المجابة: <strong>' + learningQuestions + '</strong></div>';
+        html += '      <div>التقييمات المرصودة: <strong>' + gradesCount + '</strong></div>';
         html += '    </div>';
         html += '  </div>';
         html += '</div>';
@@ -1043,7 +1114,7 @@
     html += '    <h3 style="margin: 0; font-size: 1.25rem;"><span class="sumer-card-icon">' + ICONS.calendar + '</span>الجدول الدراسي ومواعيد الحصص</h3>';
     html += '    <p style="margin: 0.25rem 0 0 0; color: var(--sumer-text-secondary); font-size: 0.9rem;">مواعيد الحصص المباشرة، جلسات المراجعة، والاختبارات الأسبوعية.</p>';
     html += '  </div>';
-    html += '  <div>' + ui.renderBadge({ text: schedules.length + ' حصة مجدولة', variant: 'teal' }) + '</div>';
+    html += '  <div>' + ui.renderBadge({ text: schedules.length + ' حصة مجدولة', variant: schedules.length > 0 ? 'teal' : 'neutral' }) + '</div>';
     html += '</div>';
 
     if (schedules.length === 0) {
@@ -1055,7 +1126,7 @@
     } else {
       html += '<div style="display: flex; flex-direction: column; gap: 1rem;">';
       schedules.forEach(function (sch) {
-        var schDate = sch.scheduledAt ? new Date(sch.scheduledAt).toLocaleString('ar-IQ', { dateStyle: 'full', timeStyle: 'short' }) : 'قريباً';
+        var schDate = sch.scheduledAt ? new Date(sch.scheduledAt).toLocaleString('ar-IQ', { dateStyle: 'full', timeStyle: 'short' }) : '—';
         var code = sch.classroomCode || sch._id;
 
         html += '<div class="sumer-card" style="padding: 1.25rem;">';
@@ -1063,13 +1134,19 @@
         html += '    <div>';
         html += '      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">';
         html += '        <h4 style="margin: 0; font-size: 1.15rem;">' + escapeHtml(sch.title || sch.subject || 'درس تفاعلي') + '</h4>';
-        html += '        ' + ui.renderBadge({ text: sch.subject || 'عام', variant: 'teal' });
+        if (sch.subject) {
+          html += '        ' + ui.renderBadge({ text: sch.subject, variant: 'teal' });
+        }
         html += '      </div>';
         html += '      <div style="font-size: 0.9rem; color: var(--sumer-text-secondary);">' + escapeHtml(schDate) + '</div>';
         html += '    </div>';
         html += '    <div style="display: flex; align-items: center; gap: 0.5rem;">';
-        html += '      ' + ui.renderBadge({ text: sch.type || 'LIVE_CLASS', variant: 'gold' });
-        html += '      <a href="#classroom/live/' + encodeURIComponent(code) + '" class="sumer-btn sumer-btn-primary sumer-btn-sm">دخول الصف المباشر</a>';
+        if (sch.type) {
+          html += '      ' + ui.renderBadge({ text: sch.type, variant: 'gold' });
+        }
+        if (code) {
+          html += '      <a href="#classroom/live/' + encodeURIComponent(code) + '" class="sumer-btn sumer-btn-primary sumer-btn-sm">دخول الصف المباشر</a>';
+        }
         html += '    </div>';
         html += '  </div>';
         html += '</div>';
@@ -1086,7 +1163,7 @@
   // (Privacy First: Camera & Mic strictly OFF by default; zero media auto-start)
   // --------------------------------------------------------------------------
   function renderClassroom(container, code, student, isVirtual) {
-    code = code || 'room-demo';
+    code = code || 'room';
     var isAI = Boolean(isVirtual);
 
     var html = '<div class="sumer-student-container">';
@@ -1128,6 +1205,7 @@
   }
 
   function attachClassroomEvents(code) {
+    if (typeof document === 'undefined') return;
     var micBtn = document.getElementById('sumer-ctrl-mic');
     var camBtn = document.getElementById('sumer-ctrl-cam');
     var handBtn = document.getElementById('sumer-ctrl-hand');
@@ -1225,7 +1303,17 @@
           renderCurriculum(container, student, []);
         });
       } else if (mainRoute.indexOf('#student/reader') === 0 || mainRoute.indexOf('#curriculum/reader') === 0) {
-        var bookId = mainRoute.split('/reader/')[1] || queryParams.bookId || 'iq-science';
+        var bookId = mainRoute.split('/reader/')[1] || queryParams.bookId || '';
+        if (!bookId) {
+          container.innerHTML = ui.renderEmptyState({
+            title: 'لم يتم تحديد كتاب للقراءة',
+            description: 'يرجى اختيار كتاب من قائمة المناهج الدراسية لفتحه في القارئ المزدوج.',
+            icon: ICONS.book,
+            action: '<a href="#student/curriculum" class="sumer-btn sumer-btn-primary">استعراض كتب مرحلتي</a>'
+          });
+          return;
+        }
+
         var pageNum = parseInt(queryParams.page, 10) || 1;
         var viewMode = store.getState() && store.getState().curriculum && store.getState().curriculum.dualViewMode;
 
@@ -1284,10 +1372,10 @@
           renderSchedule(container, student, (record && record.schedules) || []);
         });
       } else if (mainRoute.indexOf('#classroom/live') === 0) {
-        var code = mainRoute.split('/live/')[1] || 'main';
+        var code = mainRoute.split('/live/')[1] || '';
         renderClassroom(container, code, student, false);
       } else if (mainRoute.indexOf('#classroom/virtual') === 0) {
-        var vcode = mainRoute.split('/virtual/')[1] || 'ai-session';
+        var vcode = mainRoute.split('/virtual/')[1] || '';
         renderClassroom(container, vcode, student, true);
       } else {
         renderOverview(container, record);
@@ -1302,6 +1390,18 @@
   }
 
   return {
-    render: render
+    render: render,
+    renderStudentHeader: renderStudentHeader,
+    renderOverview: renderOverview,
+    renderProfile: renderProfile,
+    renderTeachers: renderTeachers,
+    renderCurriculum: renderCurriculum,
+    renderReader: renderReader,
+    renderAssignments: renderAssignments,
+    renderGrades: renderGrades,
+    renderAttendance: renderAttendance,
+    renderProgress: renderProgress,
+    renderSchedule: renderSchedule,
+    renderClassroom: renderClassroom
   };
 }));

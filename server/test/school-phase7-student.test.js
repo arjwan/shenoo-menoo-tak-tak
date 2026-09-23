@@ -250,6 +250,15 @@ test('Sumer Phase 7: Real Student Workspace Full Integration Test', async (t) =>
     assert.equal(resAtt.data.summary.absent, 0);
     assert.equal(resAtt.data.summary.attendanceRate, 100);
 
+    // ZERO attendance records MUST NOT return 100% (Zero Fake Attendance)
+    const resAttZero = await requestJson(server, 'GET', '/api/school/management/students/me/attendance', {
+      Authorization: `Bearer ${student2Token}`
+    });
+    assert.equal(resAttZero.status, 200);
+    assert.equal(resAttZero.data.records.length, 0);
+    assert.equal(resAttZero.data.summary.total, 0);
+    assert.equal(resAttZero.data.summary.attendanceRate, null, 'صفر سجلات حضور لا يجوز أن ينتج نسبة 100%');
+
     // Cross-student access forbidden
     const resForbidden = await requestJson(server, 'GET', `/api/school/management/students/${student2Profile._id}/attendance`, {
       Authorization: `Bearer ${student1Token}`
@@ -268,6 +277,15 @@ test('Sumer Phase 7: Real Student Workspace Full Integration Test', async (t) =>
     assert.equal(resGrades.data.summary.averageScore, 85);
     assert.ok(resGrades.data.summary.bySubject['الرياضيات']);
     assert.equal(resGrades.data.summary.bySubject['الرياضيات'].average, 90);
+
+    // ZERO grade records MUST NOT return fabricated average
+    const resGradesZero = await requestJson(server, 'GET', '/api/school/management/students/me/grades', {
+      Authorization: `Bearer ${student2Token}`
+    });
+    assert.equal(resGradesZero.status, 200);
+    assert.equal(resGradesZero.data.records.length, 0);
+    assert.equal(resGradesZero.data.summary.totalAssessments, 0);
+    assert.equal(resGradesZero.data.summary.averageScore, null, 'صفر تقييمات لا يجوز أن ينتج معدلاً وهمياً');
 
     // Cross-student access forbidden
     const resForbidden = await requestJson(server, 'GET', `/api/school/management/students/${student2Profile._id}/grades`, {
