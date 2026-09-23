@@ -7,6 +7,7 @@
   "scripts": {
     "test:school-phase5": "node tests/api-school-phase5-shell.js",
     "test:school-phase6": "node tests/api-school-phase6-gateway.js",
+    "test:school-phase7": "node --test server/test/school-phase7-student.test.js && node tests/api-school-phase7-student.js",
     "test:school": "node tests/api-school-curriculum-indexing.js",
     "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-library-catalog.js",
     "test:school-pages": "node tests/api-school-classroom-contract.js",

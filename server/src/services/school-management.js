@@ -13,6 +13,7 @@ const SchoolAttendanceRecord = require('../models/SchoolAttendanceRecord');
 const GuardianComplaint = require('../models/GuardianComplaint');
 const VirtualTeacherProfile = require('../models/VirtualTeacherProfile');
 const SchoolSession = require('../models/SchoolSession');
+const SchoolLearningRecord = require('../models/SchoolLearningRecord');
 const SchoolClassroom = require('../models/SchoolClassroom');
 const VirtualClassroomSession = require('../models/VirtualClassroomSession');
 const SchoolTeacherApplication = require('../models/SchoolTeacherApplication');
@@ -379,7 +380,12 @@ async function archiveStudent(actorUser, schoolContext, studentId, reason = '') 
 }
 
 async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
-  const student = await SchoolStudent.findById(studentId)
+  let resolvedId = studentId;
+  if (studentId === 'me' && schoolContext.studentProfile) {
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId)
     .populate('guardian', 'fullName username phone email')
     .populate('studentUser', 'fullName username phone email')
     .populate('assignedTeachers.teacher', 'name subjects phone')
@@ -392,9 +398,30 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     throw err;
   }
 
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
   // Guardian scoping: guardian can only see own student
-  if (schoolContext.isGuardian && String(student.guardian?._id) !== String(actorUser._id)) {
+  if (schoolContext.isGuardian && !isGuardianOwner) {
     const err = new Error('لا يمكنك الاطلاع إلا على سجلات طلابك فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  // Student scoping: student can only see own record
+  if (schoolContext.isStudent && !isStudentOwner) {
+    const err = new Error('لا يمكنك الاطلاع إلا على سجلك الأكاديمي الخاص فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على هذا السجل الأكاديمي');
     err.status = 403;
     throw err;
   }
@@ -416,8 +443,9 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     }).sort({ scheduledAt: -1 }).limit(30).lean(),
     SchoolSession.find({ student: student._id }).sort({ startedAt: -1 }).limit(30).lean(),
     VirtualClassroomSession.find({ student: student._id }).sort({ createdAt: -1 }).limit(30).lean(),
-    GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
-    GuardianConsent.find({ student: student._id }).lean(),
+    // Privacy: Students should not see guardian complaints or confidential complaints
+    schoolContext.isStudent ? Promise.resolve([]) : GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
+    schoolContext.isStudent ? Promise.resolve([]) : GuardianConsent.find({ student: student._id }).lean(),
     SchoolAssignmentSubmission.find({ student: student._id }).populate('assignment', 'title subject dueAt maxScore').sort({ submittedAt: -1 }).lean()
   ]);
 
@@ -430,11 +458,243 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     schedules,
     sessions,
     virtualSessions,
-    complaints,
-    consents,
+    complaints: complaints || [],
+    consents: consents || [],
     submissions,
     notes: student.notes || [],
     scores: student.scores || []
+  };
+}
+
+/**
+ * Get Student Attendance History (Strict Ownership Scoped)
+ */
+async function getStudentAttendanceHistory(actorUser, schoolContext, studentId) {
+  let resolvedId = studentId;
+  if (studentId === 'me') {
+    if (!schoolContext.studentProfile) {
+      const err = new Error('حسابك غير مرتبط بملف طالب نشط');
+      err.status = 403;
+      throw err;
+    }
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId).lean();
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على سجل حضور هذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  const records = await SchoolAttendanceRecord.find({ student: student._id })
+    .populate('teacher', 'fullName username')
+    .sort({ date: -1 })
+    .lean();
+
+  const total = records.length;
+  let present = 0;
+  let absent = 0;
+  let late = 0;
+  let excused = 0;
+
+  for (const r of records) {
+    if (r.status === 'present') present++;
+    else if (r.status === 'absent') absent++;
+    else if (r.status === 'late') late++;
+    else if (r.status === 'excused') excused++;
+  }
+
+  const attendanceRate = total > 0 ? Math.round(((present + late + excused) / total) * 100) : 100;
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    records,
+    summary: {
+      total,
+      present,
+      absent,
+      late,
+      excused,
+      attendanceRate
+    }
+  };
+}
+
+/**
+ * Get Student Grades History (Strict Ownership Scoped)
+ */
+async function getStudentGradesHistory(actorUser, schoolContext, studentId) {
+  let resolvedId = studentId;
+  if (studentId === 'me') {
+    if (!schoolContext.studentProfile) {
+      const err = new Error('حسابك غير مرتبط بملف طالب نشط');
+      err.status = 403;
+      throw err;
+    }
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId).lean();
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على درجات هذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  const records = await SchoolGradeRecord.find({ student: student._id })
+    .populate('teacher', 'fullName username')
+    .sort({ recordedAt: -1 })
+    .lean();
+
+  let totalScorePercentage = 0;
+  const bySubject = {};
+
+  for (const r of records) {
+    const pct = r.maxScore > 0 ? (r.score / r.maxScore) * 100 : 0;
+    totalScorePercentage += pct;
+
+    if (!bySubject[r.subject]) {
+      bySubject[r.subject] = { count: 0, totalPct: 0, average: 0, items: [] };
+    }
+    bySubject[r.subject].count++;
+    bySubject[r.subject].totalPct += pct;
+    bySubject[r.subject].average = Math.round(bySubject[r.subject].totalPct / bySubject[r.subject].count);
+    bySubject[r.subject].items.push(r);
+  }
+
+  const totalAssessments = records.length;
+  const averageScore = totalAssessments > 0 ? Math.round(totalScorePercentage / totalAssessments) : 0;
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    records,
+    summary: {
+      totalAssessments,
+      averageScore,
+      bySubject
+    }
+  };
+}
+
+/**
+ * Get Student Academic Progress & Activity (Strict Ownership Scoped)
+ */
+async function getStudentProgress(actorUser, schoolContext, studentId) {
+  let resolvedId = studentId;
+  if (studentId === 'me') {
+    if (!schoolContext.studentProfile) {
+      const err = new Error('حسابك غير مرتبط بملف طالب نشط');
+      err.status = 403;
+      throw err;
+    }
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId).lean();
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على مسار تقدم هذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  const [learningRecords, gradeRecords, sessions] = await Promise.all([
+    SchoolLearningRecord.find({ student: student._id }).sort({ createdAt: -1 }).limit(50).lean(),
+    SchoolGradeRecord.find({ student: student._id }).sort({ recordedAt: -1 }).lean(),
+    SchoolSession.find({ student: student._id, status: 'completed' }).sort({ endedAt: -1 }).limit(30).lean()
+  ]);
+
+  const subjectProgress = {};
+  for (const s of (student.subjects || [])) {
+    subjectProgress[s] = {
+      subject: s,
+      learningQuestions: 0,
+      gradesCount: 0,
+      averageGrade: null,
+      completedSessions: 0
+    };
+  }
+
+  for (const lr of learningRecords) {
+    const subj = lr.subject || 'عام';
+    if (!subjectProgress[subj]) {
+      subjectProgress[subj] = { subject: subj, learningQuestions: 0, gradesCount: 0, averageGrade: null, completedSessions: 0 };
+    }
+    subjectProgress[subj].learningQuestions++;
+  }
+
+  for (const gr of gradeRecords) {
+    const subj = gr.subject;
+    if (!subjectProgress[subj]) {
+      subjectProgress[subj] = { subject: subj, learningQuestions: 0, gradesCount: 0, averageGrade: null, completedSessions: 0 };
+    }
+    subjectProgress[subj].gradesCount++;
+  }
+
+  for (const sess of sessions) {
+    const subj = sess.subject || 'عام';
+    if (!subjectProgress[subj]) {
+      subjectProgress[subj] = { subject: subj, learningQuestions: 0, gradesCount: 0, averageGrade: null, completedSessions: 0 };
+    }
+    subjectProgress[subj].completedSessions++;
+  }
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    stage: student.stage,
+    grade: student.grade,
+    section: student.section,
+    progress: student.progress || { average: 0, sessions: 0, answered: 0 },
+    scores: student.scores || [],
+    learningRecords,
+    gradeRecords,
+    completedSessionsCount: sessions.length,
+    subjectProgress: Object.values(subjectProgress)
   };
 }
 
@@ -1716,6 +1976,9 @@ module.exports = {
   updateStudent,
   archiveStudent,
   getStudentPermanentRecord,
+  getStudentAttendanceHistory,
+  getStudentGradesHistory,
+  getStudentProgress,
   listGuardians,
   getStudentConsents,
   updateGuardianConsent,

@@ -23,6 +23,7 @@
 
     // 2. مساحة عمل الطالب (Student Workspace)
     '#student/overview':    { workspace: 'student', title: 'لوحة مؤشرات الطالب', roleRequired: 'student', phase: 7 },
+    '#student/profile':     { workspace: 'student', title: 'الملف الأكاديمي للطالب', roleRequired: 'student', phase: 7 },
     '#student/classes':     { workspace: 'student', title: 'حصص الطالب', roleRequired: 'student', phase: 7 },
     '#student/schedule':    { workspace: 'student', title: 'الجدول الدراسي للطالب', roleRequired: 'student', phase: 7 },
     '#student/assignments': { workspace: 'student', title: 'واجبات الطالب', roleRequired: 'student', phase: 7 },
@@ -30,6 +31,8 @@
     '#student/attendance':  { workspace: 'student', title: 'سجل حضور وغياب الطالب', roleRequired: 'student', phase: 7 },
     '#student/progress':    { workspace: 'student', title: 'مسار التقدم الأكاديمي', roleRequired: 'student', phase: 7 },
     '#student/teachers':    { workspace: 'student', title: 'معلمو الطالب', roleRequired: 'student', phase: 7 },
+    '#student/curriculum':  { workspace: 'student', title: 'مناهج الطالب الدراسية', roleRequired: 'student', phase: 7 },
+    '#student/reader':      { workspace: 'student', title: 'القارئ الرقمي المزدوج', roleRequired: 'student', phase: 7 },
 
     // 3. مساحة عمل المعلم (Teacher Workspace)
     '#teacher/overview':    { workspace: 'teacher', title: 'لوحة المعلم اليومية', roleRequired: 'teacher', phase: 8 },
@@ -81,6 +84,9 @@
     }
 
     // مطابقة المسارات الديناميكية كقارئ المنهج أو الصفوف
+    if (hash.indexOf('#student/reader/') === 0) {
+      return '#student/reader';
+    }
     if (hash.indexOf('#curriculum/reader/') === 0) {
       return '#curriculum';
     }
@@ -199,6 +205,10 @@
 
   SumerRouterInstance.prototype.getContracts = function () {
     return ROUTE_CONTRACTS;
+  };
+
+  SumerRouterInstance.prototype.getContract = function (routeKey) {
+    return ROUTE_CONTRACTS[routeKey] || null;
   };
 
   SumerRouterInstance.prototype.checkGuard = function (routeKey, schoolContext, auth) {

@@ -268,6 +268,36 @@ router.get('/students/:id/record', async (req, res, next) => {
   }
 });
 
+router.get('/students/:id/attendance', async (req, res, next) => {
+  try {
+    const result = await managementService.getStudentAttendanceHistory(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/students/:id/grades', async (req, res, next) => {
+  try {
+    const result = await managementService.getStudentGradesHistory(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/students/:id/progress', async (req, res, next) => {
+  try {
+    const result = await managementService.getStudentProgress(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
 // --------------------------------------------------------------------------
 // Student 30-Day Trial Status & Conversion
 // --------------------------------------------------------------------------

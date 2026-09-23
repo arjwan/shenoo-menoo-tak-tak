@@ -24,6 +24,39 @@ async function resolveSchoolContext(user) {
     return { role: 'teacher', isDeveloper: false, isManager: false, isTeacher: true, teacher };
   }
 
+  // If user role is explicitly student, prioritize student context
+  if (user.role === 'student') {
+    let studentProfile = await SchoolStudent.findOne({
+      $or: [
+        { studentUser: user._id },
+        { guardian: user._id }
+      ],
+      status: { $ne: 'archived' }
+    })
+      .populate('assignedTeachers.teacher', 'name phone subjects stages grades')
+      .lean();
+
+    if (!studentProfile) {
+      studentProfile = await SchoolStudent.findOne({
+        name: user.fullName || user.username,
+        status: { $ne: 'archived' }
+      })
+        .populate('assignedTeachers.teacher', 'name phone subjects stages grades')
+        .lean();
+    }
+
+    if (studentProfile) {
+      studentProfile.trial = SchoolStudent.computeTrialInfo(studentProfile);
+      return {
+        role: 'student',
+        isDeveloper: false,
+        isManager: false,
+        isStudent: true,
+        studentProfile
+      };
+    }
+  }
+
   const guardianStudents = await SchoolStudent.find({ guardian: user._id, status: { $ne: 'archived' } }).lean();
   const guardianProfile = await SchoolGuardian.findOne({ user: user._id, status: 'active' }).lean();
   if (guardianStudents.length > 0 || guardianProfile) {
@@ -37,8 +70,11 @@ async function resolveSchoolContext(user) {
     };
   }
 
-  const studentProfile = await SchoolStudent.findOne({ studentUser: user._id, status: { $ne: 'archived' } }).lean();
+  const studentProfile = await SchoolStudent.findOne({ studentUser: user._id, status: { $ne: 'archived' } })
+    .populate('assignedTeachers.teacher', 'name phone subjects stages grades')
+    .lean();
   if (studentProfile) {
+    studentProfile.trial = SchoolStudent.computeTrialInfo(studentProfile);
     return {
       role: 'student',
       isDeveloper: false,

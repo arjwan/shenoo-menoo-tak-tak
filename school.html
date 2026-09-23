@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="school/css/sumer-shell.css">
   <link rel="stylesheet" href="school/css/sumer-components.css">
   <link rel="stylesheet" href="school/css/sumer-gateway.css">
+  <link rel="stylesheet" href="school/css/sumer-student.css">
 </head>
 <body>
   <div id="sumer-app">
@@ -45,10 +46,11 @@
   <script src="school/js/sumer-state.js"></script>
   <script src="school/js/sumer-ui.js"></script>
   <script src="school/js/views/view-guest.js"></script>
+  <script src="school/js/views/view-student.js"></script>
   <script src="school/js/sumer-router.js"></script>
 
   <script>
-    // تهيئة صدفة وبوابة مدرسة سومر الموحدة (Phase 6 Bootstrap)
+    // تهيئة صدفة وبوابة مدرسة سومر الموحدة (Phase 6 & 7 Bootstrap)
     (function () {
       'use strict';
 
@@ -56,6 +58,7 @@
       var api = window.SumerAPI;
       var ui = window.SumerUI;
       var guestView = window.SumerGuestView || window.ViewGuest;
+      var studentView = window.SumerStudentView || window.ViewStudent;
       var router = window.SumerRouter;
 
       if (!store || !ui || !router) {
@@ -83,6 +86,12 @@
 
       function isGuestRoute(routeKey) {
         return GUEST_ROUTES.indexOf(routeKey) !== -1;
+      }
+
+      function isStudentRoute(routeKey) {
+        return routeKey.indexOf('#student') === 0 ||
+               routeKey.indexOf('#classroom') === 0 ||
+               routeKey.indexOf('#curriculum/reader') === 0;
       }
 
       function renderShell(currentRoute) {
@@ -125,7 +134,9 @@
         routeKey = routeKey || window.location.hash || '#welcome';
         if (!contentMount) return;
 
-        if (isGuestRoute(routeKey) && guestView) {
+        if (isStudentRoute(routeKey) && studentView) {
+          studentView.render(routeKey, contentMount);
+        } else if (isGuestRoute(routeKey) && guestView) {
           guestView.render(routeKey, contentMount);
         } else {
           contentMount.innerHTML = ui.renderPlaceholderShell(contract, routeKey);

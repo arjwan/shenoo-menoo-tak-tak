@@ -1,0 +1,423 @@
+/**
+ * sumer-student.css - مدرسة سومر الإلكترونية الموحدة
+ * تنسيقات مساحة عمل الطالب والقارئ المزدوج وغرف الصف (Phase 7 Student Workspace)
+ */
+
+/* -------------------------------------------------------------------------- */
+/* 1. الحاوية العامة لمساحة الطالب - Student Container & Tabs               */
+/* -------------------------------------------------------------------------- */
+.sumer-student-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.sumer-student-header {
+  background: linear-gradient(135deg, var(--sumer-card-bg) 0%, var(--sumer-surface-2) 100%);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-xl);
+  padding: 1.75rem;
+  box-shadow: var(--sumer-shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.sumer-student-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--sumer-teal-500) 0%, var(--sumer-gold-500) 100%);
+}
+
+.sumer-student-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.sumer-student-identity {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.sumer-student-avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--sumer-radius-full);
+  background: linear-gradient(135deg, var(--sumer-teal-600) 0%, var(--sumer-teal-800) 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  border: 2px solid var(--sumer-gold-400);
+  box-shadow: var(--sumer-shadow-md);
+  flex-shrink: 0;
+}
+
+.sumer-student-meta h2 {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sumer-text-primary);
+}
+
+.sumer-student-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* شريط تبويبات مساحة الطالب */
+.sumer-student-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--sumer-border-color);
+  scrollbar-width: thin;
+}
+
+.sumer-student-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--sumer-radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sumer-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--sumer-transition-fast);
+}
+
+.sumer-student-nav-btn:hover {
+  background-color: var(--sumer-surface-2);
+  color: var(--sumer-teal-600);
+}
+
+.sumer-student-nav-btn.active {
+  background-color: var(--sumer-teal-500);
+  color: #ffffff;
+  box-shadow: var(--sumer-shadow-sm);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 2. بطاقة التجربة والاشتراك (30-Day Trial Banner)                         */
+/* -------------------------------------------------------------------------- */
+.sumer-trial-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--sumer-radius-lg);
+  border: 1px solid var(--sumer-teal-300);
+  background-color: var(--sumer-teal-50);
+  color: var(--sumer-teal-900);
+}
+
+.dark .sumer-trial-banner {
+  background-color: var(--sumer-teal-900);
+  border-color: var(--sumer-teal-700);
+  color: var(--sumer-teal-100);
+}
+
+.sumer-trial-banner.trial-expiring {
+  background-color: var(--sumer-gold-50);
+  border-color: var(--sumer-gold-400);
+  color: var(--sumer-gold-900);
+}
+
+.dark .sumer-trial-banner.trial-expiring {
+  background-color: var(--sumer-gold-900);
+  border-color: var(--sumer-gold-700);
+  color: var(--sumer-gold-100);
+}
+
+.sumer-trial-banner.trial-expired {
+  background-color: #fdf2f2;
+  border-color: #f87171;
+  color: #991b1b;
+}
+
+.dark .sumer-trial-banner.trial-expired {
+  background-color: #450a0a;
+  border-color: #991b1b;
+  color: #fecaca;
+}
+
+.sumer-trial-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 3. شبكة مؤشرات الطالب السريعة (Student KPI Stat Grid)                     */
+/* -------------------------------------------------------------------------- */
+.sumer-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.sumer-kpi-card {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--sumer-shadow-xs);
+  transition: transform var(--sumer-transition-fast), border-color var(--sumer-transition-fast);
+}
+
+.sumer-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--sumer-teal-400);
+}
+
+.sumer-kpi-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--sumer-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sumer-kpi-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sumer-text-primary);
+  line-height: 1.2;
+}
+
+.sumer-kpi-label {
+  font-size: 0.85rem;
+  color: var(--sumer-text-secondary);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 4. جداول وكروت الواجبات (Assignments & Submissions)                       */
+/* -------------------------------------------------------------------------- */
+.sumer-assignment-item {
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 1.25rem;
+  background-color: var(--sumer-card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all var(--sumer-transition-fast);
+}
+
+.sumer-assignment-item:hover {
+  border-color: var(--sumer-teal-300);
+  box-shadow: var(--sumer-shadow-sm);
+}
+
+.sumer-assignment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sumer-submission-box {
+  background-color: var(--sumer-surface-2);
+  border: 1px dashed var(--sumer-border-color);
+  border-radius: var(--sumer-radius-md);
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.sumer-submission-graded {
+  background-color: var(--sumer-teal-50);
+  border: 1px solid var(--sumer-teal-200);
+  border-radius: var(--sumer-radius-md);
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.dark .sumer-submission-graded {
+  background-color: var(--sumer-teal-900);
+  border-color: var(--sumer-teal-700);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 5. القارئ الرقمي المزدوج (Dual OCR/PDF Curriculum Reader)                */
+/* -------------------------------------------------------------------------- */
+.sumer-reader-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.sumer-reader-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 0.75rem 1.25rem;
+}
+
+.sumer-reader-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sumer-reader-page-input {
+  width: 4rem;
+  text-align: center;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-sm);
+  background-color: var(--sumer-surface-1);
+  color: var(--sumer-text-primary);
+  font-weight: 600;
+}
+
+.sumer-reader-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  min-height: 600px;
+}
+
+@media (max-width: 900px) {
+  .sumer-reader-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sumer-reader-pane {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--sumer-shadow-xs);
+}
+
+.sumer-reader-pane-header {
+  padding: 0.75rem 1.25rem;
+  background-color: var(--sumer-surface-2);
+  border-bottom: 1px solid var(--sumer-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.sumer-reader-pane-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 700px;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.sumer-reader-ocr-text {
+  white-space: pre-wrap;
+  font-family: inherit;
+  color: var(--sumer-text-primary);
+}
+
+.sumer-reader-pdf-frame {
+  width: 100%;
+  height: 650px;
+  border: none;
+}
+
+.sumer-reader-search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sumer-reader-highlight {
+  background-color: #fef08a;
+  color: #854d0e;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 6. غرفة الصف الذكية (Classroom Live & Virtual Shell)                     */
+/* -------------------------------------------------------------------------- */
+.sumer-classroom-stage {
+  background: #000000;
+  border-radius: var(--sumer-radius-xl);
+  overflow: hidden;
+  position: relative;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sumer-classroom-video-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  position: relative;
+  background: radial-gradient(circle at center, #0f2b30 0%, #041014 100%);
+}
+
+.sumer-classroom-bar {
+  background-color: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(8px);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sumer-classroom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sumer-device-badge-off {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.sumer-device-badge-on {
+  background-color: #10b981;
+  color: #ffffff;
+}

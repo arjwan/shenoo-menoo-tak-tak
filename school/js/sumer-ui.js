@@ -40,6 +40,9 @@
   };
 
   var SumerUI = {
+    escapeHtml: escapeHtml,
+    ICONS: ICONS,
+
     // ------------------------------------------------------------------------
     // 1. الشريط العلوي الموحد (Header Component)
     // ------------------------------------------------------------------------
@@ -111,11 +114,32 @@
         html += '    <li class="sumer-nav-item' + (currentHash === '#student/overview' ? ' active' : '') + '">';
         html += '      <a href="#student/overview"><span class="sumer-nav-icon">' + ICONS.student + '</span><span>لوحة الطالب</span></a>';
         html += '    </li>';
-        html += '    <li class="sumer-nav-item' + (currentHash === '#student/classes' ? ' active' : '') + '">';
-        html += '      <a href="#student/classes"><span class="sumer-nav-icon">' + ICONS.school + '</span><span>الحصص والصفوف</span></a>';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/profile' ? ' active' : '') + '">';
+        html += '      <a href="#student/profile"><span class="sumer-nav-icon">' + ICONS.info + '</span><span>الملف الأكاديمي</span></a>';
         html += '    </li>';
-        html += '    <li class="sumer-nav-item' + (currentHash === '#student/assignments' ? ' active' : '') + '">';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/schedule' || currentHash === '#student/classes' ? ' active' : '') + '">';
+        html += '      <a href="#student/schedule"><span class="sumer-nav-icon">' + ICONS.calendar + '</span><span>الجدول والحصص</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash.indexOf('#student/assignments') === 0 ? ' active' : '') + '">';
         html += '      <a href="#student/assignments"><span class="sumer-nav-icon">' + ICONS.book + '</span><span>الواجبات</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/grades' ? ' active' : '') + '">';
+        html += '      <a href="#student/grades"><span class="sumer-nav-icon">' + ICONS.star + '</span><span>كشف الدرجات</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/attendance' ? ' active' : '') + '">';
+        html += '      <a href="#student/attendance"><span class="sumer-nav-icon">' + ICONS.check + '</span><span>سجل الحضور</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/progress' ? ' active' : '') + '">';
+        html += '      <a href="#student/progress"><span class="sumer-nav-icon">' + ICONS.cuneiform + '</span><span>مسار التقدم</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/teachers' ? ' active' : '') + '">';
+        html += '      <a href="#student/teachers"><span class="sumer-nav-icon">' + ICONS.teacher + '</span><span>المعلمون المعتمدون</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash === '#student/curriculum' ? ' active' : '') + '">';
+        html += '      <a href="#student/curriculum"><span class="sumer-nav-icon">' + ICONS.book + '</span><span>مناهج مرحلتي</span></a>';
+        html += '    </li>';
+        html += '    <li class="sumer-nav-item' + (currentHash.indexOf('#student/reader') === 0 ? ' active' : '') + '">';
+        html += '      <a href="#student/reader"><span class="sumer-nav-icon">' + ICONS.book + '</span><span>القارئ الرقمي المزدوج</span></a>';
         html += '    </li>';
         html += '  </ul>';
         html += '</div>';

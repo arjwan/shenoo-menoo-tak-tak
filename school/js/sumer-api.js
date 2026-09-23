@@ -364,5 +364,200 @@
     });
   };
 
+  // --------------------------------------------------------------------------
+  // مساحة الطالب - دوال السجل والدرجات والحضور والواجبات (Phase 7 API Methods)
+  // --------------------------------------------------------------------------
+
+  /**
+   * جلب السجل الدائم للطالب
+   */
+  SumerAPIInstance.prototype.getStudentRecord = function (studentId) {
+    studentId = studentId || 'me';
+    return this.request('/api/school/management/students/' + encodeURIComponent(studentId) + '/record');
+  };
+
+  /**
+   * جلب سجل حضور وغياب الطالب
+   */
+  SumerAPIInstance.prototype.getStudentAttendance = function (studentId) {
+    studentId = studentId || 'me';
+    return this.request('/api/school/management/students/' + encodeURIComponent(studentId) + '/attendance');
+  };
+
+  /**
+   * جلب كشف درجات وتقييمات الطالب
+   */
+  SumerAPIInstance.prototype.getStudentGrades = function (studentId) {
+    studentId = studentId || 'me';
+    return this.request('/api/school/management/students/' + encodeURIComponent(studentId) + '/grades');
+  };
+
+  /**
+   * جلب مسار التقدم الأكاديمي وسجلات التعلم للطالب
+   */
+  SumerAPIInstance.prototype.getStudentProgress = function (studentId) {
+    studentId = studentId || 'me';
+    return this.request('/api/school/management/students/' + encodeURIComponent(studentId) + '/progress');
+  };
+
+  /**
+   * جلب قائمة الواجبات المدرسية المخصصة للطالب
+   */
+  SumerAPIInstance.prototype.getAssignments = function (filters) {
+    filters = filters || {};
+    var queryParts = [];
+    if (filters.stage) queryParts.push('stage=' + encodeURIComponent(filters.stage));
+    if (filters.grade) queryParts.push('grade=' + encodeURIComponent(filters.grade));
+    if (filters.subject) queryParts.push('subject=' + encodeURIComponent(filters.subject));
+    if (filters.status) queryParts.push('status=' + encodeURIComponent(filters.status));
+
+    var q = queryParts.length > 0 ? ('?' + queryParts.join('&')) : '';
+    return this.request('/api/school/assignments' + q);
+  };
+
+  /**
+   * تفاصيل واجب مدرسي محدد
+   */
+  SumerAPIInstance.prototype.getAssignment = function (id) {
+    if (!id) return Promise.resolve({ ok: false, status: 400, message: 'معرف الواجب مطلوب' });
+    return this.request('/api/school/assignments/' + encodeURIComponent(id));
+  };
+
+  /**
+   * جلب تسليم الطالب لواجب محدد
+   */
+  SumerAPIInstance.prototype.getAssignmentSubmissions = function (id) {
+    if (!id) return Promise.resolve({ ok: false, status: 400, message: 'معرف الواجب مطلوب' });
+    return this.request('/api/school/assignments/' + encodeURIComponent(id) + '/submissions');
+  };
+
+  /**
+   * تسليم الطالب للواجب (مع دعم إعادة التسليم قبل التصحيح فقط)
+   */
+  SumerAPIInstance.prototype.submitAssignment = function (id, data) {
+    if (!id) return Promise.resolve({ ok: false, status: 400, message: 'معرف الواجب مطلوب' });
+    data = data || {};
+    return this.request('/api/school/assignments/' + encodeURIComponent(id) + '/submit', {
+      method: 'POST',
+      body: {
+        content: String(data.content || '').trim(),
+        attachments: Array.isArray(data.attachments) ? data.attachments : []
+      }
+    });
+  };
+
+  /**
+   * جلب الجدول الدراسي ومواعيد الحصص والاختبارات
+   */
+  SumerAPIInstance.prototype.getSchedules = function (filters) {
+    filters = filters || {};
+    var queryParts = [];
+    if (filters.stage) queryParts.push('stage=' + encodeURIComponent(filters.stage));
+    if (filters.grade) queryParts.push('grade=' + encodeURIComponent(filters.grade));
+    if (filters.subject) queryParts.push('subject=' + encodeURIComponent(filters.subject));
+    if (filters.type) queryParts.push('type=' + encodeURIComponent(filters.type));
+
+    var q = queryParts.length > 0 ? ('?' + queryParts.join('&')) : '';
+    return this.request('/api/school/management/schedules' + q);
+  };
+
+  /**
+   * جلب قائمة المعلمين الحقيقيين المعتمدين
+   */
+  SumerAPIInstance.prototype.getRealTeachers = function (filters) {
+    filters = filters || {};
+    var queryParts = [];
+    if (filters.stage) queryParts.push('stage=' + encodeURIComponent(filters.stage));
+    if (filters.grade) queryParts.push('grade=' + encodeURIComponent(filters.grade));
+    if (filters.subject) queryParts.push('subject=' + encodeURIComponent(filters.subject));
+
+    var q = queryParts.length > 0 ? ('?' + queryParts.join('&')) : '';
+    return this.request('/api/school/management/teachers' + q);
+  };
+
+  /**
+   * فتح القارئ الرقمي للكتاب
+   */
+  SumerAPIInstance.prototype.getBookReader = function (bookId) {
+    if (!bookId) return Promise.resolve({ ok: false, status: 400, message: 'معرف الكتاب مطلوب' });
+    return this.request('/api/school/books/' + encodeURIComponent(bookId) + '/reader');
+  };
+
+  /**
+   * جلب صفحة مفهرسة بنص OCR للكتاب في القارئ المزدوج
+   */
+  SumerAPIInstance.prototype.getBookPage = function (bookId, pageNum) {
+    if (!bookId) return Promise.resolve({ ok: false, status: 400, message: 'معرف الكتاب مطلوب' });
+    pageNum = Math.max(1, parseInt(pageNum, 10) || 1);
+    return this.request('/api/school/books/' + encodeURIComponent(bookId) + '/page/' + encodeURIComponent(pageNum));
+  };
+
+  /**
+   * البحث في المحتوى المفهرس لكتب المنهج
+   */
+  SumerAPIInstance.prototype.searchCurriculum = function (params) {
+    params = params || {};
+    var queryParts = [];
+    if (params.query || params.q) queryParts.push('q=' + encodeURIComponent(params.query || params.q));
+    if (params.bookId) queryParts.push('bookId=' + encodeURIComponent(params.bookId));
+    if (params.stage) queryParts.push('stage=' + encodeURIComponent(params.stage));
+    if (params.grade) queryParts.push('grade=' + encodeURIComponent(params.grade));
+    if (params.subject) queryParts.push('subject=' + encodeURIComponent(params.subject));
+    if (params.limit) queryParts.push('limit=' + encodeURIComponent(params.limit));
+
+    var q = queryParts.length > 0 ? ('?' + queryParts.join('&')) : '';
+    return this.request('/api/school/curriculum/search' + q);
+  };
+
+  /**
+   * الحصص المباشرة والافتراضية
+   */
+  SumerAPIInstance.prototype.getLiveClassrooms = function () {
+    return this.request('/api/school/live/classrooms');
+  };
+
+  SumerAPIInstance.prototype.joinLiveClassroom = function (code, studentId) {
+    if (!code) return Promise.resolve({ ok: false, status: 400, message: 'رمز الصف مطلوب' });
+    return this.request('/api/school/live/classrooms/' + encodeURIComponent(code) + '/join', {
+      method: 'POST',
+      body: { studentId: studentId }
+    });
+  };
+
+  SumerAPIInstance.prototype.raiseLiveHand = function (code, studentId, raised) {
+    if (!code) return Promise.resolve({ ok: false, status: 400, message: 'رمز الصف مطلوب' });
+    return this.request('/api/school/live/classrooms/' + encodeURIComponent(code) + '/hand', {
+      method: 'POST',
+      body: { studentId: studentId, raised: raised !== false }
+    });
+  };
+
+  SumerAPIInstance.prototype.leaveLiveClassroom = function (code) {
+    if (!code) return Promise.resolve({ ok: false, status: 400, message: 'رمز الصف مطلوب' });
+    return this.request('/api/school/live/classrooms/' + encodeURIComponent(code) + '/leave', {
+      method: 'POST'
+    });
+  };
+
+  SumerAPIInstance.prototype.getActiveVirtualSessions = function () {
+    return this.request('/api/school/virtual/sessions/active');
+  };
+
+  SumerAPIInstance.prototype.joinVirtualSession = function (code, studentId) {
+    if (!code) return Promise.resolve({ ok: false, status: 400, message: 'رمز الحصة مطلوب' });
+    return this.request('/api/school/virtual/sessions/' + encodeURIComponent(code) + '/join', {
+      method: 'POST',
+      body: { studentId: studentId }
+    });
+  };
+
+  SumerAPIInstance.prototype.askVirtualQuestion = function (code, text) {
+    if (!code || !text) return Promise.resolve({ ok: false, status: 400, message: 'رمز الحصة ونص السؤال مطلوبان' });
+    return this.request('/api/school/virtual/sessions/' + encodeURIComponent(code) + '/questions', {
+      method: 'POST',
+      body: { text: text }
+    });
+  };
+
   return new SumerAPIInstance();
 }));

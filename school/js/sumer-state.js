@@ -65,6 +65,23 @@
       selectedSubject: null
     },
 
+    // مساحة الطالب الأكاديمية (Phase 7 Student Workspace State)
+    student: {
+      profile: null,
+      assignments: [],
+      submissions: {},
+      grades: [],
+      gradesSummary: null,
+      attendance: [],
+      attendanceSummary: null,
+      progress: null,
+      schedule: [],
+      teachers: { real: [], virtual: [] },
+      activeAssignment: null,
+      loading: false,
+      error: null
+    },
+
     // مساحة العمل النشطة
     activeWorkspace: 'welcome',
     activeRoute: '#welcome',
@@ -72,13 +89,19 @@
     // الابن النشط لولي الأمر
     activeChildId: null,
 
-    // سياق المنهج المختار
+    // سياق المنهج المختار والقارئ الرقمي المزدوج
     curriculum: {
       selectedStage: null,
       selectedGrade: null,
       selectedSubject: null,
       selectedBookId: null,
-      selectedPage: 1
+      selectedPage: 1,
+      totalPages: 1,
+      bookData: null,
+      pageData: null,
+      searchQuery: '',
+      searchResults: [],
+      dualViewMode: 'split'
     },
 
     // سياق الحصة والصف
@@ -329,6 +352,98 @@
 
   SumerStoreInstance.prototype.setDrawer = function (open) {
     this.state.ui.drawerOpen = Boolean(open);
+    this.notify();
+  };
+
+  // --------------------------------------------------------------------------
+  // مساحة الطالب - موجهات الحالة وتحديثات الواجهة (Phase 7 Student State Actions)
+  // --------------------------------------------------------------------------
+
+  SumerStoreInstance.prototype.setStudentProfile = function (profile) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.profile = profile || null;
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentAssignments = function (assignments) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.assignments = Array.isArray(assignments) ? assignments : [];
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentSubmission = function (assignmentId, submission) {
+    if (!this.state.student) this.state.student = {};
+    if (!this.state.student.submissions) this.state.student.submissions = {};
+    if (assignmentId) {
+      this.state.student.submissions[assignmentId] = submission;
+    }
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentGrades = function (grades, summary) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.grades = Array.isArray(grades) ? grades : [];
+    this.state.student.gradesSummary = summary || null;
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentAttendance = function (records, summary) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.attendance = Array.isArray(records) ? records : [];
+    this.state.student.attendanceSummary = summary || null;
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentProgress = function (progressData) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.progress = progressData || null;
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentSchedule = function (schedule) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.schedule = Array.isArray(schedule) ? schedule : [];
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setStudentTeachers = function (realTeachers, virtualTeachers) {
+    if (!this.state.student) this.state.student = {};
+    this.state.student.teachers = {
+      real: Array.isArray(realTeachers) ? realTeachers : [],
+      virtual: Array.isArray(virtualTeachers) ? virtualTeachers : []
+    };
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setReaderBook = function (bookData, pageNum, pageData, totalPages) {
+    if (!this.state.curriculum) this.state.curriculum = {};
+    this.state.curriculum.bookData = bookData || null;
+    this.state.curriculum.selectedBookId = (bookData && (bookData.id || bookData.driveId)) || null;
+    this.state.curriculum.selectedPage = Math.max(1, parseInt(pageNum, 10) || 1);
+    this.state.curriculum.pageData = pageData || null;
+    this.state.curriculum.totalPages = Math.max(1, parseInt(totalPages, 10) || 1);
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setReaderPage = function (pageNum, pageData) {
+    if (!this.state.curriculum) this.state.curriculum = {};
+    this.state.curriculum.selectedPage = Math.max(1, parseInt(pageNum, 10) || 1);
+    if (pageData !== undefined) {
+      this.state.curriculum.pageData = pageData;
+    }
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setReaderSearch = function (query, results) {
+    if (!this.state.curriculum) this.state.curriculum = {};
+    this.state.curriculum.searchQuery = query || '';
+    this.state.curriculum.searchResults = Array.isArray(results) ? results : [];
+    this.notify();
+  };
+
+  SumerStoreInstance.prototype.setReaderViewMode = function (mode) {
+    if (!this.state.curriculum) this.state.curriculum = {};
+    this.state.curriculum.dualViewMode = mode || 'split';
     this.notify();
   };
 

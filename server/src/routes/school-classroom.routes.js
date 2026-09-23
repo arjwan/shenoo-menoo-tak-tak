@@ -17,6 +17,7 @@ const Knowledge = require('../models/SchoolKnowledgeSource');
 const Session = require('../models/SchoolSession');
 const iraqiCurriculum = require('../data/iraqi-curriculum-catalog');
 const iraqiCurriculumFiles = require('../data/iraqi-curriculum-files.json');
+const curriculumIndex = require('../services/school-curriculum-index');
 
 router.use(requireAuth);
 
@@ -273,6 +274,74 @@ router.get('/books/:id/reader', async (req, res, next) => {
     }
 
     return res.status(404).json({ ok: false, message: 'الكتاب غير موجود' });
+  } catch (e) { next(e); }
+});
+
+router.get('/books/:id/page/:page', async (req, res, next) => {
+  try {
+    const id = clean(req.params.id);
+    const pageNum = Math.max(1, parseInt(req.params.page, 10) || 1);
+    const data = curriculumIndex.loadPagesData();
+    const pages = data.pages || [];
+
+    const bookPages = pages.filter((p) => p.bookId === id || p.fileName === id || (p.bookTitle && id.includes(p.bookId)));
+    const totalPages = bookPages.length;
+
+    const matchedPage = bookPages.find((p) => p.page === pageNum) ||
+      pages.find((p) => (p.bookId === id || p.fileName === id) && p.page === pageNum);
+
+    if (!matchedPage) {
+      return res.status(404).json({
+        ok: false,
+        message: 'الصفحة غير موجودة في هذا الكتاب',
+        page: pageNum,
+        totalPages
+      });
+    }
+
+    res.json({
+      ok: true,
+      bookId: id,
+      page: pageNum,
+      totalPages: totalPages || 1,
+      pageData: {
+        page: matchedPage.page,
+        chapter: matchedPage.chapter || '',
+        lesson: matchedPage.lesson || '',
+        content: matchedPage.content || '',
+        bookTitle: matchedPage.bookTitle || '',
+        stage: matchedPage.stage || '',
+        grade: matchedPage.grade || '',
+        subject: matchedPage.subject || '',
+        fileName: matchedPage.fileName || ''
+      }
+    });
+  } catch (e) { next(e); }
+});
+
+router.get('/curriculum/search', async (req, res, next) => {
+  try {
+    const query = clean(req.query.q || req.query.query || '');
+    const stage = clean(req.query.stage || '');
+    const grade = clean(req.query.grade || '');
+    const subject = clean(req.query.subject || '');
+    const bookId = clean(req.query.bookId || '');
+    const limit = Math.min(30, Math.max(1, parseInt(req.query.limit, 10) || 10));
+
+    if (!query) {
+      return res.status(400).json({ ok: false, message: 'كلمة البحث مطلوبة' });
+    }
+
+    let hits = curriculumIndex.searchCurriculum({ stage, grade, subject, query, limit: 50 });
+    if (bookId) {
+      hits = hits.filter((h) => h.bookId === bookId || (h.bookTitle && bookId.includes(h.bookId)));
+    }
+
+    res.json({
+      ok: true,
+      total: hits.length,
+      results: hits.slice(0, limit)
+    });
   } catch (e) { next(e); }
 });
 
