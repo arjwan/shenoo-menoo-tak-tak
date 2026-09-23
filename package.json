@@ -16,11 +16,19 @@
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
     "test": "node server/src/scripts/scan-secrets.js --history && node --test server/test/*.test.js",
-    "test:kahwa": "node tests/api-engine-contract.js && node tests/api-tawla-contract.js && node tests/api-chess-contract.js && node tests/api-cards-contract.js && node tests/api-kahwa-integration-contract.js && node tests/api-tawla-canva-runtime.js && node tests/api-chess-canva-runtime.js && node tests/api-cards-canva-runtime.js && node tests/api-kahwa-move-perf-contract.js && node tests/api-tawla-dice-contract.js && node tests/api-kahwa-logic-exhaustive.js && node tests/api-school-canva-runtime.js",
+    "test:kahwa": "node tests/api-engine-contract.js && node tests/api-tawla-contract.js && node tests/api-chess-contract.js && node tests/api-cards-contract.js && node tests/api-kahwa-integration-contract.js && node tests/api-tawla-canva-runtime.js && node tests/api-chess-canva-runtime.js && node tests/api-cards-canva-runtime.js && node tests/api-kahwa-move-perf-contract.js && node tests/api-tawla-dice-contract.js && node tests/api-kahwa-logic-exhaustive.js",
     "seed:developer": "node server/src/scripts/createDeveloper.js",
     "seed:rooms": "node server/src/scripts/seedOfficialRooms.js",
     "games:close-all": "node server/src/scripts/closeAllGameRooms.js",
-    "security:secrets": "node server/src/scripts/scan-secrets.js --history"
+    "security:secrets": "node server/src/scripts/scan-secrets.js --history",
+    "test:school-phase5": "node tests/api-school-phase5-shell.js",
+    "test:school-phase6": "node tests/api-school-phase6-gateway.js",
+    "test:school-phase7": "node --test server/test/school-phase7-student.test.js && node tests/api-school-phase7-student.js",
+    "test:school": "node tests/api-school-curriculum-indexing.js",
+    "test:school-virtual": "node --test server/test/school-virtual-classroom.test.js && node tests/api-school-virtual-classroom-core.js",
+    "test:school-management": "node --test server/test/school-management.test.js && node tests/api-school-management.js",
+    "test:school-backend": "node --test server/test/school-backend-gaps.test.js && node tests/api-school-backend-gaps.js",
+    "test:school-legacy-runtime": "node tests/api-school-canva-runtime.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

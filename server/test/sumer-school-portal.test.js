@@ -30,13 +30,11 @@ test('Sumer School client uses authenticated real APIs and existing classroom to
   assert.doesNotMatch(app, /demo|lorem|بيان الرافدين|رائد دجلة/i);
 });
 
-test('virtual teachers use approved Iraqi names, visible AI labels and project portraits', () => {
+test('virtual teachers expose the three approved personas with visible AI labels', () => {
   const profiles = read('server/src/models/VirtualTeacherProfile.js');
-  for (const name of ['ست زهراء', 'أستاذ أحمد', 'ست علياء', 'أستاذ عمر', 'ست كوثر', 'أستاذ علي']) assert.match(profiles, new RegExp(name));
+  for (const name of ['أ. سارة الذكية', 'أ. علي الحكيم', 'أ. مريم النور']) assert.match(profiles, new RegExp(name.replace('.', '\\.')));
   assert.match(profiles, /معلم افتراضي \/ AI/);
-  for (const image of ['zahraa.webp', 'ahmed.webp', 'alyaa.webp', 'omar.webp', 'kawthar.webp', 'ali.webp']) {
-    assert.equal(fs.existsSync(path.join(root, 'sumer-school/assets/virtual-teachers', image)), true);
-  }
+  assert.equal((profiles.match(/profileId: '/g) || []).length, 3);
 });
 
 test('school service worker never caches API, messages, grades, attendance, or records', () => {

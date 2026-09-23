@@ -88,6 +88,14 @@ jobs:
             sudo install -m 0644 "$file" "$webroot/$(basename "$file")"
           done
 
+          # The Sumer portal loads its JavaScript and CSS from school/.
+          # Preserve the directory structure when deploying the root school.html.
+          if [ -d school ]; then
+            find school -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' \) -print0 | while IFS= read -r -d '' file; do
+              sudo install -D -m 0644 "$file" "$webroot/$file"
+            done
+          fi
+
           # Publish the isolated Sumer School PWA without flattening its
           # service-worker scope or mixing its assets with the platform root.
           sudo install -d -m 0755 "$webroot/sumer-school"
@@ -120,6 +128,8 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
             if curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health; then
+              curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/school.html | grep 'sumer-router.js' >/dev/null
+              curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/school/js/sumer-router.js | grep 'ROUTE_CONTRACTS' >/dev/null
               echo
               echo "Oracle automatic deployment passed."
               exit 0

@@ -14,6 +14,32 @@ router.use(requireAuth);
 router.use(attachSchoolContext);
 
 // --------------------------------------------------------------------------
+// Level 2 Security Barrier: Prevent Role Tampering & Privilege Escalation
+// --------------------------------------------------------------------------
+// Platform account roles ('role') are strictly immutable via school management.
+// Any attempt to modify or inject 'role' via school management endpoints
+// is rejected with 403 unless the actor is a platform admin or developer,
+// and developer role cannot be granted except by a developer.
+router.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body && req.body.role !== undefined) {
+    const isPlatformPrivileged = req.user && (req.user.role === 'developer' || req.user.role === 'admin');
+    if (!isPlatformPrivileged) {
+      return res.status(403).json({
+        ok: false,
+        message: 'تعديل أدوار الحسابات محصور بإدارة المنصة العليا (admin/developer) فقط لمنع تصعيد الصلاحيات'
+      });
+    }
+    if (req.body.role === 'developer' && req.user.role !== 'developer') {
+      return res.status(403).json({
+        ok: false,
+        message: 'لا يمكن منح رتبة المطور إلا من قبل مطور معتمد'
+      });
+    }
+  }
+  next();
+});
+
+// --------------------------------------------------------------------------
 // Current User & Context
 // --------------------------------------------------------------------------
 router.get('/me', (req, res) => {
@@ -61,6 +87,81 @@ router.get('/teachers', async (req, res, next) => {
       }
     });
   } catch (err) {
+    next(err);
+  }
+});
+
+// --------------------------------------------------------------------------
+// Teacher Applications Workflow
+// --------------------------------------------------------------------------
+router.post('/teachers/apply', async (req, res, next) => {
+  try {
+    const application = await managementService.submitTeacherApplication(req.user, req.body);
+    res.status(201).json({
+      ok: true,
+      message: 'تم استلام طلب التقديم كمعلم بنجاح وهو قيد مراجعة الإدارة المدرسية',
+      application
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/teacher-applications', requireSchoolManager, async (req, res, next) => {
+  try {
+    const applications = await managementService.listTeacherApplications(req.user, req.schoolContext, req.query);
+    res.json({ ok: true, applications });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/teacher-applications/:id', async (req, res, next) => {
+  try {
+    const application = await managementService.getTeacherApplication(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, application });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.post('/teacher-applications/:id/approve', requireSchoolManager, async (req, res, next) => {
+  try {
+    const result = await managementService.approveTeacherApplication(
+      req.user,
+      req.schoolContext,
+      req.params.id,
+      req.body.notes
+    );
+    res.json({
+      ok: true,
+      message: 'تم اعتماد طلب المعلم وتفعيل حسابه التعليمي بنجاح',
+      ...result
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.post('/teacher-applications/:id/reject', requireSchoolManager, async (req, res, next) => {
+  try {
+    const application = await managementService.rejectTeacherApplication(
+      req.user,
+      req.schoolContext,
+      req.params.id,
+      req.body.reason
+    );
+    res.json({
+      ok: true,
+      message: 'تم رفض طلب التقديم',
+      application
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
     next(err);
   }
 });
@@ -161,6 +262,63 @@ router.get('/students/:id/record', async (req, res, next) => {
   try {
     const record = await managementService.getStudentPermanentRecord(req.user, req.schoolContext, req.params.id);
     res.json({ ok: true, record });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/students/:id/attendance', async (req, res, next) => {
+  try {
+    const result = await managementService.getStudentAttendanceHistory(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/students/:id/grades', async (req, res, next) => {
+  try {
+    const result = await managementService.getStudentGradesHistory(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/students/:id/progress', async (req, res, next) => {
+  try {
+    const result = await managementService.getStudentProgress(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+// --------------------------------------------------------------------------
+// Student 30-Day Trial Status & Conversion
+// --------------------------------------------------------------------------
+router.get('/students/:id/trial', async (req, res, next) => {
+  try {
+    const trial = await managementService.getStudentTrial(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...trial });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.post('/students/:id/convert-trial', requireSchoolManager, async (req, res, next) => {
+  try {
+    const result = await managementService.convertStudentTrial(req.user, req.schoolContext, req.params.id);
+    res.json({
+      ok: true,
+      message: 'تم تحويل الطالب إلى اشتراك كامل بنجاح',
+      ...result
+    });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
     next(err);

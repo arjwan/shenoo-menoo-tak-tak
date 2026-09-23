@@ -1,0 +1,1364 @@
+{
+  "version": "2026.09.21",
+  "generatedAt": "2026-09-21T23:13:01.312Z",
+  "source": "https://book.haltaelam.com/",
+  "stats": {
+    "uniqueCatalogMatched": 96,
+    "secondary": 40,
+    "unmatchedFiles": 16,
+    "unmatchedCatalog": 12,
+    "manifestFiles": 136
+  },
+  "matches": [
+    {
+      "fileName": "1Nw0IaeqGm51WinFCQKkvQXK1CZNATSe3.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTZhNi62Kkg2KfZhNi52LHYqNmK2Kk",
+      "bookTitle": "كتاب اللغة العربية — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "اللغة العربية",
+      "totalPages": 152,
+      "pagesWithText": 151
+    },
+    {
+      "fileName": "109tea8wcXqDTE3zE6dbGSu3Bx26u9CAM.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNmE2LrYqSDYp9mE2LnYsdio2YrYqQ",
+      "bookTitle": "كتاب اللغة العربية — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "اللغة العربية",
+      "totalPages": 136,
+      "pagesWithText": 136
+    },
+    {
+      "fileName": "1sJeiG6dMLvhJiOcdXcnhRnRV0A9bop4d.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNmE2LrYqSDYp9mE2LnYsdio2YrYqQ",
+      "bookTitle": "كتاب اللغة العربية — الثالث متوسط",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "اللغة العربية",
+      "totalPages": 144,
+      "pagesWithText": 144
+    },
+    {
+      "fileName": "1CaOc0rBurruXMbbVAkShAvz7eDas4V-Y.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "bookTitle": "كتاب اللغة العربية — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "اللغة العربية",
+      "totalPages": 140,
+      "pagesWithText": 140
+    },
+    {
+      "fileName": "1HlIHRTSmpZG1IIboTaltZVVokkiXNSmg.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "bookTitle": "كتاب اللغة العربية — الخامس العلمي",
+      "stage": "إعدادي",
+      "grade": "الخامس العلمي",
+      "subject": "اللغة العربية",
+      "totalPages": 140,
+      "pagesWithText": 140
+    },
+    {
+      "fileName": "1_a4w-bSbsdZJWRCWjLhmkfgApcrsbQk2.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "bookTitle": "كتاب اللغة العربية — السادس العلمي",
+      "stage": "إعدادي",
+      "grade": "السادس العلمي",
+      "subject": "اللغة العربية",
+      "totalPages": 164,
+      "pagesWithText": 164
+    },
+    {
+      "fileName": "17b_5X0YenmSKFsJ5waNZSyVF5HLHhYLC.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTYo9it2YrYp9ih",
+      "bookTitle": "كتاب الأحياء — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "الأحياء",
+      "totalPages": 96,
+      "pagesWithText": 95
+    },
+    {
+      "fileName": "1TfBMokeTGyL7-4X6JaPYbaN4wUCMYJMv.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNij2K3Zitin2KE",
+      "bookTitle": "كتاب الأحياء — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "الأحياء",
+      "totalPages": 92,
+      "pagesWithText": 91
+    },
+    {
+      "fileName": "1oJA2Heni6Oe9LCyvqJ7EKpov4CZMexCW.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2KPYrdmK2KfYoQ",
+      "bookTitle": "كتاب الأحياء — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "الأحياء",
+      "totalPages": 192,
+      "pagesWithText": 190
+    },
+    {
+      "fileName": "1ObDiHKSTzfdH4h87v0zjZ-Ugtjy8ZgKO.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2KPYrdmK2KfYoQ",
+      "bookTitle": "كتاب الأحياء — الخامس العلمي",
+      "stage": "إعدادي",
+      "grade": "الخامس العلمي",
+      "subject": "الأحياء",
+      "totalPages": 232,
+      "pagesWithText": 231
+    },
+    {
+      "fileName": "1AElUHD7KFA9g8QvSNLR3mq18J8qEn_5r.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTZg9mK2YXZitin2KE",
+      "bookTitle": "كتاب الكيمياء — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "الكيمياء",
+      "totalPages": 88,
+      "pagesWithText": 88
+    },
+    {
+      "fileName": "1_bfLTpP9DPFf9o8l316pcWSjekEoIKa_.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNmD2YrZhdmK2KfYoQ",
+      "bookTitle": "كتاب الكيمياء — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "الكيمياء",
+      "totalPages": 96,
+      "pagesWithText": 96
+    },
+    {
+      "fileName": "1g34V40gbuXNKT10tFGt2OS6tBtBziVlt.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNmD2YrZhdmK2KfYoQ",
+      "bookTitle": "كتاب الكيمياء — الثالث متوسط",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "الكيمياء",
+      "totalPages": 152,
+      "pagesWithText": 108
+    },
+    {
+      "fileName": "1-oiKMTJxHU3vIn3Zl6u_EBoX9mDtH-2I.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2YPZitmF2YrYp9ih",
+      "bookTitle": "كتاب الكيمياء — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "الكيمياء",
+      "totalPages": 148,
+      "pagesWithText": 148
+    },
+    {
+      "fileName": "1tloqiZRK_AeHeCu3zQ9XnH6IqPjUUvYq.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2YPZitmF2YrYp9ih",
+      "bookTitle": "كتاب الكيمياء — الخامس العلمي",
+      "stage": "إعدادي",
+      "grade": "الخامس العلمي",
+      "subject": "الكيمياء",
+      "totalPages": 220,
+      "pagesWithText": 205
+    },
+    {
+      "fileName": "1Szlr2xbi7ivaim0ZbHJ6U_6NV3Sf1G7a.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2YPZitmF2YrYp9ih",
+      "bookTitle": "كتاب الكيمياء — السادس العلمي",
+      "stage": "إعدادي",
+      "grade": "السادس العلمي",
+      "subject": "الكيمياء",
+      "totalPages": 320,
+      "pagesWithText": 317
+    },
+    {
+      "fileName": "1Q8RID3EikRtakV-NeDiWypEFfd8WNRDC.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTYrdin2LPZiNio",
+      "bookTitle": "كتاب الحاسوب — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "الحاسوب",
+      "totalPages": 144,
+      "pagesWithText": 144
+    },
+    {
+      "fileName": "1BLTQBwxPpYyZZ1f7iTM8bbfpmS48ODgS.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNit2KfYs9mI2Kg",
+      "bookTitle": "كتاب الحاسوب — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "الحاسوب",
+      "totalPages": 144,
+      "pagesWithText": 142
+    },
+    {
+      "fileName": "1hDxBpX0h_L8WkqQk_81TAc_mhePTMA_W.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2K3Yp9iz2YjYqA",
+      "bookTitle": "كتاب الحاسوب — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "الحاسوب",
+      "totalPages": 144,
+      "pagesWithText": 144
+    },
+    {
+      "fileName": "11TWAt2d62idEOG0BlwMh87THMrr8aB7J.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2K3Yp9iz2YjYqA",
+      "bookTitle": "كتاب الحاسوب — الخامس العلمي",
+      "stage": "إعدادي",
+      "grade": "الخامس العلمي",
+      "subject": "الحاسوب",
+      "totalPages": 144,
+      "pagesWithText": 144
+    },
+    {
+      "fileName": "1ma3C52Bm94sFOOVqIkPIdmiCGl7Ejw99.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2KfZgtiq2LXYp9iv",
+      "bookTitle": "كتاب الاقتصاد — الخامس الأدبي",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "الاقتصاد",
+      "totalPages": 80,
+      "pagesWithText": 1
+    },
+    {
+      "fileName": "1EHoHpfTw8L29ip5D-aVVFxamClCwgFlZ.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2KfZgtiq2LXYp9iv",
+      "bookTitle": "كتاب الاقتصاد — السادس الأدبي",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "الاقتصاد",
+      "totalPages": 112,
+      "pagesWithText": 112
+    },
+    {
+      "fileName": "1-FLrmZmDfOLoxh47eYCPnWCK1f4CcDR3.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "bookTitle": "كتاب اللغة الإنكليزية — الأول ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 8,
+      "pagesWithText": 8
+    },
+    {
+      "fileName": "1qcYh1Vx3W5Qs6VAnDo0biC2Pf3Fl66em.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "bookTitle": "كتاب اللغة الإنكليزية — الثاني ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الثاني ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 16,
+      "pagesWithText": 16
+    },
+    {
+      "fileName": "1uUqy4egLScXQ618bc0ynoi-UQdSdrvWO.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "bookTitle": "كتاب اللغة الإنكليزية — الثالث ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 16,
+      "pagesWithText": 16
+    },
+    {
+      "fileName": "1023glMzt0ajMcaPT-JdLWkqa1G7rERTD.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNmE2LrYqSDYp9mE2KXZhtmD2YTZitiy2YrYqQ",
+      "bookTitle": "كتاب اللغة الإنكليزية — الثالث متوسط (نشاط/تمارين)",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 124,
+      "pagesWithText": 18
+    },
+    {
+      "fileName": "1AXlhEx5zeA2PUfiDsxJGQXaksFyQiVsc.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "bookTitle": "كتاب اللغة الإنكليزية — الأول ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 10,
+      "pagesWithText": 10
+    },
+    {
+      "fileName": "1fLZBPEG9bgczvcZvxN2jBSuNR0pMMne9.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "bookTitle": "كتاب اللغة الإنكليزية — الثاني ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثاني ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 10,
+      "pagesWithText": 10
+    },
+    {
+      "fileName": "1gjmF4BkLbfDNQ4aSBps2YLwkJ8Whlb6A.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "bookTitle": "كتاب اللغة الإنكليزية — الثالث ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 10,
+      "pagesWithText": 10
+    },
+    {
+      "fileName": "18L2vHor4ZnRg3bAioFjIrP_OAbfptIom.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNmE2LrYqSDYp9mE2KXZhtmD2YTZitiy2YrYqQ",
+      "bookTitle": "كتاب اللغة الإنكليزية — الثالث متوسط",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 120,
+      "pagesWithText": 14
+    },
+    {
+      "fileName": "1S_tlxcBOTTPOAIvIP9dsoVyHOtK1I1_u.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "bookTitle": "كتاب اللغة الإنكليزية — السادس العلمي",
+      "stage": "إعدادي",
+      "grade": "السادس العلمي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 135,
+      "pagesWithText": 126
+    },
+    {
+      "fileName": "1pjX1iSOA0QX9p-36KhJYdBIIDeak35Jy.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNil2YbZg9mE2YrYstmK2Kk",
+      "bookTitle": "كتاب اللغة الإنكليزية — السادس ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "اللغة الإنكليزية",
+      "totalPages": 114,
+      "pagesWithText": 51
+    },
+    {
+      "fileName": "1QjGRXWJeZEeZyxBiPqEzBV43n4lstWBj.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2KzYutix2KfZgdmK2Kk",
+      "bookTitle": "كتاب الجغرافية — الرابع الأدبي",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "الجغرافية",
+      "totalPages": 144,
+      "pagesWithText": 142
+    },
+    {
+      "fileName": "13RltkaXjMCroIWXaOUcnEnsRCWuqB16t.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2KzYutix2KfZgdmK2Kk",
+      "bookTitle": "كتاب الجغرافية — الخامس الأدبي",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "الجغرافية",
+      "totalPages": 162,
+      "pagesWithText": 162
+    },
+    {
+      "fileName": "1srCKPZK3_tV1tV50HAoEt_slgvrQWmFg.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2KzYutix2KfZgdmK2Kk",
+      "bookTitle": "كتاب الجغرافية — السادس الأدبي",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "الجغرافية",
+      "totalPages": 172,
+      "pagesWithText": 172
+    },
+    {
+      "fileName": "1UxG_BUXk6fW1xwTsHB3-e53t1PnGWe6b.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2KrYp9ix2YrYrg",
+      "bookTitle": "كتاب التاريخ — الرابع الأدبي",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "التاريخ",
+      "totalPages": 180,
+      "pagesWithText": 180
+    },
+    {
+      "fileName": "1n_oyROEEAbOS6szdFFHAajAmwNfK2sJy.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2KrYp9ix2YrYrg",
+      "bookTitle": "كتاب التاريخ — الخامس الأدبي",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "التاريخ",
+      "totalPages": 112,
+      "pagesWithText": 112
+    },
+    {
+      "fileName": "1CZyujaRFnGHeNTRXnHZVRPSLdFF4FBFU.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2KrYp9ix2YrYrg",
+      "bookTitle": "كتاب التاريخ — السادس الأدبي",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "التاريخ",
+      "totalPages": 204,
+      "pagesWithText": 151
+    },
+    {
+      "fileName": "1wuzBVWLLKFfdT4eaw7SMQH73HT0gaSwu.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTYp9is2KrZhdin2LnZitin2Ko",
+      "bookTitle": "كتاب الاجتماعيات — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "الاجتماعيات",
+      "totalPages": 132,
+      "pagesWithText": 132
+    },
+    {
+      "fileName": "1tIyMRRRi-3KgC1kZhMMOv3Zu-NR0Dmp-.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNin2KzYqtmF2KfYudmK2KfYqg",
+      "bookTitle": "كتاب الاجتماعيات — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "الاجتماعيات",
+      "totalPages": 140,
+      "pagesWithText": 140
+    },
+    {
+      "fileName": "1DJA3Cz03hwBsVubMhlixKMtq2_kpEcmF.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNin2KzYqtmF2KfYudmK2KfYqg",
+      "bookTitle": "كتاب الاجتماعيات — الثالث متوسط",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "الاجتماعيات",
+      "totalPages": 160,
+      "pagesWithText": 160
+    },
+    {
+      "fileName": "1vF8j_OIt-fk2q654waQ7BbUwi14fTqxz.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYudmE2YUg2KfZhNin2KzYqtmF2KfYuQ",
+      "bookTitle": "كتاب علم الاجتماع — الرابع الأدبي",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "علم الاجتماع",
+      "totalPages": 108,
+      "pagesWithText": 108
+    },
+    {
+      "fileName": "1XxlWljt1fhXPBtoWg4wYdm_pQtI4z6Tc.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTYp9is2KrZhdin2LnZitin2Ko",
+      "bookTitle": "كتاب الاجتماعيات — الرابع ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "الاجتماعيات",
+      "totalPages": 64,
+      "pagesWithText": 23
+    },
+    {
+      "fileName": "1RVz091kMA7w-XEn0f19WjTxMKzY4WE1g.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTYp9is2KrZhdin2LnZitin2Ko",
+      "bookTitle": "كتاب الاجتماعيات — الخامس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الخامس ابتدائي",
+      "subject": "الاجتماعيات",
+      "totalPages": 104,
+      "pagesWithText": 102
+    },
+    {
+      "fileName": "1qB5kJuih2TrN-4IL4pIM8MploPnOX0BD.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTYp9is2KrZhdin2LnZitin2Ko",
+      "bookTitle": "كتاب الاجتماعيات — السادس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "الاجتماعيات",
+      "totalPages": 116,
+      "pagesWithText": 116
+    },
+    {
+      "fileName": "1nVM1dhoZJJ2kwYwMLRMlFfo3a70rOKrD.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "bookTitle": "كتاب التربية الإسلامية — الأول ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 56,
+      "pagesWithText": 56
+    },
+    {
+      "fileName": "12Z5ldx61jvFa-pdQ7cucDZBzeMI5IE2n.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTYqtix2KjZitipINin2YTYpdiz2YTYp9mF2YrYqQ",
+      "bookTitle": "كتاب التربية الإسلامية — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "التربية الإسلامية",
+      "totalPages": 140,
+      "pagesWithText": 118
+    },
+    {
+      "fileName": "1x_Owtc4vbYHtWcjAbjehQ9jGTwPPUexe.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNiq2LHYqNmK2Kkg2KfZhNil2LPZhNin2YXZitip",
+      "bookTitle": "كتاب التربية الإسلامية — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "التربية الإسلامية",
+      "totalPages": 120,
+      "pagesWithText": 119
+    },
+    {
+      "fileName": "1iIoCA9vUMjsYLGcYB3bG9ghH1yJTtA3j.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYqtix2KjZitipINin2YTYpdiz2YTYp9mF2YrYqQ",
+      "bookTitle": "كتاب التربية الإسلامية — الثالث ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 72,
+      "pagesWithText": 72
+    },
+    {
+      "fileName": "15NPcseijUBb75ESOYb1zdfdTXcK-it0g.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNiq2LHYqNmK2Kkg2KfZhNil2LPZhNin2YXZitip",
+      "bookTitle": "كتاب التربية الإسلامية — الثالث متوسط",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "التربية الإسلامية",
+      "totalPages": 156,
+      "pagesWithText": 156
+    },
+    {
+      "fileName": "1c_zbbsvUhfpufz-FBTXmopZNA2GqkdVR.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "bookTitle": "كتاب التربية الإسلامية — الرابع الأدبي",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 130,
+      "pagesWithText": 129
+    },
+    {
+      "fileName": "1FGIDlW9FfFriKY3GGwkd5UQ8tRjH8xe6.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "bookTitle": "كتاب التربية الإسلامية — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 130,
+      "pagesWithText": 129
+    },
+    {
+      "fileName": "1Qa6FOlInBlFlafEon5rtHvU4DWbQEdhn.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTYqtix2KjZitipINin2YTYpdiz2YTYp9mF2YrYqQ",
+      "bookTitle": "كتاب التربية الإسلامية — الرابع ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 72,
+      "pagesWithText": 72
+    },
+    {
+      "fileName": "1w2fJPg5IX-81ht2atoVPRSir9evzkD9c.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYudmE2YXZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "bookTitle": "كتاب التربية الإسلامية — الخامس العلمي",
+      "stage": "إعدادي",
+      "grade": "الخامس العلمي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 156,
+      "pagesWithText": 122
+    },
+    {
+      "fileName": "1QD4MKjg-JRNzmyDUOvAXsArKqU1FWSoD.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTYqtix2KjZitipINin2YTYpdiz2YTYp9mF2YrYqQ",
+      "bookTitle": "كتاب التربية الإسلامية — الخامس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الخامس ابتدائي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 96,
+      "pagesWithText": 96
+    },
+    {
+      "fileName": "1i1kD6ws-XJpG8_rIr4FTf-nc1grFNJGP.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "bookTitle": "كتاب التربية الإسلامية — السادس العلمي",
+      "stage": "إعدادي",
+      "grade": "السادس العلمي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 164,
+      "pagesWithText": 163
+    },
+    {
+      "fileName": "1a_VcmloZrQIJv9D7dmOXKOubK3sSI5Zb.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTYqtix2KjZitipINin2YTYpdiz2YTYp9mF2YrYqQ",
+      "bookTitle": "كتاب التربية الإسلامية — السادس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "التربية الإسلامية",
+      "totalPages": 92,
+      "pagesWithText": 92
+    },
+    {
+      "fileName": "1ohJZlWvvnZ-d_fQSVL7iTjdEY5EeaQU6.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2LHZitin2LbZitin2Ko",
+      "bookTitle": "كتاب الرياضيات — الأول ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 188,
+      "pagesWithText": 187
+    },
+    {
+      "fileName": "1viIM-aFxIeekqlMWGj55ECG5vDSf5Fxw.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "الرياضيات",
+      "totalPages": 196,
+      "pagesWithText": 196
+    },
+    {
+      "fileName": "1VQy3aIsgXYrP9TBibfV6TKM570AmqFtj.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الثاني ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثاني ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 180,
+      "pagesWithText": 180
+    },
+    {
+      "fileName": "1bvAcXQ_bJe5I7sAXYU45sXK81Y5iu0FV.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNix2YrYp9i22YrYp9iq",
+      "bookTitle": "كتاب الرياضيات — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "الرياضيات",
+      "totalPages": 196,
+      "pagesWithText": 196
+    },
+    {
+      "fileName": "1x2XtEK97fBrP-Fuw1fzRtbXVI5mHQfw9.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الثالث ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 176,
+      "pagesWithText": 172
+    },
+    {
+      "fileName": "1Lh_eddKMm-6Sx5vgYbELzqLDTXeZ82kW.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNix2YrYp9i22YrYp9iq",
+      "bookTitle": "كتاب الرياضيات — الثالث متوسط",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "الرياضيات",
+      "totalPages": 196,
+      "pagesWithText": 196
+    },
+    {
+      "fileName": "1xNgqWX9h2189GZeoLB8fGT2c5ctfCo-4.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2LHZitin2LbZitin2Ko",
+      "bookTitle": "كتاب الرياضيات — الرابع الأدبي",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "الرياضيات",
+      "totalPages": 112,
+      "pagesWithText": 61
+    },
+    {
+      "fileName": "1yole_xx2CDZRwlaZ2G4nS-u1uIPTPo6o.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2LHZitin2LbZitin2Ko",
+      "bookTitle": "كتاب الرياضيات — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "الرياضيات",
+      "totalPages": 156,
+      "pagesWithText": 130
+    },
+    {
+      "fileName": "1ciJBefTfDhpQ5aScaHmd218ME7Wpkb_q.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الرابع ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 196,
+      "pagesWithText": 196
+    },
+    {
+      "fileName": "1z43l3wERXzT-egGjs_2puQM54lVaAQ30.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الخامس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الخامس ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 198,
+      "pagesWithText": 190
+    },
+    {
+      "fileName": "1VdXtdsx8uUYgVRHEHlqm-LonDz3LSmFC.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2LHZitin2LbZitin2Ko",
+      "bookTitle": "كتاب الرياضيات — السادس الأدبي",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "الرياضيات",
+      "totalPages": 140,
+      "pagesWithText": 129
+    },
+    {
+      "fileName": "1eaBAXCfeFfspUFOgYy-DC-x2uuZZMqqw.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2YTYudmE2YXZijrYp9mE2LHZitin2LbZitin2Ko",
+      "bookTitle": "كتاب الرياضيات — السادس العلمي",
+      "stage": "إعدادي",
+      "grade": "السادس العلمي",
+      "subject": "الرياضيات",
+      "totalPages": 260,
+      "pagesWithText": 253
+    },
+    {
+      "fileName": "1qvYJnF__-cQg47cagZAXgIXV1EoZo_27.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — السادس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 200,
+      "pagesWithText": 200
+    },
+    {
+      "fileName": "1SSmMfZYvWCkEDfk-lfCWT3ni4LbrZl-a.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2LHZitin2LbZitin2Ko",
+      "bookTitle": "كتاب الرياضيات — الأول ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 62,
+      "pagesWithText": 62
+    },
+    {
+      "fileName": "1SFE2frCT3DtwuNgp2vyIhEV5-VM836YT.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الثاني ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الثاني ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 64,
+      "pagesWithText": 63
+    },
+    {
+      "fileName": "1rMFsFuJSbDLYO17R-4_wzx5Dj_01dJvD.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الثالث ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 64,
+      "pagesWithText": 53
+    },
+    {
+      "fileName": "1g0_IfvcDt8OUi5u_66B_CzIgbuCobbog.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الرابع ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 56,
+      "pagesWithText": 56
+    },
+    {
+      "fileName": "1T7b4sdD0-3TQvub0M-HH3gCDNnGtNm3z.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — الخامس ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الخامس ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 54,
+      "pagesWithText": 47
+    },
+    {
+      "fileName": "1eWnIMdPE901ff1owadlzwuHNH_rElBYg.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTYsdmK2KfYttmK2KfYqg",
+      "bookTitle": "كتاب الرياضيات — السادس ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "الرياضيات",
+      "totalPages": 58,
+      "pagesWithText": 58
+    },
+    {
+      "fileName": "1NhsTq-A0qT3bqDhlLCyWjc_EtQWPRyCr.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2YHZhNiz2YHYqSDZiNi52YTZhSDYp9mE2YbZgdiz",
+      "bookTitle": "كتاب الفلسفة وعلم النفس — الخامس الأدبي",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "الفلسفة وعلم النفس",
+      "totalPages": 136,
+      "pagesWithText": 136
+    },
+    {
+      "fileName": "19AkvbGaHa6gIffTsTHoyca1Yi5JrNnxG.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDZhdiq2YjYs9i3Otin2YTZgdmK2LLZitin2KE",
+      "bookTitle": "كتاب الفيزياء — الأول متوسط",
+      "stage": "متوسط",
+      "grade": "الأول متوسط",
+      "subject": "الفيزياء",
+      "totalPages": 88,
+      "pagesWithText": 88
+    },
+    {
+      "fileName": "1q7QCkKiQf0dcB_AN_lbeRPoKdX1ROqlw.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINmF2KrZiNiz2Lc62KfZhNmB2YrYstmK2KfYoQ",
+      "bookTitle": "كتاب الفيزياء — الثاني متوسط",
+      "stage": "متوسط",
+      "grade": "الثاني متوسط",
+      "subject": "الفيزياء",
+      "totalPages": 88,
+      "pagesWithText": 88
+    },
+    {
+      "fileName": "1xg-c5roQGqc8T2xC3jIihvGhTH8Vs3Kl.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2YTYudmE2YXZijrYp9mE2YHZitiy2YrYp9ih",
+      "bookTitle": "كتاب الفيزياء — الرابع العلمي",
+      "stage": "إعدادي",
+      "grade": "الرابع العلمي",
+      "subject": "الفيزياء",
+      "totalPages": 188,
+      "pagesWithText": 188
+    },
+    {
+      "fileName": "1D0H2HFkgFtrUkfu9_jfqPlDSPuqV8gHv.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTZhNi62Kkg2KfZhNi52LHYqNmK2Kk",
+      "bookTitle": "كتاب اللغة العربية — الرابع ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "اللغة العربية",
+      "totalPages": 80,
+      "pagesWithText": 8
+    },
+    {
+      "fileName": "1e1TGmQX5RVQgyEeb7gHslt328UEpwJFX.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2LnZhNmI2YU",
+      "bookTitle": "كتاب العلوم — الأول ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 76,
+      "pagesWithText": 76
+    },
+    {
+      "fileName": "117MuokgO4X-sri5OP69GX4hQXSxawFDZ.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الثاني ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الثاني ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 68,
+      "pagesWithText": 68
+    },
+    {
+      "fileName": "1gNkRMv0ToIJEeEfLpdpQZ4Aex1P4r-bV.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الثالث ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 68,
+      "pagesWithText": 68
+    },
+    {
+      "fileName": "1rJ-2jjQM5LdQNmWMq0kjpJfZW9IuoEQj.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الرابع ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 100,
+      "pagesWithText": 97
+    },
+    {
+      "fileName": "1cSZp8Uszg1hKZb7te8FbNZY0r6eZyqSM.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الخامس ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "الخامس ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 92,
+      "pagesWithText": 92
+    },
+    {
+      "fileName": "1t410bKRHPExvnBgs9iPu1JjHhEoOOHmq.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — السادس ابتدائي (نشاط/تمارين)",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 92,
+      "pagesWithText": 92
+    },
+    {
+      "fileName": "1w0_8y7osEzGCST5Kj_b8HtL9gRnHqBcu.pdf",
+      "bookId": "iq-2KfZhNij2YjZhCDYp9io2KrYr9in2KbZijrYp9mE2LnZhNmI2YU",
+      "bookTitle": "كتاب العلوم — الأول ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الأول ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 200,
+      "pagesWithText": 200
+    },
+    {
+      "fileName": "10h-L5LKKVQM9XvqknVtzhPPUXIjhqviF.pdf",
+      "bookId": "iq-2KfZhNir2KfZhtmKINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الثاني ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثاني ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 196,
+      "pagesWithText": 196
+    },
+    {
+      "fileName": "1L_LHQS1Q8S-1R4J7h3-SlDl4IvZMv0ry.pdf",
+      "bookId": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الثالث ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 196,
+      "pagesWithText": 196
+    },
+    {
+      "fileName": "10N1acdhtc1HPkvPKjyeKfsy-WQ_q4GUk.pdf",
+      "bookId": "iq-2KfZhNix2KfYqNi5INin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الرابع ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الرابع ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 216,
+      "pagesWithText": 216
+    },
+    {
+      "fileName": "19GKZ3aOWyBZlPipgK7tVdIWXuHNEbM4u.pdf",
+      "bookId": "iq-2KfZhNiu2KfZhdizINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — الخامس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "الخامس ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 200,
+      "pagesWithText": 200
+    },
+    {
+      "fileName": "13zLlyffzFlZn6B5Z-qsZWleBp1c3KwGd.pdf",
+      "bookId": "iq-2KfZhNiz2KfYr9izINin2KjYqtiv2KfYptmKOtin2YTYudmE2YjZhQ",
+      "bookTitle": "كتاب العلوم — السادس ابتدائي",
+      "stage": "ابتدائي",
+      "grade": "السادس ابتدائي",
+      "subject": "العلوم",
+      "totalPages": 208,
+      "pagesWithText": 208
+    }
+  ],
+  "unmatchedFiles": [
+    {
+      "fileName": "1ugtWInqi8S-reTElSAd5r2AXmFUoEQQ2.pdf",
+      "sourcePage": "https://akb1pr.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "الأخلاقية",
+      "grade": "الأول ابتدائي",
+      "totalPages": 78,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "16srCnJ3Tg3AklT0avA9W_2EwuTIBg74r.pdf",
+      "sourcePage": "https://akb1sc.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "الأخلاقية",
+      "grade": "الأول متوسط",
+      "totalPages": 138,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "1ZqH-ZHT2C6cqS-Ud2m_43Xa89PFmcWRr.pdf",
+      "sourcePage": "https://enab6ad.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "اللغة الإنكليزية",
+      "grade": "السادس الأدبي",
+      "totalPages": 191,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "13UGlatauNK0a3pPJQm7IlxgpIoBT8kLf.pdf",
+      "sourcePage": "https://frb5al.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "اللغة الفرنسية",
+      "grade": "الخامس العلمي",
+      "totalPages": 64,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "1t8EGkpCnRhcxFcB_2UiR3QHnR0nXBF5v.pdf",
+      "sourcePage": "https://frb6al.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "اللغة الفرنسية",
+      "grade": "السادس العلمي",
+      "totalPages": 80,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "1Ea8lcedAR_7JPhiwVGLu1J4QizhxXDIR.pdf",
+      "sourcePage": "https://qrb4pr.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "القراءة",
+      "grade": "الرابع ابتدائي",
+      "totalPages": 148,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "1S9P_4htwstxFyk5RKoccW4bnN9DPlwo6.pdf",
+      "sourcePage": "https://qrb5pr.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "القراءة",
+      "grade": "الخامس ابتدائي",
+      "totalPages": 162,
+      "reason": "Scanned image PDF: no extractable text stream"
+    },
+    {
+      "fileName": "1YsbcKHGfzCO6d1d0aXykdh1SOFsTnnH6.pdf",
+      "sourcePage": "https://qrb6pr.haltaelam.com/",
+      "catalogId": null,
+      "catalogTitle": null,
+      "subject": "القراءة",
+      "grade": "السادس ابتدائي",
+      "totalPages": 142,
+      "reason": "Scanned image PDF: no extractable text stream"
+    }
+  ],
+  "unmatchedCatalog": [
+    {
+      "id": "iq-2KfZhNir2KfZhNirINin2KjYqtiv2KfYptmKOtin2YTYp9is2KrZhdin2LnZitin2Ko",
+      "title": "كتاب الاجتماعيات — الثالث ابتدائي",
+      "sourceType": "official_textbook",
+      "stage": "ابتدائي",
+      "grade": "الثالث ابتدائي",
+      "subject": "الاجتماعيات",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الاجتماعيات للصف الثالث ابتدائي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الثالث ابتدائي",
+        "الاجتماعيات"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNir2KfZhNirINmF2KrZiNiz2Lc62KfZhNit2KfYs9mI2Kg",
+      "title": "كتاب الحاسوب — الثالث متوسط",
+      "sourceType": "official_textbook",
+      "stage": "متوسط",
+      "grade": "الثالث متوسط",
+      "subject": "الحاسوب",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الحاسوب للصف الثالث متوسط",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الثالث متوسط",
+        "الحاسوب"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "title": "كتاب اللغة العربية — الرابع الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "اللغة العربية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة العربية للصف الرابع الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الرابع الأدبي",
+        "اللغة العربية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "title": "كتاب اللغة الإنكليزية — الرابع الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "اللغة الإنكليزية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة الإنكليزية للصف الرابع الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الرابع الأدبي",
+        "اللغة الإنكليزية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNix2KfYqNi5INin2YTYo9iv2KjZijrYp9mE2K3Yp9iz2YjYqA",
+      "title": "كتاب الحاسوب — الرابع الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الرابع الأدبي",
+      "subject": "الحاسوب",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الحاسوب للصف الرابع الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الرابع الأدبي",
+        "الحاسوب"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "title": "كتاب اللغة العربية — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "اللغة العربية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة العربية للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "اللغة العربية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "title": "كتاب التربية الإسلامية — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "التربية الإسلامية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة التربية الإسلامية للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "التربية الإسلامية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "title": "كتاب اللغة الإنكليزية — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "اللغة الإنكليزية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة الإنكليزية للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "اللغة الإنكليزية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiu2KfZhdizINin2YTYo9iv2KjZijrYp9mE2K3Yp9iz2YjYqA",
+      "title": "كتاب الحاسوب — الخامس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "الخامس الأدبي",
+      "subject": "الحاسوب",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة الحاسوب للصف الخامس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "الخامس الأدبي",
+        "الحاسوب"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYudix2KjZitip",
+      "title": "كتاب اللغة العربية — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "اللغة العربية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة العربية للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "اللغة العربية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2KrYsdio2YrYqSDYp9mE2KXYs9mE2KfZhdmK2Kk",
+      "title": "كتاب التربية الإسلامية — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "التربية الإسلامية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة التربية الإسلامية للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "التربية الإسلامية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    },
+    {
+      "id": "iq-2KfZhNiz2KfYr9izINin2YTYo9iv2KjZijrYp9mE2YTYutipINin2YTYpdmG2YPZhNmK2LLZitip",
+      "title": "كتاب اللغة الإنكليزية — السادس الأدبي",
+      "sourceType": "official_textbook",
+      "stage": "إعدادي",
+      "grade": "السادس الأدبي",
+      "subject": "اللغة الإنكليزية",
+      "chapter": "",
+      "lesson": "",
+      "year": 2026,
+      "page": "",
+      "content": "الكتاب المنهجي العراقي لمادة اللغة الإنكليزية للصف السادس الأدبي",
+      "keywords": [
+        "العراق",
+        "وزارة التربية",
+        "السادس الأدبي",
+        "اللغة الإنكليزية"
+      ],
+      "verified": false,
+      "availability": "source_pending",
+      "sourceUrl": "",
+      "file": {
+        "url": "",
+        "originalName": "",
+        "mimeType": "application/pdf",
+        "size": 0
+      }
+    }
+  ]
+}

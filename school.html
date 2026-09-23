@@ -1,1 +1,168 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>شنو منو مدرسة</title><script>document.documentElement.dataset.theme=(localStorage.getItem('shno-theme')==='dark'||localStorage.getItem('taktak-theme')==='dark')?'dark':'light';</script><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7"><link rel="stylesheet" href="theme-pages.css?v=20260913-2"><link rel="stylesheet" href="school.css?v=20260913-7"><link rel="stylesheet" href="school-enhancements.css?v=20260913-8"><script src="auth-guard.js?v=20260913-7"></script></head><body><main class="school"><header><a href="taktak.html">← شنو منو</a><div><h1>🏫 شنو منو مدرسة</h1><p>وقت الدراسة، المعلم الذكي، متابعة ولي الأمر والتقارير</p></div></header><section class="hero"><div><span>⏰ وقت الدراسة</span><h2>المعلم الذكي يقود الحصة خطوة بخطوة</h2><p>حدد الطالب والمادة والدرس. المعلم يبدأ الحصة ويطلب فتح الدرس أو الصفحة المناسبة ثم يشرح ويسأل.</p></div><button id="startStudy" disabled>ابدأ وقت الدراسة</button></section><section class="grid"><article><b>👨‍👩‍👧 ولي الأمر</b><p>إضافة الأبناء ومتابعة الدرجات والتقارير.</p></article><article><b>👩‍🏫 المعلم الذكي</b><p>يقود الحصة تلقائيًا بأسلوب مناسب لعمر الطالب.</p></article><article><b>🔔 المواعيد</b><p>حدد موعد المادة والتذكير قبل وقت الدراسة.</p></article><article><b>📊 مستوى الطالب</b><p>متوسط الدرجات وعدد الحصص وملاحظات المعلم.</p></article><article><b>📚 المنهج العراقي</b><p>قاعدة معرفة موثقة حسب الصف والمادة والدرس.</p></article><article><b>🎙️📷 الحصة التفاعلية</b><p>الصوت والكاميرا لا يعملان إلا بعد موافقة ولي الأمر وإذن الجهاز.</p></article></section><div id="schoolMessage" class="message" hidden></div><section class="panel"><div class="panel-head"><div><h3>ملفات الطلاب</h3><p>كل البيانات خاصة بولي الأمر المسجل حاليًا.</p></div></div><form id="studentForm"><input name="name" placeholder="اسم الطالب" required><select name="stage" required><option value="">المرحلة</option><option>ابتدائي</option><option>متوسط</option><option>إعدادي</option></select><input name="grade" placeholder="الصف" required><input name="subjects" placeholder="المواد مفصولة بفاصلة"><button>إضافة الطالب</button></form><div id="students" class="student-list"></div></section><section class="panel"><div class="panel-head"><div><h3>موافقة ولي الأمر على مستشعرات الحصة</h3><p>يمكن تفعيل الصوت أو الكاميرا لكل طالب بشكل مستقل. الكاميرا في هذه المرحلة تعرض الحضور داخل الحصة محليًا ولا تسجل أو ترفع فيديو.</p></div></div><form id="permissionForm" class="permission-form"><select id="permissionStudent" required><option value="">اختر الطالب</option></select><label><input id="allowVoice" type="checkbox"> 🎙️ السماح بالصوت</label><label><input id="allowCamera" type="checkbox"> 📷 السماح بالكاميرا</label><button>حفظ موافقة ولي الأمر</button></form></section><section class="panel"><h3>موعد جديد</h3><form id="scheduleForm"><select name="studentId" id="scheduleStudent" required><option value="">اختر الطالب</option></select><input name="subject" placeholder="المادة" required><input name="scheduledAt" type="datetime-local" required><input name="durationMinutes" type="number" min="10" max="240" value="45"><input name="reminderMinutes" type="number" min="0" max="1440" value="15"><button>حفظ الموعد</button></form><div id="schedules"></div></section><section class="panel study-panel"><div class="panel-head"><div><h3>وقت الدراسة</h3><p>اختر الطالب والمادة والدرس. المعلم يبدأ أولاً ثم ينتظر جواب الطالب.</p></div><span id="aiStatus" class="ai-status">فحص المعلم...</span></div><form id="studyForm"><select id="studyStudent" name="studentId" required><option value="">اختر الطالب</option></select><input id="studySubject" name="subject" placeholder="المادة" required><input id="studyLesson" name="lesson" placeholder="اسم الدرس"><select id="studyMode" name="mode"><option value="individual">فردي</option><option value="group">جماعي</option></select></form><div id="studyState" class="study-state">لا توجد حصة جارية.</div><section id="teacherBox" class="teacher-box" hidden><div class="teacher-head"><div><b>👩‍🏫 المعلم الذكي</b><small id="teacherContext"></small></div><button type="button" id="clearTeacher">مسح الحوار</button></div><div id="sensorBar" class="sensor-bar"><button type="button" id="listenTeacher">🔊 اسمع المعلم</button><button type="button" id="voiceAnswer">🎙️ جاوب بصوتك</button><button type="button" id="cameraToggle">📷 تشغيل الكاميرا</button><span id="sensorStatus">المستشعرات متوقفة</span></div><div id="cameraBox" class="camera-box" hidden><video id="studentCamera" autoplay playsinline muted></video><small>الكاميرا تعمل محليًا للحضور أثناء الحصة فقط. لا تسجيل ولا رفع فيديو في هذه النسخة.</small></div><div id="teacherChat" class="teacher-chat"><div class="teacher-welcome">المعلم سيبدأ الدرس تلقائيًا.</div></div><form id="teacherForm" class="teacher-form"><textarea id="teacherQuestion" rows="2" placeholder="اكتب إجابة الطالب عند الحاجة..."></textarea><button id="teacherSend">إرسال</button></form></section><div id="finishBox" class="finish-box" hidden><input id="finishScore" type="number" min="0" placeholder="الدرجة"><input id="finishMax" type="number" min="1" value="10" placeholder="من"><input id="teacherNote" placeholder="ملاحظة المعلم"><input id="responses" type="number" min="0" value="0" placeholder="عدد الإجابات"><input id="unanswered" type="number" min="0" value="0" placeholder="غير المجاب"><button id="finishStudy" type="button">إنهاء الحصة وإرسال ملخص ولي الأمر</button></div></section><section class="panel"><h3>تقرير ولي الأمر</h3><select id="reportStudent"><option value="">اختر الطالب لعرض التقرير</option></select><div id="report"></div></section></main><script src="media-cache.js?v=20260912-1"></script><script src="school-offline-ai.js?v=20260912-2"></script><script src="school-integration.js?v=20260919-1"></script><script src="school.js?v=20260911-5"></script></body></html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#0b505c">
+  <title>مدرسة سومر الأهلية الإلكترونية | بوابة بلاد الرافدين للتعليم الموحد</title>
+
+  <!-- أنظمة التنسيق السومرية العصرية - Mesopotamian Modern Design System -->
+  <link rel="stylesheet" href="school/css/sumer-tokens.css">
+  <link rel="stylesheet" href="school/css/sumer-shell.css">
+  <link rel="stylesheet" href="school/css/sumer-components.css">
+  <link rel="stylesheet" href="school/css/sumer-gateway.css">
+  <link rel="stylesheet" href="school/css/sumer-student.css">
+</head>
+<body>
+  <div id="sumer-app">
+    <!-- الشريط العلوي الموحد -->
+    <div id="sumer-header-mount"></div>
+
+    <!-- التخطيط العام: القائمة الجانبية ومساحة العمل الرئيسية -->
+    <div class="sumer-layout">
+      <div id="sumer-sidebar-mount"></div>
+
+      <main class="sumer-main" id="sumer-main" role="main">
+        <div class="sumer-container" id="sumer-content-mount">
+          <!-- يتم إدراج مساحات العمل ديناميكياً عبر SumerRouter -->
+        </div>
+      </main>
+    </div>
+
+    <!-- شريط التنقل السفلي للهواتف الذكية -->
+    <div id="sumer-mobile-bar-mount"></div>
+
+    <!-- القائمة المنبثقة للهواتف -->
+    <div id="sumer-drawer-mount"></div>
+  </div>
+
+  <!-- المحركات الأساسية المحفوظة -->
+  <script src="school-virtual-teacher-core.js"></script>
+  <script src="school-live-core.js"></script>
+
+  <!-- المنظومة البرمجية الموحدة لمدرسة سومر -->
+  <script src="school/js/sumer-api.js"></script>
+  <script src="school/js/sumer-state.js"></script>
+  <script src="school/js/sumer-ui.js"></script>
+  <script src="school/js/views/view-guest.js"></script>
+  <script src="school/js/views/view-student.js"></script>
+  <script src="school/js/sumer-router.js"></script>
+
+  <script>
+    // تهيئة صدفة وبوابة مدرسة سومر الموحدة (Phase 6 & 7 Bootstrap)
+    (function () {
+      'use strict';
+
+      var store = window.SumerStore;
+      var api = window.SumerAPI;
+      var ui = window.SumerUI;
+      var guestView = window.SumerGuestView || window.ViewGuest;
+      var studentView = window.SumerStudentView || window.ViewStudent;
+      var router = window.SumerRouter;
+
+      if (!store || !ui || !router) {
+        console.error('فشل في تحميل وحدات مدرسة سومر الأساسية');
+        return;
+      }
+
+      // تهيئة مخزن الحالة
+      store.init();
+
+      var headerMount = document.getElementById('sumer-header-mount');
+      var sidebarMount = document.getElementById('sumer-sidebar-mount');
+      var mobileBarMount = document.getElementById('sumer-mobile-bar-mount');
+      var drawerMount = document.getElementById('sumer-drawer-mount');
+      var contentMount = document.getElementById('sumer-content-mount');
+
+      var GUEST_ROUTES = [
+        '#welcome',
+        '#guest',
+        '#auth/login',
+        '#auth/register-student',
+        '#auth/apply-teacher',
+        '#curriculum'
+      ];
+
+      function isGuestRoute(routeKey) {
+        return GUEST_ROUTES.indexOf(routeKey) !== -1;
+      }
+
+      function isStudentRoute(routeKey) {
+        return routeKey.indexOf('#student') === 0 ||
+               routeKey.indexOf('#classroom') === 0 ||
+               routeKey.indexOf('#curriculum/reader') === 0;
+      }
+
+      function renderShell(currentRoute) {
+        var state = store.getState();
+        currentRoute = currentRoute || window.location.hash || '#welcome';
+
+        if (headerMount) headerMount.innerHTML = ui.renderHeader(state);
+        if (sidebarMount) sidebarMount.innerHTML = ui.renderSidebar(state, currentRoute);
+        if (mobileBarMount) mobileBarMount.innerHTML = ui.renderMobileBar(state, currentRoute);
+        if (drawerMount) drawerMount.innerHTML = ui.renderDrawer(state);
+
+        attachEventListeners();
+      }
+
+      function attachEventListeners() {
+        // زر تبديل الثيم
+        var themeToggle = document.getElementById('sumer-theme-toggle');
+        if (themeToggle) {
+          themeToggle.onclick = function () {
+            store.toggleTheme();
+          };
+        }
+
+        // أزرار فتح وإغلاق القائمة المنبثقة للهواتف
+        var drawerToggle = document.getElementById('sumer-drawer-toggle');
+        var mobileMenuBtn = document.getElementById('sumer-mobile-menu-btn');
+        var drawerClose = document.getElementById('sumer-drawer-close');
+        var drawerBackdrop = document.getElementById('sumer-drawer-backdrop');
+
+        function openDrawer() { store.setDrawer(true); }
+        function closeDrawer() { store.setDrawer(false); }
+
+        if (drawerToggle) drawerToggle.onclick = openDrawer;
+        if (mobileMenuBtn) mobileMenuBtn.onclick = openDrawer;
+        if (drawerClose) drawerClose.onclick = closeDrawer;
+        if (drawerBackdrop) drawerBackdrop.onclick = closeDrawer;
+      }
+
+      function renderContent(routeKey, contract) {
+        routeKey = routeKey || window.location.hash || '#welcome';
+        if (!contentMount) return;
+
+        if (isStudentRoute(routeKey) && studentView) {
+          studentView.render(routeKey, contentMount);
+        } else if (isGuestRoute(routeKey) && guestView) {
+          guestView.render(routeKey, contentMount);
+        } else {
+          contentMount.innerHTML = ui.renderPlaceholderShell(contract, routeKey);
+        }
+      }
+
+      // الاشتراك بتغيرات الحالة لتحديث مكونات الهيكل
+      store.subscribe(function () {
+        renderShell(window.location.hash);
+      });
+
+      // جلب سياق المستخدم الحالي إذا كان التوكن متوفراً
+      if (api && api.getToken()) {
+        api.getMe().then(function (res) {
+          if (res.ok && res.data) {
+            store.setSchoolContext(res.data.schoolContext, res.data.user);
+          }
+        }).catch(function () {});
+      }
+
+      // تهيئة موجه المسارات
+      router.init(function (routeKey, contract) {
+        renderShell(routeKey);
+        renderContent(routeKey, contract);
+      });
+    })();
+  </script>
+</body>
+</html>

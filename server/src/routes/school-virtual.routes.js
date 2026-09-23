@@ -17,6 +17,7 @@ const VirtualMessage = require('../models/VirtualClassroomMessage');
 const Student = require('../models/SchoolStudent');
 const Knowledge = require('../models/SchoolKnowledgeSource');
 const vsvc = require('../services/school-virtual-classroom');
+const curriculumIndex = require('../services/school-curriculum-index');
 const schoolAI = require('../services/school-ai');
 
 function io(req) {
@@ -462,6 +463,28 @@ router.post('/sessions/:code/questions', async (req, res, next) => {
           page: session.sourcePage || '',
           content: session.lessonContent || session.sourceBookName || session.sourceTitle
         });
+      }
+
+      // Enrich with relevant indexed curriculum pages for this subject, grade, and question
+      if (curriculumIndex && typeof curriculumIndex.searchCurriculum === 'function') {
+        try {
+          const hits = curriculumIndex.searchCurriculum({
+            stage: session.stage,
+            grade: session.grade,
+            subject: session.subject,
+            query: text,
+            limit: 3
+          });
+          for (const h of hits) {
+            sources.push({
+              title: `${h.bookTitle} — ص ${h.page}`,
+              page: String(h.page),
+              chapter: h.chapter,
+              lesson: h.lesson,
+              content: h.snippet || h.content.slice(0, 600)
+            });
+          }
+        } catch (_) {}
       }
 
       // Fetch recent messages for conversational context

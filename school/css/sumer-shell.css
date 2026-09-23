@@ -1,0 +1,384 @@
+/**
+ * sumer-shell.css - مدرسة سومر الإلكترونية الموحدة
+ * تخطيط الهيكل العام (Mobile-First Shell & Responsive Navigation Layout)
+ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--sumer-font-family);
+  font-size: 16px;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--sumer-bg-body);
+  color: var(--sumer-text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color var(--sumer-transition-base), color var(--sumer-transition-base);
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* صدفة التطبيق المركزية - Root Shell Container */
+#sumer-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* -------------------------------------------------------------------------- */
+/* الشريط العلوي الموحد - Header Bar                                         */
+/* -------------------------------------------------------------------------- */
+.sumer-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--sumer-z-header);
+  height: var(--sumer-header-height);
+  background-color: var(--sumer-header-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sumer-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  transition: background-color var(--sumer-transition-base), border-color var(--sumer-transition-base);
+}
+
+.sumer-header-start {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.sumer-brand-emblem {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: var(--sumer-weight-bold);
+  font-size: var(--sumer-font-lg);
+  color: var(--sumer-teal-500);
+}
+
+.sumer-emblem-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--sumer-teal-500), var(--sumer-teal-700));
+  border: 1px solid var(--sumer-gold-400);
+  border-radius: var(--sumer-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: var(--sumer-shadow-sm);
+  flex-shrink: 0;
+}
+
+.sumer-brand-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.sumer-brand-main {
+  font-size: var(--sumer-font-md);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  letter-spacing: -0.3px;
+}
+
+.sumer-brand-sub {
+  font-size: var(--sumer-font-xs);
+  color: var(--sumer-gold-600);
+  font-weight: var(--sumer-weight-medium);
+}
+
+.sumer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sumer-btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sumer-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sumer-text-secondary);
+  border: 1px solid var(--sumer-border-color);
+  background-color: var(--sumer-bg-surface);
+  transition: all var(--sumer-transition-fast);
+}
+
+.sumer-btn-icon:hover {
+  background-color: var(--sumer-bg-surface-hover);
+  color: var(--sumer-teal-500);
+  border-color: var(--sumer-teal-300);
+}
+
+.sumer-btn-icon:focus-visible {
+  outline: 2px solid var(--sumer-border-focus);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* التخطيط العام: القائمة الجانبية ومساحة العمل - Body Layout                */
+/* -------------------------------------------------------------------------- */
+.sumer-layout {
+  flex: 1;
+  display: flex;
+  width: 100%;
+}
+
+/* القائمة الجانبية (للحواسيب فقط) - Desktop Sidebar */
+.sumer-sidebar {
+  display: none; /* مخفية على الهواتف - ستفعل عبر media query */
+  width: var(--sumer-sidebar-width);
+  background-color: var(--sumer-sidebar-bg);
+  border-left: 1px solid var(--sumer-border-color);
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--sumer-header-height);
+  height: calc(100vh - var(--sumer-header-height));
+  overflow-y: auto;
+  padding: 1.25rem 0.85rem;
+  transition: background-color var(--sumer-transition-base), border-color var(--sumer-transition-base);
+}
+
+.sumer-sidebar-group {
+  margin-bottom: 1.5rem;
+}
+
+.sumer-sidebar-title {
+  font-size: var(--sumer-font-xs);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 0.85rem 0.5rem;
+}
+
+.sumer-nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sumer-nav-item a,
+.sumer-nav-item button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--sumer-radius-md);
+  font-size: var(--sumer-font-sm);
+  font-weight: var(--sumer-weight-medium);
+  color: var(--sumer-text-secondary);
+  transition: all var(--sumer-transition-fast);
+  text-align: right;
+}
+
+.sumer-nav-item a:hover,
+.sumer-nav-item button:hover {
+  background-color: var(--sumer-bg-surface-hover);
+  color: var(--sumer-teal-500);
+}
+
+.sumer-nav-item.active a,
+.sumer-nav-item.active button {
+  background-color: var(--sumer-bg-accent-soft);
+  color: var(--sumer-teal-500);
+  font-weight: var(--sumer-weight-bold);
+  border-right: 3px solid var(--sumer-gold-500);
+}
+
+.sumer-nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* حاوية المحتوى الرئيسي - Main Workspace Area */
+.sumer-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem 5rem; /* مساحة سفلية للشريط المحمول */
+}
+
+.sumer-container {
+  width: 100%;
+  max-width: var(--sumer-container-max);
+  margin: 0 auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* شريط التنقل السفلي للهواتف - Mobile Bottom Navigation Bar                 */
+/* -------------------------------------------------------------------------- */
+.sumer-mobile-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--sumer-z-mobile-bar);
+  height: var(--sumer-mobile-bar-height);
+  background-color: var(--sumer-mobile-bar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--sumer-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 0.5rem;
+  transition: background-color var(--sumer-transition-base), border-color var(--sumer-transition-base);
+}
+
+.sumer-mobile-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0;
+  color: var(--sumer-text-muted);
+  font-size: var(--sumer-font-xs);
+  font-weight: var(--sumer-weight-medium);
+  transition: color var(--sumer-transition-fast);
+}
+
+.sumer-mobile-tab:hover {
+  color: var(--sumer-teal-500);
+}
+
+.sumer-mobile-tab.active {
+  color: var(--sumer-teal-500);
+  font-weight: var(--sumer-weight-bold);
+}
+
+.sumer-mobile-tab.active .sumer-mobile-tab-icon {
+  transform: translateY(-2px);
+  color: var(--sumer-gold-500);
+}
+
+.sumer-mobile-tab-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--sumer-transition-fast);
+}
+
+/* -------------------------------------------------------------------------- */
+/* القائمة المنبثقة للهواتف - Slide Drawer                                   */
+/* -------------------------------------------------------------------------- */
+.sumer-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(11, 17, 23, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--sumer-z-drawer) - 1);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--sumer-transition-base), visibility var(--sumer-transition-base);
+}
+
+.sumer-drawer-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sumer-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 82%;
+  max-width: 320px;
+  background-color: var(--sumer-bg-surface);
+  z-index: var(--sumer-z-drawer);
+  border-left: 1px solid var(--sumer-border-color);
+  box-shadow: var(--sumer-shadow-lg);
+  transform: translateX(100%);
+  transition: transform var(--sumer-transition-base);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.sumer-drawer.open {
+  transform: translateX(0);
+}
+
+.sumer-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--sumer-border-color);
+}
+
+.sumer-drawer-close {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sumer-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sumer-text-secondary);
+}
+
+/* -------------------------------------------------------------------------- */
+/* التكيف مع الشاشات الكبيرة (Desktop Breakpoint >= 1024px)                  */
+/* -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .sumer-sidebar {
+    display: block;
+  }
+
+  .sumer-mobile-bar {
+    display: none;
+  }
+
+  .sumer-main {
+    padding: 2rem 2.5rem 3rem;
+  }
+
+  .sumer-btn-menu-drawer {
+    display: none;
+  }
+}

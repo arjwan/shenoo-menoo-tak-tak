@@ -141,6 +141,22 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
   });
 
   await t.test('3. Manager CANNOT elevate self or anyone to Developer and CANNOT modify Developer account', async () => {
+    // Attempt by non-privileged user to inject role into school management
+    const tamperRole = await request('POST', '/api/school/management/complaints', {
+      content: 'محاولة تصعيد صلاحيات',
+      role: 'admin'
+    }, teacherToken);
+    assert.equal(tamperRole.status, 403, 'Attempt to inject role by non-admin must be rejected with 403');
+    assert.match(tamperRole.data.message, /تعديل أدوار الحسابات محصور/);
+
+    // Attempt by manager to elevate anyone to developer
+    const managerElevate = await request('POST', '/api/school/management/schedules', {
+      title: 'محاولة ترقية',
+      role: 'developer'
+    }, managerToken);
+    assert.equal(managerElevate.status, 403, 'Manager must be forbidden from granting developer role');
+    assert.match(managerElevate.data.message, /لا يمكن منح رتبة المطور/);
+
     // Attempt to register/update developer as teacher by manager
     const regDev = await request('POST', '/api/school/management/teachers', {
       userId: String(devUser._id),

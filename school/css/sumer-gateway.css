@@ -1,0 +1,659 @@
+/**
+ * sumer-gateway.css - مدرسة سومر الإلكترونية الموحدة
+ * أنظمة التنسيق لبوابة الاستقبال العامة والتسجيل (Phase 6 Public Gateway & Onboarding)
+ */
+
+/* -------------------------------------------------------------------------- */
+/* قسم الترحيب الرئيسي - Hero Section                                        */
+/* -------------------------------------------------------------------------- */
+.sumer-hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--sumer-teal-900) 0%, var(--sumer-teal-800) 50%, var(--sumer-slate-800) 100%);
+  color: #ffffff;
+  border-radius: var(--sumer-radius-xl);
+  padding: 3rem 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: var(--sumer-shadow-lg);
+  overflow: hidden;
+  border: 1px solid var(--sumer-teal-700);
+}
+
+.sumer-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--sumer-gold-400), var(--sumer-teal-400), var(--sumer-gold-400));
+}
+
+.sumer-hero-cuneiform-accent {
+  position: absolute;
+  left: -20px;
+  bottom: -30px;
+  opacity: 0.05;
+  color: #ffffff;
+  pointer-events: none;
+  font-size: 15rem;
+  line-height: 1;
+}
+
+.sumer-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--sumer-radius-full);
+  background: rgba(212, 163, 71, 0.18);
+  border: 1px solid var(--sumer-gold-400);
+  color: var(--sumer-gold-300);
+  font-size: var(--sumer-font-xs);
+  font-weight: var(--sumer-weight-bold);
+  margin-bottom: 1.25rem;
+}
+
+.sumer-hero-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: var(--sumer-weight-extrabold);
+  line-height: 1.25;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  max-width: 800px;
+}
+
+.sumer-hero-title-highlight {
+  color: var(--sumer-gold-400);
+}
+
+.sumer-hero-subtitle {
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  color: var(--sumer-teal-100);
+  line-height: 1.6;
+  max-width: 720px;
+  margin-bottom: 2rem;
+}
+
+.sumer-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.sumer-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sumer-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--sumer-font-xs);
+  color: var(--sumer-teal-200);
+  background: rgba(4, 36, 41, 0.5);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--sumer-radius-sm);
+  border: 1px solid rgba(29, 154, 176, 0.3);
+}
+
+/* -------------------------------------------------------------------------- */
+/* شبكة بطاقات الخدمات الحقيقية - Real Services Grid                          */
+/* -------------------------------------------------------------------------- */
+.sumer-section-title-wrap {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.sumer-section-title {
+  font-size: var(--sumer-font-2xl);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  margin-bottom: 0.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.sumer-section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background-color: var(--sumer-gold-500);
+  margin: 0.5rem auto 0;
+  border-radius: var(--sumer-radius-full);
+}
+
+.sumer-section-desc {
+  font-size: var(--sumer-font-sm);
+  color: var(--sumer-text-secondary);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.sumer-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.sumer-service-card {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--sumer-transition-base), box-shadow var(--sumer-transition-base), border-color var(--sumer-transition-base);
+  box-shadow: var(--sumer-shadow-sm);
+}
+
+.sumer-service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sumer-shadow-md);
+  border-color: var(--sumer-teal-400);
+}
+
+.sumer-service-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--sumer-radius-md);
+  background-color: var(--sumer-teal-50);
+  color: var(--sumer-teal-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+[data-theme="dark"] .sumer-service-icon {
+  background-color: var(--sumer-teal-900);
+  color: var(--sumer-teal-300);
+}
+
+.sumer-service-title {
+  font-size: var(--sumer-font-md);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.sumer-service-desc {
+  font-size: var(--sumer-font-sm);
+  color: var(--sumer-text-secondary);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.sumer-service-footer {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sumer-border-subtle);
+}
+
+/* -------------------------------------------------------------------------- */
+/* استعراض المعلمين الافتراضيين - AI Virtual Teachers                         */
+/* -------------------------------------------------------------------------- */
+.sumer-teachers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.sumer-teacher-card {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--sumer-shadow-sm);
+}
+
+.sumer-teacher-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sumer-teacher-avatar-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--sumer-radius-full);
+  background: linear-gradient(135deg, var(--sumer-teal-600), var(--sumer-teal-800));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--sumer-weight-bold);
+  font-size: 1.25rem;
+  border: 2px solid var(--sumer-gold-400);
+}
+
+.sumer-teacher-info {
+  flex: 1;
+}
+
+.sumer-teacher-name {
+  font-size: var(--sumer-font-md);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.sumer-teacher-specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.sumer-tag {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--sumer-radius-sm);
+  background-color: var(--sumer-bg-subtle);
+  color: var(--sumer-text-secondary);
+  border: 1px solid var(--sumer-border-subtle);
+}
+
+/* -------------------------------------------------------------------------- */
+/* حاويات النماذج والمصادقة والتسجيل - Accessible Forms                        */
+/* -------------------------------------------------------------------------- */
+.sumer-auth-container {
+  max-width: 540px;
+  margin: 1.5rem auto 3rem;
+}
+
+.sumer-form-card {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-xl);
+  padding: 2.25rem 2rem;
+  box-shadow: var(--sumer-shadow-md);
+}
+
+.sumer-form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.sumer-form-title {
+  font-size: var(--sumer-font-xl);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.sumer-form-subtitle {
+  font-size: var(--sumer-font-sm);
+  color: var(--sumer-text-muted);
+}
+
+.sumer-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.sumer-label {
+  display: block;
+  font-size: var(--sumer-font-sm);
+  font-weight: var(--sumer-weight-medium);
+  color: var(--sumer-text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.sumer-required {
+  color: var(--sumer-danger);
+  margin-right: 0.25rem;
+}
+
+.sumer-input,
+.sumer-select,
+.sumer-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: var(--sumer-font-sm);
+  font-family: inherit;
+  color: var(--sumer-text-primary);
+  background-color: var(--sumer-bg-surface);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-md);
+  transition: border-color var(--sumer-transition-fast), box-shadow var(--sumer-transition-fast);
+  direction: rtl;
+}
+
+.sumer-input:focus,
+.sumer-select:focus,
+.sumer-textarea:focus {
+  outline: none;
+  border-color: var(--sumer-teal-500);
+  box-shadow: 0 0 0 3px rgba(18, 121, 139, 0.2);
+}
+
+.sumer-input:disabled,
+.sumer-select:disabled,
+.sumer-textarea:disabled {
+  background-color: var(--sumer-bg-subtle);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.sumer-input-pw-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sumer-input-pw-wrap .sumer-input {
+  padding-left: 2.75rem;
+}
+
+.sumer-pw-toggle-btn {
+  position: absolute;
+  left: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--sumer-text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sumer-radius-sm);
+}
+
+.sumer-pw-toggle-btn:hover {
+  color: var(--sumer-text-primary);
+}
+
+.sumer-form-help {
+  font-size: var(--sumer-font-xs);
+  color: var(--sumer-text-muted);
+  margin-top: 0.35rem;
+}
+
+.sumer-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.sumer-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--sumer-font-xs);
+  color: var(--sumer-text-secondary);
+  background-color: var(--sumer-bg-surface);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sumer-checkbox-label input[type="checkbox"] {
+  accent-color: var(--sumer-teal-500);
+}
+
+/* -------------------------------------------------------------------------- */
+/* التنبيهات ورسائل الحالة - Alerts & Banners                                  */
+/* -------------------------------------------------------------------------- */
+.sumer-alert {
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--sumer-radius-md);
+  font-size: var(--sumer-font-sm);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  line-height: 1.5;
+}
+
+.sumer-alert-error {
+  background-color: var(--sumer-danger-soft);
+  color: var(--sumer-danger-text);
+  border: 1px solid var(--sumer-danger);
+}
+
+.sumer-alert-success {
+  background-color: var(--sumer-success-soft);
+  color: var(--sumer-success-text);
+  border: 1px solid var(--sumer-success);
+}
+
+.sumer-alert-info {
+  background-color: var(--sumer-teal-50);
+  color: var(--sumer-teal-900);
+  border: 1px solid var(--sumer-teal-300);
+}
+
+[data-theme="dark"] .sumer-alert-info {
+  background-color: var(--sumer-teal-900);
+  color: var(--sumer-teal-100);
+  border-color: var(--sumer-teal-700);
+}
+
+/* -------------------------------------------------------------------------- */
+/* بطاقة حالة التجربة المجانية 30 يوماً - 30-Day Trial Card                    */
+/* -------------------------------------------------------------------------- */
+.sumer-trial-card {
+  background: linear-gradient(135deg, var(--sumer-card-bg) 0%, var(--sumer-bg-surface) 100%);
+  border: 2px solid var(--sumer-gold-400);
+  border-radius: var(--sumer-radius-xl);
+  padding: 2rem;
+  box-shadow: var(--sumer-shadow-md);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.sumer-trial-header {
+  margin-bottom: 1.25rem;
+}
+
+.sumer-trial-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  background-color: var(--sumer-gold-50);
+  border: 1px solid var(--sumer-gold-400);
+  border-radius: var(--sumer-radius-full);
+  color: var(--sumer-gold-900);
+  font-size: var(--sumer-font-md);
+  font-weight: var(--sumer-weight-bold);
+  margin-bottom: 1.25rem;
+}
+
+[data-theme="dark"] .sumer-trial-countdown {
+  background-color: var(--sumer-gold-900);
+  color: var(--sumer-gold-200);
+}
+
+.sumer-trial-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+  text-align: right;
+}
+
+.sumer-trial-meta-item {
+  background-color: var(--sumer-bg-body);
+  padding: 0.75rem 1rem;
+  border-radius: var(--sumer-radius-md);
+  border: 1px solid var(--sumer-border-subtle);
+}
+
+.sumer-trial-meta-label {
+  font-size: var(--sumer-font-xs);
+  color: var(--sumer-text-muted);
+}
+
+.sumer-trial-meta-val {
+  font-size: var(--sumer-font-sm);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  margin-top: 0.25rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* استعراض كتالوج المنهج العراقي - Curriculum Catalog View                    */
+/* -------------------------------------------------------------------------- */
+.sumer-catalog-filter-bar {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--sumer-shadow-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sumer-stage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sumer-stage-tab {
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--sumer-radius-md);
+  font-size: var(--sumer-font-sm);
+  font-weight: var(--sumer-weight-medium);
+  border: 1px solid var(--sumer-border-color);
+  background-color: var(--sumer-bg-surface);
+  color: var(--sumer-text-secondary);
+  cursor: pointer;
+  transition: all var(--sumer-transition-fast);
+}
+
+.sumer-stage-tab:hover {
+  border-color: var(--sumer-teal-400);
+  color: var(--sumer-text-primary);
+}
+
+.sumer-stage-tab.active {
+  background-color: var(--sumer-teal-600);
+  border-color: var(--sumer-teal-600);
+  color: #ffffff;
+}
+
+.sumer-catalog-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.sumer-catalog-select {
+  min-width: 160px;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--sumer-font-xs);
+}
+
+.sumer-catalog-search {
+  min-width: 180px;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--sumer-font-xs);
+}
+
+.sumer-books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.sumer-book-card {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--sumer-transition-fast), box-shadow var(--sumer-transition-fast);
+  box-shadow: var(--sumer-shadow-sm);
+}
+
+.sumer-book-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sumer-shadow-md);
+  border-color: var(--sumer-teal-400);
+}
+
+.sumer-book-badge-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.sumer-book-title {
+  font-size: var(--sumer-font-sm);
+  font-weight: var(--sumer-weight-bold);
+  color: var(--sumer-text-primary);
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  min-height: 2.8rem;
+}
+
+.sumer-book-meta {
+  font-size: var(--sumer-font-xs);
+  color: var(--sumer-text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.sumer-book-actions {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sumer-border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* بطاقة تأكيد طلب المعلم */
+.sumer-app-status-card {
+  background-color: var(--sumer-card-bg);
+  border: 1px solid var(--sumer-border-color);
+  border-radius: var(--sumer-radius-xl);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: var(--sumer-shadow-md);
+}
+
+.sumer-app-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--sumer-radius-full);
+  background-color: var(--sumer-warning-soft);
+  color: var(--sumer-gold-900);
+  border: 1px solid var(--sumer-warning);
+  font-weight: var(--sumer-weight-bold);
+  font-size: var(--sumer-font-sm);
+  margin-bottom: 1.25rem;
+}
+
+[data-theme="dark"] .sumer-app-status-badge {
+  background-color: var(--sumer-gold-900);
+  color: var(--sumer-gold-200);
+}

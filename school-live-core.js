@@ -1,6 +1,5 @@
-/* school-live-core.js — pure helpers for the REAL CLASSROOM V1 page
- * (school-live.html). No DOM, no network: identical in the browser
- * (window.SchoolLiveCore) and in Node tests (module.exports).
+/* school-live-core.js — pure helpers for the REAL CLASSROOM V1 live engine.
+ * No DOM, no network: identical in the browser (window.SchoolLiveCore) and in Node tests (module.exports).
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();

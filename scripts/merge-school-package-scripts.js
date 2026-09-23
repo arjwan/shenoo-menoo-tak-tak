@@ -1,0 +1,11 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const pkgPath = process.argv[2] || 'package.json';
+const overlayPath = process.argv[3] || 'server/src/data/school-package-overlay.json';
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const overlay = JSON.parse(fs.readFileSync(overlayPath, 'utf8'));
+pkg.scripts = Object.assign({}, pkg.scripts || {}, overlay.scripts || {});
+pkg.devDependencies = Object.assign({}, pkg.devDependencies || {}, overlay.devDependencies || {});
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+console.log('package.json school scripts merged:', Object.keys(overlay.scripts || {}));

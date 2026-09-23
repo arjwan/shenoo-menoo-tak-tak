@@ -258,11 +258,23 @@ function repairCanvaExport(html) {
 router.get('/original', (_req, res) => {
   res.type('html');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  // Previous approved original remains in git for instant rollback.
-  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-update-20260920.html');
+  // Immutable approved original (SHA-pinned). Serve-time repair only.
+  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-original.html');
   fs.readFile(file, (err, buf) => {
     if (err) return res.status(500).json({ ok: false, message: 'فشل تحميل الأصل' });
     res.end(repairCanvaExport(buf.toString('utf8')));
+  });
+});
+
+// Active Canva school UPDATE export (structure-list / library-search UI). Served
+// separately so /original stays the immutable approved artifact.
+router.get('/update', (_req, res) => {
+  res.type('html');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  const file = path.resolve(__dirname, '../../../original-assets/school-canva/school-canva-update-20260920.html');
+  fs.readFile(file, (err, buf) => {
+    if (err) return res.status(500).json({ ok: false, message: 'فشل تحميل تحديث Canva' });
+    res.end(buf.toString('utf8'));
   });
 });
 

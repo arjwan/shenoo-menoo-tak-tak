@@ -64,8 +64,9 @@ router.get('/bootstrap', async (req, res, next) => {
       StaffRequest.find(staffRequestScope).populate('teacher', 'name subjects').populate('reviewedBy', 'fullName').sort({ createdAt: -1 }).limit(80).lean()
     ]);
     const builtinVirtualTeachers = VirtualTeacher.getBuiltinProfiles();
-    const builtinIds = new Set(builtinVirtualTeachers.map((profile) => profile.profileId));
-    const virtualTeachers = [...builtinVirtualTeachers, ...virtualTeacherRows.filter((profile) => !builtinIds.has(profile.profileId))];
+    // Phase 7 exposes only the three approved personas. Older database rows
+    // remain stored but cannot silently reappear in the public teacher list.
+    const virtualTeachers = builtinVirtualTeachers;
     res.json({
       ok: true,
       user: { id: req.user._id, fullName: req.user.fullName, username: req.user.username, role: req.user.role, avatarUrl: req.user.profile?.avatarUrl || '' },

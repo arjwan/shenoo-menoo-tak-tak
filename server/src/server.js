@@ -41,6 +41,9 @@ const schoolLiveRoutes = require('./routes/school-live.routes');
 const schoolClassroomRoutes = require('./routes/school-classroom.routes');
 const schoolManagementRoutes = require('./routes/school-management.routes');
 const schoolVirtualRoutes = require('./routes/school-virtual.routes');
+const schoolAssignmentRoutes = require('./routes/school-assignment.routes');
+const schoolTeacherApplyRoutes = require('./routes/school-teacher-apply.routes');
+const cardsCanvaRoutes = require('./routes/cards-canva.routes');
 const schoolPortalRoutes = require('./routes/school-portal.routes');
 const schoolIndexedCurriculumRoutes = require('./routes/school-indexed-curriculum.routes');
 const { attachSocket } = require('./socket');
@@ -100,6 +103,7 @@ app.use('/api/smart-friend', smartFriendRoutes);
 app.use('/api/school', schoolCanvaRoutes);
 app.use('/api/school-canva', schoolCanvaRoutes);
 // REAL CLASSROOM V1: live classroom API; WebRTC signaling is handled by socket-school.js.
+app.use('/api/cards-canva', cardsCanvaRoutes);
 app.use('/api/school', schoolLiveRoutes);
 app.use('/api/school', schoolSyncRoutes);
 app.use('/api/school', schoolIndexedCurriculumRoutes);
@@ -111,6 +115,10 @@ app.use('/api/school', schoolClassroomRoutes);
 // Sumer School role portal. Namespaced mounts avoid collisions with the
 // legacy guardian routes while exposing the previously unmounted management
 // and virtual-classroom implementations.
+app.use('/api/school/management', schoolManagementRoutes);
+app.use('/api/school/assignments', schoolAssignmentRoutes);
+app.use('/api/school/management/assignments', schoolAssignmentRoutes);
+app.use('/api/school/teachers/apply', schoolTeacherApplyRoutes);
 app.use('/api/school/portal', schoolPortalRoutes);
 app.use('/api/school/manage', schoolManagementRoutes);
 app.use('/api/school/virtual', schoolVirtualRoutes);
