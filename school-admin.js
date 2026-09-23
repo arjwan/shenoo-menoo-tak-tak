@@ -71,6 +71,7 @@
     $('openAddTeacherModalBtn')?.addEventListener('click', () => { $('modalAddTeacher').hidden = false; });
     $('quickAddStudentBtn')?.addEventListener('click', () => { $('modalAddStudent').hidden = false; populateStudentFormDropdowns(); });
     $('openAddStudentModalBtn')?.addEventListener('click', () => { $('modalAddStudent').hidden = false; populateStudentFormDropdowns(); });
+    $('quickGuardiansBtn')?.addEventListener('click', () => { document.querySelector('[data-tab="guardians"]')?.click(); });
     $('quickAddScheduleBtn')?.addEventListener('click', () => { $('modalAddSchedule').hidden = false; });
     $('openAddScheduleModalBtn')?.addEventListener('click', () => { $('modalAddSchedule').hidden = false; });
     $('openAddGradeModalBtn')?.addEventListener('click', () => { $('modalAddGrade').hidden = false; populateStudentSelect('gradeStudentSelect'); });
