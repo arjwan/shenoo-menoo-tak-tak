@@ -12,7 +12,7 @@
     "test:school-live": "node --test server/test/school-live-classroom.test.js && node tests/api-school-live-core.js",
     "test:school-virtual": "node --test server/test/school-virtual-classroom.test.js && node tests/api-school-virtual-classroom-core.js",
     "test:school-management": "node --test server/test/school-management.test.js && node tests/api-school-management.js",
-    "test:school-server": "node --test server/test/school-canva-integration.test.js server/test/school-live-classroom.test.js server/test/school-virtual-classroom.test.js server/test/school-management.test.js server/test/school-integration.test.js",
+    "test:school-server": "node --test server/test/school-canva-integration.test.js server/test/school-live-classroom.test.js server/test/school-virtual-classroom.test.js server/test/school-management.test.js server/test/school-backend-gaps.test.js server/test/school-integration.test.js",
     "import:school-canva": "node scripts/import-school-canva-latest.js",
     "download:school-curriculum": "node scripts/download-iraqi-curriculum.js",
     "start": "node server/src/server.js",
@@ -22,7 +22,8 @@
     "seed:developer": "node server/src/scripts/createDeveloper.js",
     "seed:rooms": "node server/src/scripts/seedOfficialRooms.js",
     "games:close-all": "node server/src/scripts/closeAllGameRooms.js",
-    "security:secrets": "node server/src/scripts/scan-secrets.js --history"
+    "security:secrets": "node server/src/scripts/scan-secrets.js --history",
+    "test:school-backend": "node --test server/test/school-backend-gaps.test.js && node tests/api-school-backend-gaps.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

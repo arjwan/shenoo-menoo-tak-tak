@@ -91,6 +91,81 @@ router.get('/teachers', async (req, res, next) => {
   }
 });
 
+// --------------------------------------------------------------------------
+// Teacher Applications Workflow
+// --------------------------------------------------------------------------
+router.post('/teachers/apply', async (req, res, next) => {
+  try {
+    const application = await managementService.submitTeacherApplication(req.user, req.body);
+    res.status(201).json({
+      ok: true,
+      message: 'تم استلام طلب التقديم كمعلم بنجاح وهو قيد مراجعة الإدارة المدرسية',
+      application
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/teacher-applications', requireSchoolManager, async (req, res, next) => {
+  try {
+    const applications = await managementService.listTeacherApplications(req.user, req.schoolContext, req.query);
+    res.json({ ok: true, applications });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.get('/teacher-applications/:id', async (req, res, next) => {
+  try {
+    const application = await managementService.getTeacherApplication(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, application });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.post('/teacher-applications/:id/approve', requireSchoolManager, async (req, res, next) => {
+  try {
+    const result = await managementService.approveTeacherApplication(
+      req.user,
+      req.schoolContext,
+      req.params.id,
+      req.body.notes
+    );
+    res.json({
+      ok: true,
+      message: 'تم اعتماد طلب المعلم وتفعيل حسابه التعليمي بنجاح',
+      ...result
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.post('/teacher-applications/:id/reject', requireSchoolManager, async (req, res, next) => {
+  try {
+    const application = await managementService.rejectTeacherApplication(
+      req.user,
+      req.schoolContext,
+      req.params.id,
+      req.body.reason
+    );
+    res.json({
+      ok: true,
+      message: 'تم رفض طلب التقديم',
+      application
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
 router.post('/teachers', requireSchoolManager, async (req, res, next) => {
   try {
     const teacher = await managementService.registerTeacher(req.user, req.body);
@@ -187,6 +262,33 @@ router.get('/students/:id/record', async (req, res, next) => {
   try {
     const record = await managementService.getStudentPermanentRecord(req.user, req.schoolContext, req.params.id);
     res.json({ ok: true, record });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+// --------------------------------------------------------------------------
+// Student 30-Day Trial Status & Conversion
+// --------------------------------------------------------------------------
+router.get('/students/:id/trial', async (req, res, next) => {
+  try {
+    const trial = await managementService.getStudentTrial(req.user, req.schoolContext, req.params.id);
+    res.json({ ok: true, ...trial });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
+    next(err);
+  }
+});
+
+router.post('/students/:id/convert-trial', requireSchoolManager, async (req, res, next) => {
+  try {
+    const result = await managementService.convertStudentTrial(req.user, req.schoolContext, req.params.id);
+    res.json({
+      ok: true,
+      message: 'تم تحويل الطالب إلى اشتراك كامل بنجاح',
+      ...result
+    });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ ok: false, message: err.message });
     next(err);

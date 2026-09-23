@@ -40,6 +40,8 @@ const schoolCanvaRoutes = require('./routes/school-canva.routes');
 const schoolLiveRoutes = require('./routes/school-live.routes');
 const schoolVirtualRoutes = require('./routes/school-virtual.routes');
 const schoolManagementRoutes = require('./routes/school-management.routes');
+const schoolAssignmentRoutes = require('./routes/school-assignment.routes');
+const schoolTeacherApplyRoutes = require('./routes/school-teacher-apply.routes');
 const schoolClassroomRoutes = require('./routes/school-classroom.routes');
 const cardsCanvaRoutes = require('./routes/cards-canva.routes');
 const { attachSocket } = require('./socket');
@@ -109,6 +111,9 @@ app.use('/api/school', schoolLiveRoutes);
 app.use('/api/school/virtual', schoolVirtualRoutes);
 // SCHOOL MANAGEMENT: Admin, Teachers, Students, Guardians, Consents, Schedules, Exams, Grades, Complaints, Audit
 app.use('/api/school/management', schoolManagementRoutes);
+app.use('/api/school/assignments', schoolAssignmentRoutes);
+app.use('/api/school/management/assignments', schoolAssignmentRoutes);
+app.use('/api/school/teachers/apply', schoolTeacherApplyRoutes);
 app.use('/api/school', schoolSyncRoutes);
 app.use('/api/school', schoolRoutes);
 // Standalone school pages backend (/dashboard, /structure, /books,
