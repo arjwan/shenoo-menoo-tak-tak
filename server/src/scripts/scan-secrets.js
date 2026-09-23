@@ -6,8 +6,16 @@ const root = path.resolve(__dirname, '../../..');
 const ignoredDirectories = new Set(['.git', 'node_modules', 'build', '.gradle', '.idea', 'dist', 'coverage']);
 const ignoredFiles = new Set([path.resolve(__filename)]);
 const textExtensions = new Set(['.js', '.mjs', '.cjs', '.json', '.html', '.css', '.xml', '.yml', '.yaml', '.md', '.txt', '.properties', '.gradle', '.kts', '.kt', '.java', '.sh', '.env']);
+// A PEM/OpenSSH header can legitimately appear in deployment scripts that
+// validate a key supplied through GitHub Secrets. Treat it as a credential
+// only when it is followed by multiple key-payload lines, including the
+// optional +/- prefix found in `git log -p` output.
+const privateKeyPattern = new RegExp(
+  '-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----\\r?\\n' +
+  '(?:[+\\- ]?[A-Za-z0-9+/=]{40,}\\r?\\n){2,}'
+);
 const rules = [
-  ['private-key', new RegExp('-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----')],
+  ['private-key', privateKeyPattern],
   ['github-token', new RegExp('gh' + '[pousr]_[A-Za-z0-9]{30,}')],
   ['openai-key', new RegExp('sk' + '-[A-Za-z0-9_-]{30,}')],
   ['brevo-key', new RegExp('xkey' + 'sib-[A-Za-z0-9_-]{20,}')],
