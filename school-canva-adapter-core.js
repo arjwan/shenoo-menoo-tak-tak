@@ -340,7 +340,7 @@
 
   // ---------------------------------------------------------------------
   // Integration contract of the 2026-09-21 Canva school page
-  // (school-canva.html root page: `window.ShnoManoIntegrationAdapter`,
+  // (legacy Canva integration: `window.ShnoManoIntegrationAdapter`,
   // invoke([...candidates], payload) / has([...])). Pure helpers: the browser
   // adapter only adds the authenticated fetches. Vocabulary comes from the
   // real catalogue / teachers / students payloads — never from constants
@@ -597,7 +597,7 @@
   }
   function virtualPointerText(s) {
     var tName = s.virtualTeacher && s.virtualTeacher.name ? s.virtualTeacher.name : 'المعلم الافتراضي';
-    return 'صف افتراضي ذكي مع ' + str(tName) + ' (معلم افتراضي / AI) — ' + str(s.subject) + (s.lesson ? ' / ' + str(s.lesson) : '') + ' — رمز الحصة ' + String(s.code).toUpperCase() + '. السبورة الذكية والأسئلة متاحة عبر: school-virtual-classroom.html?code=' + String(s.code).toUpperCase();
+    return 'صف افتراضي ذكي مع ' + str(tName) + ' (معلم افتراضي / AI) — ' + str(s.subject) + (s.lesson ? ' / ' + str(s.lesson) : '') + ' — رمز الحصة ' + String(s.code).toUpperCase() + '. السبورة الذكية والأسئلة متاحة عبر رمز الحصة: ' + String(s.code).toUpperCase();
   }
   /**
    * REAL live classrooms (GET /api/school/classrooms/live) as teacher rows of
@@ -616,7 +616,7 @@
     });
   }
   function livePointerText(c) {
-    return 'حصة مباشرة الآن مع ' + str(c.teacherName) + ' — ' + str(c.subject) + (c.lesson ? ' / ' + str(c.lesson) : '') + ' — رمز الحصة ' + String(c.code).toUpperCase() + '. الصوت والصورة يعملان من صفحة الحصة المباشرة: school-live.html?code=' + String(c.code).toUpperCase() + ' (الكاميرا والمايك لا يعملان إلا بضغطة الطالب وبموافقة ولي الأمر).';
+    return 'حصة مباشرة الآن مع ' + str(c.teacherName) + ' — ' + str(c.subject) + (c.lesson ? ' / ' + str(c.lesson) : '') + ' — رمز الحصة ' + String(c.code).toUpperCase() + ' (الكاميرا والمايك لا يعملان إلا بضغطة الطالب وبموافقة ولي الأمر).';
   }
   function classroomOptions(items, packItems, teachers, payload, liveClassrooms, virtualSessions) {
     items = Array.isArray(items) ? items : [];

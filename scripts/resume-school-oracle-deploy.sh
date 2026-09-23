@@ -314,22 +314,12 @@ async function jget(url, headers) {
     const cardsHtml = await cardsOrig.text();
     if (!cardsHtml || cardsHtml.length < 1000) throw new Error('cards original empty');
 
-    const pages = [
-      'school-index.html','school-structure.html','school-teachers.html','school-students.html',
-      'school-curriculum.html','school-reader.html','school-classroom.html','cards-canva.html'
-    ];
+    const pages = ['cards-canva.html'];
     const pageStatus = {};
     for (const page of pages) {
       const r = await fetch(PUBLIC + '/' + page);
       pageStatus[page] = r.status;
       if (r.status !== 200) throw new Error('page ' + page + ' ' + r.status);
-    }
-    // library-search still present
-    const curr = await (await fetch(PUBLIC + '/school-curriculum.html')).text();
-    if (!curr.includes('id="library-search"') && !curr.includes("id='library-search'")) {
-      // may be built client-side; check local file
-      const local = fs.readFileSync('school-curriculum.html','utf8');
-      if (!local.includes('library-search')) throw new Error('library-search missing');
     }
 
     const catalog = require('./server/src/data/iraqi-curriculum-catalog');

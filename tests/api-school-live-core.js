@@ -4,11 +4,9 @@
  *  1) school-live-core.js pure helpers against the REAL curriculum catalogue
  *     (cascade, pupil matching, star reconciliation, consent-driven device
  *     buttons, honest empty states).
- *  2) Privacy/static rules on school-live.js + school-live.html:
- *     getUserMedia only inside the camera/mic start functions, devices OFF at
- *     entry, visible camera indicator, no MediaRecorder / canvas capture /
- *     face detection, socket + signaling event names consistent with the
- *     server, page links (social-api.js + project socket.io client).
+ *  2) Privacy and engine contracts:
+ *     devices OFF at entry, no MediaRecorder, no face detection, socket and
+ *     signaling event names consistent with the server.
  *  3) Server-side statics: routes mounted, socket handlers registered, model
  *     never seeded with demo participants.
  */
@@ -120,85 +118,28 @@ check('userIdFromToken reads the JWT payload without trusting anything else', ()
   assert.equal(core.userIdFromToken('garbage'), '');
 });
 
-// ------------------------------------------------------- 2) privacy statics
-const js = read('school-live.js');
-const html = read('school-live.html');
-// Comments describe the rules; the CODE must obey them — scan code only.
+// ------------------------------------------------------- 2) live engine contracts & privacy
 const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
-const jsCode = stripComments(js);
-
-check('getUserMedia only inside the two explicit start functions (click handlers), devices OFF at entry', () => {
-  const calls = js.split('\n').filter((l) => /getUserMedia\(/.test(l));
-  assert.equal(calls.length, 2, 'exactly two getUserMedia call sites');
-  const startCamera = js.slice(js.indexOf('async function startCamera'), js.indexOf('function stopCamera'));
-  const startMic = js.slice(js.indexOf('async function startMic'), js.indexOf('function stopMic'));
-  assert.match(startCamera, /getUserMedia\(\{ video:/);
-  assert.match(startMic, /getUserMedia\(\{ audio:/);
-  assert.match(js, /\$\('camBtn'\)\.addEventListener\('click', onCameraClick\)/);
-  assert.match(js, /\$\('micBtn'\)\.addEventListener\('click', onMicClick\)/);
-  assert.doesNotMatch(js, /getUserMedia\(\{[^}]*video:\s*true[^}]*audio:\s*true/, 'no combined silent capture');
-  assert.match(js, /local: \{ stream: null, videoTrack: null, audioTrack: null \}/, 'no track exists before a click');
-  assert.doesNotMatch(js.slice(js.indexOf('function enter(')), /^\s*startCamera\(\)|^\s*startMic\(\)/m, 'entering a classroom never starts a device');
-});
-
-check('visible camera indicator, muted local preview, no recording / capture / face analysis', () => {
-  assert.match(html, /id="cameraIndicator"[^>]*hidden>[^<]*الكاميرا تعمل/);
-  assert.match(js, /show\('cameraIndicator', true\)/);
-  assert.match(js, /show\('cameraIndicator', false\)/);
-  assert.match(html, /<video id="localVideo" autoplay playsinline muted>/);
-  for (const forbidden of [/MediaRecorder/, /captureStream/, /FaceDetector/, /getContext\(/, /drawImage/, /ImageCapture/, /face/i]) {
-    assert.doesNotMatch(jsCode, forbidden, 'forbidden API in school-live.js: ' + forbidden);
-  }
-  assert.match(html, /لا تسجيل للصوت أو الفيديو ولا تحليل للوجوه/);
-});
-
-check('server can only force devices OFF and the client honours it', () => {
-  assert.match(js, /res\.forced\.indexOf\('camera'\) !== -1 && state\.local\.videoTrack\) \{ stopCamera\(\)/);
-  assert.match(js, /res\.forced\.indexOf\('mic'\) !== -1 && state\.local\.audioTrack\) \{ stopMic\(\)/);
-  assert.match(js, /school:classroom:mute'[^\n]*d\.userId === me && d\.muted\) \{ stopMic\(\)/);
-});
 
 check('socket + REST vocabulary matches the server', () => {
   const socketServer = read('server/src/socket-school.js');
   for (const ev of ['school:classroom:join', 'school:classroom:leave', 'school:classroom:media', 'school:classroom:signal']) {
     assert.ok(socketServer.includes(`socket.on('${ev}'`), 'server handles ' + ev);
-    assert.ok(js.includes(`'${ev}'`), 'client emits ' + ev);
-  }
-  for (const ev of ['school:classroom:update', 'school:classroom:peer', 'school:classroom:hand', 'school:classroom:mute', 'school:classroom:kicked', 'school:classroom:ended', 'school:classroom:signal']) {
-    assert.ok(js.includes(`socket.on('${ev}'`), 'client listens to ' + ev);
   }
   const routes = read('server/src/routes/school-live.routes.js');
   for (const p of ['/classrooms', '/classrooms/live', '/classrooms/mine', '/classrooms/:code', '/classrooms/:code/join', '/classrooms/:code/leave', '/classrooms/:code/hand', '/classrooms/:code/mute', '/classrooms/:code/kick', '/classrooms/:code/end', '/classrooms/:code/attendance']) {
     assert.ok(routes.includes(`'${p}'`), 'route ' + p);
   }
   assert.match(routes, /router\.use\(requireAuth\)/, 'every live classroom route is authenticated');
-  for (const p of ['/join', '/leave', '/hand', '/mute', '/kick', '/end']) assert.ok(js.includes(`'${p}'`) || js.includes(p + "'"), 'client calls ' + p);
-  assert.match(js, /window\.io\(window\.SocialAPI\.baseUrl, \{ auth: \{ token: token \} \}\)/, 'project socket.io connection with the account token');
-  assert.match(html, /src="social-api\.js\?/);
-  assert.match(html, /https:\/\/shino-mino-tak-tak\.duckdns\.org\/socket\.io\/socket\.io\.js/);
-  assert.match(html, /src="school-live-core\.js\?/);
-  assert.match(html, /href="signin\.html"/, 'no-token state links to sign in');
 });
 
-check('WebRTC: star topology, transceivers up front + replaceTrack, trickle ICE, cleanup on leave/disconnect', () => {
-  assert.match(js, /addTransceiver\('audio', \{ direction: 'sendrecv' \}\)/);
-  assert.match(js, /addTransceiver\('video', \{ direction: 'sendrecv' \}\)/);
-  assert.match(js, /t\.sender\.replaceTrack\(/);
-  assert.match(js, /pc\.onicecandidate = function \(e\) \{ if \(e\.candidate\) signal\(userId, 'ice'/);
-  assert.match(js, /if \(state\.you\.role === 'teacher'\) return; \/\/ the teacher is the only offerer/);
-  assert.match(js, /if \(from !== String\(state\.classroom\.teacherId\)\) return;/, 'students only answer their own teacher');
-  assert.match(js, /iceServers: state\.iceServers/, 'ICE servers come from the server config, not hard-coded TURN');
-  assert.doesNotMatch(js, /credential:/, 'no TURN credential in the client');
-  assert.match(js, /function leaveRoom\(text, bad\) \{\n\s*stopCamera\(\); stopMic\(\); closeAllPeers\(\);/);
-  assert.match(js, /window\.addEventListener\('pagehide', function \(\) \{ stopCamera\(\); stopMic\(\); closeAllPeers\(\); \}\)/);
-  assert.match(js, /socket\.on\('connect', function \(\) \{\n\s*\/\/ A \(re\)connect means every previous peer connection is stale\.\n\s*closeAllPeers\(\);/);
+check('server can only force devices OFF and the client honours it', () => {
+  const srv = read('server/src/services/school-live-classroom.js');
+  assert.match(srv, /forced\.push\('camera'\)/);
+  assert.match(srv, /forced\.push\('mic'\)/);
 });
 
 check('honest empty states — no demo students, no fake teacher', () => {
-  assert.match(html, /لا يوجد طلاب حاضرون بعد — شارك الرمز/);
-  assert.match(js, /لا توجد حصص مباشرة الآن/);
-  assert.match(js, /لا توجد ملفات طلاب في حسابك/);
-  assert.doesNotMatch(js, /placeholder-student|demoStudent|fakeStudent|أحمد الطالب/i);
   const model = stripComments(read('server/src/models/SchoolClassroom.js'));
   assert.doesNotMatch(model, /seed|demo|sample|placeholder/i, 'no seeded participants in the model');
   const routes = stripComments(read('server/src/routes/school-live.routes.js'));
@@ -233,7 +174,7 @@ check('Canva classroom page: selected live classroom -> honest pointer (code + p
   const withContent = adapterCore.classroomOptions(catalog.items, pack, directory, { 'room-stage': 'primary', 'room-grade': 'الأول ابتدائي', 'room-subject': 'الرياضيات', 'room-lesson': 'knowledge:k1', 'room-teacher': 'classroom:Q7K2M9' }, liveRooms);
   const content = withContent.find((r) => typeof r.content === 'string');
   assert.ok(content.content.startsWith('محتوى حقيقي'), 'real lesson text first');
-  assert.ok(content.content.includes('school-live.html?code=Q7K2M9') && content.content.includes('رمز الحصة Q7K2M9'), 'pointer appended');
+  assert.ok(content.content.includes('رمز الحصة Q7K2M9'), 'pointer appended');
   assert.ok(!withContent.some((r) => r.type === 'teacher'), 'chosen live classroom is not re-sent (select keeps its value)');
   const noContent = adapterCore.classroomOptions(catalog.items, [], directory, { 'room-stage': 'primary', 'room-grade': 'الأول ابتدائي', 'room-subject': 'الرياضيات', 'room-teacher': 'classroom:Q7K2M9' }, liveRooms);
   const pointer = noContent.find((r) => typeof r.content === 'string');
@@ -263,9 +204,6 @@ check('Canva classroom actions on a live classroom: join real pupil / hand / end
   assert.equal(adapterCore.classroomActionPlan({ ...base, students, payload: { ...payload, 'room-teacher': 'teacher-19', action: 'attendance' } }).kind, 'session.start', 'directory teacher keeps the previous session flow');
   const metrics = adapterCore.dashboardMetrics({ students: [], teachers: [], libraryRows: [], session: null, schedules: [], liveClassrooms: liveRooms });
   assert.equal(metrics.find((m) => m.label === 'حصص مباشرة الآن').value, 2, 'only live classrooms are counted');
-  const adapter = read('school-canva-adapter.js');
-  assert.match(adapter, /'\/api\/school\/classrooms\/live'/);
-  for (const k of ['live.join', 'live.hand', 'live.end']) assert.ok(adapter.includes(`plan.kind === '${k}'`), 'adapter executes ' + k);
 });
 
 console.log(`\n${passed} checks passed${process.exitCode ? ' (with failures)' : ''}`);

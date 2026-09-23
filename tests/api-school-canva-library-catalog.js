@@ -13,7 +13,6 @@ const root = path.resolve(__dirname, '..');
 const core = require(path.join(root, 'school-canva-adapter-core.js'));
 const catalog = require(path.join(root, 'server/src/data/iraqi-curriculum-catalog.js'));
 const manifest = require(path.join(root, 'server/src/data/iraqi-curriculum-files.json'));
-const adapter = fs.readFileSync(path.join(root, 'school-canva-adapter.js'), 'utf8');
 const routes = fs.readFileSync(path.join(root, 'server/src/routes/school.routes.js'), 'utf8');
 
 const items = Array.isArray(catalog.items) ? catalog.items : [];
@@ -58,16 +57,6 @@ assert(rows.every((r, i) => r.chapter.startsWith(`${items[i].stage} ← ${items[
 // Zero-student path: library still full from catalog alone (no offline-pack items).
 const zeroStudentLibrary = core.packLibrary([].concat(items), files);
 assert.equal(zeroStudentLibrary.length, items.length, 'library does not depend on students/offline-pack');
-
-// Adapter wiring (static): parallel fetch, catalogue-first source, manifest join, real-url-only reader link.
-assert(adapter.includes("get('/api/school/curriculum/catalog')"), 'hydrate fetches catalog');
-assert(adapter.includes("get('/api/school/curriculum/files')"), 'hydrate fetches files');
-assert(/var librarySource = catalogItems\.length\s*\?\s*catalogItems\.concat/.test(adapter), 'library prefers catalog over offline-pack');
-assert(adapter.includes('core.packLibrary(librarySource, realCurriculumFiles)'), 'library rows joined to the manifest');
-assert(adapter.includes('core.packLibrary(catalogItems, manifestFiles)'), 'updated-export data bridge joins catalogue to manifest too');
-assert(adapter.includes('if (row.readable && row.url) {'), 'reader link gated on a real manifest url');
-assert(adapter.includes('/محتوى تجريبي/.test'), 'strips demo placeholders');
-assert(adapter.includes('فتح وقراءة PDF'), 'open-book control for readable PDFs');
 
 console.log('SCHOOL CANVA LIBRARY CATALOG PASS', {
   catalog: items.length,

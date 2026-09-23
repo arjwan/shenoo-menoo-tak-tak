@@ -20,15 +20,9 @@ test('school original assets are byte-identical to preserved checksums', () => {
   for (const [file, expected] of Object.entries(originalChecksums)) assert.equal(sha(file), expected, file);
 });
 
-test('school runtime still uses the preserved original client files through integration layer', () => {
-  assert.equal(sha('school.js'), originalChecksums['original-assets/school/school.js']);
-  assert.equal(sha('school-offline-ai.js'), originalChecksums['original-assets/school/school-offline-ai.js']);
-  assert.equal(sha('school-enhancements.css'), originalChecksums['original-assets/school/school-enhancements.css']);
-  const html = read('school.html');
-  const offlineAt = html.indexOf('school-offline-ai.js');
-  const integrationAt = html.indexOf('school-integration.js');
-  const schoolAt = html.indexOf('school.js');
-  assert.ok(offlineAt > 0 && integrationAt > offlineAt && schoolAt > integrationAt, 'integration loads after offline layer and before original school.js');
+test('school offline AI and sync engine modules are preserved for reuse', () => {
+  assert.ok(fs.existsSync(path.join(root, 'school-offline-ai.js')), 'school-offline-ai.js must exist');
+  assert.ok(fs.existsSync(path.join(root, 'school-integration.js')), 'school-integration.js must exist');
 });
 
 test('school offline integration preserves offline mode and queues safe sync operations', () => {

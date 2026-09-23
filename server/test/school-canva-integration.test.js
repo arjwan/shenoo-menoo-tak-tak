@@ -29,8 +29,6 @@ const FROZEN = {
   'original-assets/school-canva/school-canva-original.html': APPROVED_ORIGINAL_SHA,
   'canva-originals/cards/index.html': 'ddf7152d6ee8d2a2005cd9215dd2a73910851c267fbd29a1af54959db9657e4e',
   'original-assets/chess/chess-original.html': 'eb1d70b28431467dbcf2d176f17a18bcd35ba8f9e04902f27e480b0693022609',
-  'school.html': '5f9d40b5022d10c38131194f1882b718610b77e2a47152b109a333d9b6516d61',
-  'school.js': '3550b0a79fc91af4b484aba7794356278e7ad33365ab04bc9d649493e3c64752',
   'school-offline-ai.js': '96f6d6a32248bd6b099fa2a1dfd551f6d5b7f12e6fba9627e768549c946884db',
   'school-integration.js': 'be4f5467cedabdfb873edc86f4dcb0b033746915878aaab05b3acbe251eeebda',
   'kahwa-cards-canva.js': '78bcc85d4a6593b6a0282f7772d5120e9c5b397d99a86a768b1fdb9fd3e5c62b',
@@ -78,37 +76,11 @@ test('original exposes the integration hooks the adapter relies on (sanity)', ()
   ]) assert.ok(html.includes(hook), `original must contain ${hook}`);
 });
 
-test('loader page wires auth, config, original, socket.io client and adapter in order', () => {
-  const loader = read('school-canva.html');
-  assert.match(loader, /src="auth-guard\.js/, 'auth guard before anything else');
-  assert.match(loader, /\/api\/school\/classroom\/config/, 'fetches authenticated config');
-  assert.match(loader, /\/api\/school-canva\/(original|update)/, 'fetches Canva UI through the API (Oracle publishes root files only)');
-  assert.match(loader, /\/socket\.io\/socket\.io\.js/, 'injects the same-origin Socket.IO client');
-  assert.match(loader, /school-canva-adapter-core\.js/);
-  assert.match(loader, /school-canva-adapter\.js/);
-  assert.ok(loader.indexOf('school-canva-adapter-core.js') < loader.indexOf('school-canva-adapter.js'), 'core loads before adapter');
-  assert.match(loader, /frame\.srcdoc\s*=\s*html/, 'original runs in an srcdoc iframe (no republish of the nested file)');
-  assert.ok(!/token=/.test(loader), 'token must never be placed in a URL');
-  assertNoSecrets('school-canva.html');
-});
-
-test('adapter keeps secrets out of the frontend and never requests media itself', () => {
-  const adapter = read('school-canva-adapter.js');
-  assertNoSecrets('school-canva-adapter.js');
+test('adapter core is secret-free and defines pure Socket.IO translation', () => {
   assertNoSecrets('school-canva-adapter-core.js');
-  assert.doesNotMatch(adapter, /navigator\.mediaDevices\.getUserMedia/, 'adapter must not call getUserMedia; the original consent-gated buttons are the only media trigger');
-  assert.doesNotMatch(adapter, /new WebSocket\(/, 'adapter must not open raw WebSockets; all sockets go through the bridge');
-  assert.match(adapter, /auth:\s*\{\s*token:\s*token\(\)\s*\}/, 'JWT goes in the Socket.IO handshake auth, not the URL');
-  assert.match(adapter, /localStorage\.getItem\('token'\)/, 'session token comes from the existing Shenoo Menoo storage');
-  assert.ok(!/token=/.test(adapter), 'no token in any URL query');
-  assert.doesNotMatch(adapter, /credential\s*[:=]\s*['"]/, 'no hard-coded TURN credential');
-  assert.match(adapter, /window\.configureIntegration/, 'configures the original through its own hook');
-  assert.match(adapter, /window\.dataSdk/, 'dataSdk stub keeps the original sync path alive');
-  for (const endpoint of [
-    '/api/school/teachers', '/api/school/students', '/api/school/sessions/active',
-    '/api/school/schedules', '/api/school/ai/status', '/api/school/teacher/ask'
-  ]) assert.ok(adapter.includes(endpoint), `adapter uses real endpoint ${endpoint}`);
-  assert.match(adapter, /shno-school:\/\//, 'bridges only the marker websocket URL');
+  const coreSrc = read('school-canva-adapter-core.js');
+  assert.ok(coreSrc.includes('shno-school://'), 'defines marker prefix for classroom bridge');
+  assert.ok(coreSrc.includes('school:heartbeat'), 'defines heartbeat translation');
 });
 
 test('core is pure (no network, no storage) and secret-free', () => {

@@ -131,7 +131,7 @@ install_from_bundle() {
 try_git_patches() {
   test -f "$PATCH_PAGES" && test -f "$PATCH_CURRICULUM" || return 1
   log "Trying ordered git apply of handoff patches ..."
-  if [[ -f school-curriculum.html && -f server/src/routes/school-classroom.routes.js && -f server/src/data/iraqi-curriculum-outlines.json ]]; then
+  if [[ -f server/src/routes/school-classroom.routes.js && -f server/src/data/iraqi-curriculum-outlines.json ]]; then
     local v
     v="$(node -e "const c=require('./server/src/data/iraqi-curriculum-catalog');process.stdout.write(String(c.items.filter(i=>i.verified).length))" 2>/dev/null || echo 0)"
     if [[ "$v" == "95" ]]; then
@@ -184,7 +184,7 @@ test -f scripts/download-iraqi-curriculum.js || die "download script missing"
 test -f "$MANIFEST" || die "manifest missing"
 test -f server/src/data/iraqi-curriculum-catalog.js || die "catalog missing"
 test -f server/src/routes/school-classroom.routes.js || die "classroom routes missing"
-test -f school-curriculum.html || die "school-curriculum.html missing"
+# legacy school UI pages zeroed for rebuild
 
 # package.json school scripts
 if [[ -f server/src/data/school-package-overlay.json && -f scripts/merge-school-package-scripts.js ]]; then

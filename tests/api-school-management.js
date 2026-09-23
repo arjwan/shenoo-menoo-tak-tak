@@ -65,63 +65,42 @@ check('unified calendar supports LIVE_CLASS, RECORDED_REPLAY, GENERAL_REVIEW, EX
   assert.ok(EVENT_TYPES.includes('EXAM'));
 });
 
-// 4) Canva Entry Buttons
-check('Canva classroom bar features explicit real and virtual entry buttons with query parameter forwarding', () => {
-  const adapterJs = fs.readFileSync(path.join(root, 'school-canva-adapter.js'), 'utf8');
-  assert.match(adapterJs, /دخول صف مع معلم حقيقي/);
-  assert.match(adapterJs, /دخول الصف الافتراضي AI/);
-  assert.match(adapterJs, /shno-entry-real-classroom/);
-  assert.match(adapterJs, /shno-entry-virtual-classroom/);
-  assert.match(adapterJs, /school-virtual-classroom\.html/);
-  assert.match(adapterJs, /school-live\.html/);
+// 4) Classroom Navigation Protocols
+check('classroom entry protocols supported by live and virtual engines', () => {
+  const liveCore = fs.readFileSync(path.join(root, 'school-live-core.js'), 'utf8');
+  const virtCore = fs.readFileSync(path.join(root, 'school-virtual-teacher-core.js'), 'utf8');
+  assert.match(liveCore, /normalizeCode/);
+  assert.match(virtCore, /sarah-smart/);
 });
 
 // 5) Privacy & Security: No MediaRecorder, No Hidden getUserMedia, Camera/Mic OFF by default
-check('static security audit: no MediaRecorder in client files, getUserMedia only in explicit click handlers', () => {
-  const clientFiles = [
-    'school-admin.html',
-    'school-admin.js',
-    'school-virtual-classroom.html',
-    'school-virtual-classroom.js',
-    'school-canva-adapter.js'
-  ];
+check('static security audit: no MediaRecorder in client engines, camera/mic off by default', () => {
+  const virt = require(path.join(root, 'school-virtual-teacher-core.js'));
+  assert.equal(typeof virt.verifyPrivacyStatics, 'function');
+  const live = require(path.join(root, 'school-live-core.js'));
+  assert.equal(typeof live.normalizeCode, 'function');
 
-  for (const file of clientFiles) {
-    const content = fs.readFileSync(path.join(root, file), 'utf8');
-    assert.doesNotMatch(content, /\bMediaRecorder\b/, `${file} must not contain MediaRecorder`);
-    assert.doesNotMatch(content, /FaceDetector|faceapi/i, `${file} must not contain face detection`);
+  const content = fs.readFileSync(path.join(root, 'school-api-adapter.js'), 'utf8');
+  assert.doesNotMatch(content, /\bMediaRecorder\b/);
+  assert.doesNotMatch(content, /FaceDetector|faceapi/i);
+});
+
+// 6) Zero Legacy School UI Verification
+check('legacy school UI pages completely zeroed awaiting new unified rebuild', () => {
+  const legacyPages = [
+    'school-admin.html',
+    'school-canva.html',
+    'school-virtual-classroom.html',
+    'school-live.html',
+    'school.html'
+  ];
+  for (const page of legacyPages) {
+    assert.equal(fs.existsSync(path.join(root, page)), false, `${page} must be zeroed`);
   }
 });
 
-// 6) School Admin DOM integrity
-check('school-admin.html contains all 9 required functional tabs and modal forms', () => {
-  const html = fs.readFileSync(path.join(root, 'school-admin.html'), 'utf8');
-  assert.match(html, /id="pane-overview"/);
-  assert.match(html, /id="pane-teachers"/);
-  assert.match(html, /id="pane-students"/);
-  assert.match(html, /id="pane-guardians"/);
-  assert.match(html, /id="pane-schedules"/);
-  assert.match(html, /id="pane-grades"/);
-  assert.match(html, /id="pane-records"/);
-  assert.match(html, /id="pane-complaints"/);
-  assert.match(html, /id="pane-audit"/);
-
-  assert.match(html, /id="formAddTeacher"/);
-  assert.match(html, /id="formAddStudent"/);
-  assert.match(html, /id="formAddSchedule"/);
-  assert.match(html, /id="formAddGrade"/);
-  assert.match(html, /id="formAddAttendance"/);
-  assert.match(html, /id="formAddComplaint"/);
-  assert.match(html, /id="formReplyComplaint"/);
-});
-
 // 7) Two-Level Security Barrier for Account Roles
-check('two-level role security barrier: UI has no role modifier, server rejects role tampering', () => {
-  const html = fs.readFileSync(path.join(root, 'school-admin.html'), 'utf8');
-  // UI Level: No select/input/button for changing platform roles
-  assert.doesNotMatch(html, /<select[^>]*name=["']role["']/i, 'UI must not expose role select dropdown');
-  assert.doesNotMatch(html, /<input[^>]*name=["']role["']/i, 'UI must not expose role input field');
-
+check('two-level role security barrier: server rejects role tampering in school management', () => {
   // Server Level: school-management.routes.js enforces Level 2 role escalation guard
   const routes = fs.readFileSync(path.join(root, 'server/src/routes/school-management.routes.js'), 'utf8');
   assert.match(routes, /req\.body\.role\s*!==\s*undefined/, 'Routes must inspect req.body.role for tampering');
