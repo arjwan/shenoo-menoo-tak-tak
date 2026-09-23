@@ -43,7 +43,7 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: 'avatar-sarah.png',
+    avatar: '',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.05, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'أهلاً بكم يا أبطال، اليوم سنتعلم معاً بطريقة سهلة وتفاعلية خطوة بخطوة.',
     active: true
@@ -60,7 +60,7 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: 'avatar-ali.png',
+    avatar: '',
     voiceSettings: { voiceGender: 'male', defaultPitch: 0.95, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'مرحباً بكم أعزائي الطلبة، لنستكشف معاً جمال لغتنا ومعانيها القيمة.',
     active: true
@@ -77,7 +77,7 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: 'avatar-mariam.png',
+    avatar: '',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 0.95, lang: 'ar-IQ' },
     introGreeting: 'أهلاً بكم في حصتنا، لنتعرف اليوم على تاريخ وحضارة بلادنا العريقة.',
     active: true

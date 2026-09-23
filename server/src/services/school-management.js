@@ -68,8 +68,8 @@ async function listRealTeachers(filters = {}) {
 }
 
 async function listVirtualTeachers() {
-  const list = await VirtualTeacherProfile.find({ active: true }).sort({ sortOrder: 1 }).lean();
-  return list.map((t) => ({
+  const approved = VirtualTeacherProfile.getBuiltinProfiles();
+  return approved.map((t) => ({
     ...t,
     isVirtual: true,
     badgeText: 'معلم افتراضي / AI'
