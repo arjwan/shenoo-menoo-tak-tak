@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#0b505c">
+  <title>مدرسة سومر الأهلية الإلكترونية | بوابة بلاد الرافدين للتعليم الموحد</title>
+
+  <!-- أنظمة التنسيق السومرية العصرية - Mesopotamian Modern Design System -->
+  <link rel="stylesheet" href="school/css/sumer-tokens.css">
+  <link rel="stylesheet" href="school/css/sumer-shell.css">
+  <link rel="stylesheet" href="school/css/sumer-components.css">
+</head>
+<body>
+  <div id="sumer-app">
+    <!-- الشريط العلوي الموحد -->
+    <div id="sumer-header-mount"></div>
+
+    <!-- التخطيط العام: القائمة الجانبية ومساحة العمل الرئيسية -->
+    <div class="sumer-layout">
+      <div id="sumer-sidebar-mount"></div>
+
+      <main class="sumer-main" id="sumer-main" role="main">
+        <div class="sumer-container" id="sumer-content-mount">
+          <!-- يتم إدراج مساحات العمل ديناميكياً عبر SumerRouter -->
+        </div>
+      </main>
+    </div>
+
+    <!-- شريط التنقل السفلي للهواتف الذكية -->
+    <div id="sumer-mobile-bar-mount"></div>
+
+    <!-- القائمة المنبثقة للهواتف -->
+    <div id="sumer-drawer-mount"></div>
+  </div>
+
+  <!-- المحركات الأساسية المحفوظة -->
+  <script src="school-virtual-teacher-core.js"></script>
+  <script src="school-live-core.js"></script>
+
+  <!-- المنظومة البرمجية الموحدة لمدرسة سومر -->
+  <script src="school/js/sumer-state.js"></script>
+  <script src="school/js/sumer-ui.js"></script>
+  <script src="school/js/sumer-router.js"></script>
+
+  <script>
+    // تهيئة صدفة مدرسة سومر الموحدة (Phase 5 Bootstrap)
+    (function () {
+      'use strict';
+
+      var store = window.SumerStore;
+      var ui = window.SumerUI;
+      var router = window.SumerRouter;
+
+      if (!store || !ui || !router) {
+        console.error('فشل في تحميل وحدات مدرسة سومر الأساسية');
+        return;
+      }
+
+      // تهيئة مخزن الحالة
+      store.init();
+
+      var headerMount = document.getElementById('sumer-header-mount');
+      var sidebarMount = document.getElementById('sumer-sidebar-mount');
+      var mobileBarMount = document.getElementById('sumer-mobile-bar-mount');
+      var drawerMount = document.getElementById('sumer-drawer-mount');
+      var contentMount = document.getElementById('sumer-content-mount');
+
+      function renderShell(currentRoute) {
+        var state = store.getState();
+        currentRoute = currentRoute || window.location.hash || '#welcome';
+
+        if (headerMount) headerMount.innerHTML = ui.renderHeader(state);
+        if (sidebarMount) sidebarMount.innerHTML = ui.renderSidebar(state, currentRoute);
+        if (mobileBarMount) mobileBarMount.innerHTML = ui.renderMobileBar(state, currentRoute);
+        if (drawerMount) drawerMount.innerHTML = ui.renderDrawer(state);
+
+        attachEventListeners();
+      }
+
+      function attachEventListeners() {
+        // زر تبديل الثيم
+        var themeToggle = document.getElementById('sumer-theme-toggle');
+        if (themeToggle) {
+          themeToggle.onclick = function () {
+            store.toggleTheme();
+          };
+        }
+
+        // أزرار فتح وإغلاق القائمة المنبثقة للهواتف
+        var drawerToggle = document.getElementById('sumer-drawer-toggle');
+        var mobileMenuBtn = document.getElementById('sumer-mobile-menu-btn');
+        var drawerClose = document.getElementById('sumer-drawer-close');
+        var drawerBackdrop = document.getElementById('sumer-drawer-backdrop');
+
+        function openDrawer() { store.setDrawer(true); }
+        function closeDrawer() { store.setDrawer(false); }
+
+        if (drawerToggle) drawerToggle.onclick = openDrawer;
+        if (mobileMenuBtn) mobileMenuBtn.onclick = openDrawer;
+        if (drawerClose) drawerClose.onclick = closeDrawer;
+        if (drawerBackdrop) drawerBackdrop.onclick = closeDrawer;
+      }
+
+      // الاشتراك بتغيرات الحالة لتحديث مكونات الهيكل
+      store.subscribe(function () {
+        renderShell(window.location.hash);
+      });
+
+      // تهيئة موجه المسارات
+      router.init(function (routeKey, contract) {
+        renderShell(routeKey);
+        // في المرحلة 5: عرض بطاقة الحجز النظيفة (Placeholder Shell) مع نفي البيانات الوهمية
+        if (contentMount) {
+          contentMount.innerHTML = ui.renderPlaceholderShell(contract, routeKey);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

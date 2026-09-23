@@ -1,0 +1,174 @@
+/**
+ * sumer-tokens.css - مدرسة سومر الإلكترونية الموحدة
+ * المتغيرات التصميمية المستوحاة من حضارة بلاد الرافدين بنمط عصري
+ * Mesopotamian Modern Design System Tokens (Light & Dark, RTL-first)
+ */
+
+:root {
+  /* ألوان بلاد الرافدين الأساسية - Mesopotamian Palette */
+  --sumer-teal-900: #042429;
+  --sumer-teal-800: #073840;
+  --sumer-teal-700: #0b505c;
+  --sumer-teal-600: #0e6473;
+  --sumer-teal-500: #12798b; /* اللون المميز الأساسي للعلامة */
+  --sumer-teal-400: #1d9ab0;
+  --sumer-teal-300: #42b7cc;
+  --sumer-teal-200: #89d6e4;
+  --sumer-teal-100: #c9eff5;
+  --sumer-teal-50:  #f0fafb;
+
+  /* الذهب البابلي والنحاس السومري - Babylonian Gold & Copper */
+  --sumer-gold-900: #4a3406;
+  --sumer-gold-800: #704f0c;
+  --sumer-gold-700: #966b14;
+  --sumer-gold-600: #be881d;
+  --sumer-gold-500: #d4a347; /* الذهب المميز */
+  --sumer-gold-400: #e2ba6d;
+  --sumer-gold-300: #eed095;
+  --sumer-gold-200: #f7e6c3;
+  --sumer-gold-100: #fbf4e5;
+  --sumer-gold-50:  #fdfaf2;
+
+  /* الطين والصلصال ورمادي دجلة والفرات - River Slate & Clay */
+  --sumer-slate-900: #0b1117;
+  --sumer-slate-800: #131c24;
+  --sumer-slate-700: #1d2b37;
+  --sumer-slate-600: #2c3f4f;
+  --sumer-slate-500: #465f75;
+  --sumer-slate-400: #6b849b;
+  --sumer-slate-300: #9eb1c2;
+  --sumer-slate-200: #cbd7e2;
+  --sumer-slate-100: #eaf0f5;
+  --sumer-slate-50:  #f6f9fb;
+
+  /* ألوان الدلالة الوظيفية - Semantic Colors */
+  --sumer-success: #10b981;
+  --sumer-success-soft: #ecfdf5;
+  --sumer-success-text: #065f46;
+
+  --sumer-warning: #f59e0b;
+  --sumer-warning-soft: #fffbeb;
+  --sumer-warning-text: #92400e;
+
+  --sumer-danger: #ef4444;
+  --sumer-danger-soft: #fef2f2;
+  --sumer-danger-text: #991b1b;
+
+  --sumer-info: #0284c7;
+  --sumer-info-soft: #f0f9ff;
+  --sumer-info-text: #075985;
+
+  /* شارة الذكاء الاصطناعي - AI Badge Accent */
+  --sumer-ai-purple: #8b5cf6;
+  --sumer-ai-soft: #f5f3ff;
+  --sumer-ai-text: #5b21b6;
+
+  /* الخطوط والتدرجات الطباعية - Typography */
+  --sumer-font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --sumer-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --sumer-font-xs:   0.75rem;    /* 12px */
+  --sumer-font-sm:   0.875rem;   /* 14px */
+  --sumer-font-base: 1rem;       /* 16px */
+  --sumer-font-md:   1.125rem;   /* 18px */
+  --sumer-font-lg:   1.25rem;    /* 20px */
+  --sumer-font-xl:   1.5rem;     /* 24px */
+  --sumer-font-2xl:  1.875rem;   /* 30px */
+  --sumer-font-3xl:  2.25rem;    /* 36px */
+
+  --sumer-weight-regular: 400;
+  --sumer-weight-medium:  500;
+  --sumer-weight-semibold: 600;
+  --sumer-weight-bold:    700;
+
+  /* الانحناءات - Border Radius */
+  --sumer-radius-xs: 4px;
+  --sumer-radius-sm: 8px;
+  --sumer-radius-md: 12px;
+  --sumer-radius-lg: 18px;
+  --sumer-radius-xl: 24px;
+  --sumer-radius-full: 9999px;
+
+  /* الظلال - Shadows */
+  --sumer-shadow-sm: 0 1px 2px rgba(11, 17, 23, 0.05);
+  --sumer-shadow-md: 0 4px 12px rgba(11, 17, 23, 0.08);
+  --sumer-shadow-lg: 0 10px 24px rgba(11, 17, 23, 0.12);
+  --sumer-shadow-gold: 0 4px 16px rgba(212, 163, 71, 0.25);
+  --sumer-shadow-teal: 0 4px 16px rgba(18, 121, 139, 0.25);
+
+  /* الأبعاد الثابتة للتخطيط - Shell Dimensions */
+  --sumer-header-height: 68px;
+  --sumer-sidebar-width: 270px;
+  --sumer-mobile-bar-height: 64px;
+  --sumer-container-max: 1380px;
+
+  /* الانتقالات السلسة - Transitions */
+  --sumer-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --sumer-transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --sumer-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* طبقات العرض - Z-Index Layers */
+  --sumer-z-base: 1;
+  --sumer-z-dropdown: 50;
+  --sumer-z-sticky: 100;
+  --sumer-z-header: 200;
+  --sumer-z-mobile-bar: 250;
+  --sumer-z-drawer: 300;
+  --sumer-z-modal: 400;
+  --sumer-z-toast: 500;
+}
+
+/* ثيم النهار الافتراضي - Light Theme */
+:root,
+[data-theme="light"] {
+  --sumer-bg-body: #f8fafc;
+  --sumer-bg-surface: #ffffff;
+  --sumer-bg-surface-elevated: #ffffff;
+  --sumer-bg-surface-hover: #f1f5f9;
+  --sumer-bg-subtle: #f8fafc;
+  --sumer-bg-accent-soft: var(--sumer-teal-50);
+
+  --sumer-text-primary: #0f172a;
+  --sumer-text-secondary: #475569;
+  --sumer-text-muted: #64748b;
+  --sumer-text-inverse: #ffffff;
+
+  --sumer-border-color: #e2e8f0;
+  --sumer-border-subtle: #edf2f7;
+  --sumer-border-strong: #cbd5e1;
+  --sumer-border-focus: var(--sumer-teal-500);
+
+  --sumer-header-bg: rgba(255, 255, 255, 0.92);
+  --sumer-sidebar-bg: #ffffff;
+  --sumer-mobile-bar-bg: rgba(255, 255, 255, 0.94);
+  --sumer-card-bg: #ffffff;
+}
+
+/* ثيم الليل - Dark Theme (اللازورد وحجر السج العراقي) */
+[data-theme="dark"] {
+  --sumer-bg-body: #0a1116;
+  --sumer-bg-surface: #101c24;
+  --sumer-bg-surface-elevated: #16242f;
+  --sumer-bg-surface-hover: #1c2e3c;
+  --sumer-bg-subtle: #0d171e;
+  --sumer-bg-accent-soft: rgba(18, 121, 139, 0.15);
+
+  --sumer-text-primary: #f1f5f9;
+  --sumer-text-secondary: #cbd5e1;
+  --sumer-text-muted: #8496a7;
+  --sumer-text-inverse: #0f172a;
+
+  --sumer-border-color: #1f3342;
+  --sumer-border-subtle: #172733;
+  --sumer-border-strong: #2c475c;
+  --sumer-border-focus: var(--sumer-teal-400);
+
+  --sumer-header-bg: rgba(16, 28, 36, 0.92);
+  --sumer-sidebar-bg: #101c24;
+  --sumer-mobile-bar-bg: rgba(16, 28, 36, 0.94);
+  --sumer-card-bg: #101c24;
+
+  --sumer-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sumer-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --sumer-shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.55);
+}

@@ -85,18 +85,25 @@ check('static security audit: no MediaRecorder in client engines, camera/mic off
   assert.doesNotMatch(content, /FaceDetector|faceapi/i);
 });
 
-// 6) Zero Legacy School UI Verification
+// 6) Zero Legacy School UI Verification & Unified Shell Entry Point
 check('legacy school UI pages completely zeroed awaiting new unified rebuild', () => {
   const legacyPages = [
     'school-admin.html',
     'school-canva.html',
     'school-virtual-classroom.html',
     'school-live.html',
-    'school.html'
+    'school-index.html',
+    'school-structure.html',
+    'school-teachers.html',
+    'school-students.html',
+    'school-curriculum.html',
+    'school-reader.html',
+    'school-classroom.html'
   ];
   for (const page of legacyPages) {
     assert.equal(fs.existsSync(path.join(root, page)), false, `${page} must be zeroed`);
   }
+  assert.equal(fs.existsSync(path.join(root, 'school.html')), true, 'school.html must be the unified entry shell');
 });
 
 // 7) Two-Level Security Barrier for Account Roles
