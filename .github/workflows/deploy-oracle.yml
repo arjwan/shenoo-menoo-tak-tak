@@ -128,6 +128,8 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
             if curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health; then
+              curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/school.html | grep 'sumer-router.js' >/dev/null
+              curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/school/js/sumer-router.js | grep 'ROUTE_CONTRACTS' >/dev/null
               echo
               echo "Oracle automatic deployment passed."
               exit 0

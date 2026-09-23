@@ -24,3 +24,4 @@ jobs:
       - run: npm run test:school-phase7
       - run: npm run test:school-management
       - run: npm run test:school-portal
+      - run: npm run test:kahwa
