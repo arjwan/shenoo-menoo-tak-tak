@@ -1,0 +1,26 @@
+name: Verify Sumer Phase 7 Integration
+
+on:
+  push:
+    branches: [school-phase7-oracle-merge]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  school:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:school-phase6
+      - run: npm run test:school-phase7
+      - run: npm run test:school-management
+      - run: npm run test:school-portal

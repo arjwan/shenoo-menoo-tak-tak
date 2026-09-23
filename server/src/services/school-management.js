@@ -13,8 +13,12 @@ const SchoolAttendanceRecord = require('../models/SchoolAttendanceRecord');
 const GuardianComplaint = require('../models/GuardianComplaint');
 const VirtualTeacherProfile = require('../models/VirtualTeacherProfile');
 const SchoolSession = require('../models/SchoolSession');
+const SchoolLearningRecord = require('../models/SchoolLearningRecord');
 const SchoolClassroom = require('../models/SchoolClassroom');
 const VirtualClassroomSession = require('../models/VirtualClassroomSession');
+const SchoolTeacherApplication = require('../models/SchoolTeacherApplication');
+const SchoolAssignment = require('../models/SchoolAssignment');
+const SchoolAssignmentSubmission = require('../models/SchoolAssignmentSubmission');
 
 const { CONSENT_TYPES } = require('../models/GuardianConsent');
 
@@ -219,13 +223,18 @@ async function listStudents(actorUser, schoolContext, filters = {}) {
     query.studentUser = actorUser._id;
   }
 
-  return SchoolStudent.find(query)
+  const students = await SchoolStudent.find(query)
     .populate('guardian', 'fullName username phone email')
     .populate('studentUser', 'fullName username phone email')
     .populate('assignedTeachers.teacher', 'name subjects')
     .populate('assignedVirtualTeacher', 'name subject avatarUrl')
     .sort({ createdAt: -1 })
     .lean();
+
+  return students.map(s => ({
+    ...s,
+    trialInfo: SchoolStudent.computeTrialInfo(s)
+  }));
 }
 
 async function registerStudent(actorUser, schoolContext, data) {
@@ -269,9 +278,12 @@ async function registerStudent(actorUser, schoolContext, data) {
     virtualTeacher = await VirtualTeacherProfile.findById(assignedVirtualTeacherId);
   }
 
+  const now = new Date();
+  const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
   const student = await SchoolStudent.create({
     guardian: guardian._id,
-    ...(studentUser ? { studentUser: studentUser._id } : {}),
+    studentUser: studentUser ? studentUser._id : null,
     name: String(name).trim(),
     stage,
     grade: String(grade).trim(),
@@ -280,7 +292,10 @@ async function registerStudent(actorUser, schoolContext, data) {
     assignedTeachers: Array.isArray(assignedTeachers) ? assignedTeachers : [],
     assignedVirtualTeacher: virtualTeacher ? virtualTeacher._id : null,
     registeredBy: actorUser._id,
-    registrationDate: new Date(),
+    registrationDate: now,
+    trialStartedAt: now,
+    trialEndsAt: trialEndsAt,
+    trialStatus: 'active',
     status: 'active',
     parentApproved: true
   });
@@ -365,7 +380,12 @@ async function archiveStudent(actorUser, schoolContext, studentId, reason = '') 
 }
 
 async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
-  const student = await SchoolStudent.findById(studentId)
+  let resolvedId = studentId;
+  if (studentId === 'me' && schoolContext.studentProfile) {
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId)
     .populate('guardian', 'fullName username phone email')
     .populate('studentUser', 'fullName username phone email')
     .populate('assignedTeachers.teacher', 'name subjects phone')
@@ -378,9 +398,30 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     throw err;
   }
 
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
   // Guardian scoping: guardian can only see own student
-  if (schoolContext.isGuardian && String(student.guardian?._id) !== String(actorUser._id)) {
+  if (schoolContext.isGuardian && !isGuardianOwner) {
     const err = new Error('لا يمكنك الاطلاع إلا على سجلات طلابك فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  // Student scoping: student can only see own record
+  if (schoolContext.isStudent && !isStudentOwner) {
+    const err = new Error('لا يمكنك الاطلاع إلا على سجلك الأكاديمي الخاص فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على هذا السجل الأكاديمي');
     err.status = 403;
     throw err;
   }
@@ -392,7 +433,8 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     sessions,
     virtualSessions,
     complaints,
-    consents
+    consents,
+    submissions
   ] = await Promise.all([
     SchoolAttendanceRecord.find({ student: student._id }).populate('teacher', 'fullName username').sort({ date: -1 }).lean(),
     SchoolGradeRecord.find({ student: student._id }).populate('teacher', 'fullName username').sort({ recordedAt: -1 }).lean(),
@@ -401,9 +443,13 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     }).sort({ scheduledAt: -1 }).limit(30).lean(),
     SchoolSession.find({ student: student._id }).sort({ startedAt: -1 }).limit(30).lean(),
     VirtualClassroomSession.find({ student: student._id }).sort({ createdAt: -1 }).limit(30).lean(),
-    GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
-    GuardianConsent.find({ student: student._id }).lean()
+    // Privacy: Students should not see guardian complaints or confidential complaints
+    schoolContext.isStudent ? Promise.resolve([]) : GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
+    schoolContext.isStudent ? Promise.resolve([]) : GuardianConsent.find({ student: student._id }).lean(),
+    SchoolAssignmentSubmission.find({ student: student._id }).populate('assignment', 'title subject dueAt maxScore').sort({ submittedAt: -1 }).lean()
   ]);
+
+  student.trialInfo = SchoolStudent.computeTrialInfo(student);
 
   return {
     student,
@@ -412,10 +458,243 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     schedules,
     sessions,
     virtualSessions,
-    complaints,
-    consents,
+    complaints: complaints || [],
+    consents: consents || [],
+    submissions,
     notes: student.notes || [],
     scores: student.scores || []
+  };
+}
+
+/**
+ * Get Student Attendance History (Strict Ownership Scoped)
+ */
+async function getStudentAttendanceHistory(actorUser, schoolContext, studentId) {
+  let resolvedId = studentId;
+  if (studentId === 'me') {
+    if (!schoolContext.studentProfile) {
+      const err = new Error('حسابك غير مرتبط بملف طالب نشط');
+      err.status = 403;
+      throw err;
+    }
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId).lean();
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على سجل حضور هذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  const records = await SchoolAttendanceRecord.find({ student: student._id })
+    .populate('teacher', 'fullName username')
+    .sort({ date: -1 })
+    .lean();
+
+  const total = records.length;
+  let present = 0;
+  let absent = 0;
+  let late = 0;
+  let excused = 0;
+
+  for (const r of records) {
+    if (r.status === 'present') present++;
+    else if (r.status === 'absent') absent++;
+    else if (r.status === 'late') late++;
+    else if (r.status === 'excused') excused++;
+  }
+
+  const attendanceRate = total > 0 ? Math.round(((present + late + excused) / total) * 100) : null;
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    records,
+    summary: {
+      total,
+      present,
+      absent,
+      late,
+      excused,
+      attendanceRate
+    }
+  };
+}
+
+/**
+ * Get Student Grades History (Strict Ownership Scoped)
+ */
+async function getStudentGradesHistory(actorUser, schoolContext, studentId) {
+  let resolvedId = studentId;
+  if (studentId === 'me') {
+    if (!schoolContext.studentProfile) {
+      const err = new Error('حسابك غير مرتبط بملف طالب نشط');
+      err.status = 403;
+      throw err;
+    }
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId).lean();
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على درجات هذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  const records = await SchoolGradeRecord.find({ student: student._id })
+    .populate('teacher', 'fullName username')
+    .sort({ recordedAt: -1 })
+    .lean();
+
+  let totalScorePercentage = 0;
+  const bySubject = {};
+
+  for (const r of records) {
+    const pct = r.maxScore > 0 ? (r.score / r.maxScore) * 100 : 0;
+    totalScorePercentage += pct;
+
+    if (!bySubject[r.subject]) {
+      bySubject[r.subject] = { count: 0, totalPct: 0, average: 0, items: [] };
+    }
+    bySubject[r.subject].count++;
+    bySubject[r.subject].totalPct += pct;
+    bySubject[r.subject].average = Math.round(bySubject[r.subject].totalPct / bySubject[r.subject].count);
+    bySubject[r.subject].items.push(r);
+  }
+
+  const totalAssessments = records.length;
+  const averageScore = totalAssessments > 0 ? Math.round(totalScorePercentage / totalAssessments) : null;
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    records,
+    summary: {
+      totalAssessments,
+      averageScore,
+      bySubject
+    }
+  };
+}
+
+/**
+ * Get Student Academic Progress & Activity (Strict Ownership Scoped)
+ */
+async function getStudentProgress(actorUser, schoolContext, studentId) {
+  let resolvedId = studentId;
+  if (studentId === 'me') {
+    if (!schoolContext.studentProfile) {
+      const err = new Error('حسابك غير مرتبط بملف طالب نشط');
+      err.status = 403;
+      throw err;
+    }
+    resolvedId = schoolContext.studentProfile._id;
+  }
+
+  const student = await SchoolStudent.findById(resolvedId).lean();
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
+  const isTeacher = schoolContext.isTeacher;
+  const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
+  const isStudentOwner = schoolContext.isStudent && (
+    String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
+    (schoolContext.studentProfile && String(schoolContext.studentProfile._id) === String(student._id))
+  );
+
+  if (!isManagerOrDev && !isTeacher && !isGuardianOwner && !isStudentOwner) {
+    const err = new Error('غير مصرح لك بالاطلاع على مسار تقدم هذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  const [learningRecords, gradeRecords, sessions] = await Promise.all([
+    SchoolLearningRecord.find({ student: student._id }).sort({ createdAt: -1 }).limit(50).lean(),
+    SchoolGradeRecord.find({ student: student._id }).sort({ recordedAt: -1 }).lean(),
+    SchoolSession.find({ student: student._id, status: 'completed' }).sort({ endedAt: -1 }).limit(30).lean()
+  ]);
+
+  const subjectProgress = {};
+  for (const s of (student.subjects || [])) {
+    subjectProgress[s] = {
+      subject: s,
+      learningQuestions: 0,
+      gradesCount: 0,
+      averageGrade: null,
+      completedSessions: 0
+    };
+  }
+
+  for (const lr of learningRecords) {
+    const subj = lr.subject || 'عام';
+    if (!subjectProgress[subj]) {
+      subjectProgress[subj] = { subject: subj, learningQuestions: 0, gradesCount: 0, averageGrade: null, completedSessions: 0 };
+    }
+    subjectProgress[subj].learningQuestions++;
+  }
+
+  for (const gr of gradeRecords) {
+    const subj = gr.subject;
+    if (!subjectProgress[subj]) {
+      subjectProgress[subj] = { subject: subj, learningQuestions: 0, gradesCount: 0, averageGrade: null, completedSessions: 0 };
+    }
+    subjectProgress[subj].gradesCount++;
+  }
+
+  for (const sess of sessions) {
+    const subj = sess.subject || 'عام';
+    if (!subjectProgress[subj]) {
+      subjectProgress[subj] = { subject: subj, learningQuestions: 0, gradesCount: 0, averageGrade: null, completedSessions: 0 };
+    }
+    subjectProgress[subj].completedSessions++;
+  }
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    stage: student.stage,
+    grade: student.grade,
+    section: student.section,
+    progress: student.progress || { average: 0, sessions: 0, answered: 0 },
+    scores: student.scores || [],
+    learningRecords,
+    gradeRecords,
+    completedSessionsCount: sessions.length,
+    subjectProgress: Object.values(subjectProgress)
   };
 }
 
@@ -830,6 +1109,859 @@ async function listAuditLogs(schoolContext, limit = 100) {
     .lean();
 }
 
+
+// --------------------------------------------------------------------------
+// 9. Teacher Applications Workflow
+// --------------------------------------------------------------------------
+async function submitTeacherApplication(applicantUser, data) {
+  if (!applicantUser || applicantUser.status !== 'active') {
+    const err = new Error('يجب تسجيل الدخول بحساب مفعّل لتقديم طلب التدريس');
+    err.status = 401;
+    throw err;
+  }
+
+  const existingTeacher = await SchoolTeacher.findOne({ user: applicantUser._id, status: 'active' });
+  if (existingTeacher) {
+    const err = new Error('حسابك مسجل بالفعل كمعلم نشط في المدرسة');
+    err.status = 409;
+    throw err;
+  }
+
+  const pendingApp = await SchoolTeacherApplication.findOne({ applicant: applicantUser._id, status: 'pending' });
+  if (pendingApp) {
+    const err = new Error('لديك طلب انضمام معلق قيد المراجعة بالفعل');
+    err.status = 409;
+    throw err;
+  }
+
+  const fullName = String(data.fullName || applicantUser.fullName || '').trim();
+  if (!fullName) {
+    const err = new Error('الاسم الكامل مطلوب لتقديم الطلب');
+    err.status = 400;
+    throw err;
+  }
+
+  const subjects = Array.isArray(data.subjects)
+    ? data.subjects.filter(Boolean)
+    : (Array.isArray(data.specialties) ? data.specialties.filter(Boolean) : (data.subject ? [String(data.subject).trim()] : []));
+
+  if (!subjects.length) {
+    const err = new Error('يجب تحديد مادة أو تخصص تدريسي واحد على الأقل');
+    err.status = 400;
+    throw err;
+  }
+
+  const application = await SchoolTeacherApplication.create({
+    applicant: applicantUser._id,
+    fullName,
+    phone: String(data.phone || applicantUser.phone || '').trim(),
+    email: String(data.email || applicantUser.email || '').trim().toLowerCase(),
+    subjects,
+    specialties: subjects,
+    stages: Array.isArray(data.stages) ? data.stages.filter(Boolean) : (data.stage ? [data.stage] : []),
+    grades: Array.isArray(data.grades) ? data.grades.filter(Boolean) : (data.grade ? [data.grade] : []),
+    sections: Array.isArray(data.sections) ? data.sections.filter(Boolean) : ['أ'],
+    qualifications: String(data.qualifications || '').trim(),
+    experience: String(data.experience || '').trim(),
+    experienceYears: Number(data.experienceYears || 0),
+    bio: String(data.bio || '').trim(),
+    notes: String(data.notes || '').trim(),
+    status: 'pending'
+  });
+
+  await logAudit(
+    applicantUser._id,
+    'TEACHER_APPLICATION_SUBMITTED',
+    null,
+    `تقديم طلب انضمام كمعلم: ${application.fullName} (${subjects.join('، ')})`
+  );
+
+  await application.populate('applicant', 'fullName username phone email gender role');
+  return application;
+}
+
+async function listTeacherApplications(actorUser, schoolContext, filters = {}) {
+  if (!schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('عرض طلبات المعلمين مخصص للإدارة أو المطور فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  const query = {};
+  if (filters.status) query.status = filters.status;
+  if (filters.stage) query.stages = filters.stage;
+  if (filters.subject) {
+    query.$or = [{ subjects: filters.subject }, { specialties: filters.subject }];
+  }
+
+  return SchoolTeacherApplication.find(query)
+    .populate('applicant', 'fullName username phone email gender role')
+    .populate('reviewedBy', 'fullName username')
+    .populate('approvedTeacher', 'name subjects stages')
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+async function getTeacherApplication(actorUser, schoolContext, applicationId) {
+  const application = await SchoolTeacherApplication.findById(applicationId)
+    .populate('applicant', 'fullName username phone email gender role')
+    .populate('reviewedBy', 'fullName username')
+    .populate('approvedTeacher', 'name subjects stages')
+    .lean();
+
+  if (!application) {
+    const err = new Error('طلب التقديم غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  // Permitted: Admin/Developer or applicant themselves
+  const isApplicant = String(application.applicant?._id || application.applicant) === String(actorUser._id);
+  if (!isApplicant && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('لا تملك صلاحية الاطلاع على هذا الطلب');
+    err.status = 403;
+    throw err;
+  }
+
+  return application;
+}
+
+async function approveTeacherApplication(actorUser, schoolContext, applicationId, reviewNotes = '') {
+  if (!schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('اعتماد طلبات المعلمين مخصص للإدارة أو المطور فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  const application = await SchoolTeacherApplication.findById(applicationId);
+  if (!application) {
+    const err = new Error('طلب التقديم غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  // Prevent applicant self-approval:
+  if (String(application.applicant) === String(actorUser._id)) {
+    const err = new Error('لا يمكن للمتقدم اعتماد طلبه بنفسه');
+    err.status = 403;
+    throw err;
+  }
+
+  // Idempotent: if already approved, return existing teacher and application
+  if (application.status === 'approved' && application.approvedTeacher) {
+    const existingTeacher = await SchoolTeacher.findById(application.approvedTeacher).populate('user', 'fullName username phone email gender role');
+    return { application, teacher: existingTeacher, alreadyApproved: true };
+  }
+
+  const applicantUser = await User.findById(application.applicant);
+  if (!applicantUser) {
+    const err = new Error('حساب المتقدم غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  // Important: Platform role barrier. Approving a teacher does NOT elevate User.role to admin or developer.
+  // The User account stays as is (or user role), and a SchoolTeacher profile is created / linked.
+  let teacher = await SchoolTeacher.findOne({ user: applicantUser._id });
+  if (!teacher) {
+    teacher = await SchoolTeacher.create({
+      user: applicantUser._id,
+      name: application.fullName || applicantUser.fullName,
+      gender: applicantUser.gender === 'female' ? 'أنثى' : 'ذكر',
+      phone: application.phone || applicantUser.phone || '',
+      subjects: application.subjects && application.subjects.length ? application.subjects : (application.specialties || []),
+      stages: application.stages || [],
+      grades: application.grades || [],
+      sections: application.sections || ['أ'],
+      status: 'active',
+      registeredBy: actorUser._id
+    });
+  } else {
+    teacher.status = 'active';
+    teacher.name = application.fullName || teacher.name;
+    if (application.subjects?.length) teacher.subjects = application.subjects;
+    else if (application.specialties?.length) teacher.subjects = application.specialties;
+    if (application.stages?.length) teacher.stages = application.stages;
+    if (application.grades?.length) teacher.grades = application.grades;
+    if (application.sections?.length) teacher.sections = application.sections;
+    await teacher.save();
+  }
+
+  application.status = 'approved';
+  application.reviewedBy = actorUser._id;
+  application.reviewedAt = new Date();
+  application.approvedTeacher = teacher._id;
+  if (reviewNotes) application.notes = reviewNotes;
+  await application.save();
+
+  await logAudit(
+    actorUser._id,
+    'TEACHER_APPLICATION_APPROVED',
+    applicantUser._id,
+    `تم اعتماد طلب المعلم: ${teacher.name} لتدريس (${(teacher.subjects || []).join('، ')})`
+  );
+
+  await teacher.populate('user', 'fullName username phone email gender role');
+  await application.populate('applicant', 'fullName username phone email gender role');
+  await application.populate('reviewedBy', 'fullName username');
+
+  return { application, teacher };
+}
+
+async function rejectTeacherApplication(actorUser, schoolContext, applicationId, reason = '') {
+  if (!schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('رفض طلبات المعلمين مخصص للإدارة أو المطور فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  const application = await SchoolTeacherApplication.findById(applicationId);
+  if (!application) {
+    const err = new Error('طلب التقديم غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  if (String(application.applicant) === String(actorUser._id)) {
+    const err = new Error('لا يمكن للمتقدم رفض طلبه كإجراء إداري');
+    err.status = 403;
+    throw err;
+  }
+
+  application.status = 'rejected';
+  application.rejectionReason = String(reason || 'لم يستوفِ الشروط المطلوبة').trim();
+  application.reviewedBy = actorUser._id;
+  application.reviewedAt = new Date();
+  await application.save();
+
+  await logAudit(
+    actorUser._id,
+    'TEACHER_APPLICATION_REJECTED',
+    application.applicant,
+    `تم رفض طلب التقديم للمعلم: ${application.fullName}. السبب: ${application.rejectionReason}`
+  );
+
+  await application.populate('applicant', 'fullName username phone email gender role');
+  await application.populate('reviewedBy', 'fullName username');
+
+  return application;
+}
+
+// --------------------------------------------------------------------------
+// 10. Student Trial Operations
+// --------------------------------------------------------------------------
+async function convertStudentTrial(actorUser, schoolContext, studentId) {
+  if (!schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('تحويل حالة التجربة مخصص لإدارة المدرسة أو المطور فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  const student = await SchoolStudent.findById(studentId);
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  student.trialStatus = 'converted';
+  await student.save();
+
+  await logAudit(
+    actorUser._id,
+    'STUDENT_TRIAL_CONVERTED',
+    student._id,
+    `تحويل الطالب ${student.name} من الفترة التجريبية إلى الاشتراك الكامل`
+  );
+
+  return {
+    student,
+    trialInfo: student.getTrialInfo()
+  };
+}
+
+async function getStudentTrial(actorUser, schoolContext, studentId) {
+  const student = await SchoolStudent.findById(studentId);
+  if (!student) {
+    const err = new Error('الطالب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isGuardianOfStudent = schoolContext.isGuardian && String(student.guardian) === String(actorUser._id);
+  const isStudentSelf = schoolContext.isStudent && String(student.studentUser) === String(actorUser._id);
+  const isStaff = schoolContext.isTeacher || schoolContext.isManager || schoolContext.isDeveloper;
+
+  if (!isGuardianOfStudent && !isStudentSelf && !isStaff) {
+    const err = new Error('لا تملك صلاحية الاطلاع على تفاصيل التجربة لهذا الطالب');
+    err.status = 403;
+    throw err;
+  }
+
+  return {
+    studentId: student._id,
+    studentName: student.name,
+    trialInfo: student.getTrialInfo()
+  };
+}
+
+// --------------------------------------------------------------------------
+// 11. Assignments, Submissions & Grading Management
+// --------------------------------------------------------------------------
+async function createAssignment(actorUser, schoolContext, data) {
+  if (!schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('إنشاء الواجبات مخصص للطاقم التعليمي والإدارة فقط');
+    err.status = 403;
+    throw err;
+  }
+
+  const { stage, grade, section, subject, title, description, attachments, assignedStudents, dueAt, maxScore, allowLateSubmission, classroomId } = data;
+
+  if (!stage || !grade || !subject || !title || !dueAt) {
+    const err = new Error('المرحلة والصف والمادة وعنوان الواجب وموعد التسليم حقول مطلوبة');
+    err.status = 400;
+    throw err;
+  }
+
+  const dueDate = new Date(dueAt);
+  if (isNaN(dueDate.getTime())) {
+    const err = new Error('موعد التسليم غير صالح');
+    err.status = 400;
+    throw err;
+  }
+
+  // Teacher scope check:
+  if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const t = schoolContext.teacher;
+    if (t) {
+      if (t.stages && t.stages.length > 0 && !t.stages.includes(stage)) {
+        const err = new Error('المعلم غير مصرح له بإنشاء واجب خارج مرحلته الدراسية');
+        err.status = 403;
+        throw err;
+      }
+      if (t.subjects && t.subjects.length > 0 && !t.subjects.includes(subject)) {
+        const err = new Error('المعلم غير مصرح له بإنشاء واجب خارج مواده الدراسية');
+        err.status = 403;
+        throw err;
+      }
+    }
+  }
+
+  const numMaxScore = Number(maxScore || 100);
+  if (isNaN(numMaxScore) || numMaxScore <= 0) {
+    const err = new Error('الدرجة القصوى للواجب يجب أن تكون رقماً موجباً أكبر من صفر');
+    err.status = 400;
+    throw err;
+  }
+
+  const assignment = await SchoolAssignment.create({
+    teacher: actorUser._id,
+    teacherProfile: schoolContext.teacher?._id || null,
+    stage,
+    grade: String(grade).trim(),
+    section: String(section || '').trim(),
+    classroom: classroomId && mongoose.isValidObjectId(classroomId) ? classroomId : null,
+    subject: String(subject).trim(),
+    title: String(title).trim(),
+    description: String(description || '').trim(),
+    attachments: Array.isArray(attachments) ? attachments : [],
+    assignedStudents: Array.isArray(assignedStudents) ? assignedStudents.filter(Boolean) : [],
+    dueAt: dueDate,
+    maxScore: numMaxScore,
+    allowLateSubmission: allowLateSubmission !== false,
+    status: data.status === 'draft' ? 'draft' : 'published'
+  });
+
+  await logAudit(
+    actorUser._id,
+    'ASSIGNMENT_CREATED',
+    null,
+    `إنشاء واجب جديد: "${assignment.title}" في مادة ${assignment.subject} (الصف: ${assignment.grade})`
+  );
+
+  await assignment.populate('teacher', 'fullName username');
+  return assignment;
+}
+
+async function listAssignments(actorUser, schoolContext, filters = {}) {
+  const query = {};
+  if (filters.status) query.status = filters.status;
+  else if (!filters.includeArchived) query.status = { $ne: 'archived' };
+
+  if (filters.stage) query.stage = filters.stage;
+  if (filters.grade) query.grade = filters.grade;
+  if (filters.section) query.section = filters.section;
+  if (filters.subject) query.subject = filters.subject;
+
+  // Role scoping:
+  if (schoolContext.isStudent && schoolContext.studentProfile) {
+    const sp = schoolContext.studentProfile;
+    query.stage = sp.stage;
+    query.grade = sp.grade;
+    query.status = 'published';
+    query.$or = [
+      { section: '' },
+      { section: sp.section },
+      { section: { $exists: false } },
+      { assignedStudents: sp._id }
+    ];
+  } else if (schoolContext.isGuardian && schoolContext.students?.length) {
+    const studentStages = [...new Set(schoolContext.students.map(s => s.stage))];
+    const studentGrades = [...new Set(schoolContext.students.map(s => s.grade))];
+    query.stage = { $in: studentStages };
+    query.grade = { $in: studentGrades };
+    query.status = 'published';
+  } else if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    if (!filters.allTeachers) {
+      query.teacher = actorUser._id;
+    }
+  }
+
+  const assignments = await SchoolAssignment.find(query)
+    .populate('teacher', 'fullName username')
+    .sort({ dueAt: 1, createdAt: -1 })
+    .lean();
+
+  if (schoolContext.isStudent && schoolContext.studentProfile) {
+    const studentId = schoolContext.studentProfile._id;
+    const assignmentIds = assignments.map(a => a._id);
+    const submissions = await SchoolAssignmentSubmission.find({
+      assignment: { $in: assignmentIds },
+      student: studentId
+    }).lean();
+
+    const subMap = new Map();
+    submissions.forEach(sub => subMap.set(String(sub.assignment), sub));
+
+    return assignments.map(a => {
+      const mySub = subMap.get(String(a._id));
+      return {
+        ...a,
+        mySubmission: mySub ? {
+          _id: mySub._id,
+          status: mySub.status,
+          score: mySub.score,
+          maxScore: mySub.maxScore,
+          submittedAt: mySub.submittedAt,
+          teacherFeedback: mySub.teacherFeedback
+        } : null
+      };
+    });
+  }
+
+  return assignments;
+}
+
+async function getAssignment(actorUser, schoolContext, assignmentId) {
+  const assignment = await SchoolAssignment.findById(assignmentId)
+    .populate('teacher', 'fullName username')
+    .lean();
+
+  if (!assignment) {
+    const err = new Error('الواجب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  if (schoolContext.isStudent && schoolContext.studentProfile) {
+    const mySub = await SchoolAssignmentSubmission.findOne({
+      assignment: assignment._id,
+      student: schoolContext.studentProfile._id
+    }).lean();
+    return { ...assignment, mySubmission: mySub || null };
+  }
+
+  if (schoolContext.isTeacher || schoolContext.isManager || schoolContext.isDeveloper) {
+    const totalSubmissions = await SchoolAssignmentSubmission.countDocuments({ assignment: assignment._id });
+    const gradedSubmissions = await SchoolAssignmentSubmission.countDocuments({ assignment: assignment._id, status: 'graded' });
+    return {
+      ...assignment,
+      stats: {
+        totalSubmissions,
+        gradedSubmissions,
+        pendingSubmissions: totalSubmissions - gradedSubmissions
+      }
+    };
+  }
+
+  return assignment;
+}
+
+async function updateAssignment(actorUser, schoolContext, assignmentId, updates) {
+  const assignment = await SchoolAssignment.findById(assignmentId);
+  if (!assignment) {
+    const err = new Error('الواجب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isCreator = String(assignment.teacher) === String(actorUser._id);
+  if (!isCreator && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('لا تملك صلاحية تعديل هذا الواجب');
+    err.status = 403;
+    throw err;
+  }
+
+  const allowedFields = ['title', 'description', 'dueAt', 'maxScore', 'allowLateSubmission', 'status', 'attachments', 'assignedStudents', 'subject', 'stage', 'grade', 'section'];
+  for (const f of allowedFields) {
+    if (updates[f] !== undefined) {
+      if (f === 'dueAt') assignment.dueAt = new Date(updates.dueAt);
+      else if (f === 'maxScore') assignment.maxScore = Number(updates.maxScore);
+      else assignment[f] = updates[f];
+    }
+  }
+
+  await assignment.save();
+  await logAudit(
+    actorUser._id,
+    'ASSIGNMENT_UPDATED',
+    null,
+    `تعديل واجب: "${assignment.title}"`
+  );
+
+  return assignment;
+}
+
+async function archiveAssignment(actorUser, schoolContext, assignmentId) {
+  const assignment = await SchoolAssignment.findById(assignmentId);
+  if (!assignment) {
+    const err = new Error('الواجب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isCreator = String(assignment.teacher) === String(actorUser._id);
+  if (!isCreator && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('لا تملك صلاحية أرشفة هذا الواجب');
+    err.status = 403;
+    throw err;
+  }
+
+  assignment.status = 'archived';
+  await assignment.save();
+
+  await logAudit(
+    actorUser._id,
+    'ASSIGNMENT_ARCHIVED',
+    null,
+    `أرشفة واجب: "${assignment.title}"`
+  );
+
+  return assignment;
+}
+
+async function submitAssignment(actorUser, schoolContext, assignmentId, data) {
+  // Security rule: "guardian cannot submit as student"
+  if (schoolContext.isGuardian && !schoolContext.isStudent) {
+    const err = new Error('التسليم مخصص للطالب نفسه ولا يحق لولي الأمر تسليم الواجب نيابة عنه');
+    err.status = 403;
+    throw err;
+  }
+
+  let studentProfile = schoolContext.studentProfile;
+  if (!studentProfile) {
+    studentProfile = await SchoolStudent.findOne({ studentUser: actorUser._id, status: { $ne: 'archived' } });
+  }
+
+  if (!studentProfile) {
+    const err = new Error('حسابك غير مرتبط بملف طالب نشط لتسليم الواجب');
+    err.status = 403;
+    throw err;
+  }
+
+  // Security rule: "student A cannot read/submit as student B"
+  if (data.studentId && String(data.studentId) !== String(studentProfile._id)) {
+    const err = new Error('لا تملك صلاحية التسليم نيابة عن طالب آخر');
+    err.status = 403;
+    throw err;
+  }
+
+  const assignment = await SchoolAssignment.findById(assignmentId);
+  if (!assignment) {
+    const err = new Error('الواجب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  if (assignment.status === 'archived' || assignment.status === 'closed') {
+    const err = new Error('هذا الواجب مغلق أو مؤرشف ولا يقبل تسليمات جديدة');
+    err.status = 400;
+    throw err;
+  }
+
+  const now = new Date();
+  const isPastDue = now > new Date(assignment.dueAt);
+
+  if (isPastDue && !assignment.allowLateSubmission) {
+    const err = new Error('انتهى الموعد النهائي لتسليم هذا الواجب ولا يُقبل التسليم المتأخر');
+    err.status = 400;
+    throw err;
+  }
+
+  const content = String(data.content || data.text || '').trim();
+  const attachments = Array.isArray(data.attachments) ? data.attachments : [];
+
+  if (!content && !attachments.length) {
+    const err = new Error('يجب كتابة نص الإجابة أو إرفاق ملف على الأقل');
+    err.status = 400;
+    throw err;
+  }
+
+  let submission = await SchoolAssignmentSubmission.findOne({
+    assignment: assignment._id,
+    student: studentProfile._id
+  });
+
+  if (submission) {
+    if (submission.status === 'graded') {
+      const err = new Error('تم تصحيح هذا الواجب بالفعل ورصد الدرجة، لا يمكن إعادة التسليم');
+      err.status = 400;
+      throw err;
+    }
+
+    submission.content = content;
+    if (attachments.length) submission.attachments = attachments;
+    submission.submittedAt = now;
+    submission.status = isPastDue ? 'late' : 'resubmitted';
+    submission.resubmissionCount = (submission.resubmissionCount || 0) + 1;
+    await submission.save();
+
+    await logAudit(
+      actorUser._id,
+      'ASSIGNMENT_RESUBMITTED',
+      studentProfile._id,
+      `إعادة تسليم واجب "${assignment.title}" للطالب ${studentProfile.name}`
+    );
+  } else {
+    submission = await SchoolAssignmentSubmission.create({
+      assignment: assignment._id,
+      student: studentProfile._id,
+      studentUser: actorUser._id,
+      content,
+      attachments,
+      submittedAt: now,
+      status: isPastDue ? 'late' : 'submitted',
+      resubmissionCount: 0
+    });
+
+    await logAudit(
+      actorUser._id,
+      'ASSIGNMENT_SUBMITTED',
+      studentProfile._id,
+      `تسليم واجب "${assignment.title}" للطالب ${studentProfile.name}`
+    );
+  }
+
+  await submission.populate('student', 'name grade section');
+  return submission;
+}
+
+async function listSubmissions(actorUser, schoolContext, assignmentId) {
+  const assignment = await SchoolAssignment.findById(assignmentId);
+  if (!assignment) {
+    const err = new Error('الواجب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  if (schoolContext.isStudent && schoolContext.studentProfile) {
+    const mySub = await SchoolAssignmentSubmission.find({
+      assignment: assignment._id,
+      student: schoolContext.studentProfile._id
+    }).populate('student', 'name grade section').lean();
+    return mySub;
+  }
+
+  const isTeacherOwner = String(assignment.teacher) === String(actorUser._id);
+  if (schoolContext.isTeacher && !isTeacherOwner && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('لا تملك صلاحية عرض تسليمات واجب لمعلم آخر');
+    err.status = 403;
+    throw err;
+  }
+
+  return SchoolAssignmentSubmission.find({ assignment: assignment._id })
+    .populate('student', 'name grade section')
+    .populate('studentUser', 'fullName username')
+    .populate('gradedBy', 'fullName username')
+    .sort({ submittedAt: -1 })
+    .lean();
+}
+
+async function getSubmission(actorUser, schoolContext, assignmentId, submissionId) {
+  const submission = await SchoolAssignmentSubmission.findById(submissionId)
+    .populate('assignment')
+    .populate('student', 'name grade section')
+    .populate('studentUser', 'fullName username')
+    .populate('gradedBy', 'fullName username')
+    .lean();
+
+  if (!submission || String(submission.assignment?._id || submission.assignment) !== String(assignmentId)) {
+    const err = new Error('التسليم غير موجود أو لا ينتمي لهذا الواجب');
+    err.status = 404;
+    throw err;
+  }
+
+  if (schoolContext.isStudent && schoolContext.studentProfile) {
+    if (String(submission.student?._id || submission.student) !== String(schoolContext.studentProfile._id)) {
+      const err = new Error('لا يمكنك الاطلاع على تسليم طالب آخر');
+      err.status = 403;
+      throw err;
+    }
+  } else if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    if (String(submission.assignment?.teacher) !== String(actorUser._id)) {
+      const err = new Error('لا تملك صلاحية الاطلاع على تسليم واجب لمعلم آخر');
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  return submission;
+}
+
+async function gradeSubmission(actorUser, schoolContext, assignmentId, submissionIdOrData, gradeData = {}) {
+  let submissionId = typeof submissionIdOrData === 'string' ? submissionIdOrData : (submissionIdOrData.submissionId || submissionIdOrData.id);
+  const data = typeof submissionIdOrData === 'object' && !Array.isArray(submissionIdOrData) ? { ...submissionIdOrData, ...gradeData } : gradeData;
+  const numScore = Number(data.score !== undefined ? data.score : gradeData.score);
+  const feedback = String(data.feedback !== undefined ? data.feedback : (data.teacherFeedback || gradeData.feedback || '')).trim();
+
+  const assignment = await SchoolAssignment.findById(assignmentId);
+  if (!assignment) {
+    const err = new Error('الواجب غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  const isOwner = String(assignment.teacher) === String(actorUser._id);
+  if (!isOwner && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('لا تملك صلاحية تصحيح واجب لمعلم آخر');
+    err.status = 403;
+    throw err;
+  }
+
+  let submission = null;
+  if (submissionId && mongoose.isValidObjectId(submissionId)) {
+    submission = await SchoolAssignmentSubmission.findById(submissionId);
+  } else if (data.studentId && mongoose.isValidObjectId(data.studentId)) {
+    submission = await SchoolAssignmentSubmission.findOne({ assignment: assignment._id, student: data.studentId });
+  }
+
+  if (!submission) {
+    const err = new Error('التسليم المراد تصحيحه غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  if (isNaN(numScore) || numScore < 0 || numScore > assignment.maxScore) {
+    const err = new Error(`الدرجة غير صحيحة أو أكبر من الدرجة القصوى (${assignment.maxScore})`);
+    err.status = 400;
+    throw err;
+  }
+
+  let gradeRecord = null;
+  if (submission.gradeRecord) {
+    gradeRecord = await SchoolGradeRecord.findById(submission.gradeRecord);
+  }
+
+  const gradeTitle = `واجب: ${assignment.title}`;
+
+  if (!gradeRecord) {
+    gradeRecord = await SchoolGradeRecord.findOne({
+      student: submission.student,
+      subject: assignment.subject,
+      title: gradeTitle
+    });
+  }
+
+  const student = await SchoolStudent.findById(submission.student);
+  if (!student) {
+    const err = new Error('الطالب المرتبط بالتسليم غير موجود');
+    err.status = 404;
+    throw err;
+  }
+
+  student.scores = student.scores || [];
+  const existingScoreIdx = student.scores.findIndex(
+    s => s.subject === assignment.subject && s.lesson === gradeTitle
+  );
+
+  if (gradeRecord) {
+    gradeRecord.score = numScore;
+    gradeRecord.maxScore = assignment.maxScore;
+    gradeRecord.notes = feedback || gradeRecord.notes;
+    gradeRecord.teacher = actorUser._id;
+    gradeRecord.recordedAt = new Date();
+    await gradeRecord.save();
+
+    if (existingScoreIdx >= 0) {
+      student.scores[existingScoreIdx].score = numScore;
+      student.scores[existingScoreIdx].maxScore = assignment.maxScore;
+      student.scores[existingScoreIdx].createdAt = new Date();
+    } else {
+      student.scores.push({
+        subject: assignment.subject,
+        lesson: gradeTitle,
+        score: numScore,
+        maxScore: assignment.maxScore,
+        createdAt: new Date()
+      });
+      student.progress = student.progress || { average: 0, sessions: 0, answered: 0 };
+      student.progress.answered += 1;
+    }
+  } else {
+    gradeRecord = await SchoolGradeRecord.create({
+      student: student._id,
+      teacher: actorUser._id,
+      subject: assignment.subject,
+      gradeType: 'homework',
+      title: gradeTitle,
+      score: numScore,
+      maxScore: assignment.maxScore,
+      notes: feedback,
+      recordedAt: new Date()
+    });
+
+    if (existingScoreIdx >= 0) {
+      student.scores[existingScoreIdx].score = numScore;
+      student.scores[existingScoreIdx].maxScore = assignment.maxScore;
+      student.scores[existingScoreIdx].createdAt = new Date();
+    } else {
+      student.scores.push({
+        subject: assignment.subject,
+        lesson: gradeTitle,
+        score: numScore,
+        maxScore: assignment.maxScore,
+        createdAt: new Date()
+      });
+      student.progress = student.progress || { average: 0, sessions: 0, answered: 0 };
+      student.progress.answered += 1;
+    }
+  }
+
+  student.progress.average = student.scores.reduce((a, x) => a + (x.score / x.maxScore) * 100, 0) / student.scores.length;
+  await student.save();
+
+  submission.score = numScore;
+  submission.maxScore = assignment.maxScore;
+  submission.teacherFeedback = feedback;
+  submission.gradedBy = actorUser._id;
+  submission.gradedAt = new Date();
+  submission.status = 'graded';
+  submission.gradeRecord = gradeRecord._id;
+  await submission.save();
+
+  await logAudit(
+    actorUser._id,
+    'ASSIGNMENT_GRADED',
+    student._id,
+    `تصحيح واجب "${assignment.title}" للطالب ${student.name}: ${numScore}/${assignment.maxScore}`
+  );
+
+  await submission.populate('student', 'name grade section');
+  await submission.populate('gradedBy', 'fullName username');
+
+  return { submission, gradeRecord };
+}
+
 module.exports = {
   logAudit,
   searchRealUsers,
@@ -844,6 +1976,9 @@ module.exports = {
   updateStudent,
   archiveStudent,
   getStudentPermanentRecord,
+  getStudentAttendanceHistory,
+  getStudentGradesHistory,
+  getStudentProgress,
   listGuardians,
   getStudentConsents,
   updateGuardianConsent,
@@ -854,5 +1989,25 @@ module.exports = {
   createComplaint,
   listComplaints,
   replyToComplaint,
-  listAuditLogs
+  listAuditLogs,
+  // Teacher Applications
+  submitTeacherApplication,
+  listTeacherApplications,
+  getTeacherApplication,
+  approveTeacherApplication,
+  rejectTeacherApplication,
+  // 30-Day Student Trial
+  computeStudentTrialInfo: SchoolStudent.computeTrialInfo,
+  convertStudentTrial,
+  getStudentTrial,
+  // Assignments, Submissions & Grading
+  createAssignment,
+  listAssignments,
+  getAssignment,
+  updateAssignment,
+  archiveAssignment,
+  submitAssignment,
+  listSubmissions,
+  getSubmission,
+  gradeSubmission
 };

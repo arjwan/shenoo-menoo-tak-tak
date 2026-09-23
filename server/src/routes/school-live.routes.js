@@ -134,7 +134,6 @@ router.post('/classrooms/:code/join', async (req, res, next) => {
     if (!result.ok) return reply(res, result);
     if (result.changed) {
       await classroom.save();
-      events.emitUpdate(io(req), classroom);
     }
     res.status(result.rejoined === false ? 201 : 200).json({
       ok: true,

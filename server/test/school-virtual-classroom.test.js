@@ -185,7 +185,7 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     assert.ok(data.code && data.code.length === 6);
     sessionCode = data.code;
 
-    assert.equal(data.session.virtualTeacher.name, 'ست زهراء');
+    assert.equal(data.session.virtualTeacher.name, 'أ. سارة الذكية');
     assert.equal(data.session.virtualTeacher.label, 'معلم افتراضي / AI');
     assert.match(data.session.sourceTitle, /كتاب الرياضيات/);
 

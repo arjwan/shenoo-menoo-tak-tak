@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "test:school-curriculum": "node tests/api-iraqi-curriculum-catalog.js && node tests/api-iraqi-curriculum-files.js && node tests/api-school-canva-update.js && node tests/api-school-canva-runtime.js",
+    "test:school-pages": "node tests/api-school-canva-latest.js && node tests/api-school-classroom-contract.js && node tests/api-school-pages-dom.js",
+    "import:school-canva": "node scripts/import-school-canva-latest.js",
+    "download:school-curriculum": "node scripts/download-iraqi-curriculum.js"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "mongodb-memory-server-core": "^10.4.3",
+    "socket.io-client": "^4.8.3"
+  }
+}

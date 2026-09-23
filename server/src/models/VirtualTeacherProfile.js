@@ -33,24 +33,24 @@ const virtualTeacherProfileSchema = new mongoose.Schema({
 const BUILTIN_PROFILES = [
   {
     profileId: 'sarah-smart',
-    name: 'ست زهراء',
+    name: 'أ. سارة الذكية',
     label: 'معلم افتراضي / AI',
     title: 'معلمة افتراضية للرياضيات والعلوم',
-    subjectSpecialty: ['الرياضيات', 'العلوم'],
+    subjectSpecialty: ['الرياضيات', 'العلوم', 'كيمياء', 'فيزياء', 'أحياء'],
     supportedDialects: [
       { id: 'ar-standard', name: 'العربية الفصحى', isDefault: true },
       { id: 'ar-iraqi', name: 'اللهجة العراقية', isDefault: false },
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: '/sumer-school/assets/virtual-teachers/zahraa.webp',
+    avatar: 'avatar-sarah.png',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.05, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'أهلاً بكم يا أبطال، اليوم سنتعلم معاً بطريقة سهلة وتفاعلية خطوة بخطوة.',
     active: true
   },
   {
     profileId: 'ali-wise',
-    name: 'أستاذ أحمد',
+    name: 'أ. علي الحكيم',
     label: 'معلم افتراضي / AI',
     title: 'معلم افتراضي للغة العربية والتربية الإسلامية',
     subjectSpecialty: ['اللغة العربية', 'القراءة', 'قواعد اللغة العربية', 'التربية الإسلامية', 'القرآن الكريم'],
@@ -60,14 +60,14 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: '/sumer-school/assets/virtual-teachers/ahmed.webp',
+    avatar: 'avatar-ali.png',
     voiceSettings: { voiceGender: 'male', defaultPitch: 0.95, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'مرحباً بكم أعزائي الطلبة، لنستكشف معاً جمال لغتنا ومعانيها القيمة.',
     active: true
   },
   {
     profileId: 'mariam-nour',
-    name: 'ست علياء',
+    name: 'أ. مريم النور',
     label: 'معلم افتراضي / AI',
     title: 'معلمة افتراضية للاجتماعيات والتاريخ والجغرافيا',
     subjectSpecialty: ['الاجتماعيات', 'التاريخ', 'الجغرافيا', 'الوطنية'],
@@ -77,58 +77,9 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: '/sumer-school/assets/virtual-teachers/alyaa.webp',
+    avatar: 'avatar-mariam.png',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 0.95, lang: 'ar-IQ' },
     introGreeting: 'أهلاً بكم في حصتنا، لنتعرف اليوم على تاريخ وحضارة بلادنا العريقة.',
-    active: true
-  },
-  {
-    profileId: 'omar-digital',
-    name: 'أستاذ عمر',
-    label: 'معلم افتراضي / AI',
-    title: 'معلم افتراضي للغة الإنجليزية والحاسوب',
-    subjectSpecialty: ['اللغة الإنجليزية', 'الحاسوب'],
-    supportedDialects: [
-      { id: 'ar-standard', name: 'العربية الفصحى', isDefault: true },
-      { id: 'ar-iraqi', name: 'اللهجة العراقية', isDefault: false },
-      { id: 'en', name: 'English', isDefault: false }
-    ],
-    defaultDialect: 'ar-standard',
-    avatar: '/sumer-school/assets/virtual-teachers/omar.webp',
-    voiceSettings: { voiceGender: 'male', defaultPitch: 0.98, defaultRate: 1.0, lang: 'ar-IQ' },
-    introGreeting: 'أهلاً بكم، سنتعلم الإنجليزية والحاسوب بخطوات واضحة وتطبيقات عملية.',
-    active: true
-  },
-  {
-    profileId: 'kawthar-lab',
-    name: 'ست كوثر',
-    label: 'معلم افتراضي / AI',
-    title: 'معلمة افتراضية للأحياء والكيمياء',
-    subjectSpecialty: ['الأحياء', 'الكيمياء'],
-    supportedDialects: [
-      { id: 'ar-standard', name: 'العربية الفصحى', isDefault: true },
-      { id: 'ar-iraqi', name: 'اللهجة العراقية', isDefault: false }
-    ],
-    defaultDialect: 'ar-standard',
-    avatar: '/sumer-school/assets/virtual-teachers/kawthar.webp',
-    voiceSettings: { voiceGender: 'female', defaultPitch: 1.02, defaultRate: 0.96, lang: 'ar-IQ' },
-    introGreeting: 'مرحباً يا أبطال، سنفهم الأحياء والكيمياء من خلال أمثلة قريبة وتجارب آمنة.',
-    active: true
-  },
-  {
-    profileId: 'ali-physics',
-    name: 'أستاذ علي',
-    label: 'معلم افتراضي / AI',
-    title: 'معلم افتراضي للفيزياء والرياضيات',
-    subjectSpecialty: ['الفيزياء', 'الرياضيات'],
-    supportedDialects: [
-      { id: 'ar-standard', name: 'العربية الفصحى', isDefault: true },
-      { id: 'ar-iraqi', name: 'اللهجة العراقية', isDefault: false }
-    ],
-    defaultDialect: 'ar-standard',
-    avatar: '/sumer-school/assets/virtual-teachers/ali.webp',
-    voiceSettings: { voiceGender: 'male', defaultPitch: 0.94, defaultRate: 0.96, lang: 'ar-IQ' },
-    introGreeting: 'أهلاً بكم، سنحوّل مسائل الفيزياء والرياضيات إلى أفكار بسيطة خطوة بخطوة.',
     active: true
   }
 ];
@@ -139,11 +90,9 @@ virtualTeacherProfileSchema.statics.getBuiltinProfiles = function () {
 
 virtualTeacherProfileSchema.statics.findProfile = async function (profileId) {
   const norm = String(profileId || '').trim().toLowerCase();
-  const builtinProfile = BUILTIN_PROFILES.find((p) => p.profileId === norm);
-  if (builtinProfile) return JSON.parse(JSON.stringify(builtinProfile));
   const dbProfile = await this.findOne({ profileId: norm, active: true }).lean();
   if (dbProfile) return dbProfile;
-  return null;
+  return BUILTIN_PROFILES.find((p) => p.profileId === norm) || null;
 };
 
 module.exports = mongoose.model('VirtualTeacherProfile', virtualTeacherProfileSchema);

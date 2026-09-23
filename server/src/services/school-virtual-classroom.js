@@ -10,6 +10,7 @@
 // - Security & roles: students cannot become teachers; only host/admin/developer can end or manage class.
 const catalog = require('../data/iraqi-curriculum-catalog');
 const Knowledge = require('../models/SchoolKnowledgeSource');
+const curriculumIndex = require('./school-curriculum-index');
 
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
@@ -74,6 +75,22 @@ async function validateCurriculumSource(input) {
     }).lean();
   } catch (e) {
     dbSource = null;
+  }
+
+  // Fallback to indexed curriculum pages if not in DB
+  if (!dbSource && curriculumIndex && typeof curriculumIndex.searchCurriculum === 'function') {
+    try {
+      const hits = curriculumIndex.searchCurriculum({ stage, grade, subject, query: lesson, lesson, limit: 1 });
+      if (hits && hits.length > 0) {
+        dbSource = {
+          title: hits[0].bookTitle + ' — ص ' + hits[0].page,
+          content: hits[0].content,
+          page: String(hits[0].page),
+          chapter: hits[0].chapter,
+          lesson: hits[0].lesson
+        };
+      }
+    } catch (_) {}
   }
 
   // 2) Search in Iraqi curriculum catalog (108 real books)
