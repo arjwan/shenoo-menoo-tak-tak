@@ -22,7 +22,8 @@
   var PAGE_FILES = {
     index: "school-index.html", structure: "school-structure.html", teachers: "school-teachers.html",
     students: "school-students.html", curriculum: "school-curriculum.html",
-    reader: "school-reader.html", classroom: "school-classroom.html"
+    reader: "school-reader.html", classroom: "school-classroom.html",
+    virtualClassroom: "school-live.html"
   };
   var SCREEN_FOR = {
     index: "screen-index", structure: "screen-collection", teachers: "screen-collection",
@@ -201,20 +202,20 @@
       ["📚", "اعتماد المناهج", "الكتب والمحتوى", PAGE_FILES.curriculum]
     ],
     teacher: [
-      ["🧑‍🏫", "بدء الحصة", "الصف والحضور والشرح", PAGE_FILES.classroom],
+      ["🧑‍🏫", "بدء الصف المباشر", "الحصة والحضور والصوت", PAGE_FILES.virtualClassroom],
       ["📚", "مناهجي", "المحتوى والمواد", PAGE_FILES.curriculum],
       ["🎓", "طلابي", "القوائم والتقدم", PAGE_FILES.students],
       ["📖", "قارئ الكتاب", "فتح الدرس والصفحة", PAGE_FILES.reader]
     ],
     student: [
-      ["🧑‍🏫", "صفي الدراسي", "دخول الحصة الحالية", PAGE_FILES.classroom],
+      ["🧑‍🏫", "صفي المباشر", "دخول الحصة الحالية", PAGE_FILES.virtualClassroom],
       ["📖", "كتابي", "متابعة القراءة", PAGE_FILES.reader],
       ["📚", "موادي", "المنهج والدروس", PAGE_FILES.curriculum]
     ],
     guardian: [
       ["🎓", "الأبناء", "الملفات والتقدم", PAGE_FILES.students],
       ["👩‍🏫", "المعلمون", "الكادر التعليمي", PAGE_FILES.teachers],
-      ["🧑‍🏫", "الحصة", "الحضور والمتابعة", PAGE_FILES.classroom],
+      ["🧑‍🏫", "الحصة المباشرة", "الحضور والمتابعة", PAGE_FILES.virtualClassroom],
       ["🗓️", "الجداول والموافقات", "المواعيد وصلاحيات التعلم", "school.html"]
     ],
     guest: [
