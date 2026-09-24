@@ -35,6 +35,9 @@
   };
   var displayedMessages = new Set();
   var spokenAnswers = new Set();
+  var latestTeacherAnswerId = '';
+  var speechPlayback = null;
+  var speechGeneration = 0;
 
   // Helper selectors
   var $ = function (id) { return document.getElementById(id); };
@@ -476,6 +479,7 @@
       state.timerInterval = null;
     }
     stopMediaTracks();
+    stopTeacherSpeech();
     state.cameraPeers.forEach(function (peer) { peer.close(); });
     state.cameraPeers.clear();
     if ($('virtualStudentCameraGrid')) $('virtualStudentCameraGrid').replaceChildren();
@@ -1003,7 +1007,7 @@
           if (res.question) appendMessage(res.question);
           if (res.answer) {
             appendMessage(res.answer);
-            speakAiAnswer(res.answer.text, res.answer._id || res.answer.id);
+            playTeacherAnswer(res.answer.text, res.answer._id || res.answer.id);
           }
         }).catch(function (err) {
           if (err.status === 503) {
@@ -1048,7 +1052,7 @@
     if (speakBtn) {
       speakBtn.addEventListener('click', function () {
         var text = $('speechText').textContent;
-        speakAiAnswer(text, null, true);
+        playTeacherAnswer(text, latestTeacherAnswerId, true);
       });
     }
 
@@ -1061,12 +1065,12 @@
           voiceToggleBtn.classList.add('active');
           $('teacherVoiceIcon').textContent = '🔊';
           $('teacherVoiceText').textContent = 'صوت المعلم مفعّل';
-          speakAiAnswer($('speechText').textContent, null, true);
+          playTeacherAnswer($('speechText').textContent, latestTeacherAnswerId, true);
         } else {
           voiceToggleBtn.classList.remove('active');
           $('teacherVoiceIcon').textContent = '🔇';
           $('teacherVoiceText').textContent = 'صوت المعلم مكتوم';
-          if (window.speechSynthesis) window.speechSynthesis.cancel();
+          stopTeacherSpeech();
         }
       });
     }
@@ -1116,6 +1120,50 @@
     // If teacher speech bubble update
     if (m.senderType === 'teacher_ai') {
       $('speechText').textContent = m.text;
+      latestTeacherAnswerId = String(id || '');
+    }
+  }
+
+  function stopTeacherSpeech() {
+    speechGeneration += 1;
+    if (speechPlayback) { speechPlayback.pause(); speechPlayback.src = ''; speechPlayback = null; }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  }
+
+  async function playTeacherAnswer(text, answerId, manual) {
+    if (!state.speechSynthesisActive || !text) return;
+    var key = answerId && String(answerId);
+    if (!manual && key && spokenAnswers.has(key)) return;
+    if (key) spokenAnswers.add(key);
+    stopTeacherSpeech();
+    var generation = speechGeneration;
+    if (!key || !state.code) { speakAiAnswer(text, null, true); return; }
+    try {
+      for (var part = 0; part < 4 && generation === speechGeneration; part++) {
+        var response = await fetch('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/messages/' + encodeURIComponent(key) + '/speech?part=' + part, {
+          headers: { Authorization: 'Bearer ' + state.token }
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        var total = Number(response.headers.get('X-Speech-Parts')) || 1;
+        var url = URL.createObjectURL(await response.blob());
+        try {
+          if (generation !== speechGeneration) break;
+          var player = new Audio(url);
+          speechPlayback = player;
+          await player.play();
+          await new Promise(function (resolve, reject) {
+            player.addEventListener('ended', resolve, { once: true });
+            player.addEventListener('error', function () { reject(new Error('فشل تشغيل الصوت')); }, { once: true });
+          });
+          speechPlayback = null;
+        } finally { URL.revokeObjectURL(url); }
+        if (part + 1 >= total) break;
+      }
+    } catch (error) {
+      if (generation !== speechGeneration) return;
+      if (key) spokenAnswers.delete(key);
+      notify('تعذر تشغيل الصوت المسجل؛ سأجرّب صوت المتصفح. ' + error.message, true);
+      speakAiAnswer(text, null, true);
     }
   }
 
@@ -1352,7 +1400,7 @@
       state.socket.on('school:virtual:message', function (data) {
         if (data && data.message && data.code === state.code) {
           appendMessage(data.message);
-          if (data.message.senderType === 'teacher_ai') speakAiAnswer(data.message.text, data.message._id || data.message.id);
+          if (data.message.senderType === 'teacher_ai') playTeacherAnswer(data.message.text, data.message._id || data.message.id);
         }
       });
 
