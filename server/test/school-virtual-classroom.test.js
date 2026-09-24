@@ -196,6 +196,26 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     assert.ok(slide0.leftColumn && slide0.leftColumn.items.length >= 2);
   });
 
+  await t.test('Teacher speech route calls the configured TTS engine', async () => {
+    const message = await VirtualMessage.findOne({ code: sessionCode, senderType: 'teacher_ai' }).lean();
+    assert.ok(message);
+    const engine = require('../src/services/school-virtual-tts').defaultEngine;
+    const original = engine.synthesizePart;
+    const sample = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(128)]);
+    engine.synthesizePart = async () => ({ bytes: sample, type: 'audio/mpeg', provider: 'test' });
+    try {
+      const response = await fetch(baseUrl + `/api/school/virtual/sessions/${sessionCode}/messages/${message._id}/speech?part=0`, {
+        headers: { Authorization: 'Bearer ' + teacherToken }
+      });
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get('content-type'), /audio\\/mpeg/);
+      assert.ok(Number(response.headers.get('x-speech-parts')) >= 1);
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), sample);
+    } finally {
+      engine.synthesizePart = original;
+    }
+  });
+
   await t.test('4. Real student joins session and role stays strictly student', async () => {
     const { status, data } = await call('POST', `/api/school/virtual/sessions/${sessionCode}/join`, {
       token: guardianToken,
