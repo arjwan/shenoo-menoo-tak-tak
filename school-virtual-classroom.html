@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
   <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
   <link rel="stylesheet" href="school.css?v=20260913-7">
-  <link rel="stylesheet" href="school-virtual-classroom.css?v=20260924-visibility-1">
+  <link rel="stylesheet" href="school-virtual-classroom.css?v=20260924-class-2">
   <script src="auth-guard.js?v=20260913-7"></script>
 </head>
 <body class="school-virtual-page">
@@ -395,6 +395,7 @@
           <span class="control-icon">🛑</span>
           <span class="control-label">إنهاء الحصة</span>
         </button>
+        <button id="virtualAttendanceBtn" type="button" class="control-btn" hidden>📋 سجل الحضور</button>
       </div>
 
       <div class="controls-group right-group">
@@ -418,6 +419,7 @@
       </div>
     </div>
   </main>
+  <section id="virtualAttendancePanel" class="virtual-attendance" hidden><h3>سجل حضور الحصة</h3><div id="virtualAttendanceRows"></div><button id="closeVirtualAttendance" type="button">إغلاق</button></section>
 
   <!-- Settings / Persona Modal -->
   <div id="settingsModal" class="virtual-modal" hidden>
@@ -449,6 +451,6 @@
   <script src="social-api.js?v=20260916-identity-7"></script>
   <script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script>
   <script src="school-virtual-teacher-core.js?v=20260921-1"></script>
-  <script src="school-virtual-classroom.js?v=20260924-visibility-1"></script>
+  <script src="school-virtual-classroom.js?v=20260924-class-2"></script>
 </body>
 </html>

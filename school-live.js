@@ -31,6 +31,70 @@
     local: { stream: null, videoTrack: null, audioTrack: null },
     handRaised: false, tiles: new Map()
   };
+  var boardQueue = Promise.resolve(), boardPointer = false, boardTool = 'pen', boardLast = null;
+
+  function paintBoard(drawing) {
+    var canvas = $('liveBoard'), ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!drawing) return;
+    var code = state.code, image = new Image();
+    image.onload = function () { if (code === state.code) ctx.drawImage(image, 0, 0, canvas.width, canvas.height); };
+    image.src = drawing;
+  }
+
+  async function loadBoard() {
+    var code = state.code;
+    paintBoard('');
+    $('boardStatus').textContent = 'جارٍ تحميل السبورة...';
+    try {
+      var data = await api('/api/school/classrooms/' + encodeURIComponent(code) + '/whiteboard');
+      if (code !== state.code) return;
+      paintBoard(data.drawing);
+      $('boardStatus').textContent = 'السبورة متصلة بالحصة';
+    } catch (e) { if (code === state.code) $('boardStatus').textContent = 'تعذر تحميل السبورة: ' + e.message; }
+  }
+
+  function saveBoard(drawing) {
+    if (!state.code || !state.you || state.you.role !== 'teacher') return;
+    var code = state.code;
+    $('boardStatus').textContent = 'جارٍ حفظ السبورة...';
+    boardQueue = boardQueue.catch(function () {}).then(function () {
+      return post('/api/school/classrooms/' + encodeURIComponent(code) + '/whiteboard', { drawing: drawing });
+    }).then(function () {
+      if (code === state.code) $('boardStatus').textContent = 'تم حفظ السبورة للطلاب';
+    }).catch(function (e) { if (code === state.code) $('boardStatus').textContent = 'تعذر حفظ السبورة: ' + e.message; });
+  }
+
+  function setupBoard() {
+    var canvas = $('liveBoard'), ctx = canvas.getContext('2d');
+    function point(ev) {
+      var rect = canvas.getBoundingClientRect();
+      return { x: (ev.clientX - rect.left) * canvas.width / rect.width, y: (ev.clientY - rect.top) * canvas.height / rect.height };
+    }
+    canvas.addEventListener('pointerdown', function (ev) {
+      if (!state.you || state.you.role !== 'teacher' || state.classroom.status !== 'live') return;
+      ev.preventDefault(); boardPointer = true; boardLast = point(ev);
+      canvas.setPointerCapture(ev.pointerId);
+    });
+    canvas.addEventListener('pointermove', function (ev) {
+      if (!boardPointer) return;
+      ev.preventDefault(); var p = point(ev);
+      ctx.beginPath(); ctx.moveTo(boardLast.x, boardLast.y); ctx.lineTo(p.x, p.y);
+      ctx.lineWidth = boardTool === 'eraser' ? 30 : 4; ctx.lineCap = 'round';
+      ctx.globalCompositeOperation = boardTool === 'eraser' ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = '#172554'; ctx.stroke(); ctx.globalCompositeOperation = 'source-over';
+      boardLast = p;
+    });
+    function finish() { if (!boardPointer) return; boardPointer = false; saveBoard(canvas.toDataURL('image/png')); }
+    canvas.addEventListener('pointerup', finish);
+    canvas.addEventListener('pointercancel', finish);
+    $('boardPen').addEventListener('click', function () { boardTool = 'pen'; $('boardPen').classList.add('active'); $('boardEraser').classList.remove('active'); });
+    $('boardEraser').addEventListener('click', function () { boardTool = 'eraser'; $('boardEraser').classList.add('active'); $('boardPen').classList.remove('active'); });
+    $('boardClear').addEventListener('click', function () {
+      if (!state.you || state.you.role !== 'teacher' || !confirm('مسح السبورة لجميع المشاركين؟')) return;
+      paintBoard(''); saveBoard('');
+    });
+  }
 
   function msg(text, bad) {
     var el = $('liveMessage');
@@ -117,9 +181,11 @@
     show('lobby', false); show('room', true);
     var teacher = state.you.role === 'teacher';
     show('teacherPanel', teacher); show('endBtn', teacher); show('handBtn', !teacher); show('leaveBtn', !teacher); show('teacherTile', !teacher);
+    show('boardTools', teacher); show('muteAllBtn', teacher); show('attendanceBtn', teacher);
     $('selfName').textContent = state.you.name + (teacher ? ' (المعلم)' : '');
     history.replaceState(null, '', 'school-live.html?code=' + encodeURIComponent(state.code));
     renderRoom();
+    loadBoard();
     connectSocket();
   }
 
@@ -154,6 +220,11 @@
     $('camBtn').textContent = cam.label; $('camBtn').disabled = cam.disabled || c.status !== 'live'; $('camBtn').classList.toggle('active', cam.active);
     $('micBtn').textContent = mic.label; $('micBtn').disabled = mic.disabled || c.status !== 'live'; $('micBtn').classList.toggle('active', mic.active);
     $('controlHint').textContent = [cam.reason, mic.reason].filter(Boolean).join(' · ');
+    if (teacher) {
+      var students = (c.participants || []).filter(function (p) { return p.role === 'student' && !p.leftAt && !p.kicked; });
+      $('muteAllBtn').textContent = students.length && students.every(function (p) { return p.mutedByTeacher; }) ? '🔊 رفع الكتم عن الجميع' : '🔇 كتم جميع الطلاب';
+      $('muteAllBtn').disabled = !students.length;
+    }
     $('selfBadges').textContent = (state.local.videoTrack ? '📷 ' : '') + (state.local.audioTrack ? '🎙️ ' : '') + (state.handRaised ? '✋' : '');
     if (!teacher) {
       $('handBtn').textContent = state.handRaised ? '✋ إنزال اليد' : '✋ رفع اليد';
@@ -212,6 +283,7 @@
     });
     socket.on('disconnect', function () { $('roomStatus').textContent = 'انقطع الاتصال بالخادم — تجري إعادة المحاولة...'; });
     socket.on('school:classroom:update', function (d) { if (d && d.code === state.code) applyClassroom(d.classroom); });
+    socket.on('school:classroom:whiteboard', function (d) { if (d && d.code === state.code && state.you && state.you.role !== 'teacher') { paintBoard(d.drawing); $('boardStatus').textContent = 'تم تحديث السبورة'; } });
     socket.on('school:classroom:peer', function (d) {
       if (!d || d.code !== state.code) return;
       if (state.you.role === 'teacher') { if (!d.online) closePeer(d.userId); }
@@ -436,6 +508,30 @@
     var p = (state.classroom.participants || []).find(function (x) { return x.userId === userId; });
     try { await post('/api/school/classrooms/' + state.code + '/mute', { userId: userId, muted: !(p && p.mutedByTeacher) }); } catch (e) { msg(e.message, true); }
   }
+  async function muteAll() {
+    var targets = (state.classroom.participants || []).filter(function (p) { return p.role === 'student' && !p.leftAt && !p.kicked; });
+    if (!targets.length) return msg('لا يوجد طلاب حاضرون لكتمهم');
+    var muted = targets.some(function (p) { return !p.mutedByTeacher; });
+    try {
+      var result = await post('/api/school/classrooms/' + state.code + '/mute-all', { muted: muted });
+      msg((muted ? 'تم كتم ' : 'تم رفع الكتم عن ') + result.count + ' طالب');
+    } catch (e) { msg(e.message, true); }
+  }
+  async function showAttendance() {
+    if (!state.code || state.you.role !== 'teacher') return;
+    try {
+      var data = await api('/api/school/classrooms/' + encodeURIComponent(state.code) + '/attendance');
+      var rows = $('attendanceRows'); rows.replaceChildren();
+      (data.attendance || []).forEach(function (person) {
+        var row = document.createElement('p');
+        row.textContent = (person.name || 'طالب') + ' — ' + (person.minutes || 0) + ' دقيقة';
+        rows.appendChild(row);
+      });
+      if (!rows.childNodes.length) rows.textContent = 'لا يوجد حضور مسجل بعد.';
+      show('attendancePanel', true);
+      $('attendancePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) { msg(e.message, true); }
+  }
   async function kick(userId, name) {
     if (!confirm('إخراج ' + name + ' من الحصة؟')) return;
     try { await post('/api/school/classrooms/' + state.code + '/kick', { userId: userId }); closePeer(userId); } catch (e) { msg(e.message, true); }
@@ -454,7 +550,9 @@
     state.tiles.forEach(function (el) { el.remove(); }); state.tiles.clear();
     show('playBtn', false);
     state.classroom = null; state.you = null; state.code = ''; state.handRaised = false;
+    boardPointer = false; paintBoard(''); $('boardStatus').textContent = '';
     show('room', false); show('lobby', true);
+    show('attendancePanel', false);
     history.replaceState(null, '', 'school-live.html');
     if (text) msg(text, bad);
     loadLiveList();
@@ -470,6 +568,9 @@
     $('joinAs').addEventListener('change', loadLiveList);
     $('camBtn').addEventListener('click', onCameraClick);
     $('micBtn').addEventListener('click', onMicClick);
+    $('muteAllBtn').addEventListener('click', muteAll);
+    $('attendanceBtn').addEventListener('click', showAttendance);
+    setupBoard();
     $('handBtn').addEventListener('click', toggleHand);
     $('leaveBtn').addEventListener('click', leaveClassroom);
     $('endBtn').addEventListener('click', endClassroom);

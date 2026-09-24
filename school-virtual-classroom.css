@@ -37,6 +37,7 @@ body.school-virtual-page {
 /* Author display rules must not reveal inactive room, modal, or media controls. */
 body.school-virtual-page [hidden] { display: none !important; }
 .whiteboard-canvas { touch-action: none; }
+.virtual-attendance { position: fixed; z-index: 210; inset: auto 1rem 1rem; max-width: 520px; max-height: 65vh; overflow: auto; padding: 20px; margin: auto; border-radius: 16px; background: #fff; color: #183a3c; box-shadow: 0 10px 40px #0007; }
 
 /* 1. Top Navigation Bar */
 .top-nav-bar {

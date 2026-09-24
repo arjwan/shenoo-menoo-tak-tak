@@ -22,6 +22,12 @@ html[data-theme="light"] .school-live .room-code{background:#f3f6fb;border-color
 .school-live .controls button[hidden]{display:none}
 .school-live .controls button.active{outline:2px solid #6d78ff}
 .school-live .controls button.danger{background:#7a2a36;color:#fff}
+.school-live .live-board{margin-top:14px}
+.school-live .board-tools{display:flex;gap:8px;flex-wrap:wrap}
+.school-live .board-tools[hidden]{display:none}
+.school-live .board-tools .active{outline:2px solid #6d78ff}
+.school-live #liveBoard{display:block;width:100%;height:auto;aspect-ratio:2/1;background:#fff;border:1px solid #b8c9d2;border-radius:12px;touch-action:none;cursor:crosshair}
+.school-live #boardStatus{min-height:1.2em;margin:8px 0 0}
 .school-live .stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:16px}
 .school-live .tile{margin:0;background:#08101f;border:1px solid #34405f;border-radius:16px;overflow:hidden;position:relative}
 .school-live .tile[hidden]{display:none}

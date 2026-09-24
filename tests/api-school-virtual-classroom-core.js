@@ -46,9 +46,9 @@ check('virtual teacher profiles: multiple personas, each clearly labeled "معل
     assert.match(p.label, /معلم افتراضي|AI/, 'label matches required virtual indicator');
     assert.ok(Array.isArray(p.supportedDialects), 'supportedDialects is array');
   });
-  const zahraa = core.getProfile('sarah-smart');
-  assert.equal(zahraa.name, 'ست زهراء');
-  assert.equal(zahraa.label, 'معلم افتراضي / AI');
+  const sarah = core.getProfile('sarah-smart');
+  assert.equal(sarah.name, 'أ. سارة الذكية');
+  assert.equal(sarah.label, 'معلم افتراضي / AI');
 });
 
 check('virtual teacher personas do not impersonate human teachers', () => {
