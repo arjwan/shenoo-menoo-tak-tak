@@ -20,7 +20,7 @@ const Knowledge = require('../models/SchoolKnowledgeSource');
 const vsvc = require('../services/school-virtual-classroom');
 const curriculumIndex = require('../services/school-curriculum-index');
 const schoolAI = require('../services/school-ai');
-const tts = require('../services/school-virtual-tts');
+const { defaultEngine: tts } = require('../services/school-virtual-tts');
 const speechCache = new Map();
 
 function io(req) {
@@ -48,6 +48,11 @@ async function loadSessionByCode(code, req, res) {
     res.status(404).json({ ok: false, message: 'لا توجد حصة بهذا الرمز' });
     return null;
   }
+  // Existing sessions retain the old persona ID; display the updated female teacher.
+  if (session.virtualTeacher?.profileId === 'ali-wise') {
+    session.virtualTeacher.name = 'أ. ليلى الحكيمة';
+    session.virtualTeacher.title = 'معلمة افتراضية للغة العربية والتربية الإسلامية';
+  }
   return session;
 }
 
@@ -71,6 +76,7 @@ router.get('/profiles', async (_req, res, next) => {
     const mergedMap = new Map();
     for (const p of builtin) mergedMap.set(p.profileId, p);
     for (const p of dbProfiles) mergedMap.set(p.profileId, p);
+    mergedMap.set('ali-wise', builtin.find((p) => p.profileId === 'ali-wise'));
     res.json({ ok: true, profiles: Array.from(mergedMap.values()) });
   } catch (e) { next(e); }
 });
@@ -595,7 +601,7 @@ router.get('/sessions/:code/messages/:messageId/speech', async (req, res) => {
     if (!parts.length) return res.status(400).json({ ok: false, message: 'لا يوجد نص قابل للنطق في رد المعلم' });
     const index = Number(req.query.part || 0);
     if (!Number.isInteger(index) || index < 0 || index >= parts.length) return res.status(400).json({ ok: false, message: 'مقطع صوت غير صالح' });
-    const voice = /^(ali|hakeem)/i.test(String(session.virtualTeacher.profileId || '')) ? 'male' : 'female';
+    const voice = 'female'; // All built-in virtual teachers are female.
     const cacheKey = `${message._id}:${index}:${voice}`;
     let audio = speechCache.get(cacheKey);
     if (!audio) {

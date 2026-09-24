@@ -404,7 +404,7 @@ test('Sumer Phase 7: Real Student Workspace Full Integration Test', async (t) =>
     assert.equal(resProfiles.data.profiles.length, 3);
     const profileNames = resProfiles.data.profiles.map(p => p.name);
     assert.ok(profileNames.includes('أ. سارة الذكية'));
-    assert.ok(profileNames.includes('أ. علي الحكيم'));
+    assert.ok(profileNames.includes('أ. ليلى الحكيمة'));
     assert.ok(profileNames.includes('أ. مريم النور'));
   });
 });
