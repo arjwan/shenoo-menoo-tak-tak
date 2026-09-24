@@ -28,9 +28,13 @@
     devices: core.initialDevicesState(),
     localStream: null,
     speechSynthesisActive: true,
+    cameraPeers: new Map(),
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    hostId: '',
     socket: null
   };
   var displayedMessages = new Set();
+  var spokenAnswers = new Set();
 
   // Helper selectors
   var $ = function (id) { return document.getElementById(id); };
@@ -470,6 +474,10 @@
       state.timerInterval = null;
     }
     stopMediaTracks();
+    state.cameraPeers.forEach(function (peer) { peer.close(); });
+    state.cameraPeers.clear();
+    if ($('virtualStudentCameraGrid')) $('virtualStudentCameraGrid').replaceChildren();
+    hide('virtualStudentCameras');
     if (state.socket) {
       try {
         state.socket.emit('school:virtual:leave', { code: state.code });
@@ -482,6 +490,7 @@
     hide('virtualAttendancePanel');
     state.session = null;
     displayedMessages.clear();
+    spokenAnswers.clear();
   }
 
   window.addEventListener('pagehide', cleanupSession);
@@ -822,6 +831,8 @@
         if (state.devices.camera) {
           // Stop camera
           stopVideoTracks();
+          state.cameraPeers.forEach(function (peer) { peer.close(); });
+          state.cameraPeers.clear();
           state.devices.camera = false;
           camBtn.classList.remove('active');
           $('camLabel').textContent = 'تشغيل الكاميرا';
@@ -843,7 +854,9 @@
             // Store tracks
             if (!state.localStream) state.localStream = stream;
             else stream.getVideoTracks().forEach(function (t) { state.localStream.addTrack(t); });
-            sendMediaState();
+            sendMediaState().then(function (allowed) {
+              if (allowed && !state.isHost) startStudentCamera();
+            });
           }).catch(function (err) {
             notify('تعذر تشغيل الكاميرا: ' + err.message, true);
           });
@@ -920,14 +933,22 @@
   }
 
   function sendMediaState() {
-    if (!state.code) return;
-    api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/media', {
+    if (!state.code) return Promise.resolve(false);
+    return api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/media', {
       method: 'POST',
       body: {
         camera: state.devices.camera,
         mic: state.devices.mic
       }
-    }).catch(function () {});
+    }).then(function (result) {
+      if (state.devices.camera && result.forced && result.forced.includes('camera')) {
+        stopVideoTracks(); state.devices.camera = false; hide('localVideoContainer');
+        $('camLabel').textContent = 'تشغيل الكاميرا';
+        notify('كاميرا الطالب غير مسموحة في هذه الحصة.', true);
+        return false;
+      }
+      return true;
+    }).catch(function (error) { notify('تعذر تحديث حالة الكاميرا: ' + error.message, true); return false; });
   }
 
   // -------------------------------------------------------------
@@ -979,7 +1000,7 @@
           if (res.question) appendMessage(res.question);
           if (res.answer) {
             appendMessage(res.answer);
-            if (!state.socket || !state.socket.connected) speakAiAnswer(res.answer.text);
+            speakAiAnswer(res.answer.text, res.answer._id || res.answer.id);
           }
         }).catch(function (err) {
           if (err.status === 503) {
@@ -1024,7 +1045,7 @@
     if (speakBtn) {
       speakBtn.addEventListener('click', function () {
         var text = $('speechText').textContent;
-        speakAiAnswer(text);
+        speakAiAnswer(text, null, true);
       });
     }
 
@@ -1037,6 +1058,7 @@
           voiceToggleBtn.classList.add('active');
           $('teacherVoiceIcon').textContent = '🔊';
           $('teacherVoiceText').textContent = 'صوت المعلم مفعّل';
+          speakAiAnswer($('speechText').textContent, null, true);
         } else {
           voiceToggleBtn.classList.remove('active');
           $('teacherVoiceIcon').textContent = '🔇';
@@ -1094,16 +1116,39 @@
     }
   }
 
-  function speakAiAnswer(text) {
-    if (!state.speechSynthesisActive || !window.speechSynthesis || !text) return;
+  function speakAiAnswer(text, answerId, manual) {
+    if (!state.speechSynthesisActive || !text) return;
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+      notify('هذا المتصفح لا يدعم صوت المعلم. جرّب Chrome مع تثبيت صوت عربي في إعدادات النظام.', true);
+      return;
+    }
+    var key = answerId && String(answerId);
+    if (!manual && key && spokenAnswers.has(key)) return;
+    if (key) spokenAnswers.add(key);
     try {
       window.speechSynthesis.cancel();
       var utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ar-IQ';
+      var voices = window.speechSynthesis.getVoices();
+      var arabic = voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); }) ||
+        voices.find(function (v) { return /^ar[-_]/i.test(v.lang); });
+      if (arabic) utterance.voice = arabic;
+      utterance.lang = arabic ? arabic.lang : 'ar-IQ';
       utterance.pitch = 1.0;
       utterance.rate = 1.0;
+      utterance.volume = 1;
+      utterance.onerror = function (event) {
+        if (key) spokenAnswers.delete(key);
+        if (event.error !== 'interrupted' && event.error !== 'canceled') {
+          notify('تعذر نطق صوت المعلم (' + event.error + '). اضغط زر 🔊 ثم تأكد من توفر صوت عربي وصوت الجهاز.', true);
+        }
+      };
       window.speechSynthesis.speak(utterance);
-    } catch (e) {}
+      // Some Chromium builds pause long utterances until resume is called.
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    } catch (e) {
+      if (key) spokenAnswers.delete(key);
+      notify('تعذر تشغيل صوت المعلم: ' + e.message, true);
+    }
   }
 
   // -------------------------------------------------------------
@@ -1180,6 +1225,65 @@
     $('teacherDialectLabel').textContent = core.getDialect(teacher.dialect).name;
   }
 
+  function cameraSignal(to, type, data) {
+    if (state.socket && state.socket.connected) state.socket.emit('school:virtual:signal', { code: state.code, to: to, type: type, data: data });
+  }
+
+  function cameraPeer(userId) {
+    var existing = state.cameraPeers.get(userId);
+    if (existing) existing.close();
+    var peer = new RTCPeerConnection({ iceServers: state.iceServers });
+    state.cameraPeers.set(userId, peer);
+    peer.onicecandidate = function (event) {
+      if (event.candidate) cameraSignal(userId, 'ice', event.candidate.toJSON());
+    };
+    if (state.isHost) peer.ontrack = function (event) {
+      var grid = $('virtualStudentCameraGrid');
+      var tile = document.getElementById('virtualCamera-' + userId);
+      if (!tile) {
+        tile = document.createElement('figure'); tile.id = 'virtualCamera-' + userId;
+        var video = document.createElement('video'); video.autoplay = true; video.playsInline = true; video.muted = true;
+        var caption = document.createElement('figcaption');
+        var participant = (state.session.participants || []).find(function (p) { return String(p.userId) === userId; });
+        caption.textContent = participant ? participant.name : 'طالب';
+        tile.append(video, caption); grid.appendChild(tile);
+      }
+      tile.querySelector('video').srcObject = event.streams[0] || new MediaStream([event.track]);
+      show('virtualStudentCameras');
+    };
+    peer.onconnectionstatechange = function () {
+      if (peer.connectionState === 'failed') notify('تعذر اتصال كاميرا الطالب؛ قد تتطلب الشبكة خادم TURN.', true);
+    };
+    return peer;
+  }
+
+  async function startStudentCamera() {
+    if (!state.hostId || !state.socket || !state.socket.connected || !state.devices.camera || !window.RTCPeerConnection) return;
+    try {
+      var peer = cameraPeer(state.hostId);
+      state.localStream.getVideoTracks().forEach(function (track) { peer.addTrack(track, state.localStream); });
+      await peer.setLocalDescription(await peer.createOffer());
+      cameraSignal(state.hostId, 'offer', peer.localDescription);
+    } catch (error) { notify('تعذر إرسال كاميرا الطالب: ' + error.message, true); }
+  }
+
+  async function onCameraSignal(data) {
+    if (!data || data.code !== state.code || !window.RTCPeerConnection) return;
+    try {
+      var peer = state.cameraPeers.get(data.from);
+      if (data.type === 'offer' && state.isHost) {
+        peer = cameraPeer(data.from);
+        await peer.setRemoteDescription(data.data);
+        await peer.setLocalDescription(await peer.createAnswer());
+        cameraSignal(data.from, 'answer', peer.localDescription);
+      } else if (data.type === 'answer' && peer && !state.isHost) {
+        await peer.setRemoteDescription(data.data);
+      } else if (data.type === 'ice' && peer) {
+        await peer.addIceCandidate(data.data);
+      }
+    } catch (error) { notify('تعذر اتصال كاميرا الطالب: ' + error.message, true); }
+  }
+
   // -------------------------------------------------------------
   // Socket.IO Presence and Events
   // -------------------------------------------------------------
@@ -1194,7 +1298,26 @@
       });
 
       state.socket.on('connect', function () {
-        state.socket.emit('school:virtual:join', { code: code });
+        state.socket.emit('school:virtual:join', { code: code }, function (result) {
+          if (!result || !result.ok) return notify('تعذر اتصال كاميرات الحصة.', true);
+          state.hostId = result.host;
+          if (result.host === result.you) state.isHost = true;
+          if (Array.isArray(result.iceServers)) state.iceServers = result.iceServers;
+          if (!state.isHost && state.devices.camera) startStudentCamera();
+        });
+      });
+      state.socket.on('school:virtual:signal', onCameraSignal);
+      state.socket.on('school:virtual:peer', function (data) {
+        if (!data || data.code !== state.code) return;
+        if (data.online && !state.isHost && data.userId === state.hostId && state.devices.camera) startStudentCamera();
+        if (!data.online) {
+          var peer = state.cameraPeers.get(data.userId);
+          if (peer) peer.close();
+          state.cameraPeers.delete(data.userId);
+          var tile = document.getElementById('virtualCamera-' + data.userId);
+          if (tile) tile.remove();
+          if (!$('virtualStudentCameraGrid').childElementCount) hide('virtualStudentCameras');
+        }
       });
 
       state.socket.on('school:virtual:update', function (data) {
@@ -1222,7 +1345,7 @@
       state.socket.on('school:virtual:message', function (data) {
         if (data && data.message && data.code === state.code) {
           appendMessage(data.message);
-          if (data.message.senderType === 'teacher_ai') speakAiAnswer(data.message.text);
+          if (data.message.senderType === 'teacher_ai') speakAiAnswer(data.message.text, data.message._id || data.message.id);
         }
       });
 
