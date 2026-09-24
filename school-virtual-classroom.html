@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
   <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
   <link rel="stylesheet" href="school.css?v=20260913-7">
-  <link rel="stylesheet" href="school-virtual-classroom.css?v=20260924-class-2">
+  <link rel="stylesheet" href="school-virtual-classroom.css?v=20260924-voice-camera-1">
   <script src="auth-guard.js?v=20260913-7"></script>
 </head>
 <body class="school-virtual-page">
@@ -415,10 +415,11 @@
       <video id="localVideo" autoplay playsinline muted></video>
       <div class="preview-tag">
         <span class="rec-dot">🔴</span>
-        <span>معاينة محلية للطالب فقط (لا تسجيل)</span>
+        <span>كاميرا الطالب ظاهرة لمشرف الحصة عند تشغيلها (لا تسجيل)</span>
       </div>
     </div>
   </main>
+  <section id="virtualStudentCameras" class="virtual-student-cameras" hidden aria-label="كاميرات الطلاب"><h3>كاميرات الطلاب المباشرة</h3><div id="virtualStudentCameraGrid"></div></section>
   <section id="virtualAttendancePanel" class="virtual-attendance" hidden><h3>سجل حضور الحصة</h3><div id="virtualAttendanceRows"></div><button id="closeVirtualAttendance" type="button">إغلاق</button></section>
 
   <!-- Settings / Persona Modal -->
@@ -451,6 +452,6 @@
   <script src="social-api.js?v=20260916-identity-7"></script>
   <script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script>
   <script src="school-virtual-teacher-core.js?v=20260921-1"></script>
-  <script src="school-virtual-classroom.js?v=20260924-class-2"></script>
+  <script src="school-virtual-classroom.js?v=20260924-voice-camera-1"></script>
 </body>
 </html>
