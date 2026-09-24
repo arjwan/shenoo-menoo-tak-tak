@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
   var api, store, ui, mount, route = '#teacher/overview';
-  var cache = { me: null, teacher: null, students: [], schedules: [], assignments: [] };
+  var cache = { me: null, teacher: null, students: [], schedules: [], assignments: [], requests: [] };
 
   function esc(v) { return ui.escapeHtml(v == null ? '' : String(v)); }
   function arr(v) { return Array.isArray(v) ? v : []; }
@@ -39,7 +39,8 @@
       api.request('/api/school/management/me'),
       api.request('/api/school/management/students'),
       api.request('/api/school/management/schedules'),
-      api.request('/api/school/assignments')
+      api.request('/api/school/assignments'),
+      api.request('/api/school/management/teacher-student-requests')
     ]).then(function (r) {
       cache.me = payload(r[0]);
       if (!cache.me || !cache.me.schoolContext || !cache.me.schoolContext.isTeacher) throw new Error('هذه المساحة مخصصة للمعلم المعتمد فقط');
@@ -47,6 +48,7 @@
       cache.students = payload(r[1], 'students') || [];
       cache.schedules = payload(r[2], 'schedules') || [];
       cache.assignments = payload(r[3], 'assignments') || [];
+      cache.requests = payload(r[4], 'requests') || [];
     });
   }
   function overview() {
@@ -67,14 +69,19 @@
       card('أدوات الصف','<div class="teacher-actions"><a href="/school-live.html">الصف المباشر</a><a href="/school-virtual-classroom.html">السبورة والصف</a><a href="#teacher/schedule">الجدول</a></div>');
   }
   function students() {
-    return head('طلابي','تظهر فقط الملفات التي يسمح بها نطاق المعلم في الخادم.') +
-      card('قائمة الطلاب',cache.students.length ? '<div class="teacher-list">'+cache.students.map(function(s){
-        return '<div class="teacher-row"><div><b>'+esc(s.name)+'</b><small>'+esc([s.stage,s.grade,s.section&&('شعبة '+s.section)].filter(Boolean).join(' · '))+
-          '</small></div><button data-record="'+esc(s._id||s.id)+'">السجل</button></div>';
-      }).join('')+'</div><div id="teacher-record"></div>' : empty('لا يوجد طلاب مكلفون بهذا المعلم.'));
+    var pending=cache.requests.filter(function(x){return x.status==='PENDING';});
+    return head('طلابي','كل مرحلة وصف ومادة مستقلة. الإضافة وفك الارتباط يتمان بطلب وموافقة ولي الأمر.') +
+      card('إضافة طالب إلى مجموعتي','<form id="teacher-student-search" class="teacher-form"><label class="wide">ابحث باسم الطالب<input name="q" minlength="2" required placeholder="اكتب اسم الطالب"></label><button>بحث</button></form><div id="teacher-candidates"></div>')+
+      card('طلبات معلقة',pending.length?'<div class="teacher-list">'+pending.map(function(x){return '<div class="teacher-row"><div><b>'+esc(x.student&&x.student.name||'طالب')+'</b><small>'+esc((x.kind==='REMOVE'?'فك ارتباط':'إضافة')+' · '+(x.subjects||[]).join('، '))+'</small></div><span>بانتظار ولي الأمر</span></div>';}).join('')+'</div>':empty('لا توجد طلبات معلقة.'))+
+      card('قائمة طلابي',cache.students.length ? '<div class="teacher-list">'+cache.students.map(function(s){
+        return '<div class="teacher-row"><div><b>'+esc(s.name)+'</b><small>'+esc([s.stage,s.grade,s.section&&('شعبة '+s.section),(s.assignedTeachers||[]).filter(function(a){return String(a.teacher&&a.teacher._id||a.teacher)===String(cache.teacher._id);}).map(function(a){return a.subject;}).filter(Boolean).join('، ')].filter(Boolean).join(' · '))+
+          '</small></div><div><button data-record="'+esc(s._id||s.id)+'">السجل</button> <button data-remove-student="'+esc(s._id||s.id)+'">طلب إزالة</button></div></div>';
+      }).join('')+'</div><div id="teacher-record"></div>' : empty('لا يوجد طلاب مرتبطون بهذا المعلم بعد.'));
   }
   function schedule() {
-    return head('الجدول','الحصص والاختبارات المسجلة ضمن نطاقك.') +
+    var t=cache.teacher||{};
+    return head('الجدول والتنبيهات','أنشئ موعد امتحان أو مراجعة لمجموعة محددة فقط.') +
+      card('تنبيه امتحان/مراجعة','<form id="teacher-exam-alert" class="teacher-form"><label>النوع<select name="type"><option value="EXAM">امتحان</option><option value="GENERAL_REVIEW">مراجعة</option></select></label><label>العنوان<input name="title" required></label><label>المرحلة<select name="stage" required>'+arr(t.stages).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الصف<select name="grade" required>'+arr(t.grades).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الشعبة<input name="section" value="أ"></label><label>المادة<select name="subject" required>'+arr(t.subjects).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الموعد<input name="scheduledAt" type="datetime-local" required></label><label class="wide">المطلوب مراجعته<textarea name="description" required></textarea></label><button>نشر التنبيه</button></form>')+
       card('المواعيد',cache.schedules.length ? '<div class="teacher-list">'+cache.schedules.map(scheduleRow).join('')+'</div>' : empty('لا توجد مواعيد مسجلة.'));
   }
   function attendance() {
@@ -88,9 +95,21 @@
       card('الواجبات المنشورة',cache.assignments.length ? '<div class="teacher-list">'+cache.assignments.map(function(a){return '<div class="teacher-row"><div><b>'+esc(a.title)+'</b><small>'+esc(a.subject||'')+'</small></div><button data-submissions="'+esc(a._id||a.id)+'">التسليمات</button></div>';}).join('')+'</div><div id="teacher-submissions"></div>' : empty('لا توجد واجبات منشورة.'));
   }
   function gradebook() {
-    return head('دفتر الدرجات','رصد التقييمات وعرض السجل الأكاديمي.') +
-      card('رصد درجة','<form id="teacher-grade" class="teacher-form"><label>الطالب<select name="studentId" required><option value="">اختر الطالب</option>'+options()+
-      '</select></label><label>المادة<input name="subject" required></label><label>التقييم<input name="title" required></label><label>الدرجة<input name="score" type="number" min="0" required></label><label>من<input name="maxScore" type="number" min="1" value="100" required></label><button>حفظ الدرجة</button></form><div id="teacher-grade-result"></div>');
+    var groups={};
+    cache.students.forEach(function(st){
+      (st.assignedTeachers||[]).forEach(function(link){
+        if(String(link.teacher&&link.teacher._id||link.teacher)!==String(cache.teacher._id)||!link.subject)return;
+        var key=[st.stage,st.grade,st.section||'أ',link.subject].join('|');
+        (groups[key]||(groups[key]=[])).push(st);
+      });
+    });
+    var keys=Object.keys(groups);
+    return head('سجل الدرجات الإلكتروني','السجل مفصول حسب المرحلة والصف والشعبة والمادة، ولا تختلط مجموعات الطلاب.') +
+      (keys.length?keys.map(function(key){
+        var p=key.split('|'),list=groups[key];
+        return card(p[0]+' · '+p[1]+' · شعبة '+p[2]+' · '+p[3],
+          '<form class="teacher-form teacher-grade-group" data-subject="'+esc(p[3])+'"><input type="hidden" name="subject" value="'+esc(p[3])+'"><label>الطالب<select name="studentId" required><option value="">اختر الطالب</option>'+list.map(function(st){return '<option value="'+esc(st._id)+'">'+esc(st.name)+'</option>';}).join('')+'</select></label><label>نوع التقييم<select name="gradeType"><option value="oral">شفهي</option><option value="homework">واجب</option><option value="activity">نشاط</option><option value="quiz">يومي</option><option value="monthly">شهري</option><option value="midyear">نصف السنة</option><option value="final">نهائي</option></select></label><label>التقييم<input name="title" required></label><label>الدرجة<input name="score" type="number" min="0" required></label><label>من<input name="maxScore" type="number" min="1" value="100" required></label><label>ملاحظات<input name="notes"></label><button>حفظ الدرجة</button></form>');
+      }).join(''):empty('لا توجد مجموعات طلاب مرتبطة بموادك بعد.'));
   }
   function reports() {
     return head('التقارير','قراءة السجل الدائم للطلاب المكلفين.') +
@@ -110,15 +129,19 @@
   function resultBox(id, html){var x=document.getElementById(id);if(x)x.innerHTML=html;}
   function bind() {
     mount.addEventListener('submit',function(ev){
-      var f=ev.target;if(!f.id)return;ev.preventDefault();var b=formData(f),p;
+      var f=ev.target;if(!f.id&&!f.classList.contains('teacher-grade-group'))return;ev.preventDefault();var b=formData(f),p;
+      if(f.id==='teacher-student-search'){api.request('/api/school/management/teacher-student-candidates?q='+encodeURIComponent(b.q)).then(function(r){var list=payload(r,'students')||[];resultBox('teacher-candidates',list.length?'<div class="teacher-list">'+list.map(function(x){return '<div class="teacher-row"><div><b>'+esc(x.name)+'</b><small>'+esc([x.stage,x.grade,x.section].filter(Boolean).join(' · '))+'</small></div><button data-add-student="'+esc(x._id)+'">طلب إضافة</button></div>';}).join('')+'</div>':empty('لا توجد نتائج ضمن مراحل وصفوف تكليفك.'));});return;}
+      if(f.id==='teacher-exam-alert'){p=send('/api/school/management/schedules','POST',b);}
       if(f.id==='teacher-attendance') p=send('/api/school/management/attendance','POST',b);
       if(f.id==='teacher-assignment'){b.maxScore=Number(b.maxScore);p=send('/api/school/assignments','POST',b);}
-      if(f.id==='teacher-grade'){b.score=Number(b.score);b.maxScore=Number(b.maxScore);p=send('/api/school/management/grades','POST',b);}
+      if(f.id==='teacher-grade'||f.classList.contains('teacher-grade-group')){b.score=Number(b.score);b.maxScore=Number(b.maxScore);p=send('/api/school/management/grades','POST',b);}
       if(f.id==='teacher-report'){p=api.request('/api/school/management/students/'+encodeURIComponent(b.studentId)+'/record').then(function(r){var d=payload(r);resultBox('teacher-report-result',d?'<pre class="teacher-record">'+esc(JSON.stringify(d,null,2))+'</pre>':empty('تعذر قراءة السجل.'));});return;}
       if(p)p.then(function(r){if(!r.ok)throw new Error(r.message||'تعذر الحفظ');ui.showToast('تم الحفظ بنجاح','success');return load();}).then(renderNow).catch(function(err){ui.showToast(err.message||'تعذر التنفيذ','error');});
     });
     mount.addEventListener('click',function(ev){
-      var s=ev.target.closest('[data-submissions]'),r=ev.target.closest('[data-record]');
+      var s=ev.target.closest('[data-submissions]'),r=ev.target.closest('[data-record]'),a=ev.target.closest('[data-add-student]'),rm=ev.target.closest('[data-remove-student]');
+      if(a){var subject=prompt('اكتب المادة التي سيدرسها الطالب معك:');if(subject)send('/api/school/management/teacher-student-requests','POST',{studentId:a.dataset.addStudent,subjects:[subject]}).then(function(x){if(!x.ok)throw new Error(x.message);ui.showToast('أرسل الطلب إلى ولي الأمر','success');return load();}).then(renderNow).catch(function(e){ui.showToast(e.message,'error');});}
+      if(rm){send('/api/school/management/students/'+encodeURIComponent(rm.dataset.removeStudent)+'/request-removal','POST',{}).then(function(x){if(!x.ok)throw new Error(x.message);ui.showToast('طلب الإزالة ينتظر موافقة ولي الأمر','success');return load();}).then(renderNow).catch(function(e){ui.showToast(e.message,'error');});}
       if(s)api.request('/api/school/assignments/'+encodeURIComponent(s.dataset.submissions)+'/submissions').then(function(x){var list=payload(x,'submissions')||[];resultBox('teacher-submissions',card('التسليمات',list.length?'<div class="teacher-list">'+list.map(function(v){return '<div class="teacher-row"><div><b>'+esc(v.studentName||v.student?.name||'طالب')+'</b><small>'+esc(v.status||'submitted')+'</small></div></div>';}).join('')+'</div>':empty('لا توجد تسليمات بعد.')));});
       if(r)api.request('/api/school/management/students/'+encodeURIComponent(r.dataset.record)+'/record').then(function(x){var d=payload(x);resultBox('teacher-record',d?'<pre class="teacher-record">'+esc(JSON.stringify(d,null,2))+'</pre>':empty('تعذر قراءة السجل.'));});
     });
