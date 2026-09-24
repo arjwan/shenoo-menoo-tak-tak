@@ -147,7 +147,9 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     const { status, data } = await call('GET', '/api/school/virtual/profiles', { token: teacherToken });
     assert.equal(status, 200);
     assert.ok(data.ok);
-    assert.ok(Array.isArray(data.profiles) && data.profiles.length >= 3);
+    assert.equal(data.profiles.length, 6);
+    assert.ok(data.profiles.every((p) => p.voiceSettings.voiceGender === 'female' && p.avatar));
+    assert.equal(data.profiles.find((p) => p.profileId === 'english-global').defaultDialect, 'en');
     data.profiles.forEach((p) => {
       assert.match(p.label, /معلم افتراضي|AI/);
     });
@@ -266,9 +268,63 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
       const opening = await VirtualMessage.findOne({ code: data.code, type: 'answer' }).lean();
       assert.match(opening.text, /الفاصلة/);
       assert.equal(opening.sourceRefs[0].page, '14');
+      const board = await VirtualSession.findOne({ code: data.code }).lean();
+      assert.ok(board.whiteboardData.slides.length >= 2);
+      assert.match(board.whiteboardData.slides[board.whiteboardData.currentSlide].leftColumn.items.join(' '), /الفاصلة/);
     } finally {
       ai.configured = configured;
       ai.ask = ask;
+    }
+  });
+
+  await t.test('English teacher speaks English and writes the lesson on the board', async () => {
+    await Knowledge.create({
+      stage: 'ابتدائي', grade: 'السادس ابتدائي', subject: 'اللغة الإنكليزية',
+      lesson: 'Unit 1 Hello', title: 'كتاب اللغة الإنكليزية — السادس ابتدائي',
+      page: '12', content: 'Unit 1 Hello. Say hello to your friend and introduce yourself in English.',
+      sourceType: 'official_textbook', verified: true
+    });
+    const ai = require('../src/services/school-ai');
+    const originalConfigured = ai.configured, originalAsk = ai.ask;
+    ai.configured = () => true;
+    ai.ask = async (ctx) => {
+      assert.equal(ctx.language, 'en');
+      return { answer: 'Hello means a greeting. For example, say Hello, I am Noor. How do you greet a friend?', provider: 'test' };
+    };
+    try {
+      const { status, data } = await call('POST', '/api/school/virtual/sessions', {
+        token: teacherToken,
+        body: {
+          stage: 'ابتدائي', grade: 'السادس ابتدائي', subject: 'اللغة الإنكليزية',
+          lesson: 'Unit 1 Hello', profileId: 'english-global', dialect: 'en'
+        }
+      });
+      assert.equal(status, 201);
+      assert.equal(data.session.virtualTeacher.dialect, 'en');
+      assert.equal(data.openingAvailable, true);
+      assert.match(data.session.whiteboardData.slides.at(-1).leftColumn.items.join(' '), /Hello/);
+      const engine = require('../src/services/school-virtual-tts').defaultEngine;
+      const originalSynth = engine.synthesizePart, originalTtsConfigured = engine.isConfigured;
+      let selectedVoice;
+      engine.isConfigured = () => true;
+      engine.synthesizePart = async (_text, voice) => {
+        selectedVoice = voice;
+        return { bytes: Buffer.concat([Buffer.from('ID3'), Buffer.alloc(128)]), type: 'audio/mpeg' };
+      };
+      try {
+        const opening = await VirtualMessage.findOne({ code: data.code, type: 'answer' }).lean();
+        const response = await fetch(baseUrl + `/api/school/virtual/sessions/${data.code}/messages/${opening._id}/speech`, {
+          headers: { Authorization: 'Bearer ' + teacherToken }
+        });
+        assert.equal(response.status, 200);
+        assert.equal(selectedVoice, 'english-female');
+      } finally {
+        engine.synthesizePart = originalSynth;
+        engine.isConfigured = originalTtsConfigured;
+      }
+    } finally {
+      ai.configured = originalConfigured;
+      ai.ask = originalAsk;
     }
   });
 
