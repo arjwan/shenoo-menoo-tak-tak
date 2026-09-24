@@ -24,6 +24,7 @@
     "test:school-phase5": "node tests/api-school-phase5-shell.js",
     "test:school-phase6": "node tests/api-school-phase6-gateway.js",
     "test:school-phase7": "node --test server/test/school-phase7-student.test.js && node tests/api-school-phase7-student.js",
+    "test:school-phase8": "node --test server/test/school-phase8-teacher.test.js && node tests/api-school-phase8-teacher.js",
     "test:school": "node tests/api-school-curriculum-indexing.js",
     "test:school-virtual": "node --test server/test/school-virtual-classroom.test.js && node tests/api-school-virtual-classroom-core.js",
     "test:school-management": "node --test server/test/school-management.test.js && node tests/api-school-management.js",

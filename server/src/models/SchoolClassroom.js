@@ -47,6 +47,7 @@ const classroomSchema = new mongoose.Schema({
   status: { type: String, enum: ['live', 'ended'], default: 'live', index: true },
   startedAt: { type: Date, default: Date.now },
   endedAt: { type: Date, default: null },
+  boardEntries: [{ text: { type: String, required: true, trim: true, maxlength: 2000 }, bookId: { type: String, default: '' }, page: { type: Number, default: null }, createdAt: { type: Date, default: Date.now } }],
   participants: [participantSchema]
 }, { timestamps: true });
 

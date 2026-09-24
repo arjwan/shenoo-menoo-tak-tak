@@ -165,6 +165,12 @@ async function archiveTeacher(actorUser, schoolContext, teacherId, reason = '') 
 }
 
 async function getTeacherRecord(actorUser, schoolContext, teacherId) {
+  if (!schoolContext.isManager && !schoolContext.isDeveloper &&
+      !(schoolContext.isTeacher && String(schoolContext.teacher?._id) === String(teacherId))) {
+    const err = new Error('سجل المعلم مخصص لصاحبه وإدارة المدرسة');
+    err.status = 403;
+    throw err;
+  }
   const teacher = await SchoolTeacher.findById(teacherId)
     .populate('user', 'fullName username phone email gender role friendCode profile')
     .lean();
@@ -176,7 +182,7 @@ async function getTeacherRecord(actorUser, schoolContext, teacherId) {
 
   const [assignedStudents, schedules, liveClassrooms, gradeRecords, attendanceRecords, auditLogs] = await Promise.all([
     SchoolStudent.find({
-      $or: [{ 'assignedTeachers.teacher': teacher._id }, { _id: { $in: teacher.assignedStudents || [] } }],
+      'assignedTeachers.teacher': teacher._id,
       status: { $ne: 'archived' }
     })
       .select('name stage grade section subjects progress')
@@ -185,7 +191,9 @@ async function getTeacherRecord(actorUser, schoolContext, teacherId) {
     SchoolClassroom.find({ teacher: teacher.user._id }).sort({ createdAt: -1 }).limit(30).lean(),
     SchoolGradeRecord.find({ teacher: teacher.user._id }).sort({ recordedAt: -1 }).limit(50).lean(),
     SchoolAttendanceRecord.find({ teacher: teacher.user._id }).sort({ date: -1 }).limit(50).lean(),
-    AuditLog.find({ $or: [{ actor: teacher.user._id }, { target: teacher.user._id }] }).sort({ createdAt: -1 }).limit(30).lean()
+    (schoolContext.isManager || schoolContext.isDeveloper)
+      ? AuditLog.find({ $or: [{ actor: teacher.user._id }, { target: teacher.user._id }] }).sort({ createdAt: -1 }).limit(30).lean()
+      : Promise.resolve([])
   ]);
 
   return {
@@ -215,10 +223,7 @@ async function listStudents(actorUser, schoolContext, filters = {}) {
   if (schoolContext.isGuardian) {
     query.guardian = actorUser._id;
   } else if (schoolContext.isTeacher) {
-    query.$or = [
-      { 'assignedTeachers.teacher': schoolContext.teacher._id },
-      { stage: { $in: schoolContext.teacher.stages || [] }, grade: { $in: schoolContext.teacher.grades || [] } }
-    ];
+    query['assignedTeachers.teacher'] = schoolContext.teacher._id;
   } else if (schoolContext.isStudent) {
     query.studentUser = actorUser._id;
   }
@@ -339,7 +344,7 @@ async function updateStudent(actorUser, schoolContext, studentId, updates) {
     const isAssigned = student.assignedTeachers?.some(
       (at) => String(at.teacher) === String(schoolContext.teacher._id)
     );
-    if (!isAssigned && (!schoolContext.teacher.grades.includes(student.grade) || !schoolContext.teacher.stages.includes(student.stage))) {
+    if (!isAssigned) {
       const err = new Error('ليس لديك صلاحية تعديل بيانات هذا الطالب');
       err.status = 403;
       throw err;
@@ -399,7 +404,8 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && (student.assignedTeachers || []).some(entry =>
+    String(entry.teacher?._id || entry.teacher) === String(schoolContext.teacher?._id));
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -444,8 +450,8 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
     SchoolSession.find({ student: student._id }).sort({ startedAt: -1 }).limit(30).lean(),
     VirtualClassroomSession.find({ student: student._id }).sort({ createdAt: -1 }).limit(30).lean(),
     // Privacy: Students should not see guardian complaints or confidential complaints
-    schoolContext.isStudent ? Promise.resolve([]) : GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
-    schoolContext.isStudent ? Promise.resolve([]) : GuardianConsent.find({ student: student._id }).lean(),
+    (schoolContext.isStudent || schoolContext.isTeacher) ? Promise.resolve([]) : GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
+    (schoolContext.isStudent || schoolContext.isTeacher) ? Promise.resolve([]) : GuardianConsent.find({ student: student._id }).lean(),
     SchoolAssignmentSubmission.find({ student: student._id }).populate('assignment', 'title subject dueAt maxScore').sort({ submittedAt: -1 }).lean()
   ]);
 
@@ -488,7 +494,8 @@ async function getStudentAttendanceHistory(actorUser, schoolContext, studentId) 
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && (student.assignedTeachers || []).some(entry =>
+    String(entry.teacher?._id || entry.teacher) === String(schoolContext.teacher?._id));
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -558,7 +565,8 @@ async function getStudentGradesHistory(actorUser, schoolContext, studentId) {
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && (student.assignedTeachers || []).some(entry =>
+    String(entry.teacher?._id || entry.teacher) === String(schoolContext.teacher?._id));
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -629,7 +637,8 @@ async function getStudentProgress(actorUser, schoolContext, studentId) {
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && (student.assignedTeachers || []).some(entry =>
+    String(entry.teacher?._id || entry.teacher) === String(schoolContext.teacher?._id));
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -822,7 +831,7 @@ async function listSchedules(actorUser, schoolContext, filters = {}) {
   if (filters.subject) query.subject = filters.subject;
 
   if (schoolContext.isTeacher) {
-    query.$or = [{ teacher: actorUser._id }, { stage: { $in: schoolContext.teacher.stages || [] } }];
+    query.teacher = actorUser._id;
   } else if (schoolContext.isGuardian) {
     const studentGrades = (schoolContext.students || []).map((s) => s.grade);
     const studentStages = (schoolContext.students || []).map((s) => s.stage);
@@ -862,6 +871,15 @@ async function createScheduleEvent(actorUser, schoolContext, data) {
       const err = new Error('لا تملك صلاحية جدولة أحداث خارج مرحلتك الدراسية');
       err.status = 403;
       throw err;
+    }
+    if ((t.grades || []).length && !t.grades.includes(String(grade).trim()) ||
+        (t.subjects || []).length && !t.subjects.includes(String(subject).trim())) {
+      const err = new Error('الموعد خارج صفوف المعلم أو مواده'); err.status = 403; throw err;
+    }
+    const chosen = Array.isArray(studentIds) ? studentIds : [];
+    if (chosen.some((value) => !mongoose.isValidObjectId(value)) ||
+        await SchoolStudent.countDocuments({ _id: { $in: chosen }, status: 'active', 'assignedTeachers.teacher': t._id }) !== new Set(chosen.map(String)).size) {
+      const err = new Error('الموعد يضم طلاباً خارج تكليفك'); err.status = 403; throw err;
     }
   }
 
@@ -916,6 +934,15 @@ async function recordGrade(actorUser, schoolContext, data) {
     const err = new Error('الطالب غير موجود أو تم أرشفته');
     err.status = 404;
     throw err;
+  }
+
+  if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const assigned = (student.assignedTeachers || []).some(entry => String(entry.teacher) === String(schoolContext.teacher._id) && entry.subject === String(subject).trim());
+    if (!assigned || !(schoolContext.teacher.subjects || []).includes(String(subject).trim())) {
+      const err = new Error('لا يمكنك رصد درجة لطالب أو مادة خارج تكليفك');
+      err.status = 403;
+      throw err;
+    }
   }
 
   const numScore = Number(score);
@@ -976,6 +1003,13 @@ async function recordAttendance(actorUser, schoolContext, data) {
   if (!student) {
     const err = new Error('الطالب غير موجود');
     err.status = 404;
+    throw err;
+  }
+
+  if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper &&
+      !(student.assignedTeachers || []).some(entry => String(entry.teacher) === String(schoolContext.teacher._id))) {
+    const err = new Error('لا يمكنك تسجيل حضور طالب خارج تكليفك');
+    err.status = 403;
     throw err;
   }
 
@@ -1390,7 +1424,7 @@ async function getStudentTrial(actorUser, schoolContext, studentId) {
 
   const isGuardianOfStudent = schoolContext.isGuardian && String(student.guardian) === String(actorUser._id);
   const isStudentSelf = schoolContext.isStudent && String(student.studentUser) === String(actorUser._id);
-  const isStaff = schoolContext.isTeacher || schoolContext.isManager || schoolContext.isDeveloper;
+  const isStaff = schoolContext.isManager || schoolContext.isDeveloper || (schoolContext.isTeacher && (student.assignedTeachers || []).some((entry) => String(entry.teacher) === String(schoolContext.teacher?._id)));
 
   if (!isGuardianOfStudent && !isStudentSelf && !isStaff) {
     const err = new Error('لا تملك صلاحية الاطلاع على تفاصيل التجربة لهذا الطالب');
@@ -1431,6 +1465,7 @@ async function createAssignment(actorUser, schoolContext, data) {
   }
 
   // Teacher scope check:
+  let scopedStudents = Array.isArray(assignedStudents) ? assignedStudents : [];
   if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
     const t = schoolContext.teacher;
     if (t) {
@@ -1444,6 +1479,29 @@ async function createAssignment(actorUser, schoolContext, data) {
         err.status = 403;
         throw err;
       }
+    }
+  }
+
+  if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const t = schoolContext.teacher;
+    if ((t.grades || []).length && !t.grades.includes(String(grade).trim()) ||
+        (t.sections || []).length && section && !t.sections.includes(String(section).trim())) {
+      const err = new Error('الواجب خارج صفوف المعلم'); err.status = 403; throw err;
+    }
+    if (!scopedStudents.length) {
+      const linked = await SchoolStudent.find({ status: 'active', stage, grade: String(grade).trim(), ...(section ? { section: String(section).trim() } : {}), assignedTeachers: { $elemMatch: { teacher: t._id, subject: String(subject).trim() } } }).select('_id').lean();
+      scopedStudents = linked.map((student) => student._id);
+    }
+    if (!scopedStudents.length || scopedStudents.some((value) => !mongoose.isValidObjectId(value))) {
+      const err = new Error('لا يوجد طلاب مرتبطون بهذا المعلم والمادة'); err.status = 400; throw err;
+    }
+    const count = await SchoolStudent.countDocuments({ _id: { $in: scopedStudents }, status: 'active', stage, grade: String(grade).trim(), ...(section ? { section: String(section).trim() } : {}), assignedTeachers: { $elemMatch: { teacher: t._id, subject: String(subject).trim() } } });
+    if (count !== new Set(scopedStudents.map(String)).size) {
+      const err = new Error('بعض الطلاب خارج تكليف المعلم أو المادة'); err.status = 403; throw err;
+    }
+    if (classroomId) {
+      const classroom = await SchoolClassroom.findOne({ _id: classroomId, teacher: actorUser._id, stage, grade, subject });
+      if (!classroom) { const err = new Error('الصف خارج تكليف المعلم'); err.status = 403; throw err; }
     }
   }
 
@@ -1465,7 +1523,7 @@ async function createAssignment(actorUser, schoolContext, data) {
     title: String(title).trim(),
     description: String(description || '').trim(),
     attachments: Array.isArray(attachments) ? attachments : [],
-    assignedStudents: Array.isArray(assignedStudents) ? assignedStudents.filter(Boolean) : [],
+    assignedStudents: schoolContext.isTeacher ? scopedStudents : (Array.isArray(assignedStudents) ? assignedStudents.filter(Boolean) : []),
     dueAt: dueDate,
     maxScore: numMaxScore,
     allowLateSubmission: allowLateSubmission !== false,
@@ -1499,12 +1557,7 @@ async function listAssignments(actorUser, schoolContext, filters = {}) {
     query.stage = sp.stage;
     query.grade = sp.grade;
     query.status = 'published';
-    query.$or = [
-      { section: '' },
-      { section: sp.section },
-      { section: { $exists: false } },
-      { assignedStudents: sp._id }
-    ];
+    query.$or = [{ assignedStudents: sp._id }, { assignedStudents: { $size: 0 }, section: { $in: ['', sp.section] } }];
   } else if (schoolContext.isGuardian && schoolContext.students?.length) {
     const studentStages = [...new Set(schoolContext.students.map(s => s.stage))];
     const studentGrades = [...new Set(schoolContext.students.map(s => s.grade))];
@@ -1512,9 +1565,7 @@ async function listAssignments(actorUser, schoolContext, filters = {}) {
     query.grade = { $in: studentGrades };
     query.status = 'published';
   } else if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
-    if (!filters.allTeachers) {
-      query.teacher = actorUser._id;
-    }
+    query.teacher = actorUser._id;
   }
 
   const assignments = await SchoolAssignment.find(query)
@@ -1563,7 +1614,15 @@ async function getAssignment(actorUser, schoolContext, assignmentId) {
     throw err;
   }
 
+  if (schoolContext.isTeacher && String(assignment.teacher?._id || assignment.teacher) !== String(actorUser._id) && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const err = new Error('الواجب لمعلم آخر'); err.status = 403; throw err;
+  }
   if (schoolContext.isStudent && schoolContext.studentProfile) {
+    const sp = schoolContext.studentProfile;
+    if (assignment.status !== 'published' || assignment.stage !== sp.stage || assignment.grade !== sp.grade ||
+        (assignment.assignedStudents || []).length && !(assignment.assignedStudents || []).some((id) => String(id) === String(sp._id))) {
+      const err = new Error('الواجب غير مخصص لهذا الطالب'); err.status = 403; throw err;
+    }
     const mySub = await SchoolAssignmentSubmission.findOne({
       assignment: assignment._id,
       student: schoolContext.studentProfile._id
@@ -1602,7 +1661,9 @@ async function updateAssignment(actorUser, schoolContext, assignmentId, updates)
     throw err;
   }
 
-  const allowedFields = ['title', 'description', 'dueAt', 'maxScore', 'allowLateSubmission', 'status', 'attachments', 'assignedStudents', 'subject', 'stage', 'grade', 'section'];
+  const allowedFields = (schoolContext.isManager || schoolContext.isDeveloper)
+    ? ['title', 'description', 'dueAt', 'maxScore', 'allowLateSubmission', 'status', 'attachments', 'assignedStudents', 'subject', 'stage', 'grade', 'section']
+    : ['title', 'description', 'dueAt', 'allowLateSubmission', 'status', 'attachments'];
   for (const f of allowedFields) {
     if (updates[f] !== undefined) {
       if (f === 'dueAt') assignment.dueAt = new Date(updates.dueAt);
@@ -1683,6 +1744,10 @@ async function submitAssignment(actorUser, schoolContext, assignmentId, data) {
     throw err;
   }
 
+  if (assignment.status !== 'published' || assignment.stage !== studentProfile.stage || assignment.grade !== studentProfile.grade ||
+      (assignment.assignedStudents || []).length && !(assignment.assignedStudents || []).some((id) => String(id) === String(studentProfile._id))) {
+    const err = new Error('الواجب غير مخصص لهذا الطالب'); err.status = 403; throw err;
+  }
   if (assignment.status === 'archived' || assignment.status === 'closed') {
     const err = new Error('هذا الواجب مغلق أو مؤرشف ولا يقبل تسليمات جديدة');
     err.status = 400;
@@ -1849,6 +1914,14 @@ async function gradeSubmission(actorUser, schoolContext, assignmentId, submissio
     const err = new Error('التسليم المراد تصحيحه غير موجود');
     err.status = 404;
     throw err;
+  }
+
+  if (String(submission.assignment) !== String(assignment._id)) {
+    const err = new Error('التسليم لا ينتمي لهذا الواجب'); err.status = 403; throw err;
+  }
+  if (schoolContext.isTeacher && !schoolContext.isManager && !schoolContext.isDeveloper) {
+    const scoped = await SchoolStudent.exists({ _id: submission.student, status: 'active', assignedTeachers: { $elemMatch: { teacher: schoolContext.teacher._id, subject: assignment.subject } } });
+    if (!scoped) { const err = new Error('الطالب خارج تكليف المعلم'); err.status = 403; throw err; }
   }
 
   if (isNaN(numScore) || numScore < 0 || numScore > assignment.maxScore) {

@@ -145,18 +145,15 @@
         html += '</div>';
       }
 
-      if (state.schoolContext.isTeacher || state.schoolContext.isManager) {
-        html += '<div class="sumer-sidebar-group">';
-        html += '  <div class="sumer-sidebar-title">مساحة المعلم</div>';
-        html += '  <ul class="sumer-nav-list">';
-        html += '    <li class="sumer-nav-item' + (currentHash === '#teacher/overview' ? ' active' : '') + '">';
-        html += '      <a href="#teacher/overview"><span class="sumer-nav-icon">' + ICONS.teacher + '</span><span>لوحة المعلم</span></a>';
-        html += '    </li>';
-        html += '    <li class="sumer-nav-item' + (currentHash === '#teacher/classes' ? ' active' : '') + '">';
-        html += '      <a href="#teacher/classes"><span class="sumer-nav-icon">' + ICONS.school + '</span><span>الفصول والحصص</span></a>';
-        html += '    </li>';
-        html += '  </ul>';
-        html += '</div>';
+      if (state.schoolContext.isTeacher) {
+        html += '<div class="sumer-sidebar-group"><div class="sumer-sidebar-title">مساحة المعلم</div><ul class="sumer-nav-list">';
+        [['overview', 'ملفي ولوحتي'], ['students', 'طلابي'], ['classes', 'صفوفي'], ['schedule', 'جدولي'],
+         ['assignments', 'الواجبات'], ['gradebook', 'الدرجات'], ['attendance', 'الحضور'],
+         ['reports', 'التقارير'], ['curriculum', 'المناهج والقارئ'], ['classroom', 'السبورة'], ['live', 'البث']]
+          .forEach(function (item) {
+            html += '<li class="sumer-nav-item' + (currentHash === '#teacher/' + item[0] ? ' active' : '') + '"><a href="#teacher/' + item[0] + '"><span class="sumer-nav-icon">' + ICONS.teacher + '</span><span>' + item[1] + '</span></a></li>';
+          });
+        html += '</ul></div>';
       }
 
       if (state.schoolContext.isGuardian || state.schoolContext.isManager) {

@@ -1,0 +1,14 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const read = (file) => fs.readFileSync(file, 'utf8');
+const html = read('school.html'), view = read('school/js/views/view-teacher.js');
+assert.match(html, /view-teacher\.js/);
+assert.match(html, /sumer-teacher\.css/);
+assert.match(html, /teacherView\.render\(routeKey, contentMount\)/);
+assert.match(view, /\/api\/school\/teacher\/overview/);
+assert.match(view, /\/api\/school\/assignments/);
+assert.doesNotMatch(view, /Math\.random|fakeStudent|mockStudent/);
+const server = read('server/src/server.js');
+assert.match(server, /\/api\/school\/teacher/);
+console.log('Phase 8 teacher workspace frontend and server mounts present');

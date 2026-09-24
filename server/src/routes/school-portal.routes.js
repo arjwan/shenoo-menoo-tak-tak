@@ -23,7 +23,7 @@ const ids = (rows) => rows.map((row) => row._id);
 async function visibleStudents(req) {
   const context = req.schoolContext || {};
   if (context.isManager || context.isDeveloper) return Student.find({ active: true }).sort({ name: 1 }).lean();
-  if (context.isTeacher && context.teacher) return Student.find({ _id: { $in: context.teacher.assignedStudents || [] }, active: true }).sort({ name: 1 }).lean();
+  if (context.isTeacher && context.teacher) return Student.find({ 'assignedTeachers.teacher': context.teacher._id, active: true }).sort({ name: 1 }).lean();
   if (context.isStudent && context.studentProfile) return [context.studentProfile];
   if (context.isGuardian) return Student.find({ $or: [{ guardian: req.user._id }, { _id: { $in: context.guardian?.students || [] } }], active: true }).sort({ name: 1 }).lean();
   return [];
@@ -127,7 +127,7 @@ router.post('/reports', requireSchoolStaff, async (req, res, next) => {
     if (!teacher) return res.status(403).json({ ok: false, message: 'كتابة التقارير مخصصة لحساب معلم معتمد' });
     const student = await Student.findOne({ _id: req.body.studentId, active: true });
     if (!student) return res.status(404).json({ ok: false, message: 'الطالب غير موجود' });
-    if (teacher && !(teacher.assignedStudents || []).some((id) => String(id) === String(student._id))) return res.status(403).json({ ok: false, message: 'الطالب غير مرتبط بهذا المعلم' });
+    if (!(student.assignedTeachers || []).some((entry) => String(entry.teacher) === String(teacher._id))) return res.status(403).json({ ok: false, message: 'الطالب غير مرتبط بهذا المعلم' });
     const report = await StudentReport.create({ student: student._id, teacher: teacher._id, subject: clean(req.body.subject), level: ['excellent', 'good', 'needs_support'].includes(req.body.level) ? req.body.level : 'good', participation: clean(req.body.participation), homework: clean(req.body.homework), learningBehavior: clean(req.body.learningBehavior), recommendations: clean(req.body.recommendations), visibleToGuardian: req.body.visibleToGuardian !== false, createdBy: req.user._id });
     res.status(201).json({ ok: true, report, message: 'تم حفظ تقرير المعلم' });
   } catch (error) { next(error); }
