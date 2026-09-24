@@ -208,7 +208,7 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
         headers: { Authorization: 'Bearer ' + teacherToken }
       });
       assert.equal(response.status, 200);
-      assert.match(response.headers.get('content-type'), /audio\\/mpeg/);
+      assert.ok(response.headers.get('content-type').startsWith('audio/mpeg'));
       assert.ok(Number(response.headers.get('x-speech-parts')) >= 1);
       assert.deepEqual(Buffer.from(await response.arrayBuffer()), sample);
     } finally {
