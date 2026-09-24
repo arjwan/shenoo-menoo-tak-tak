@@ -20,7 +20,7 @@ const Knowledge = require('../models/SchoolKnowledgeSource');
 const vsvc = require('../services/school-virtual-classroom');
 const curriculumIndex = require('../services/school-curriculum-index');
 const schoolAI = require('../services/school-ai');
-const tts = require('../services/school-virtual-tts');
+const { defaultEngine: tts } = require('../services/school-virtual-tts');
 const speechCache = new Map();
 
 function io(req) {
