@@ -16,7 +16,7 @@
       '</h1><p>' + esc(text) + '</p></header>' + tabs();
   }
   function tabs() {
-    var x = [['overview','اليوم'],['classes','الصفوف'],['students','الطلاب'],['schedule','الجدول'],
+    var x = [['overview','اليوم'],['classes','الصفوف'],['whiteboard','السبورة الذكية'],['students','الطلاب'],['schedule','الجدول'],
       ['attendance','الحضور'],['assignments','الواجبات'],['gradebook','الدرجات'],['reports','التقارير'],['messages','الرسائل']];
     return '<nav class="teacher-tabs">' + x.map(function (i) {
       var h = '#teacher/' + i[0];
@@ -68,6 +68,12 @@
       card('تكليفاتي','<div class="teacher-chips">'+arr(t.subjects).concat(arr(t.grades)).map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div>')+
       card('أدوات الصف','<div class="teacher-actions"><a href="/school-live.html">الصف المباشر</a><a href="/school-virtual-classroom.html">السبورة والصف</a><a href="#teacher/schedule">الجدول</a></div>');
   }
+  function whiteboard(){
+    var t=cache.teacher||{};
+    return head('السبورة الذكية','سبورة خاصة بالمعلم الحقيقي؛ لا يعدلها المعلم الافتراضي إلا إذا شاركت المحتوى معه.')+
+      card('سبورة جديدة','<form id="teacher-whiteboard" class="teacher-form"><label>العنوان<input name="title" required></label><label>المرحلة<select name="stage" required>'+arr(t.stages).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الصف<select name="grade" required>'+arr(t.grades).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الشعبة<input name="section" value="أ" required></label><label>المادة<select name="subject" required>'+arr(t.subjects).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الدرس<input name="lesson"></label><label>المشاركة<select name="visibility"><option value="PRIVATE">خاصة بي</option><option value="STUDENTS">نشر للطلاب</option></select></label><label class="wide">محتوى السبورة<textarea name="notes" rows="10" placeholder="اكتب الشرح، المسائل، المطلوب مراجعته..."></textarea></label><label><input type="checkbox" name="sharedWithVirtualTeacher" value="true"> مشاركة نسخة مع المعلم الافتراضي للمراجعة</label><button>حفظ السبورة</button></form><p><a class="sumer-btn sumer-btn-outline" href="/school-virtual-classroom.html">فتح أدوات الصف والسبورة التفاعلية</a></p>');
+  }
+
   function students() {
     var pending=cache.requests.filter(function(x){return x.status==='PENDING';});
     return head('طلابي','كل مرحلة وصف ومادة مستقلة. الإضافة وفك الارتباط يتمان بطلب وموافقة ولي الأمر.') +
@@ -121,7 +127,7 @@
   }
   function renderNow() {
     var key=route.split('?')[0].replace('#teacher/','');
-    var f={overview:overview,classes:classes,students:students,schedule:schedule,attendance:attendance,assignments:assignments,gradebook:gradebook,reports:reports,messages:messages}[key]||overview;
+    var f={overview:overview,classes:classes,whiteboard:whiteboard,students:students,schedule:schedule,attendance:attendance,assignments:assignments,gradebook:gradebook,reports:reports,messages:messages}[key]||overview;
     mount.innerHTML=f();
   }
   function formData(form){var o={};new FormData(form).forEach(function(v,k){o[k]=v;});return o;}
@@ -131,6 +137,7 @@
     mount.addEventListener('submit',function(ev){
       var f=ev.target;if(!f.id&&!f.classList.contains('teacher-grade-group'))return;ev.preventDefault();var b=formData(f),p;
       if(f.id==='teacher-student-search'){api.request('/api/school/management/teacher-student-candidates?q='+encodeURIComponent(b.q)).then(function(r){var list=payload(r,'students')||[];resultBox('teacher-candidates',list.length?'<div class="teacher-list">'+list.map(function(x){return '<div class="teacher-row"><div><b>'+esc(x.name)+'</b><small>'+esc([x.stage,x.grade,x.section].filter(Boolean).join(' · '))+'</small></div><button data-add-student="'+esc(x._id)+'">طلب إضافة</button></div>';}).join('')+'</div>':empty('لا توجد نتائج ضمن مراحل وصفوف تكليفك.'));});return;}
+      if(f.id==='teacher-whiteboard'){b.sharedWithVirtualTeacher=b.sharedWithVirtualTeacher==='true';p=send('/api/school/management/whiteboards','POST',b);}
       if(f.id==='teacher-exam-alert'){p=send('/api/school/management/schedules','POST',b);}
       if(f.id==='teacher-attendance') p=send('/api/school/management/attendance','POST',b);
       if(f.id==='teacher-assignment'){b.maxScore=Number(b.maxScore);p=send('/api/school/assignments','POST',b);}

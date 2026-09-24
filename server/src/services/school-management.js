@@ -21,6 +21,8 @@ const SchoolAssignment = require('../models/SchoolAssignment');
 const SchoolAssignmentSubmission = require('../models/SchoolAssignmentSubmission');
 const SchoolTeacherStudentRequest = require('../models/SchoolTeacherStudentRequest');
 const SchoolGuardianNotification = require('../models/SchoolGuardianNotification');
+const SchoolWhiteboard = require('../models/SchoolWhiteboard');
+const SchoolGuardianRequest = require('../models/SchoolGuardianRequest');
 
 const { CONSENT_TYPES } = require('../models/GuardianConsent');
 
@@ -2068,6 +2070,50 @@ async function listGuardianNotifications(actorUser, schoolContext) {
   return SchoolGuardianNotification.find(q).populate('student','name stage grade section').sort({createdAt:-1}).limit(100).lean();
 }
 
+async function getStudentDashboard(actorUser, schoolContext) {
+  let student=schoolContext.studentProfile || (schoolContext.isGuardian && schoolContext.students?.[0]);
+  if(student&&student._id) student=await SchoolStudent.findById(student._id);
+  if (!student) { const e=new Error('لا يوجد ملف طالب مرتبط بهذا الحساب'); e.status=403; throw e; }
+  const sid=student._id;
+  const [record,notifications,requests,whiteboards]=await Promise.all([
+    getStudentPermanentRecord(actorUser,schoolContext,String(sid)),
+    SchoolGuardianNotification.find({student:sid}).sort({createdAt:-1}).limit(50).lean(),
+    SchoolTeacherStudentRequest.find({student:sid}).populate('teacher','name subjects').sort({createdAt:-1}).limit(50).lean(),
+    SchoolWhiteboard.find({stage:student.stage,grade:student.grade,section:student.section||'أ',visibility:'STUDENTS',archived:false}).sort({updatedAt:-1}).limit(30).lean()
+  ]);
+  return {...record,notifications,relationshipRequests:requests,whiteboards};
+}
+async function createGuardianRequest(actorUser,schoolContext,data) {
+  if(!schoolContext.isGuardian){const e=new Error('هذه الخدمة لولي الأمر');e.status=403;throw e;}
+  const student=await SchoolStudent.findOne({_id:data.studentId,guardian:actorUser._id,status:{$ne:'archived'}});
+  if(!student){const e=new Error('الطالب غير مرتبط بولي الأمر');e.status=403;throw e;}
+  const request=await SchoolGuardianRequest.create({guardian:actorUser._id,student:student._id,type:data.type||'GENERAL',title:String(data.title||'').trim(),message:String(data.message||'').trim()});
+  await logAudit(actorUser._id,'GUARDIAN_REQUEST_CREATED',student._id,request.title); return request;
+}
+async function listGuardianRequests(actorUser,schoolContext){
+  const q=schoolContext.isGuardian?{guardian:actorUser._id}:{};
+  if(!schoolContext.isGuardian&&!schoolContext.isManager&&!schoolContext.isDeveloper){const e=new Error('غير مصرح');e.status=403;throw e;}
+  return SchoolGuardianRequest.find(q).populate('student','name stage grade section').sort({createdAt:-1}).lean();
+}
+async function listWhiteboards(actorUser,schoolContext,filters={}){
+  const q={archived:false}; ['stage','grade','section','subject'].forEach(k=>{if(filters[k])q[k]=filters[k];});
+  if(schoolContext.isTeacher) q.owner=actorUser._id;
+  else if(schoolContext.isStudent){q.stage=schoolContext.studentProfile.stage;q.grade=schoolContext.studentProfile.grade;q.section=schoolContext.studentProfile.section||'أ';q.visibility='STUDENTS';}
+  else if(schoolContext.isGuardian){q.stage={$in:(schoolContext.students||[]).map(x=>x.stage)};q.visibility='STUDENTS';}
+  return SchoolWhiteboard.find(q).sort({updatedAt:-1}).lean();
+}
+async function saveWhiteboard(actorUser,schoolContext,data){
+  assertTeacherContext(schoolContext);
+  const t=schoolContext.teacher;
+  if(t.stages?.length&&!t.stages.includes(data.stage)){const e=new Error('المرحلة خارج تكليف المعلم');e.status=403;throw e;}
+  if(t.grades?.length&&!t.grades.includes(data.grade)){const e=new Error('الصف خارج تكليف المعلم');e.status=403;throw e;}
+  if(t.subjects?.length&&!t.subjects.includes(data.subject)){const e=new Error('المادة خارج تكليف المعلم');e.status=403;throw e;}
+  let board=data.id?await SchoolWhiteboard.findOne({_id:data.id,owner:actorUser._id}):null;
+  if(!board) board=new SchoolWhiteboard({owner:actorUser._id});
+  ['title','stage','grade','section','subject','lesson','visibility','notes','strokes','sharedWithVirtualTeacher'].forEach(k=>{if(data[k]!==undefined)board[k]=data[k];});
+  await board.save(); await logAudit(actorUser._id,'WHITEBOARD_SAVED',actorUser._id,board.title); return board;
+}
+
 module.exports = {
   logAudit,
   searchRealUsers,
@@ -2121,5 +2167,10 @@ module.exports = {
   requestStudentRemoval,
   listTeacherStudentRequests,
   decideTeacherStudentRequest,
-  listGuardianNotifications
+  listGuardianNotifications,
+  getStudentDashboard,
+  createGuardianRequest,
+  listGuardianRequests,
+  listWhiteboards,
+  saveWhiteboard
 };

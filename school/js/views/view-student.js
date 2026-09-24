@@ -127,7 +127,9 @@
       { route: '#student/progress', label: 'مسار التقدم', icon: ICONS.cuneiform },
       { route: '#student/teachers', label: 'المعلمون', icon: ICONS.teacher },
       { route: '#student/curriculum', label: 'مناهج مرحلتي', icon: ICONS.book },
-      { route: '#student/reader', label: 'القارئ المزدوج', icon: ICONS.book }
+      { route: '#student/reader', label: 'القارئ المزدوج', icon: ICONS.book },
+      { route: '#student/alerts', label: 'التنبيهات والإنذارات', icon: ICONS.alert },
+      { route: '#student/whiteboards', label: 'السبورات', icon: '🧠' }
     ];
 
     html += '  <nav class="sumer-student-nav" aria-label="أقسام مساحة الطالب">';
@@ -1250,6 +1252,23 @@
     }
   }
 
+
+  function renderAlerts(container,student,data){
+    var n=(data&&data.notifications)||[], r=(data&&data.relationshipRequests)||[], schedules=(data&&data.schedules)||[];
+    var html='<div class="sumer-student-container">'+renderStudentHeader(student,'#student/alerts');
+    html+='<div class="sumer-grid"><section class="sumer-card"><div class="sumer-card-header"><h3>التنبيهات والإنذارات</h3></div><div class="sumer-card-body">';
+    html+=n.length?n.map(function(x){return '<div class="sumer-alert"><strong>'+escapeHtml(x.title)+'</strong><p>'+escapeHtml(x.message)+'</p></div>';}).join(''):ui.renderEmptyState({title:'لا توجد إنذارات',description:'ستظهر هنا تنبيهات الغياب والتوجيهات.',icon:ICONS.alert});
+    html+='</div></section><section class="sumer-card"><div class="sumer-card-header"><h3>الامتحانات والمراجعات</h3></div><div class="sumer-card-body">';
+    var exams=schedules.filter(function(x){return x.type==='EXAM'||x.type==='GENERAL_REVIEW';});
+    html+=exams.length?exams.map(function(x){return '<div><b>'+escapeHtml(x.title)+'</b><p>'+escapeHtml(x.subject||'')+' · '+escapeHtml(x.scheduledAt?new Date(x.scheduledAt).toLocaleString('ar-IQ'):'')+'</p><small>'+escapeHtml(x.description||'')+'</small></div>';}).join('<hr>'):ui.renderEmptyState({title:'لا توجد امتحانات قادمة',description:'يظهر هنا ما يحدده المعلم.',icon:ICONS.calendar});
+    html+='</div></section><section class="sumer-card"><div class="sumer-card-header"><h3>موافقات ولي الأمر</h3></div><div class="sumer-card-body">'+(r.length?r.map(function(x){return '<div><b>'+escapeHtml(x.kind==='REMOVE'?'طلب انسحاب/فك ارتباط':'طلب إضافة معلم')+'</b><p>'+escapeHtml(x.status)+'</p></div>';}).join(''): 'لا توجد طلبات')+'</div></section></div></div>';container.innerHTML=html;
+  }
+  function renderWhiteboards(container,student,boards){
+    var html='<div class="sumer-student-container">'+renderStudentHeader(student,'#student/whiteboards')+'<section class="sumer-card"><div class="sumer-card-header"><h3>السبورات الذكية المحفوظة</h3></div><div class="sumer-card-body">';
+    html+=boards.length?boards.map(function(b){return '<article style="padding:1rem;border:1px solid var(--sumer-border-color);border-radius:12px;margin-bottom:.75rem"><b>'+escapeHtml(b.title)+'</b><p>'+escapeHtml([b.subject,b.lesson,b.grade,b.section&&('شعبة '+b.section)].filter(Boolean).join(' · '))+'</p><div style="white-space:pre-wrap">'+escapeHtml(b.notes||'')+'</div></article>';}).join(''):ui.renderEmptyState({title:'لا توجد سبورات منشورة',description:'عندما يشارك المعلم سبورته ستظهر هنا.',icon:'🧠'});
+    html+='</div></section></div>';container.innerHTML=html;
+  }
+
   // --------------------------------------------------------------------------
   // الموجه الرئيسي لمساحة الطالب - Main Dispatcher
   // --------------------------------------------------------------------------
@@ -1364,6 +1383,10 @@
         }).catch(function () {
           renderProgress(container, student, {});
         });
+      } else if (mainRoute === '#student/alerts') {
+        api.request('/api/school/management/student-dashboard').then(function(x){renderAlerts(container,student,(x.ok&&x.data)||{});}).catch(function(){renderAlerts(container,student,record||{});});
+      } else if (mainRoute === '#student/whiteboards') {
+        api.request('/api/school/management/whiteboards').then(function(x){renderWhiteboards(container,student,(x.ok&&x.whiteboards)||[]);}).catch(function(){renderWhiteboards(container,student,[]);});
       } else if (mainRoute === '#student/schedule' || mainRoute === '#student/classes') {
         api.getSchedules({ stage: student.stage, grade: student.grade }).then(function (schRes) {
           var schedules = (schRes.ok && schRes.data && schRes.data.schedules) || (record && record.schedules) || [];
@@ -1402,6 +1425,8 @@
     renderAttendance: renderAttendance,
     renderProgress: renderProgress,
     renderSchedule: renderSchedule,
-    renderClassroom: renderClassroom
+    renderClassroom: renderClassroom,
+    renderAlerts: renderAlerts,
+    renderWhiteboards: renderWhiteboards
   };
 }));

@@ -33,10 +33,13 @@
     '#student/teachers':    { workspace: 'student', title: 'معلمو الطالب', roleRequired: 'student', phase: 7 },
     '#student/curriculum':  { workspace: 'student', title: 'مناهج الطالب الدراسية', roleRequired: 'student', phase: 7 },
     '#student/reader':      { workspace: 'student', title: 'القارئ الرقمي المزدوج', roleRequired: 'student', phase: 7 },
+    '#student/alerts':      { workspace: 'student', title: 'التنبيهات والإنذارات والامتحانات', roleRequired: 'student', phase: 10 },
+    '#student/whiteboards': { workspace: 'student', title: 'السبورات الذكية المحفوظة', roleRequired: 'student', phase: 10 },
 
     // 3. مساحة عمل المعلم (Teacher Workspace)
     '#teacher/overview':    { workspace: 'teacher', title: 'لوحة المعلم اليومية', roleRequired: 'teacher', phase: 8 },
     '#teacher/classes':     { workspace: 'teacher', title: 'الفصول والحصص', roleRequired: 'teacher', phase: 8 },
+    '#teacher/whiteboard':  { workspace: 'teacher', title: 'السبورة الذكية الخاصة', roleRequired: 'teacher', phase: 10 },
     '#teacher/students':    { workspace: 'teacher', title: 'قوائم الطلاب المكلفين', roleRequired: 'teacher', phase: 8 },
     '#teacher/schedule':    { workspace: 'teacher', title: 'جدول مواعيد الحصص', roleRequired: 'teacher', phase: 8 },
     '#teacher/attendance':  { workspace: 'teacher', title: 'رصد الحضور والغياب', roleRequired: 'teacher', phase: 8 },
