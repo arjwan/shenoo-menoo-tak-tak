@@ -375,10 +375,7 @@
     $('topTeacherName').textContent = teacher.name || 'أ. سارة الذكية';
 
     // 3) Left Teacher Panel
-    $('teacherDisplayName').textContent = teacher.name || 'أ. سارة الذكية';
-    $('teacherRoleTag').textContent = teacher.title || 'معلم رياضيات افتراضي';
-    var dialectObj = core.getDialect(teacher.dialect);
-    $('teacherDialectLabel').textContent = dialectObj.name;
+    updateTeacherDisplay(teacher);
 
     // 4) Check Host Role for End Button
     // If authenticated user is host, show End Session button
@@ -629,8 +626,18 @@
     // Right Column
     if (slide.rightColumn) {
       $('boardRightTitle').textContent = slide.rightColumn.title || '';
+      var rightItems = $('boardRightItems');
+      if (rightItems) {
+        rightItems.replaceChildren();
+        (slide.rightColumn.items || []).filter(Boolean).forEach(function (item) {
+          var entry = document.createElement('p');
+          entry.textContent = item;
+          rightItems.appendChild(entry);
+        });
+      }
+      $('boardRightDiagram').hidden = slide.rightColumn.diagram !== 'number_line';
       if (slide.example) {
-        $('boardRightExample').innerHTML = '<div class="example-title">مثال:</div><div class="example-body">' + slide.example + '</div>';
+        $('boardRightExample').textContent = slide.example;
         show('boardRightExample');
       } else {
         hide('boardRightExample');
@@ -1385,8 +1392,12 @@
 
   function updateTeacherDisplay(teacher) {
     if (!teacher) return;
+    var profile = core.getProfile(teacher.profileId);
+    var avatar = $('teacherAvatarImg');
+    if (avatar) avatar.src = teacher.avatar || profile.avatar || 'school-assets/virtual-teachers/math.svg';
     $('topTeacherName').textContent = teacher.name;
     $('teacherDisplayName').textContent = teacher.name;
+    if ($('rosterTeacherName')) $('rosterTeacherName').textContent = teacher.name;
     $('teacherRoleTag').textContent = teacher.title;
     $('teacherDialectLabel').textContent = core.getDialect(teacher.dialect).name;
   }
@@ -1500,7 +1511,7 @@
       });
 
       state.socket.on('school:virtual:whiteboard', function (data) {
-        if (!data || data.code !== state.code || !data.whiteboardData || state.isHost) return;
+        if (!data || data.code !== state.code || !data.whiteboardData) return;
         var board = data.whiteboardData;
         if (!board.slides || !board.slides.length) return;
         state.whiteboard = core.createWhiteboardState(board.slides);
