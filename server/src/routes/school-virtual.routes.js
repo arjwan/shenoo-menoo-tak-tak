@@ -15,6 +15,7 @@ const VirtualSession = require('../models/VirtualClassroomSession');
 const VirtualProfile = require('../models/VirtualTeacherProfile');
 const VirtualMessage = require('../models/VirtualClassroomMessage');
 const Student = require('../models/SchoolStudent');
+const SchoolTeacher = require('../models/SchoolTeacher');
 const Knowledge = require('../models/SchoolKnowledgeSource');
 const vsvc = require('../services/school-virtual-classroom');
 const curriculumIndex = require('../services/school-curriculum-index');
@@ -77,9 +78,8 @@ router.post('/sessions', async (req, res, next) => {
   try {
     // Permission check: Real teacher/admin/developer/guardian can create
     const role = String(req.user.role || '').toLowerCase();
-    const isPrivileged = ['admin', 'developer', 'teacher'].includes(role) ||
-      Boolean(req.user.isTeacher) ||
-      Boolean(req.user.profile?.profession && /معلم|مدرس|أستاذ/.test(req.user.profile.profession));
+    const teacherProfile = await SchoolTeacher.findOne({ user: req.user._id, status: 'active' }).lean();
+    const isPrivileged = ['admin', 'developer'].includes(role) || Boolean(teacherProfile);
 
     // Also allow any authenticated account that is a guardian of students
     const studentCount = await Student.countDocuments({ guardian: req.user._id, active: true });
@@ -204,6 +204,10 @@ router.get('/sessions/:code', async (req, res, next) => {
   try {
     const session = await loadSessionByCode(req.params.code, req, res);
     if (!session) return;
+    const participant = vsvc.findParticipant(session, req.user._id);
+    if (!vsvc.canManage(session, req.user) && (!participant || participant.leftAt)) {
+      return res.status(403).json({ ok: false, message: 'انضم إلى الحصة أولاً لعرض تفاصيلها' });
+    }
     res.json({
       ok: true,
       session: vsvc.publicSession(session, { roster: true }),
@@ -440,10 +444,14 @@ router.post('/sessions/:code/questions', async (req, res, next) => {
   try {
     const session = await loadSessionByCode(req.params.code, req, res);
     if (!session) return;
+    if (session.status !== 'active') return res.status(409).json({ ok: false, message: 'الحصة منتهية' });
+    const participant = vsvc.findParticipant(session, req.user._id);
+    if ((!participant || participant.leftAt) && !vsvc.canManage(session, req.user)) {
+      return res.status(403).json({ ok: false, message: 'انضم إلى الحصة أولاً لطرح السؤال' });
+    }
     const text = String(req.body.text || '').trim();
     if (!text) return res.status(400).json({ ok: false, message: 'نص السؤال مطلوب' });
 
-    const participant = vsvc.findParticipant(session, req.user._id);
     const senderName = participant ? participant.name : vsvc.accountName(req.user);
     const studentId = participant?.student || null;
 
@@ -574,6 +582,10 @@ router.get('/sessions/:code/messages', async (req, res, next) => {
   try {
     const session = await loadSessionByCode(req.params.code, req, res);
     if (!session) return;
+    const participant = vsvc.findParticipant(session, req.user._id);
+    if ((!participant || participant.leftAt) && !vsvc.canManage(session, req.user)) {
+      return res.status(403).json({ ok: false, message: 'سجل الرسائل لأعضاء الحصة فقط' });
+    }
     const messages = await VirtualMessage.find({ session: session._id })
       .sort({ timestamp: 1 })
       .limit(200);

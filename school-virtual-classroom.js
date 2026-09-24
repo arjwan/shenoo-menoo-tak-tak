@@ -30,6 +30,7 @@
     speechSynthesisActive: true,
     socket: null
   };
+  var displayedMessages = new Set();
 
   // Helper selectors
   var $ = function (id) { return document.getElementById(id); };
@@ -99,7 +100,7 @@
     bindSettingsControls();
 
     if (codeFromUrl) {
-      loadSession(codeFromUrl);
+      joinVirtualSession(codeFromUrl, '');
     } else {
       enterLobby();
     }
@@ -173,10 +174,13 @@
       list.forEach(function (s) {
         var chip = document.createElement('div');
         chip.className = 'session-chip';
-        chip.innerHTML = '<div><b>' + (s.subject || 'مادة') + ':</b> ' + (s.lesson || 'درس') + ' <small>(' + s.grade + ')</small></div>' +
-          '<span class="badge">' + s.code + '</span>';
+        var title = document.createElement('div');
+        title.textContent = (s.subject || 'مادة') + ': ' + (s.lesson || 'درس') + ' (' + (s.grade || '') + ')';
+        var badge = document.createElement('span');
+        badge.className = 'badge'; badge.textContent = s.code;
+        chip.appendChild(title); chip.appendChild(badge);
         chip.addEventListener('click', function () {
-          loadSession(s.code);
+          joinVirtualSession(s.code, $('joinStudent').value);
         });
         box.appendChild(chip);
       });
@@ -251,6 +255,8 @@
           return;
         }
 
+        var createButton = $('createVirtualBtn');
+        createButton.disabled = true;
         api('/api/school/virtual/sessions', {
           method: 'POST',
           body: {
@@ -266,7 +272,7 @@
           loadSession(res.code);
         }).catch(function (err) {
           notify('خطأ في بدء الحصة: ' + err.message, true);
-        });
+        }).finally(function () { createButton.disabled = false; });
       });
     }
 
@@ -280,14 +286,7 @@
           notify('رمز الحصة يجب أن يتكون من 6 أحرف صالحة.', true);
           return;
         }
-        api('/api/school/virtual/sessions/' + encodeURIComponent(code) + '/join', {
-          method: 'POST',
-          body: { studentId: studentId || undefined }
-        }).then(function () {
-          loadSession(code);
-        }).catch(function (err) {
-          notify('تعذر الانضمام: ' + err.message, true);
-        });
+        joinVirtualSession(code, studentId);
       });
     }
 
@@ -309,6 +308,17 @@
   // -------------------------------------------------------------
   // Active Room Mode
   // -------------------------------------------------------------
+  function joinVirtualSession(code, studentId) {
+    code = core.normalizeCode(code);
+    if (!code) { notify('رمز الحصة غير صالح.', true); return; }
+    api('/api/school/virtual/sessions/' + encodeURIComponent(code) + '/join', {
+      method: 'POST', body: { studentId: studentId || undefined }
+    }).then(function () { loadSession(code); }).catch(function (err) {
+      notify('تعذر الانضمام: ' + err.message, true);
+      enterLobby();
+    });
+  }
+
   function loadSession(code) {
     code = core.normalizeCode(code);
     if (!code) {
@@ -342,9 +352,9 @@
 
   function renderClassroom(session) {
     // 1) Metadata bar
-    $('metaLesson').innerHTML = '<b>الدرس:</b> ' + (session.lesson || 'غير محدد');
-    $('metaSubject').innerHTML = '<b>المادة:</b> ' + (session.subject || 'غير محدد');
-    $('metaGrade').innerHTML = '<b>الصف:</b> ' + (session.grade || 'غير محدد');
+    $('metaLesson').textContent = 'الدرس: ' + (session.lesson || 'غير محدد');
+    $('metaSubject').textContent = 'المادة: ' + (session.subject || 'غير محدد');
+    $('metaGrade').textContent = 'الصف: ' + (session.grade || 'غير محدد');
     $('metaSource').textContent = '📖 ' + (session.sourceTitle || session.sourceBookName || 'المنهج العراقي');
 
     // 2) Top Teacher Quick Indicator
@@ -364,9 +374,11 @@
       if (d && d.hosting && d.hosting.code === session.code) {
         state.isHost = true;
         show('endClassBtn');
+        show('virtualAttendanceBtn');
       } else {
         state.isHost = false;
         hide('endClassBtn');
+        hide('virtualAttendanceBtn');
       }
     }).catch(function () {});
 
@@ -466,7 +478,10 @@
       state.socket = null;
     }
     state.code = '';
+    state.isHost = false;
+    hide('virtualAttendancePanel');
     state.session = null;
+    displayedMessages.clear();
   }
 
   window.addEventListener('pagehide', cleanupSession);
@@ -964,7 +979,7 @@
           if (res.question) appendMessage(res.question);
           if (res.answer) {
             appendMessage(res.answer);
-            speakAiAnswer(res.answer.text);
+            if (!state.socket || !state.socket.connected) speakAiAnswer(res.answer.text);
           }
         }).catch(function (err) {
           if (err.status === 503) {
@@ -1038,6 +1053,7 @@
       var box = $('chatMessagesBox');
       if (!box) return;
       box.innerHTML = '';
+      displayedMessages.clear();
       if (!messages.length) {
         show('chatEmptyState');
         return;
@@ -1050,6 +1066,9 @@
   }
 
   function appendMessage(m) {
+    var id = m._id || m.id;
+    if (id && displayedMessages.has(String(id))) return;
+    if (id) displayedMessages.add(String(id));
     hide('chatEmptyState');
     var box = $('chatMessagesBox');
     if (!box) return;
@@ -1060,8 +1079,11 @@
     var time = new Date(m.timestamp || Date.now());
     var timeStr = time.getHours() + ':' + (time.getMinutes() < 10 ? '0' : '') + time.getMinutes();
 
-    bubble.innerHTML = '<div class="msg-sender">' + m.senderName + ' <span class="msg-time">' + timeStr + '</span></div>' +
-      '<div class="msg-text">' + m.text + '</div>';
+    var sender = document.createElement('div'); sender.className = 'msg-sender';
+    sender.textContent = (m.senderName || 'مشارك') + ' · ' + timeStr;
+    var content = document.createElement('div'); content.className = 'msg-text';
+    content.textContent = m.text || '';
+    bubble.appendChild(sender); bubble.appendChild(content);
 
     box.appendChild(bubble);
     box.scrollTop = box.scrollHeight;
@@ -1093,6 +1115,21 @@
     var modal = $('settingsModal');
     var closeBtn = $('closeSettingsBtn');
     var saveBtn = $('saveSettingsBtn');
+    var attendanceBtn = $('virtualAttendanceBtn');
+    if (attendanceBtn) attendanceBtn.addEventListener('click', function () {
+      if (!state.code || !state.isHost) return;
+      api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/attendance').then(function (result) {
+        var rows = $('virtualAttendanceRows'); rows.replaceChildren();
+        (result.attendance || []).forEach(function (person) {
+          var row = document.createElement('p');
+          row.textContent = (person.name || 'طالب') + ' — ' + (person.minutesPresent || 0) + ' دقيقة';
+          rows.appendChild(row);
+        });
+        if (!rows.childNodes.length) rows.textContent = 'لا يوجد حضور مسجل بعد.';
+        show('virtualAttendancePanel');
+      }).catch(function (error) { notify(error.message, true); });
+    });
+    $('closeVirtualAttendance').addEventListener('click', function () { hide('virtualAttendancePanel'); });
 
     function openModal() {
       if (!modal) return;
@@ -1185,6 +1222,7 @@
       state.socket.on('school:virtual:message', function (data) {
         if (data && data.message && data.code === state.code) {
           appendMessage(data.message);
+          if (data.message.senderType === 'teacher_ai') speakAiAnswer(data.message.text);
         }
       });
 

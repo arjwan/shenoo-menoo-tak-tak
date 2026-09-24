@@ -78,6 +78,10 @@ const schema = new mongoose.Schema({
   trialStatus: { type: String, enum: ['active', 'expired', 'converted'], default: 'active', index: true }
 }, { timestamps: true });
 
+// A guardian can register multiple children without separate User accounts.
+// Only linked student accounts must be unique.
+schema.index({ studentUser: 1 }, { unique: true, partialFilterExpression: { studentUser: { $type: 'objectId' } }, name: 'studentUser_linked_unique' });
+
 schema.methods.getTrialInfo = function(now) {
   return computeTrialInfo(this, now);
 };

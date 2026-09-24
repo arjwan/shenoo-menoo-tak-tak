@@ -146,9 +146,11 @@ check('visible camera indicator, muted local preview, no recording / capture / f
   assert.match(js, /show\('cameraIndicator', true\)/);
   assert.match(js, /show\('cameraIndicator', false\)/);
   assert.match(html, /<video id="localVideo" autoplay playsinline muted>/);
-  for (const forbidden of [/MediaRecorder/, /captureStream/, /FaceDetector/, /getContext\(/, /drawImage/, /ImageCapture/, /face/i]) {
+  for (const forbidden of [/MediaRecorder/, /captureStream/, /FaceDetector/, /ImageCapture/, /face/i]) {
     assert.doesNotMatch(jsCode, forbidden, 'forbidden API in school-live.js: ' + forbidden);
   }
+  assert.match(js, /\$\('liveBoard'\), ctx = canvas\.getContext\('2d'\)/, 'canvas is used for the teaching whiteboard');
+  assert.doesNotMatch(jsCode, /drawImage\(\s*(?:video|localVideo|teacherVideo)/, 'camera frames are never drawn to canvas');
   assert.match(html, /لا تسجيل للصوت أو الفيديو ولا تحليل للوجوه/);
 });
 

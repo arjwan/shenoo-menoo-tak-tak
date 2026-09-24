@@ -20,6 +20,7 @@ const mongoose = require('mongoose');
 const { requireAuth } = require('../middleware/auth');
 const Classroom = require('../models/SchoolClassroom');
 const Student = require('../models/SchoolStudent');
+const SchoolTeacher = require('../models/SchoolTeacher');
 const catalog = require('../data/iraqi-curriculum-catalog');
 const live = require('../services/school-live-classroom');
 const events = require('../services/school-live-events');
@@ -60,6 +61,11 @@ router.use(requireAuth);
 
 router.post('/classrooms', async (req, res, next) => {
   try {
+    const platformRole = String(req.user.role || '').toLowerCase();
+    const teacherProfile = await SchoolTeacher.findOne({ user: req.user._id, status: 'active' }).lean();
+    if (!teacherProfile && !['admin', 'developer'].includes(platformRole)) {
+      return res.status(403).json({ ok: false, message: 'إنشاء الحصة المباشرة متاح للمعلم المعتمد وإدارة المدرسة فقط' });
+    }
     const existing = await Classroom.findOne({ teacher: req.user._id, status: 'live' });
     if (existing) {
       return res.status(409).json({ ok: false, message: 'لديك حصة مباشرة جارية بالفعل', classroom: live.publicClassroom(existing, { roster: true }), room: live.roomName(existing), iceServers: iceServers() });
@@ -191,6 +197,48 @@ router.post('/classrooms/:code/mute', async (req, res, next) => {
       events.emitUpdate(io(req), classroom);
     }
     res.json({ ok: true, participant: live.publicParticipant(result.participant) });
+  } catch (e) { next(e); }
+});
+
+router.post('/classrooms/:code/mute-all', async (req, res, next) => {
+  try {
+    const classroom = await loadByCode(req, res);
+    if (!classroom) return;
+    if (!live.isTeacher(classroom, req.user._id)) return res.status(403).json({ ok: false, message: 'كتم الطلاب من صلاحية المعلم فقط' });
+    if (classroom.status !== 'live') return res.status(409).json({ ok: false, message: 'انتهت الحصة' });
+    const muted = req.body?.muted !== false;
+    const targets = (classroom.participants || []).filter(p => p.role === 'student' && !p.leftAt && !p.kicked);
+    for (const participant of targets) live.setMute(classroom, req.user._id, String(participant.user), muted);
+    await classroom.save();
+    targets.forEach(p => events.emitToRoom(io(req), classroom, 'school:classroom:mute', { userId: String(p.user), muted }));
+    events.emitUpdate(io(req), classroom);
+    res.json({ ok: true, muted, count: targets.length });
+  } catch (e) { next(e); }
+});
+
+router.get('/classrooms/:code/whiteboard', async (req, res, next) => {
+  try {
+    const classroom = await loadByCode(req, res);
+    if (!classroom) return;
+    if (!canSeeRoster(classroom, req.user)) return res.status(403).json({ ok: false, message: 'السبورة لأعضاء الحصة فقط' });
+    res.json({ ok: true, drawing: classroom.whiteboard?.drawing || '', updatedAt: classroom.whiteboard?.updatedAt || null });
+  } catch (e) { next(e); }
+});
+
+router.post('/classrooms/:code/whiteboard', async (req, res, next) => {
+  try {
+    const classroom = await loadByCode(req, res);
+    if (!classroom) return;
+    if (!live.isTeacher(classroom, req.user._id)) return res.status(403).json({ ok: false, message: 'السبورة للمعلم فقط' });
+    if (classroom.status !== 'live') return res.status(409).json({ ok: false, message: 'انتهت الحصة' });
+    const drawing = req.body?.drawing;
+    if (typeof drawing !== 'string' || drawing.length > 500000 || (drawing && !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(drawing))) {
+      return res.status(400).json({ ok: false, message: 'بيانات السبورة غير صالحة أو كبيرة جداً' });
+    }
+    classroom.whiteboard = { drawing, updatedAt: new Date() };
+    await classroom.save();
+    events.emitToRoom(io(req), classroom, 'school:classroom:whiteboard', { drawing, updatedAt: classroom.whiteboard.updatedAt });
+    res.json({ ok: true, updatedAt: classroom.whiteboard.updatedAt });
   } catch (e) { next(e); }
 });
 

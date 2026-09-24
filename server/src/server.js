@@ -7,6 +7,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const GameRoom = require('./models/GameRoom');
 const SmartFriend = require('./models/SmartFriend');
+const SchoolStudent = require('./models/SchoolStudent');
 
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
@@ -127,4 +128,15 @@ app.use((error, req, res, next) => { if (error instanceof multer.MulterError) re
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
 const port=Number(process.env.PORT||3000);
 async function migrateSmartFriendIndexes(){try{const indexes=await SmartFriend.collection.indexes();const legacy=indexes.find(i=>i.unique&&i.key&&i.key.user===1&&!('slot' in i.key));if(legacy){await SmartFriend.collection.dropIndex(legacy.name);console.log('Removed legacy SmartFriend unique user index:',legacy.name);}await SmartFriend.collection.createIndex({user:1,slot:1},{unique:true,name:'user_1_slot_1'});}catch(error){console.error('SmartFriend index migration failed:',error.message);}}
-connectDB().then(async()=>{await migrateSmartFriendIndexes();const expireRooms=()=>GameRoom.updateMany({isActive:{$ne:false},expiresAt:{$ne:null,$lte:new Date()}},{$set:{isActive:false,'gameState.status':'finished','gameState.updatedAt':new Date()}}).catch(error=>console.error('Game room cleanup failed:',error.message));expireRooms();const cleanupTimer=setInterval(expireRooms,15*60*1000);cleanupTimer.unref();const io=attachSocket(httpServer);attachSchoolSocket(io);app.set('io',io);httpServer.listen(port,()=>console.log(`Server running on http://localhost:${port}`));}).catch(error=>{console.error('Server startup failed:',error.message);process.exit(1);});
+async function migrateSchoolStudentIndexes(){
+  let indexes=[];
+  try{indexes=await SchoolStudent.collection.indexes();}catch(error){if(error.code!==26)throw error;}
+  for(const index of indexes){
+    if(index.unique&&index.key&&Object.keys(index.key).length===1&&index.key.studentUser===1&&!index.partialFilterExpression){
+      await SchoolStudent.collection.dropIndex(index.name);
+      console.log('Removed legacy SchoolStudent null-unique index:',index.name);
+    }
+  }
+  await SchoolStudent.collection.createIndex({studentUser:1},{unique:true,partialFilterExpression:{studentUser:{$type:'objectId'}},name:'studentUser_linked_unique'});
+}
+connectDB().then(async()=>{await migrateSmartFriendIndexes();await migrateSchoolStudentIndexes();const expireRooms=()=>GameRoom.updateMany({isActive:{$ne:false},expiresAt:{$ne:null,$lte:new Date()}},{$set:{isActive:false,'gameState.status':'finished','gameState.updatedAt':new Date()}}).catch(error=>console.error('Game room cleanup failed:',error.message));expireRooms();const cleanupTimer=setInterval(expireRooms,15*60*1000);cleanupTimer.unref();const io=attachSocket(httpServer);attachSchoolSocket(io);app.set('io',io);httpServer.listen(port,()=>console.log(`Server running on http://localhost:${port}`));}).catch(error=>{console.error('Server startup failed:',error.message);process.exit(1);});
