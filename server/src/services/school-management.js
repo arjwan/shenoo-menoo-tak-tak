@@ -2016,7 +2016,7 @@ async function createTeacherStudentRequest(actorUser, schoolContext, data) {
   const pending=await SchoolTeacherStudentRequest.findOne({teacher:t._id,student:student._id,kind:'ADD',status:'PENDING'});
   if (pending) { const e=new Error('يوجد طلب إضافة معلق لهذا الطالب'); e.status=409; throw e; }
   const request=await SchoolTeacherStudentRequest.create({teacher:t._id,teacherUser:actorUser._id,student:student._id,guardian:student.guardian,kind:'ADD',requestedBy:'TEACHER',stage:student.stage,grade:student.grade,section:student.section||'أ',subjects,status:'PENDING',note:String(data.note||'')});
-  await logAudit(actorUser._id,'TEACHER_STUDENT_ADD_REQUESTED',student._id,\`طلب إضافة \${student.name}: \${subjects.join('، ')}\`);
+  await logAudit(actorUser._id,'TEACHER_STUDENT_ADD_REQUESTED',student._id,`طلب إضافة ${student.name}: ${subjects.join('، ')}`);
   return request.populate('student','name stage grade section');
 }
 async function requestStudentRemoval(actorUser, schoolContext, studentId, data={}) {
@@ -2058,7 +2058,7 @@ async function decideTeacherStudentRequest(actorUser, schoolContext, requestId, 
     }
     await student.save();
   }
-  await logAudit(actorUser._id,approve?'TEACHER_STUDENT_REQUEST_APPROVED':'TEACHER_STUDENT_REQUEST_REJECTED',request.student,\`\${request.kind} \${request._id}\`);
+  await logAudit(actorUser._id,approve?'TEACHER_STUDENT_REQUEST_APPROVED':'TEACHER_STUDENT_REQUEST_REJECTED',request.student,`${request.kind} ${request._id}`);
   return request;
 }
 async function listGuardianNotifications(actorUser, schoolContext) {
