@@ -201,7 +201,9 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     assert.ok(message);
     const engine = require('../src/services/school-virtual-tts').defaultEngine;
     const original = engine.synthesizePart;
+    const originalConfigured = engine.isConfigured;
     const sample = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(128)]);
+    engine.isConfigured = () => true;
     engine.synthesizePart = async () => ({ bytes: sample, type: 'audio/mpeg', provider: 'test' });
     try {
       const response = await fetch(baseUrl + `/api/school/virtual/sessions/${sessionCode}/messages/${message._id}/speech?part=0`, {
@@ -213,6 +215,7 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
       assert.deepEqual(Buffer.from(await response.arrayBuffer()), sample);
     } finally {
       engine.synthesizePart = original;
+      engine.isConfigured = originalConfigured;
     }
   });
 
@@ -319,7 +322,7 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     // Teacher updates whiteboard -> 200
     const teachRes = await call('POST', `/api/school/virtual/sessions/${sessionCode}/whiteboard`, {
       token: teacherToken,
-      body: { drawing: 'sample-drawing-stroke-json' }
+      body: { drawing: 'data:image/png;base64,iVBORw0KGgo=' }
     });
     assert.equal(teachRes.status, 200);
     assert.ok(teachRes.data.ok);
