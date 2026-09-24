@@ -364,6 +364,7 @@ router.post('/students/:id/consents', async (req, res, next) => {
 
 
 /* Phase 9 — teacher/student relationship workflow */
+router.get('/teacher-student-candidates', async (req,res,next)=>{ try { res.json({ok:true,students:await managementService.searchTeacherStudentCandidates(req.user,req.schoolContext,req.query.q)}); } catch(err){ if(err.status)return res.status(err.status).json({ok:false,message:err.message}); next(err); } });
 router.get('/teacher-student-requests', async (req,res,next)=>{ try { res.json({ok:true,requests:await managementService.listTeacherStudentRequests(req.user,req.schoolContext)}); } catch(err){ if(err.status)return res.status(err.status).json({ok:false,message:err.message}); next(err); } });
 router.post('/teacher-student-requests', async (req,res,next)=>{ try { const request=await managementService.createTeacherStudentRequest(req.user,req.schoolContext,req.body); res.status(201).json({ok:true,request,message:'تم إرسال طلب إضافة الطالب إلى ولي الأمر'}); } catch(err){ if(err.status)return res.status(err.status).json({ok:false,message:err.message}); next(err); } });
 router.post('/teacher-student-requests/:id/decision', async (req,res,next)=>{ try { const request=await managementService.decideTeacherStudentRequest(req.user,req.schoolContext,req.params.id,req.body.approve===true); res.json({ok:true,request,message:req.body.approve===true?'تمت الموافقة':'تم رفض الطلب'}); } catch(err){ if(err.status)return res.status(err.status).json({ok:false,message:err.message}); next(err); } });
