@@ -1241,3 +1241,10 @@ body.school-virtual-page [hidden] { display: none !important; }
     gap: 8px;
   }
 }
+.virtual-student-cameras{position:fixed;right:16px;bottom:78px;z-index:30;max-width:min(480px,90vw);padding:12px;background:#142329;color:#fff;border-radius:14px;box-shadow:0 6px 24px #0005;direction:rtl}
+.virtual-student-cameras[hidden]{display:none}
+.virtual-student-cameras h3{margin:0 0 8px;font-size:15px}
+#virtualStudentCameraGrid{display:flex;gap:8px;flex-wrap:wrap;max-height:50vh;overflow:auto}
+#virtualStudentCameraGrid figure{margin:0;width:145px}
+#virtualStudentCameraGrid video{width:145px;height:105px;object-fit:cover;background:#111;border-radius:8px}
+#virtualStudentCameraGrid figcaption{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
