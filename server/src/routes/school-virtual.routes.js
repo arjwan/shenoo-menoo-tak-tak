@@ -72,12 +72,7 @@ router.use(requireAuth);
 router.get('/profiles', async (_req, res, next) => {
   try {
     const builtin = VirtualProfile.getBuiltinProfiles();
-    const dbProfiles = await VirtualProfile.find({ active: true }).lean();
-    const mergedMap = new Map();
-    for (const p of builtin) mergedMap.set(p.profileId, p);
-    for (const p of dbProfiles) mergedMap.set(p.profileId, p);
-    mergedMap.set('ali-wise', builtin.find((p) => p.profileId === 'ali-wise'));
-    res.json({ ok: true, profiles: Array.from(mergedMap.values()) });
+    res.json({ ok: true, profiles: builtin });
   } catch (e) { next(e); }
 });
 
@@ -112,7 +107,9 @@ router.post('/sessions', async (req, res, next) => {
       return res.status(400).json({ ok: false, message: 'شخصية المعلم الافتراضي المحددة غير موجودة' });
     }
 
-    const dialect = ['ar-standard', 'ar-iraqi', 'en'].includes(req.body.dialect) ? req.body.dialect : 'ar-standard';
+    const dialect = profile.profileId === 'english-global'
+      ? 'en'
+      : (['ar-standard', 'ar-iraqi'].includes(req.body.dialect) ? req.body.dialect : 'ar-standard');
     const code = await generateUniqueSessionCode();
     const now = new Date();
 
@@ -182,13 +179,16 @@ router.post('/sessions', async (req, res, next) => {
         };
         const aiResult = await schoolAI.ask({
           mode: 'opening',
+          language: dialect === 'en' ? 'en' : 'ar',
           student: { name: 'الطلاب', stage: session.stage, grade: session.grade },
           subject: session.subject,
           lesson: session.lesson,
           sources: [source]
         }, [{
           role: 'user',
-          content: 'ابدئي الحصة الآن بشرح الدرس الموثق في المصدر. اذكري فكرة الدرس ومثالاً من الصفحة أولاً، ثم اسألي سؤال فهم واحداً.'
+          content: dialect === 'en'
+            ? 'Start the class in English. Explain the verified lesson and one example from the textbook page before asking one comprehension question.'
+            : 'ابدئي الحصة الآن بشرح الدرس الموثق في المصدر. اذكري فكرة الدرس ومثالاً من الصفحة أولاً، ثم اسألي سؤال فهم واحداً.'
         }]);
         if (aiResult?.answer) {
           openingAnswer = await VirtualMessage.create({
@@ -202,6 +202,8 @@ router.post('/sessions', async (req, res, next) => {
             aiModel: aiResult.model || '',
             sourceRefs: [{ title: source.title, page: source.page || '' }]
           });
+          vsvc.writeTeacherExplanation(session, openingAnswer.text);
+          await session.save();
         }
       } catch (_) { /* No fabricated explanation if the AI provider fails. */ }
     }
@@ -438,7 +440,8 @@ router.patch('/sessions/:code/teacher', async (req, res, next) => {
     const profile = await VirtualProfile.findProfile(String(req.body.profileId || '').trim().toLowerCase());
     if (!profile) return res.status(400).json({ ok: false, message: 'شخصية المعلم الافتراضي غير متاحة' });
     const dialect = String(req.body.dialect || '');
-    if (!['ar-standard', 'ar-iraqi'].includes(dialect)) return res.status(400).json({ ok: false, message: 'لغة الشرح غير متاحة' });
+    const allowedDialects = profile.profileId === 'english-global' ? ['en'] : ['ar-standard', 'ar-iraqi'];
+    if (!allowedDialects.includes(dialect)) return res.status(400).json({ ok: false, message: 'لغة الشرح غير متاحة' });
     session.virtualTeacher.profileId = profile.profileId;
     session.virtualTeacher.name = profile.name;
     session.virtualTeacher.title = profile.title;
@@ -580,7 +583,7 @@ router.post('/sessions/:code/questions', async (req, res, next) => {
       }));
 
       const aiResult = await schoolAI.ask(
-        { student: studentContext, subject: session.subject, lesson: session.lesson, sources },
+        { student: studentContext, subject: session.subject, lesson: session.lesson, sources, language: session.virtualTeacher.dialect === 'en' ? 'en' : 'ar' },
         [...history, { role: 'user', content: text }]
       );
 
@@ -597,6 +600,11 @@ router.post('/sessions/:code/questions', async (req, res, next) => {
           sourceRefs: [{ title: session.sourceTitle, page: session.sourcePage || '' }]
         });
 
+        vsvc.writeTeacherExplanation(session, answerMsg.text);
+        await session.save();
+        emitVirtual(req, session.code, 'school:virtual:whiteboard', {
+          code: session.code, whiteboardData: session.whiteboardData
+        });
         emitVirtual(req, session.code, 'school:virtual:message', {
           code: session.code,
           message: answerMsg
@@ -638,7 +646,7 @@ router.get('/sessions/:code/messages/:messageId/speech', async (req, res) => {
     if (!parts.length) return res.status(400).json({ ok: false, message: 'لا يوجد نص قابل للنطق في رد المعلم' });
     const index = Number(req.query.part || 0);
     if (!Number.isInteger(index) || index < 0 || index >= parts.length) return res.status(400).json({ ok: false, message: 'مقطع صوت غير صالح' });
-    const voice = 'female'; // All built-in virtual teachers are female.
+    const voice = session.virtualTeacher.dialect === 'en' ? 'english-female' : 'female';
     const cacheKey = `${message._id}:${index}:${voice}`;
     let audio = speechCache.get(cacheKey);
     if (!audio) {
