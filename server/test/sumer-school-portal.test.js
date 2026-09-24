@@ -32,7 +32,7 @@ test('Sumer School client uses authenticated real APIs and existing classroom to
 
 test('virtual teachers expose the three approved personas with visible AI labels', () => {
   const profiles = read('server/src/models/VirtualTeacherProfile.js');
-  for (const name of ['أ. سارة الذكية', 'أ. علي الحكيم', 'أ. مريم النور']) assert.match(profiles, new RegExp(name.replace('.', '\\.')));
+  for (const name of ['أ. سارة الذكية', 'أ. ليلى الحكيمة', 'أ. مريم النور']) assert.match(profiles, new RegExp(name.replace('.', '\\.')));
   assert.match(profiles, /معلم افتراضي \/ AI/);
   assert.equal((profiles.match(/profileId: '/g) || []).length, 3);
 });
