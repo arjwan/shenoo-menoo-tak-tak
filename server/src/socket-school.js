@@ -33,6 +33,7 @@
 
 const { createClassroomRegistry } = require('./services/school-classroom');
 const Classroom = require('./models/SchoolClassroom');
+const VirtualSession = require('./models/VirtualClassroomSession');
 const live = require('./services/school-live-classroom');
 const events = require('./services/school-live-events');
 const { iceServers } = require('./services/school-live-ice');
@@ -52,6 +53,45 @@ function attachSchoolSocket(io) {
     const namespace = (roomId) => `school-classroom:${roomId}`;
     // Per-account room: targeted delivery (signals, kick) without touching socket.js.
     socket.join(events.userRoom(user._id));
+
+    // Camera in an AI classroom is opt-in and visible only to its real host.
+    socket.on('school:virtual:join', async (payload = {}, done) => {
+      try {
+        const code = String(payload.code || '').toUpperCase();
+        const session = await VirtualSession.findOne({ code, status: 'active' });
+        const participant = session && session.participants.find((p) => String(p.user) === String(user._id) && !p.leftAt);
+        if (!session || !participant) return ack(done, { ok: false });
+        const room = `virtual:${code}`;
+        socket.join(room);
+        ack(done, { ok: true, host: String(session.hostUser), you: String(user._id), iceServers: iceServers() });
+        socket.to(room).emit('school:virtual:peer', { code, userId: String(user._id), online: true });
+      } catch (_) { ack(done, { ok: false }); }
+    });
+    socket.on('school:virtual:leave', (payload = {}) => {
+      const code = String(payload.code || '').toUpperCase();
+      const room = `virtual:${code}`;
+      if (socket.rooms.has(room)) {
+        socket.leave(room);
+        socket.to(room).emit('school:virtual:peer', { code, userId: String(user._id), online: false });
+      }
+    });
+    socket.on('school:virtual:signal', async (payload = {}, done) => {
+      try {
+        const code = String(payload.code || '').toUpperCase();
+        const room = `virtual:${code}`;
+        if (!socket.rooms.has(room) || !['offer', 'answer', 'ice'].includes(payload.type)) return ack(done, { ok: false });
+        const session = await VirtualSession.findOne({ code, status: 'active' });
+        const from = String(user._id), to = String(payload.to || '');
+        const member = (id) => session && session.participants.some((p) => String(p.user) === id && !p.leftAt);
+        if (!member(from) || !member(to) || from === to || (from !== String(session.hostUser) && to !== String(session.hostUser))) return ack(done, { ok: false });
+        const student = session.participants.find((p) => String(p.user) === (from === String(session.hostUser) ? to : from));
+        if (!student || !student.permissions.camera || !student.media.camera) return ack(done, { ok: false });
+        if (!['offer', 'answer'].includes(payload.type) && !payload.data) return ack(done, { ok: false });
+        const targets = await io.in(events.userRoom(to)).fetchSockets();
+        targets.filter((peer) => peer.rooms.has(room)).forEach((peer) => peer.emit('school:virtual:signal', { code, from, type: payload.type, data: payload.data }));
+        ack(done, { ok: true });
+      } catch (_) { ack(done, { ok: false }); }
+    });
 
     async function loadLive(code) {
       const normalized = live.normalizeCode(code);
