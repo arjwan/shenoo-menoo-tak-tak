@@ -43,7 +43,7 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: '',
+    avatar: 'school-assets/virtual-teachers/math.svg',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.05, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'أهلاً بكم يا أبطال، اليوم سنتعلم معاً بطريقة سهلة وتفاعلية خطوة بخطوة.',
     active: true
@@ -60,7 +60,7 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: '',
+    avatar: 'school-assets/virtual-teachers/arabic.svg',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'مرحباً بكم أعزائي الطلبة، لنستكشف معاً جمال لغتنا ومعانيها القيمة.',
     active: true
@@ -77,9 +77,48 @@ const BUILTIN_PROFILES = [
       { id: 'en', name: 'English (قريباً)', isDefault: false }
     ],
     defaultDialect: 'ar-standard',
-    avatar: '',
+    avatar: 'school-assets/virtual-teachers/social.svg',
     voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 0.95, lang: 'ar-IQ' },
     introGreeting: 'أهلاً بكم في حصتنا، لنتعرف اليوم على تاريخ وحضارة بلادنا العريقة.',
+    active: true
+  },
+  {
+    profileId: 'english-global',
+    name: 'أ. نور الإنكليزية',
+    label: 'معلم افتراضي / AI',
+    title: 'معلمة اللغة الإنكليزية لجميع المراحل',
+    subjectSpecialty: ['اللغة الإنكليزية', 'اللغة الإنجليزية', 'English'],
+    supportedDialects: [{ id: 'en', name: 'English', isDefault: true }],
+    defaultDialect: 'en',
+    avatar: 'school-assets/virtual-teachers/english.svg',
+    voiceSettings: { voiceGender: 'female', defaultPitch: 1, defaultRate: 0.95, lang: 'en-US' },
+    introGreeting: 'Hello, everyone! Open your English textbook. We will learn the lesson together.',
+    active: true
+  },
+  {
+    profileId: 'science-physics',
+    name: 'أ. هدى الفيزياء',
+    label: 'معلم افتراضي / AI',
+    title: 'معلمة الفيزياء والكيمياء',
+    subjectSpecialty: ['الفيزياء', 'الكيمياء', 'علم الأرض'],
+    supportedDialects: [{ id: 'ar-standard', name: 'العربية الفصحى', isDefault: true }, { id: 'ar-iraqi', name: 'اللهجة العراقية', isDefault: false }],
+    defaultDialect: 'ar-standard',
+    avatar: 'school-assets/virtual-teachers/physics.svg',
+    voiceSettings: { voiceGender: 'female', defaultPitch: 1, defaultRate: 0.95, lang: 'ar-IQ' },
+    introGreeting: 'أهلاً بكم، سنفهم درس العلوم خطوة خطوة من الكتاب.',
+    active: true
+  },
+  {
+    profileId: 'science-biology',
+    name: 'أ. ريم الأحياء',
+    label: 'معلم افتراضي / AI',
+    title: 'معلمة الأحياء وعلوم الحياة',
+    subjectSpecialty: ['الأحياء', 'العلوم', 'علوم الحياة'],
+    supportedDialects: [{ id: 'ar-standard', name: 'العربية الفصحى', isDefault: true }, { id: 'ar-iraqi', name: 'اللهجة العراقية', isDefault: false }],
+    defaultDialect: 'ar-standard',
+    avatar: 'school-assets/virtual-teachers/biology.svg',
+    voiceSettings: { voiceGender: 'female', defaultPitch: 1, defaultRate: 0.95, lang: 'ar-IQ' },
+    introGreeting: 'أهلاً بكم، لنقرأ درس الأحياء ونفهمه من الكتاب معاً.',
     active: true
   }
 ];
@@ -90,9 +129,6 @@ virtualTeacherProfileSchema.statics.getBuiltinProfiles = function () {
 
 virtualTeacherProfileSchema.statics.findProfile = async function (profileId) {
   const norm = String(profileId || '').trim().toLowerCase();
-  const dbProfile = await this.findOne({ profileId: norm, active: true }).lean();
-  if (norm === 'ali-wise') return BUILTIN_PROFILES.find((p) => p.profileId === norm);
-  if (dbProfile) return dbProfile;
   return BUILTIN_PROFILES.find((p) => p.profileId === norm) || null;
 };
 
