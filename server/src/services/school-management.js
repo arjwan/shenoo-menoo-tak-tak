@@ -19,6 +19,8 @@ const VirtualClassroomSession = require('../models/VirtualClassroomSession');
 const SchoolTeacherApplication = require('../models/SchoolTeacherApplication');
 const SchoolAssignment = require('../models/SchoolAssignment');
 const SchoolAssignmentSubmission = require('../models/SchoolAssignmentSubmission');
+const SchoolTeacherStudentRequest = require('../models/SchoolTeacherStudentRequest');
+const SchoolGuardianNotification = require('../models/SchoolGuardianNotification');
 
 const { CONSENT_TYPES } = require('../models/GuardianConsent');
 
@@ -918,6 +920,11 @@ async function recordGrade(actorUser, schoolContext, data) {
     throw err;
   }
 
+  if (schoolContext.isTeacher) {
+    const linked=student.assignedTeachers?.some(x=>String(x.teacher)===String(schoolContext.teacher._id) && (!(x.subjects||[]).length || (x.subjects||[]).includes(subject));
+    if (!linked) { const e=new Error('لا يمكنك رصد درجة إلا لطالب مرتبط بك في هذه المادة'); e.status=403; throw e; }
+  }
+
   const numScore = Number(score);
   const numMax = Number(maxScore || 100);
   if (Number.isNaN(numScore) || Number.isNaN(numMax) || numScore < 0 || numScore > numMax || numMax <= 0) {
@@ -979,6 +986,11 @@ async function recordAttendance(actorUser, schoolContext, data) {
     throw err;
   }
 
+  if (schoolContext.isTeacher) {
+    const linked=student.assignedTeachers?.some(x=>String(x.teacher)===String(schoolContext.teacher._id));
+    if (!linked) { const e=new Error('لا يمكنك تسجيل حضور طالب غير مرتبط بك'); e.status=403; throw e; }
+  }
+
   const attendance = await SchoolAttendanceRecord.create({
     student: student._id,
     teacher: actorUser._id,
@@ -990,6 +1002,14 @@ async function recordAttendance(actorUser, schoolContext, data) {
     notes: String(notes || '').trim(),
     date: new Date()
   });
+
+  if (status === 'absent') {
+    const recent=await SchoolAttendanceRecord.find({student:student._id,teacher:actorUser._id}).sort({date:-1}).limit(3).lean();
+    if (recent.length===3 && recent.every(x=>x.status==='absent')) {
+      const exists=await SchoolGuardianNotification.findOne({guardian:student.guardian,student:student._id,teacher:actorUser._id,type:'THREE_CONSECUTIVE_ABSENCES','meta.thirdAttendanceId':String(recent[0]._id)});
+      if (!exists) await SchoolGuardianNotification.create({guardian:student.guardian,student:student._id,teacher:actorUser._id,type:'THREE_CONSECUTIVE_ABSENCES',title:'تنبيه غياب ثلاث محاضرات متتالية',message:`غاب الطالب ${student.name} عن ثلاث محاضرات متتالية. يرجى المتابعة مع المعلم.`,meta:{thirdAttendanceId:String(recent[0]._id)}});
+    }
+  }
 
   await logAudit(
     actorUser._id,
@@ -1962,6 +1982,82 @@ async function gradeSubmission(actorUser, schoolContext, assignmentId, submissio
   return { submission, gradeRecord };
 }
 
+// --------------------------------------------------------------------------
+// 12. Phase 9 — Teacher/student links, guardian approval and alerts
+// --------------------------------------------------------------------------
+function assertTeacherContext(schoolContext) {
+  if (!schoolContext.isTeacher || !schoolContext.teacher) {
+    const err = new Error('هذه العملية مخصصة للمعلم المعتمد');
+    err.status = 403;
+    throw err;
+  }
+}
+async function createTeacherStudentRequest(actorUser, schoolContext, data) {
+  assertTeacherContext(schoolContext);
+  const student = await SchoolStudent.findById(data.studentId);
+  if (!student || student.status === 'archived') { const e=new Error('الطالب غير موجود'); e.status=404; throw e; }
+  const t=schoolContext.teacher;
+  const subjects=(Array.isArray(data.subjects)?data.subjects:[data.subject]).filter(Boolean).map(String);
+  if (!subjects.length) { const e=new Error('يجب تحديد المادة'); e.status=400; throw e; }
+  if (t.stages?.length && !t.stages.includes(student.stage)) { const e=new Error('الطالب خارج المراحل المكلف بها المعلم'); e.status=403; throw e; }
+  if (t.grades?.length && !t.grades.includes(student.grade)) { const e=new Error('الطالب خارج الصفوف المكلف بها المعلم'); e.status=403; throw e; }
+  if (t.subjects?.length && subjects.some(x=>!t.subjects.includes(x))) { const e=new Error('المادة خارج تكليف المعلم'); e.status=403; throw e; }
+  const pending=await SchoolTeacherStudentRequest.findOne({teacher:t._id,student:student._id,kind:'ADD',status:'PENDING'});
+  if (pending) { const e=new Error('يوجد طلب إضافة معلق لهذا الطالب'); e.status=409; throw e; }
+  const request=await SchoolTeacherStudentRequest.create({teacher:t._id,teacherUser:actorUser._id,student:student._id,guardian:student.guardian,kind:'ADD',requestedBy:'TEACHER',stage:student.stage,grade:student.grade,section:student.section||'أ',subjects,status:'PENDING',note:String(data.note||'')});
+  await logAudit(actorUser._id,'TEACHER_STUDENT_ADD_REQUESTED',student._id,\`طلب إضافة \${student.name}: \${subjects.join('، ')}\`);
+  return request.populate('student','name stage grade section');
+}
+async function requestStudentRemoval(actorUser, schoolContext, studentId, data={}) {
+  assertTeacherContext(schoolContext);
+  const student=await SchoolStudent.findById(studentId);
+  if (!student) { const e=new Error('الطالب غير موجود'); e.status=404; throw e; }
+  const linked=student.assignedTeachers?.some(x=>String(x.teacher)===String(schoolContext.teacher._id));
+  if (!linked) { const e=new Error('الطالب غير مرتبط بهذا المعلم'); e.status=409; throw e; }
+  const pending=await SchoolTeacherStudentRequest.findOne({teacher:schoolContext.teacher._id,student:student._id,kind:'REMOVE',status:'PENDING'});
+  if (pending) return pending;
+  const subjects=(Array.isArray(data.subjects)?data.subjects:[]).filter(Boolean);
+  const request=await SchoolTeacherStudentRequest.create({teacher:schoolContext.teacher._id,teacherUser:actorUser._id,student:student._id,guardian:student.guardian,kind:'REMOVE',requestedBy:'TEACHER',stage:student.stage,grade:student.grade,section:student.section||'أ',subjects,status:'PENDING',note:String(data.note||'')});
+  await logAudit(actorUser._id,'TEACHER_STUDENT_REMOVE_REQUESTED',student._id,'طلب فك ارتباط؛ ينتظر موافقة ولي الأمر');
+  return request;
+}
+async function listTeacherStudentRequests(actorUser, schoolContext) {
+  let q={};
+  if (schoolContext.isTeacher) q.teacher=schoolContext.teacher._id;
+  else if (schoolContext.isGuardian) q.guardian=actorUser._id;
+  else if (!schoolContext.isManager && !schoolContext.isDeveloper) { const e=new Error('غير مصرح'); e.status=403; throw e; }
+  return SchoolTeacherStudentRequest.find(q).populate('student','name stage grade section').populate('teacher','name subjects').sort({createdAt:-1}).lean();
+}
+async function decideTeacherStudentRequest(actorUser, schoolContext, requestId, approve) {
+  const request=await SchoolTeacherStudentRequest.findById(requestId);
+  if (!request) { const e=new Error('الطلب غير موجود'); e.status=404; throw e; }
+  if (!schoolContext.isDeveloper && String(request.guardian)!==String(actorUser._id)) { const e=new Error('الموافقة أو الرفض لولي أمر الطالب فقط'); e.status=403; throw e; }
+  if (request.status!=='PENDING') { const e=new Error('تم البت في هذا الطلب مسبقاً'); e.status=409; throw e; }
+  request.status=approve?'APPROVED':'REJECTED'; request.decidedBy=actorUser._id; request.decidedAt=new Date(); await request.save();
+  if (approve) {
+    const student=await SchoolStudent.findById(request.student);
+    if (request.kind==='ADD') {
+      const found=student.assignedTeachers?.find(x=>String(x.teacher)===String(request.teacher));
+      if (!found) student.assignedTeachers.push({teacher:request.teacher,subjects:request.subjects});
+      else found.subjects=Array.from(new Set([...(found.subjects||[]),...request.subjects]));
+      const teacher=await SchoolTeacher.findById(request.teacher);
+      if (teacher && !teacher.assignedStudents.some(x=>String(x)===String(student._id))) teacher.assignedStudents.push(student._id), await teacher.save();
+    } else {
+      student.assignedTeachers=(student.assignedTeachers||[]).filter(x=>String(x.teacher)!==String(request.teacher));
+      await SchoolTeacher.updateOne({_id:request.teacher},{$pull:{assignedStudents:student._id}});
+    }
+    await student.save();
+  }
+  await logAudit(actorUser._id,approve?'TEACHER_STUDENT_REQUEST_APPROVED':'TEACHER_STUDENT_REQUEST_REJECTED',request.student,\`\${request.kind} \${request._id}\`);
+  return request;
+}
+async function listGuardianNotifications(actorUser, schoolContext) {
+  let q={};
+  if (schoolContext.isGuardian) q.guardian=actorUser._id;
+  else if (!schoolContext.isManager && !schoolContext.isDeveloper) { const e=new Error('التنبيهات لولي الأمر أو الإدارة'); e.status=403; throw e; }
+  return SchoolGuardianNotification.find(q).populate('student','name stage grade section').sort({createdAt:-1}).limit(100).lean();
+}
+
 module.exports = {
   logAudit,
   searchRealUsers,
@@ -2009,5 +2105,10 @@ module.exports = {
   submitAssignment,
   listSubmissions,
   getSubmission,
-  gradeSubmission
+  gradeSubmission,
+  createTeacherStudentRequest,
+  requestStudentRemoval,
+  listTeacherStudentRequests,
+  decideTeacherStudentRequest,
+  listGuardianNotifications
 };
