@@ -408,11 +408,13 @@
     api('/api/school/virtual/sessions/mine').then(function (d) {
       if (d && d.hosting && d.hosting.code === session.code) {
         state.isHost = true;
+        syncBoardPointerMode();
         hide('handBtn');
         show('endClassBtn');
         show('virtualAttendanceBtn');
       } else {
         state.isHost = false;
+        syncBoardPointerMode();
         show('handBtn');
         hide('endClassBtn');
         hide('virtualAttendanceBtn');
@@ -554,6 +556,11 @@
     api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/whiteboard', {
       method: 'POST', body: { currentSlide: state.whiteboard.getCurrentSlideIndex() }
     }).catch(function (error) { notify('تعذر حفظ موضع السبورة: ' + error.message, true); });
+  }
+
+  function syncBoardPointerMode() {
+    var canvas = $('whiteboardCanvas');
+    if (canvas) canvas.classList.toggle('board-editable', state.isHost && state.whiteboard.getTool() !== 'select');
   }
 
   function setupWhiteboardCanvas() {
@@ -702,6 +709,7 @@
         btn.classList.add('active');
         var tool = btnId.replace('tool', '').toLowerCase();
         state.whiteboard.setTool(tool);
+        syncBoardPointerMode();
       });
     });
 
