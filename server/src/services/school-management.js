@@ -2071,7 +2071,8 @@ async function listGuardianNotifications(actorUser, schoolContext) {
 }
 
 async function getStudentDashboard(actorUser, schoolContext) {
-  const student=schoolContext.studentProfile || (schoolContext.isGuardian && schoolContext.students?.[0]);
+  let student=schoolContext.studentProfile || (schoolContext.isGuardian && schoolContext.students?.[0]);
+  if(student&&student._id) student=await SchoolStudent.findById(student._id);
   if (!student) { const e=new Error('لا يوجد ملف طالب مرتبط بهذا الحساب'); e.status=403; throw e; }
   const sid=student._id;
   const [record,notifications,requests,whiteboards]=await Promise.all([
