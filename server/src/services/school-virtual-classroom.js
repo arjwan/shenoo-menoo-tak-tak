@@ -64,33 +64,44 @@ async function validateCurriculumSource(input) {
   if (!subject) return { ok: false, error: 'اسم المادة مطلوب.' };
   if (!lesson) return { ok: false, error: 'عنوان الدرس مطلوب لبدء الحصة الافتراضية.' };
 
-  // 1) Search in Knowledge DB if present
+  // A verified book proves the subject exists, but it does not prove a free-text
+  // lesson title is real. Bind each class to a named lesson or an OCR page
+  // containing the complete, specific lesson phrase.
+  const normalizedLesson = curriculumIndex.normalizeArabic(lesson);
+  const meaningfulWords = normalizedLesson.split(' ').filter((word) => word.length > 2);
   let dbSource = null;
   try {
-    dbSource = await Knowledge.findOne({
-      stage,
-      grade,
-      subject,
+    const candidate = await Knowledge.findOne({
+      stage, grade, subject, lesson,
       $or: [{ verified: true }, { sourceType: 'official_textbook' }]
     }).lean();
-  } catch (e) {
-    dbSource = null;
-  }
+    if (candidate && curriculumIndex.normalizeArabic(candidate.lesson) === normalizedLesson) {
+      dbSource = candidate;
+    }
+  } catch (_) { /* Indexed curriculum remains available if MongoDB fails. */ }
 
-  // Fallback to indexed curriculum pages if not in DB
-  if (!dbSource && curriculumIndex && typeof curriculumIndex.searchCurriculum === 'function') {
+  if (!dbSource) {
     try {
-      const hits = curriculumIndex.searchCurriculum({ stage, grade, subject, query: lesson, lesson, limit: 1 });
-      if (hits && hits.length > 0) {
+      const hits = curriculumIndex.searchCurriculum({ stage, grade, subject, query: lesson, limit: 10 });
+      const match = hits.find((hit) => {
+        const namedLesson = curriculumIndex.normalizeArabic(hit.lesson);
+        const chapter = curriculumIndex.normalizeArabic(hit.chapter);
+        const pageText = curriculumIndex.normalizeArabic(hit.content);
+        return (namedLesson && namedLesson === normalizedLesson)
+          || (chapter && chapter === normalizedLesson)
+          || (meaningfulWords.length >= 2 && normalizedLesson.length >= 8
+            && String(hit.content || '').length >= 50 && pageText.includes(normalizedLesson));
+      });
+      if (match) {
         dbSource = {
-          title: hits[0].bookTitle + ' — ص ' + hits[0].page,
-          content: hits[0].content,
-          page: String(hits[0].page),
-          chapter: hits[0].chapter,
-          lesson: hits[0].lesson
+          title: match.bookTitle + ' — ص ' + match.page,
+          content: match.content,
+          page: String(match.page),
+          chapter: match.chapter,
+          lesson: match.lesson
         };
       }
-    } catch (_) {}
+    } catch (_) { /* Reject titles we cannot verify. */ }
   }
 
   // 2) Search in Iraqi curriculum catalog (108 real books)
@@ -108,6 +119,10 @@ async function validateCurriculumSource(input) {
       ok: false,
       error: `لا يوجد مصدر منهج معتمد في الكتالوج العراقي لمادة (${subject}) للصف (${grade}) في مرحلة (${stage}). لا يمكن بدء حصة افتراضية بدون منهج حقيقي.`
     };
+  }
+
+  if (!dbSource) {
+    return { ok: false, error: 'عنوان الدرس غير موثق في منهج هذا الصف والمادة. اختر عنوان درس موجودًا في الكتاب المفهرس.' };
   }
 
   const sourceTitle = dbSource?.title || catalogItem?.title || `كتاب ${subject} — ${grade}`;
