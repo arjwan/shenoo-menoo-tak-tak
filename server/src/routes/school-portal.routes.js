@@ -91,6 +91,15 @@ router.post('/enrollment', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.get('/enrollment/teacher-requests', requireSchoolManager, async (req, res, next) => {
+  try {
+    const requests = await Enrollment.find({ requestedRole: 'teacher', status: 'pending' })
+      .populate('user', 'fullName username phone email profile.avatarUrl')
+      .sort({ createdAt: 1 }).lean();
+    res.json({ ok: true, requests });
+  } catch (error) { next(error); }
+});
+
 router.patch('/enrollment/:id/review', requireSchoolManager, async (req, res, next) => {
   try {
     const decision = clean(req.body.decision);
