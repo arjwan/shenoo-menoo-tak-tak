@@ -129,7 +129,7 @@
   function resultBox(id, html){var x=document.getElementById(id);if(x)x.innerHTML=html;}
   function bind() {
     mount.addEventListener('submit',function(ev){
-      var f=ev.target;if(!f.id)return;ev.preventDefault();var b=formData(f),p;
+      var f=ev.target;if(!f.id&&!f.classList.contains('teacher-grade-group'))return;ev.preventDefault();var b=formData(f),p;
       if(f.id==='teacher-student-search'){api.request('/api/school/management/teacher-student-candidates?q='+encodeURIComponent(b.q)).then(function(r){var list=payload(r,'students')||[];resultBox('teacher-candidates',list.length?'<div class="teacher-list">'+list.map(function(x){return '<div class="teacher-row"><div><b>'+esc(x.name)+'</b><small>'+esc([x.stage,x.grade,x.section].filter(Boolean).join(' · '))+'</small></div><button data-add-student="'+esc(x._id)+'">طلب إضافة</button></div>';}).join('')+'</div>':empty('لا توجد نتائج ضمن مراحل وصفوف تكليفك.'));});return;}
       if(f.id==='teacher-exam-alert'){p=send('/api/school/management/schedules','POST',b);}
       if(f.id==='teacher-attendance') p=send('/api/school/management/attendance','POST',b);
