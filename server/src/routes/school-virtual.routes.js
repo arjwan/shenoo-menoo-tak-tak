@@ -20,6 +20,38 @@ const Knowledge = require('../models/SchoolKnowledgeSource');
 const vsvc = require('../services/school-virtual-classroom');
 const curriculumIndex = require('../services/school-curriculum-index');
 const schoolAI = require('../services/school-ai');
+const speechCache = new Map();
+
+function speechParts(text) {
+  const words = String(text || '').slice(0, 540).split(/\s+/);
+  const parts = [];
+  let part = '';
+  for (const word of words) {
+    if (!word) continue;
+    if (part && (part.length + word.length + 1 > 175)) { parts.push(part); part = ''; }
+    part += (part ? ' ' : '') + word.slice(0, 175);
+  }
+  if (part) parts.push(part);
+  return parts.slice(0, 4);
+}
+
+async function generateTeacherSpeech(input, voice) {
+  const groqKey = process.env.GROQ_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!groqKey && !openaiKey) return null;
+  const groq = Boolean(groqKey);
+  const response = await fetch(groq ? 'https://api.groq.com/openai/v1/audio/speech' : 'https://api.openai.com/v1/audio/speech', {
+    method: 'POST', signal: AbortSignal.timeout(15000),
+    headers: { Authorization: `Bearer ${groq ? groqKey : openaiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(groq
+      ? { model: 'canopylabs/orpheus-arabic-saudi', voice: voice === 'male' ? 'fahad' : 'lulwa', input, response_format: 'wav' }
+      : { model: 'gpt-4o-mini-tts', voice: 'alloy', input, response_format: 'mp3', instructions: 'Speak clearly in Arabic for an Iraqi school lesson.' })
+  });
+  if (!response.ok) throw new Error(`خدمة الصوت غير متاحة (${response.status})`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > 1024 * 1024) throw new Error('حجم الصوت غير صالح');
+  return { bytes, type: groq ? 'audio/wav' : 'audio/mpeg' };
+}
 
 function io(req) {
   return req.app.get('io') || null;
@@ -578,6 +610,34 @@ router.post('/sessions/:code/questions', async (req, res, next) => {
 });
 
 /** 14. GET /sessions/:code/messages: Message History */
+router.get('/sessions/:code/messages/:messageId/speech', async (req, res, next) => {
+  try {
+    const session = await loadSessionByCode(req.params.code, req, res);
+    if (!session) return;
+    const participant = vsvc.findParticipant(session, req.user._id);
+    if (!vsvc.canManage(session, req.user) && (!participant || participant.leftAt)) {
+      return res.status(403).json({ ok: false, message: 'الصوت متاح للمشاركين في الحصة فقط' });
+    }
+    if (!mongoose.isValidObjectId(req.params.messageId)) return res.status(404).json({ ok: false });
+    const message = await VirtualMessage.findOne({ _id: req.params.messageId, session: session._id, senderType: 'teacher_ai' }).lean();
+    if (!message) return res.status(404).json({ ok: false, message: 'رد المعلم غير موجود' });
+    const parts = speechParts(message.text);
+    const index = Number(req.query.part || 0);
+    if (!Number.isInteger(index) || index < 0 || index >= parts.length) return res.status(400).json({ ok: false, message: 'مقطع صوت غير صالح' });
+    const voice = /^(ali|hakeem)/i.test(String(session.virtualTeacher.profileId || '')) ? 'male' : 'female';
+    const cacheKey = `${message._id}:${index}:${voice}`;
+    let audio = speechCache.get(cacheKey);
+    if (!audio) {
+      audio = await generateTeacherSpeech(parts[index], voice);
+      if (!audio) return res.status(503).json({ ok: false, message: 'مزود الصوت غير مفعّل' });
+      if (speechCache.size >= 80) speechCache.delete(speechCache.keys().next().value);
+      speechCache.set(cacheKey, audio);
+    }
+    res.set({ 'Content-Type': audio.type, 'Cache-Control': 'private, max-age=3600', 'X-Speech-Parts': String(parts.length) });
+    res.send(audio.bytes);
+  } catch (error) { next(error); }
+});
+
 router.get('/sessions/:code/messages', async (req, res, next) => {
   try {
     const session = await loadSessionByCode(req.params.code, req, res);
