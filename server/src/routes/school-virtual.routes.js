@@ -35,22 +35,47 @@ function speechParts(text) {
   return parts.slice(0, 4);
 }
 
-async function generateTeacherSpeech(input, voice) {
-  const groqKey = process.env.GROQ_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!groqKey && !openaiKey) return null;
-  const groq = Boolean(groqKey);
+async function requestTeacherSpeech(provider, key, input, voice) {
+  const groq = provider === 'groq';
   const response = await fetch(groq ? 'https://api.groq.com/openai/v1/audio/speech' : 'https://api.openai.com/v1/audio/speech', {
-    method: 'POST', signal: AbortSignal.timeout(15000),
-    headers: { Authorization: `Bearer ${groq ? groqKey : openaiKey}`, 'Content-Type': 'application/json' },
+    method: 'POST', signal: AbortSignal.timeout(20000),
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(groq
-      ? { model: 'canopylabs/orpheus-arabic-saudi', voice: voice === 'male' ? 'fahad' : 'lulwa', input, response_format: 'wav' }
+      ? { model: 'canopylabs/orpheus-arabic-saudi', voice: voice === 'male' ? 'fahad' : 'lulwa', input: String(input).slice(0, 200), response_format: 'wav' }
       : { model: 'gpt-4o-mini-tts', voice: 'alloy', input, response_format: 'mp3', instructions: 'Speak clearly in Arabic for an Iraqi school lesson.' })
   });
-  if (!response.ok) throw new Error(`خدمة الصوت غير متاحة (${response.status})`);
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const payload = await response.json();
+      detail = payload && payload.error && (payload.error.message || payload.error.code) || payload && payload.message || '';
+    } catch (_) {}
+    const error = new Error(`${provider} TTS HTTP ${response.status}${detail ? ': ' + detail : ''}`);
+    error.status = response.status;
+    throw error;
+  }
   const bytes = Buffer.from(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > 1024 * 1024) throw new Error('حجم الصوت غير صالح');
-  return { bytes, type: groq ? 'audio/wav' : 'audio/mpeg' };
+  if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new Error(`${provider} أعاد ملف صوت غير صالح`);
+  return { bytes, type: groq ? 'audio/wav' : 'audio/mpeg', provider };
+}
+
+async function generateTeacherSpeech(input, voice) {
+  const providers = [];
+  if (process.env.GROQ_API_KEY) providers.push(['groq', process.env.GROQ_API_KEY]);
+  if (process.env.OPENAI_API_KEY) providers.push(['openai', process.env.OPENAI_API_KEY]);
+  if (!providers.length) return null;
+  const failures = [];
+  for (const [provider, key] of providers) {
+    try {
+      return await requestTeacherSpeech(provider, key, input, voice);
+    } catch (error) {
+      failures.push(error.message);
+      console.error('[school-virtual-tts]', error.message);
+    }
+  }
+  const error = new Error('تعذر توليد صوت المعلم من الخادم: ' + failures.join(' | '));
+  error.status = 502;
+  throw error;
 }
 
 function io(req) {
