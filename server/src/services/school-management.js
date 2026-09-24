@@ -921,7 +921,7 @@ async function recordGrade(actorUser, schoolContext, data) {
   }
 
   if (schoolContext.isTeacher) {
-    const linked=student.assignedTeachers?.some(x=>String(x.teacher)===String(schoolContext.teacher._id) && (!(x.subjects||[]).length || (x.subjects||[]).includes(subject));
+    const linked=student.assignedTeachers?.some(x=>String(x.teacher)===String(schoolContext.teacher._id) && (!x.subject || x.subject===subject));
     if (!linked) { const e=new Error('لا يمكنك رصد درجة إلا لطالب مرتبط بك في هذه المادة'); e.status=403; throw e; }
   }
 
@@ -2037,9 +2037,8 @@ async function decideTeacherStudentRequest(actorUser, schoolContext, requestId, 
   if (approve) {
     const student=await SchoolStudent.findById(request.student);
     if (request.kind==='ADD') {
-      const found=student.assignedTeachers?.find(x=>String(x.teacher)===String(request.teacher));
-      if (!found) student.assignedTeachers.push({teacher:request.teacher,subjects:request.subjects});
-      else found.subjects=Array.from(new Set([...(found.subjects||[]),...request.subjects]));
+      const existingSubjects=new Set((student.assignedTeachers||[]).filter(x=>String(x.teacher)===String(request.teacher)).map(x=>x.subject).filter(Boolean));
+      request.subjects.forEach(subject=>{ if(!existingSubjects.has(subject)) student.assignedTeachers.push({teacher:request.teacher,subject}); });
       const teacher=await SchoolTeacher.findById(request.teacher);
       if (teacher && !teacher.assignedStudents.some(x=>String(x)===String(student._id))) teacher.assignedStudents.push(student._id), await teacher.save();
     } else {
