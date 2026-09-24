@@ -274,6 +274,76 @@
     };
   }
 
+  /**
+   * Sequential server-audio playlist for one teacher answer.
+   *
+   * Contract (all dependencies are injected so Node tests can verify the
+   * behaviour without a browser):
+   *  - fetchPart(partIndex) resolves { buffer, total } or rejects with an
+   *    Error carrying .status (0 = network/transient).
+   *  - playBuffer(buffer) resolves when that part finished playing.
+   *  - Parts play strictly in order and advance only after success, so a
+   *    failed later part never replays earlier parts.
+   *  - Transient failures (status 0, 429, >=500) are retried with backoff.
+   *  - Device speechSynthesis is NEVER chosen here: the caller decides what
+   *    to do when the result reports a first-part failure.
+   * Returns { completedParts, total, failure } where failure is null on
+   * success, or { atPart, status, message, autoplayBlocked }.
+   */
+  function createSpeechPlaylist(deps) {
+    var fetchPart = deps.fetchPart;
+    var playBuffer = deps.playBuffer;
+    var sleep = deps.sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var isCancelled = deps.isCancelled || function () { return false; };
+    var maxParts = Math.max(1, deps.maxParts || 12);
+    var retries = Math.max(1, deps.retries || 3);
+
+    function isTransient(error) {
+      var status = error && error.status;
+      return status === 0 || status === 429 || (typeof status === 'number' && status >= 500);
+    }
+
+    return async function run() {
+      var total = 1;
+      var part = 0;
+      var finalError = null;
+      while (part < total && part < maxParts && !isCancelled()) {
+        var fetched = null;
+        for (var attempt = 0; attempt < retries && !isCancelled(); attempt += 1) {
+          try {
+            fetched = await fetchPart(part);
+            break;
+          } catch (partError) {
+            finalError = partError;
+            if (!isTransient(partError) || attempt === retries - 1) break;
+            await sleep(700 * (attempt + 1));
+          }
+        }
+        if (isCancelled()) return { completedParts: part, total: total, failure: null, cancelled: true };
+        if (!fetched) break;
+        total = Math.max(1, Math.min(fetched.total || 1, maxParts));
+        try {
+          await playBuffer(fetched.buffer);
+          part += 1; // advance only after this part actually finished playing
+        } catch (playError) {
+          finalError = playError;
+          break;
+        }
+      }
+      return {
+        completedParts: part,
+        total: total,
+        failure: finalError ? {
+          atPart: part,
+          status: finalError.status || 0,
+          message: String(finalError.message || 'فشل غير معروف'),
+          autoplayBlocked: Boolean(finalError.autoplay)
+        } : null,
+        cancelled: false
+      };
+    };
+  }
+
   /** Static code verification helper to assert privacy and security invariants */
   function verifyPrivacyStatics(codeString) {
     var violations = [];
@@ -305,6 +375,7 @@
     initialDevicesState: initialDevicesState,
     isValidAiPersona: isValidAiPersona,
     createWhiteboardState: createWhiteboardState,
+    createSpeechPlaylist: createSpeechPlaylist,
     verifyPrivacyStatics: verifyPrivacyStatics
   };
 }));

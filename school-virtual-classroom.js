@@ -37,7 +37,10 @@
   var spokenAnswers = new Set();
   var latestTeacherAnswerId = '';
   var speechPlayback = null;
+  var speechObjectURL = null;
   var speechGeneration = 0;
+  var SPEECH_MAX_PARTS = 12;   // must match server MAX_PARTS
+  var SPEECH_PART_RETRIES = 3; // retries per part for transient failures
 
   // Helper selectors
   var $ = function (id) { return document.getElementById(id); };
@@ -1124,53 +1127,148 @@
     }
   }
 
+  function releaseSpeechPlayback() {
+    if (speechPlayback) {
+      speechPlayback.pause();
+      speechPlayback.src = '';
+      speechPlayback = null;
+    }
+    if (speechObjectURL) {
+      URL.revokeObjectURL(speechObjectURL);
+      speechObjectURL = null;
+    }
+  }
+
   function stopTeacherSpeech() {
     speechGeneration += 1;
-    if (speechPlayback) { speechPlayback.pause(); speechPlayback.src = ''; speechPlayback = null; }
+    releaseSpeechPlayback();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
   }
 
+  function delay(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // Verify the payload really is audio (RIFF/WAVE, MPEG frame or ID3),
+  // never a JSON error body saved as a sound file.
+  function looksLikeAudio(bytes) {
+    if (!bytes || bytes.byteLength < 64) return false;
+    var head = new Uint8Array(bytes, 0, Math.min(12, bytes.byteLength));
+    var tag = String.fromCharCode.apply(null, head.subarray(0, 4));
+    if (tag === 'RIFF' && String.fromCharCode.apply(null, head.subarray(8, 12)) === 'WAVE') return true;
+    if (String.fromCharCode.apply(null, head.subarray(0, 3)) === 'ID3') return true;
+    return head[0] === 0xff && (head[1] & 0xe0) === 0xe0;
+  }
+
+  // Fetch one speech part. Rejects with { status, message } — status 0 means
+  // a network/transient failure that is worth retrying.
+  async function fetchSpeechPart(code, key, part) {
+    var response;
+    try {
+      response = await fetch('/api/school/virtual/sessions/' + encodeURIComponent(code) +
+        '/messages/' + encodeURIComponent(key) + '/speech?part=' + part, {
+        headers: { Authorization: 'Bearer ' + state.token }
+      });
+    } catch (networkError) {
+      var netFail = new Error('تعذر الوصول إلى خادم الصوت (شبكة)');
+      netFail.status = 0;
+      throw netFail;
+    }
+    if (!response.ok) {
+      var failureMessage = 'خادم الصوت أعاد HTTP ' + response.status;
+      try {
+        var payload = await response.json();
+        if (payload && payload.message) failureMessage = payload.message;
+      } catch (_) {}
+      var failure = new Error(failureMessage);
+      failure.status = response.status;
+      throw failure;
+    }
+    var contentType = String(response.headers.get('Content-Type') || '').toLowerCase();
+    if (contentType.indexOf('audio/') !== 0) {
+      var typeError = new Error('خادم الصوت لم يُرجع ملفًا صوتيًا (Content-Type: ' + contentType + ')');
+      typeError.status = 0;
+      throw typeError;
+    }
+    var total = Number(response.headers.get('X-Speech-Parts')) || 1;
+    var buffer = await response.arrayBuffer();
+    if (!buffer || buffer.byteLength === 0) {
+      var emptyError = new Error('خادم الصوت أعاد ملفًا فارغًا');
+      emptyError.status = 0;
+      throw emptyError;
+    }
+    if (!looksLikeAudio(buffer)) {
+      var invalidError = new Error('خادم الصوت أعاد بيانات غير صوتية');
+      invalidError.status = 0;
+      throw invalidError;
+    }
+    return { buffer: buffer, total: total };
+  }
+
+  async function playAudioBuffer(buffer) {
+    var url = URL.createObjectURL(new Blob([buffer]));
+    speechObjectURL = url;
+    var player = new Audio(url);
+    speechPlayback = player;
+    try {
+      await player.play();
+    } catch (playError) {
+      // NotAllowedError: the browser blocked autoplay — surface it, do not
+      // treat it as a server failure.
+      releaseSpeechPlayback();
+      var blocked = new Error('المتصفح منع تشغيل الصوت تلقائيًا — اضغط زر 🔊 لتشغيل جواب المعلم');
+      blocked.autoplay = true;
+      throw blocked;
+    }
+    await new Promise(function (resolve, reject) {
+      player.addEventListener('ended', resolve, { once: true });
+      player.addEventListener('error', function () {
+        reject(new Error('فشل تشغيل مقطع الصوت من الخادم'));
+      }, { once: true });
+    });
+    releaseSpeechPlayback();
+  }
+
+  /**
+   * Play a full teacher answer from the server through the tested playlist
+   * core (core.createSpeechPlaylist): sequential parts, per-part retry for
+   * transient errors, no replay of finished parts, and device
+   * speechSynthesis only as a last resort when the server voice is
+   * unavailable from the very first part.
+   */
   async function playTeacherAnswer(text, answerId, manual) {
     if (!state.speechSynthesisActive || !text) return;
     var key = answerId && String(answerId);
     if (!manual && key && spokenAnswers.has(key)) return;
-    if (key) spokenAnswers.add(key);
     stopTeacherSpeech();
     var generation = speechGeneration;
+    if (key) spokenAnswers.add(key);
     if (!key || !state.code) { speakAiAnswer(text, null, true); return; }
-    try {
-      for (var part = 0; part < 4 && generation === speechGeneration; part++) {
-        var response = await fetch('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/messages/' + encodeURIComponent(key) + '/speech?part=' + part, {
-          headers: { Authorization: 'Bearer ' + state.token }
-        });
-        if (!response.ok) {
-          var failure = null;
-          try { failure = await response.json(); } catch (_) {}
-          throw new Error(failure && failure.message ? failure.message : 'خادم الصوت أعاد HTTP ' + response.status);
-        }
-        var contentType = String(response.headers.get('Content-Type') || '').toLowerCase();
-        if (contentType.indexOf('audio/') !== 0) throw new Error('خادم الصوت لم يُرجع ملفًا صوتيًا');
-        var total = Number(response.headers.get('X-Speech-Parts')) || 1;
-        var url = URL.createObjectURL(await response.blob());
-        try {
-          if (generation !== speechGeneration) break;
-          var player = new Audio(url);
-          speechPlayback = player;
-          await player.play();
-          await new Promise(function (resolve, reject) {
-            player.addEventListener('ended', resolve, { once: true });
-            player.addEventListener('error', function () { reject(new Error('فشل تشغيل الصوت')); }, { once: true });
-          });
-          speechPlayback = null;
-        } finally { URL.revokeObjectURL(url); }
-        if (part + 1 >= total) break;
-      }
-    } catch (error) {
-      if (generation !== speechGeneration) return;
+
+    var runPlaylist = core.createSpeechPlaylist({
+      fetchPart: function (part) { return fetchSpeechPart(state.code, key, part); },
+      playBuffer: playAudioBuffer,
+      sleep: delay,
+      isCancelled: function () { return generation !== speechGeneration; },
+      maxParts: SPEECH_MAX_PARTS,
+      retries: SPEECH_PART_RETRIES
+    });
+
+    var result = await runPlaylist();
+
+    if (generation !== speechGeneration) return; // superseded by mute/new answer
+    if (!result.failure) return;
+    if (result.completedParts === 0 && !result.failure.autoplayBlocked) {
+      // Server voice unavailable from the start: last-resort device fallback.
       if (key) spokenAnswers.delete(key);
-      notify('تعذر توليد صوت المعلم من الخادم: ' + error.message + ' — سيُستخدم صوت الجهاز كحل احتياطي فقط.', true);
+      notify('صوت الخادم غير متاح: ' + result.failure.message + ' — سيُستخدم صوت الجهاز كحل احتياطي أخير فقط.', true);
       speakAiAnswer(text, null, true);
+      return;
     }
+    // A later part failed (or autoplay was blocked): keep everything already
+    // played, show the real server error, and allow a clean full retry via 🔊.
+    if (key) spokenAnswers.delete(key);
+    notify('توقف صوت المعلم بعد ' + result.completedParts + ' مقطعًا: ' + result.failure.message + ' — اضغط 🔊 لإعادة المحاولة.', true);
   }
 
   function speakAiAnswer(text, answerId, manual) {

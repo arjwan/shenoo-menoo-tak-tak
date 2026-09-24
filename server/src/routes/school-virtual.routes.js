@@ -20,63 +20,8 @@ const Knowledge = require('../models/SchoolKnowledgeSource');
 const vsvc = require('../services/school-virtual-classroom');
 const curriculumIndex = require('../services/school-curriculum-index');
 const schoolAI = require('../services/school-ai');
+const tts = require('../services/school-virtual-tts');
 const speechCache = new Map();
-
-function speechParts(text) {
-  const words = String(text || '').slice(0, 540).split(/\s+/);
-  const parts = [];
-  let part = '';
-  for (const word of words) {
-    if (!word) continue;
-    if (part && (part.length + word.length + 1 > 175)) { parts.push(part); part = ''; }
-    part += (part ? ' ' : '') + word.slice(0, 175);
-  }
-  if (part) parts.push(part);
-  return parts.slice(0, 4);
-}
-
-async function requestTeacherSpeech(provider, key, input, voice) {
-  const groq = provider === 'groq';
-  const response = await fetch(groq ? 'https://api.groq.com/openai/v1/audio/speech' : 'https://api.openai.com/v1/audio/speech', {
-    method: 'POST', signal: AbortSignal.timeout(20000),
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(groq
-      ? { model: 'canopylabs/orpheus-arabic-saudi', voice: voice === 'male' ? 'fahad' : 'lulwa', input: String(input).slice(0, 200), response_format: 'wav' }
-      : { model: 'gpt-4o-mini-tts', voice: 'alloy', input, response_format: 'mp3', instructions: 'Speak clearly in Arabic for an Iraqi school lesson.' })
-  });
-  if (!response.ok) {
-    let detail = '';
-    try {
-      const payload = await response.json();
-      detail = payload && payload.error && (payload.error.message || payload.error.code) || payload && payload.message || '';
-    } catch (_) {}
-    const error = new Error(`${provider} TTS HTTP ${response.status}${detail ? ': ' + detail : ''}`);
-    error.status = response.status;
-    throw error;
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new Error(`${provider} أعاد ملف صوت غير صالح`);
-  return { bytes, type: groq ? 'audio/wav' : 'audio/mpeg', provider };
-}
-
-async function generateTeacherSpeech(input, voice) {
-  const providers = [];
-  if (process.env.GROQ_API_KEY) providers.push(['groq', process.env.GROQ_API_KEY]);
-  if (process.env.OPENAI_API_KEY) providers.push(['openai', process.env.OPENAI_API_KEY]);
-  if (!providers.length) return null;
-  const failures = [];
-  for (const [provider, key] of providers) {
-    try {
-      return await requestTeacherSpeech(provider, key, input, voice);
-    } catch (error) {
-      failures.push(error.message);
-      console.error('[school-virtual-tts]', error.message);
-    }
-  }
-  const error = new Error('تعذر توليد صوت المعلم من الخادم: ' + failures.join(' | '));
-  error.status = 502;
-  throw error;
-}
 
 function io(req) {
   return req.app.get('io') || null;
@@ -634,8 +579,8 @@ router.post('/sessions/:code/questions', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-/** 14. GET /sessions/:code/messages: Message History */
-router.get('/sessions/:code/messages/:messageId/speech', async (req, res, next) => {
+/** 14. GET /sessions/:code/messages/:messageId/speech: Teacher audio part N */
+router.get('/sessions/:code/messages/:messageId/speech', async (req, res) => {
   try {
     const session = await loadSessionByCode(req.params.code, req, res);
     if (!session) return;
@@ -646,21 +591,30 @@ router.get('/sessions/:code/messages/:messageId/speech', async (req, res, next) 
     if (!mongoose.isValidObjectId(req.params.messageId)) return res.status(404).json({ ok: false });
     const message = await VirtualMessage.findOne({ _id: req.params.messageId, session: session._id, senderType: 'teacher_ai' }).lean();
     if (!message) return res.status(404).json({ ok: false, message: 'رد المعلم غير موجود' });
-    const parts = speechParts(message.text);
+    const parts = tts.speechParts(message.text);
+    if (!parts.length) return res.status(400).json({ ok: false, message: 'لا يوجد نص قابل للنطق في رد المعلم' });
     const index = Number(req.query.part || 0);
     if (!Number.isInteger(index) || index < 0 || index >= parts.length) return res.status(400).json({ ok: false, message: 'مقطع صوت غير صالح' });
     const voice = /^(ali|hakeem)/i.test(String(session.virtualTeacher.profileId || '')) ? 'male' : 'female';
     const cacheKey = `${message._id}:${index}:${voice}`;
     let audio = speechCache.get(cacheKey);
     if (!audio) {
-      audio = await generateTeacherSpeech(parts[index], voice);
-      if (!audio) return res.status(503).json({ ok: false, message: 'مزود الصوت غير مفعّل' });
-      if (speechCache.size >= 80) speechCache.delete(speechCache.keys().next().value);
+      if (!tts.isConfigured()) {
+        return res.status(503).json({ ok: false, message: 'مزود الصوت غير مفعّل على الخادم — لا يوجد مفتاح Groq/OpenAI ولا محرك صوت محلي مثبت' });
+      }
+      audio = await tts.synthesizePart(parts[index], voice);
+      if (speechCache.size >= 120) speechCache.delete(speechCache.keys().next().value);
       speechCache.set(cacheKey, audio);
     }
     res.set({ 'Content-Type': audio.type, 'Cache-Control': 'private, max-age=3600', 'X-Speech-Parts': String(parts.length) });
     res.send(audio.bytes);
-  } catch (error) { next(error); }
+  } catch (error) {
+    const status = Number(error.status);
+    res.status(status >= 400 && status < 600 ? status : 500).json({
+      ok: false,
+      message: error.message || 'تعذر توليد صوت المعلم من الخادم'
+    });
+  }
 });
 
 router.get('/sessions/:code/messages', async (req, res, next) => {
