@@ -110,6 +110,8 @@
   // -------------------------------------------------------------
   function enterLobby() {
     hide('virtualRoom');
+    hide('classroomStatusBar');
+    hide('topTeacherBadge');
     show('virtualLobby');
     loadLobbyData();
   }
@@ -321,6 +323,8 @@
       renderClassroom(data.session);
       hide('virtualLobby');
       show('virtualRoom');
+      show('classroomStatusBar');
+      show('topTeacherBadge');
 
       // Update URL without reloading
       if (window.history && window.history.replaceState) {
@@ -345,6 +349,7 @@
 
     // 2) Top Teacher Quick Indicator
     var teacher = session.virtualTeacher || {};
+    state.session = session;
     $('topTeacherName').textContent = teacher.name || 'أ. سارة الذكية';
 
     // 3) Left Teacher Panel
@@ -368,6 +373,7 @@
     // 5) Whiteboard Render
     if (session.whiteboardData && Array.isArray(session.whiteboardData.slides) && session.whiteboardData.slides.length) {
       state.whiteboard = core.createWhiteboardState(session.whiteboardData.slides);
+      state.whiteboard.setSlide(session.whiteboardData.currentSlide || 0);
       renderWhiteboardSlide();
     }
 
@@ -473,6 +479,24 @@
   var isDrawing = false;
   var lastX = 0;
   var lastY = 0;
+  function saveWhiteboard() {
+    if (!state.code || !state.isHost) return;
+    var canvas = $('whiteboardCanvas');
+    if (!canvas) return;
+    var drawing = canvas.toDataURL('image/png');
+    var slide = state.whiteboard.getCurrentSlide();
+    slide.drawing = drawing;
+    api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/whiteboard', {
+      method: 'POST', body: { currentSlide: state.whiteboard.getCurrentSlideIndex(), drawing: drawing }
+    }).catch(function (error) { notify('تعذر حفظ السبورة: ' + error.message, true); });
+  }
+
+  function saveSlidePosition() {
+    if (!state.code || !state.isHost) return;
+    api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/whiteboard', {
+      method: 'POST', body: { currentSlide: state.whiteboard.getCurrentSlideIndex() }
+    }).catch(function (error) { notify('تعذر حفظ موضع السبورة: ' + error.message, true); });
+  }
 
   function setupWhiteboardCanvas() {
     var canvas = $('whiteboardCanvas');
@@ -492,7 +516,10 @@
     }
 
     function startDraw(e) {
+      if (!state.isHost) return;
       if (state.whiteboard.getTool() === 'select') return;
+      e.preventDefault();
+      try { state.whiteboard.pushHistory(canvas.toDataURL('image/png')); } catch (_) {}
       isDrawing = true;
       var pos = getCoords(e);
       lastX = pos.x;
@@ -501,6 +528,7 @@
 
     function draw(e) {
       if (!isDrawing || !canvasCtx) return;
+      e.preventDefault();
       var pos = getCoords(e);
       var tool = state.whiteboard.getTool();
 
@@ -532,10 +560,7 @@
     function stopDraw() {
       if (isDrawing && canvas) {
         isDrawing = false;
-        try {
-          var dataUrl = canvas.toDataURL();
-          state.whiteboard.pushHistory(dataUrl);
-        } catch (e) {}
+        saveWhiteboard();
       }
     }
 
@@ -591,6 +616,7 @@
       if (slide.drawing) {
         var img = new Image();
         img.onload = function () {
+          if (state.whiteboard.getCurrentSlideIndex() !== idx) return;
           canvasCtx.drawImage(img, 0, 0);
         };
         img.src = slide.drawing;
@@ -629,9 +655,11 @@
     var clearBtn = $('toolClear');
     if (clearBtn) {
       clearBtn.addEventListener('click', function () {
+        if (!state.isHost) return;
         if (canvasCtx && $('whiteboardCanvas')) {
           canvasCtx.clearRect(0, 0, $('whiteboardCanvas').width, $('whiteboardCanvas').height);
           state.whiteboard.clearDrawing();
+          saveWhiteboard();
         }
       });
     }
@@ -640,6 +668,7 @@
     var undoBtn = $('undoBtn');
     if (undoBtn) {
       undoBtn.addEventListener('click', function () {
+        if (!state.isHost) return;
         var canvas = $('whiteboardCanvas');
         if (!canvas || !canvasCtx) return;
         var prev = state.whiteboard.undo(canvas.toDataURL());
@@ -648,10 +677,12 @@
           img.onload = function () {
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             canvasCtx.drawImage(img, 0, 0);
+            saveWhiteboard();
           };
           img.src = prev;
         } else {
           canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+          saveWhiteboard();
         }
       });
     }
@@ -659,6 +690,7 @@
     var redoBtn = $('redoBtn');
     if (redoBtn) {
       redoBtn.addEventListener('click', function () {
+        if (!state.isHost) return;
         var canvas = $('whiteboardCanvas');
         if (!canvas || !canvasCtx) return;
         var next = state.whiteboard.redo(canvas.toDataURL());
@@ -667,6 +699,7 @@
           img.onload = function () {
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             canvasCtx.drawImage(img, 0, 0);
+            saveWhiteboard();
           };
           img.src = next;
         }
@@ -677,13 +710,15 @@
     var prevBtn = $('prevSlideBtn');
     if (prevBtn) {
       prevBtn.addEventListener('click', function () {
-        if (state.whiteboard.prevSlide()) renderWhiteboardSlide();
+        if (!state.isHost) return;
+        if (state.whiteboard.prevSlide()) { renderWhiteboardSlide(); saveSlidePosition(); }
       });
     }
     var nextBtn = $('nextSlideBtn');
     if (nextBtn) {
       nextBtn.addEventListener('click', function () {
-        if (state.whiteboard.nextSlide()) renderWhiteboardSlide();
+        if (!state.isHost) return;
+        if (state.whiteboard.nextSlide()) { renderWhiteboardSlide(); saveSlidePosition(); }
       });
     }
 
@@ -1062,6 +1097,9 @@
     function openModal() {
       if (!modal) return;
       populateModalProfiles();
+      var current = state.session && state.session.virtualTeacher;
+      if ($('modalProfileSelect')) $('modalProfileSelect').value = current && current.profileId || 'sarah-smart';
+      if ($('modalDialectSelect')) $('modalDialectSelect').value = current && current.dialect || 'ar-standard';
       show('settingsModal');
     }
 
@@ -1070,8 +1108,16 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { hide('settingsModal'); });
     if (saveBtn) {
       saveBtn.addEventListener('click', function () {
-        hide('settingsModal');
-        notify('تم تحديث إعدادات المعلم الافتراضي.');
+        if (!state.code || !state.isHost) { notify('تعديل المعلم متاح لمشرف الحصة فقط.', true); return; }
+        saveBtn.disabled = true;
+        api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/teacher', {
+          method: 'PATCH', body: { profileId: $('modalProfileSelect').value, dialect: $('modalDialectSelect').value }
+        }).then(function (result) {
+          state.session.virtualTeacher = result.teacher;
+          updateTeacherDisplay(result.teacher);
+          hide('settingsModal');
+          notify('تم حفظ إعدادات المعلم الافتراضي للحصة.');
+        }).catch(function (error) { notify(error.message, true); }).finally(function () { saveBtn.disabled = false; });
       });
     }
   }
@@ -1079,16 +1125,22 @@
   function populateModalProfiles() {
     var box = $('modalProfilesList');
     if (!box) return;
-    box.innerHTML = '';
+    box.innerHTML = '<label for="modalProfileSelect">شخصية المعلم</label><select id="modalProfileSelect"></select>';
+    var select = $('modalProfileSelect');
     core.PROFILES.forEach(function (p) {
-      var div = document.createElement('div');
-      div.className = 'profile-option-row';
-      div.style.cssText = 'padding:10px;border:1px solid #d0e7e7;border-radius:8px;margin-bottom:8px;background:#f0f7f7;display:flex;align-items:center;gap:12px;cursor:pointer;';
-      div.innerHTML = '<div style="font-size:24px;">👩‍🏫</div>' +
-        '<div style="flex:1;"><b>' + p.name + '</b> <span style="font-size:11px;background:#e0f2f1;color:#146c70;padding:2px 6px;border-radius:6px;">' + p.label + '</span>' +
-        '<div style="font-size:12px;color:#53706f;">' + p.title + '</div></div>';
-      box.appendChild(div);
+      var option = document.createElement('option');
+      option.value = p.profileId;
+      option.textContent = p.name + ' — ' + p.title;
+      select.appendChild(option);
     });
+  }
+
+  function updateTeacherDisplay(teacher) {
+    if (!teacher) return;
+    $('topTeacherName').textContent = teacher.name;
+    $('teacherDisplayName').textContent = teacher.name;
+    $('teacherRoleTag').textContent = teacher.title;
+    $('teacherDialectLabel').textContent = core.getDialect(teacher.dialect).name;
   }
 
   // -------------------------------------------------------------
@@ -1112,6 +1164,22 @@
         if (data && data.session && data.code === state.code) {
           renderParticipants(data.session.participants || []);
         }
+      });
+
+      state.socket.on('school:virtual:teacher', function (data) {
+        if (data && data.code === state.code && data.teacher && state.session) {
+          state.session.virtualTeacher = data.teacher;
+          updateTeacherDisplay(data.teacher);
+        }
+      });
+
+      state.socket.on('school:virtual:whiteboard', function (data) {
+        if (!data || data.code !== state.code || !data.whiteboardData || state.isHost) return;
+        var board = data.whiteboardData;
+        if (!board.slides || !board.slides.length) return;
+        state.whiteboard = core.createWhiteboardState(board.slides);
+        state.whiteboard.setSlide(board.currentSlide || 0);
+        renderWhiteboardSlide();
       });
 
       state.socket.on('school:virtual:message', function (data) {

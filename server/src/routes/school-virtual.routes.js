@@ -352,13 +352,18 @@ router.post('/sessions/:code/whiteboard', async (req, res, next) => {
 
     const { currentSlide, drawing } = req.body;
     if (session.whiteboardData) {
-      if (typeof currentSlide === 'number' && currentSlide >= 0) {
+      if (Number.isInteger(currentSlide) && currentSlide >= 0 && currentSlide < (session.whiteboardData.slides || []).length) {
         session.whiteboardData.currentSlide = currentSlide;
+      } else if (currentSlide !== undefined) {
+        return res.status(400).json({ ok: false, message: 'موضع السبورة غير صالح' });
       }
       if (typeof drawing === 'string') {
+        if (drawing.length > 500000 || (drawing && !drawing.startsWith('data:image/png;base64,'))) {
+          return res.status(400).json({ ok: false, message: 'بيانات الرسم غير صالحة أو كبيرة جداً' });
+        }
         const slideIdx = session.whiteboardData.currentSlide || 0;
         if (session.whiteboardData.slides && session.whiteboardData.slides[slideIdx]) {
-          session.whiteboardData.slides[slideIdx].drawing = drawing.slice(0, 500000);
+          session.whiteboardData.slides[slideIdx].drawing = drawing;
         }
       }
     }
@@ -371,6 +376,29 @@ router.post('/sessions/:code/whiteboard', async (req, res, next) => {
     });
 
     res.json({ ok: true, whiteboardData: session.whiteboardData });
+  } catch (e) { next(e); }
+});
+
+/** Update the live AI persona and dialect for the class host. */
+router.patch('/sessions/:code/teacher', async (req, res, next) => {
+  try {
+    const session = await loadSessionByCode(req.params.code, req, res);
+    if (!session) return;
+    if (session.status !== 'active') return res.status(409).json({ ok: false, message: 'الحصة منتهية' });
+    if (!vsvc.canManage(session, req.user)) return res.status(403).json({ ok: false, message: 'تعديل المعلم الافتراضي متاح لمشرف الحصة فقط' });
+    const profile = await VirtualProfile.findProfile(String(req.body.profileId || '').trim().toLowerCase());
+    if (!profile) return res.status(400).json({ ok: false, message: 'شخصية المعلم الافتراضي غير متاحة' });
+    const dialect = String(req.body.dialect || '');
+    if (!['ar-standard', 'ar-iraqi'].includes(dialect)) return res.status(400).json({ ok: false, message: 'لغة الشرح غير متاحة' });
+    session.virtualTeacher.profileId = profile.profileId;
+    session.virtualTeacher.name = profile.name;
+    session.virtualTeacher.title = profile.title;
+    session.virtualTeacher.avatar = profile.avatar || '';
+    session.virtualTeacher.dialect = dialect;
+    await session.save();
+    const teacher = vsvc.publicSession(session).virtualTeacher;
+    emitVirtual(req, session.code, 'school:virtual:teacher', { code: session.code, teacher });
+    res.json({ ok: true, teacher });
   } catch (e) { next(e); }
 });
 
