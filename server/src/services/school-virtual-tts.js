@@ -243,7 +243,7 @@ function createTeacherTTS(options = {}) {
             voice: 'alloy',
             input: text,
             response_format: 'mp3',
-            instructions: 'Speak clearly in Arabic for an Iraqi school lesson.'
+            instructions: voice === 'english-female' ? 'Speak clearly in English for an Iraqi school lesson with a warm female voice.' : 'Speak clearly in Arabic for an Iraqi school lesson.'
           })
         }).then((result) => ({ ...result, type: 'audio/mpeg', provider: 'openai' }))
       });
