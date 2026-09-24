@@ -27,6 +27,7 @@
       const result = await schoolApi('/teacher-applications?status=pending');
       requests = result.applications || [];
       count.textContent = String(requests.length);
+      document.getElementById('schoolTeacherNavCount').textContent = String(requests.length);
       body.innerHTML = requests.map(request => `<tr>
         <td>${escapeHtml(request.fullName || request.applicant?.fullName || 'حساب غير متاح')}<br><small>${escapeHtml(request.applicant?.username || '')}</small></td>
         <td>${escapeHtml((request.subjects || []).join('، ') || '—')}<br><small>${escapeHtml([...(request.stages || []), ...(request.grades || [])].join(' · '))}</small></td>
@@ -35,6 +36,7 @@
       </tr>`).join('') || '<tr><td colspan="4">لا توجد طلبات معلمين معلقة.</td></tr>';
     } catch (error) {
       count.textContent = '—';
+      document.getElementById('schoolTeacherNavCount').textContent = '—';
       body.innerHTML = '<tr><td colspan="4">تعذر عرض الطلبات. اضغط تحديث للمحاولة مجددًا.</td></tr>';
       message.textContent = error.message;
     }
