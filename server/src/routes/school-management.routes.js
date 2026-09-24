@@ -363,6 +363,14 @@ router.post('/students/:id/consents', async (req, res, next) => {
 });
 
 
+
+/* Phase 10 — student/guardian hub and smart whiteboard */
+router.get('/student-dashboard',async(req,res,next)=>{try{res.json({ok:true,data:await managementService.getStudentDashboard(req.user,req.schoolContext)});}catch(err){if(err.status)return res.status(err.status).json({ok:false,message:err.message});next(err);}});
+router.get('/guardian-requests',async(req,res,next)=>{try{res.json({ok:true,requests:await managementService.listGuardianRequests(req.user,req.schoolContext)});}catch(err){if(err.status)return res.status(err.status).json({ok:false,message:err.message});next(err);}});
+router.post('/guardian-requests',async(req,res,next)=>{try{res.status(201).json({ok:true,request:await managementService.createGuardianRequest(req.user,req.schoolContext,req.body)});}catch(err){if(err.status)return res.status(err.status).json({ok:false,message:err.message});next(err);}});
+router.get('/whiteboards',async(req,res,next)=>{try{res.json({ok:true,whiteboards:await managementService.listWhiteboards(req.user,req.schoolContext,req.query)});}catch(err){if(err.status)return res.status(err.status).json({ok:false,message:err.message});next(err);}});
+router.post('/whiteboards',async(req,res,next)=>{try{res.json({ok:true,whiteboard:await managementService.saveWhiteboard(req.user,req.schoolContext,req.body)});}catch(err){if(err.status)return res.status(err.status).json({ok:false,message:err.message});next(err);}});
+
 /* Phase 9 — teacher/student relationship workflow */
 router.get('/teacher-student-candidates', async (req,res,next)=>{ try { res.json({ok:true,students:await managementService.searchTeacherStudentCandidates(req.user,req.schoolContext,req.query.q)}); } catch(err){ if(err.status)return res.status(err.status).json({ok:false,message:err.message}); next(err); } });
 router.get('/teacher-student-requests', async (req,res,next)=>{ try { res.json({ok:true,requests:await managementService.listTeacherStudentRequests(req.user,req.schoolContext)}); } catch(err){ if(err.status)return res.status(err.status).json({ok:false,message:err.message}); next(err); } });
