@@ -170,9 +170,46 @@ router.post('/sessions', async (req, res, next) => {
       timestamp: now
     });
 
+    // The first substantive teacher message is a source-grounded explanation.
+    // An unavailable AI provider leaves only the greeting; never invent a lesson.
+    let openingAnswer = null;
+    if (schoolAI.configured()) {
+      try {
+        const source = {
+          title: curResult.value.sourceTitle,
+          page: curResult.value.sourcePage,
+          content: curResult.value.lessonContent
+        };
+        const aiResult = await schoolAI.ask({
+          mode: 'opening',
+          student: { name: 'الطلاب', stage: session.stage, grade: session.grade },
+          subject: session.subject,
+          lesson: session.lesson,
+          sources: [source]
+        }, [{
+          role: 'user',
+          content: 'ابدئي الحصة الآن بشرح الدرس الموثق في المصدر. اذكري فكرة الدرس ومثالاً من الصفحة أولاً، ثم اسألي سؤال فهم واحداً.'
+        }]);
+        if (aiResult?.answer) {
+          openingAnswer = await VirtualMessage.create({
+            session: session._id,
+            code: session.code,
+            senderType: 'teacher_ai',
+            senderName: profile.name,
+            type: 'answer',
+            text: aiResult.answer.slice(0, 4000),
+            aiProvider: aiResult.provider || '',
+            aiModel: aiResult.model || '',
+            sourceRefs: [{ title: source.title, page: source.page || '' }]
+          });
+        }
+      } catch (_) { /* No fabricated explanation if the AI provider fails. */ }
+    }
+
     res.status(201).json({
       ok: true,
       code: session.code,
+      openingAvailable: Boolean(openingAnswer),
       session: vsvc.publicSession(session, { roster: true }),
       room: roomName(session.code)
     });
