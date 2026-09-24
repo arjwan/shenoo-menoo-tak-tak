@@ -377,10 +377,12 @@
     api('/api/school/virtual/sessions/mine').then(function (d) {
       if (d && d.hosting && d.hosting.code === session.code) {
         state.isHost = true;
+        hide('handBtn');
         show('endClassBtn');
         show('virtualAttendanceBtn');
       } else {
         state.isHost = false;
+        show('handBtn');
         hide('endClassBtn');
         hide('virtualAttendanceBtn');
       }
@@ -868,6 +870,7 @@
     if (handBtn) {
       handBtn.addEventListener('click', function () {
         if (!state.code) return;
+        if (state.isHost) { notify('رفع اليد مخصص للطلاب. أنت مشرف هذه الحصة.', true); return; }
         var currentlyRaised = handBtn.classList.contains('active');
         api('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/hand', {
           method: 'POST',
@@ -879,7 +882,7 @@
             handBtn.classList.remove('active');
           }
         }).catch(function (err) {
-          notify('خطأ في تحديث اليد: ' + err.message, true);
+          notify(err.message === 'المعلم لا يرفع يده' ? 'رفع اليد مخصص للطلاب. أنت مشرف هذه الحصة.' : 'تعذر تحديث اليد: ' + err.message, true);
         });
       });
     }
@@ -1127,23 +1130,27 @@
     if (key) spokenAnswers.add(key);
     try {
       window.speechSynthesis.cancel();
-      var utterance = new SpeechSynthesisUtterance(text);
       var voices = window.speechSynthesis.getVoices();
       var arabic = voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); }) ||
         voices.find(function (v) { return /^ar[-_]/i.test(v.lang); });
-      if (arabic) utterance.voice = arabic;
-      utterance.lang = arabic ? arabic.lang : 'ar-IQ';
-      utterance.pitch = 1.0;
-      utterance.rate = 1.0;
-      utterance.volume = 1;
-      utterance.onerror = function (event) {
-        if (key) spokenAnswers.delete(key);
-        if (event.error !== 'interrupted' && event.error !== 'canceled') {
-          notify('تعذر نطق صوت المعلم (' + event.error + '). اضغط زر 🔊 ثم تأكد من توفر صوت عربي وصوت الجهاز.', true);
-        }
-      };
-      window.speechSynthesis.speak(utterance);
-      // Some Chromium builds pause long utterances until resume is called.
+      if (!arabic && manual) notify('لم يجد المتصفح صوتًا عربيًا مثبتًا. ستحاول القراءة بالصوت المتاح؛ ثبّت صوت العربية في إعدادات الجهاز لتحسين النطق.', true);
+      // Chromium can silently stop a long utterance. Read shorter sentences in sequence.
+      var parts = String(text).match(/.{1,160}(?:[.،؛؟!\s]|$)/g) || [String(text)];
+      parts.forEach(function (part) {
+        var utterance = new SpeechSynthesisUtterance(part);
+        if (arabic) utterance.voice = arabic;
+        utterance.lang = arabic ? arabic.lang : 'ar-IQ';
+        utterance.pitch = 1;
+        utterance.rate = 1;
+        utterance.volume = 1;
+        utterance.onerror = function (event) {
+          if (key) spokenAnswers.delete(key);
+          if (event.error !== 'interrupted' && event.error !== 'canceled') {
+            notify('تعذر نطق صوت المعلم (' + event.error + '). تأكد من صوت الجهاز واضغط زر 🔊 للتجربة.', true);
+          }
+        };
+        window.speechSynthesis.speak(utterance);
+      });
       if (window.speechSynthesis.paused) window.speechSynthesis.resume();
     } catch (e) {
       if (key) spokenAnswers.delete(key);
@@ -1301,7 +1308,7 @@
         state.socket.emit('school:virtual:join', { code: code }, function (result) {
           if (!result || !result.ok) return notify('تعذر اتصال كاميرات الحصة.', true);
           state.hostId = result.host;
-          if (result.host === result.you) state.isHost = true;
+          if (result.host === result.you) { state.isHost = true; hide('handBtn'); }
           if (Array.isArray(result.iceServers)) state.iceServers = result.iceServers;
           if (!state.isHost && state.devices.camera) startStudentCamera();
         });
