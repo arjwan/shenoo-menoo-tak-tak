@@ -50,9 +50,9 @@ const BUILTIN_PROFILES = [
   },
   {
     profileId: 'ali-wise',
-    name: 'أ. علي الحكيم',
+    name: 'أ. ليلى الحكيمة',
     label: 'معلم افتراضي / AI',
-    title: 'معلم افتراضي للغة العربية والتربية الإسلامية',
+    title: 'معلمة افتراضية للغة العربية والتربية الإسلامية',
     subjectSpecialty: ['اللغة العربية', 'القراءة', 'قواعد اللغة العربية', 'التربية الإسلامية', 'القرآن الكريم'],
     supportedDialects: [
       { id: 'ar-standard', name: 'العربية الفصحى', isDefault: true },
@@ -61,7 +61,7 @@ const BUILTIN_PROFILES = [
     ],
     defaultDialect: 'ar-standard',
     avatar: '',
-    voiceSettings: { voiceGender: 'male', defaultPitch: 0.95, defaultRate: 1.0, lang: 'ar-IQ' },
+    voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 1.0, lang: 'ar-IQ' },
     introGreeting: 'مرحباً بكم أعزائي الطلبة، لنستكشف معاً جمال لغتنا ومعانيها القيمة.',
     active: true
   },
@@ -91,6 +91,7 @@ virtualTeacherProfileSchema.statics.getBuiltinProfiles = function () {
 virtualTeacherProfileSchema.statics.findProfile = async function (profileId) {
   const norm = String(profileId || '').trim().toLowerCase();
   const dbProfile = await this.findOne({ profileId: norm, active: true }).lean();
+  if (norm === 'ali-wise') return BUILTIN_PROFILES.find((p) => p.profileId === norm);
   if (dbProfile) return dbProfile;
   return BUILTIN_PROFILES.find((p) => p.profileId === norm) || null;
 };
