@@ -39,7 +39,7 @@ function fail(reason) {
 
   let audio;
   try {
-    audio = await tts.synthesizePart(parts[0], 'male');
+    audio = await tts.synthesizePart(parts[0], 'female');
   } catch (error) {
     fail(String(error.message).slice(0, 400));
     return;
@@ -49,4 +49,13 @@ function fail(reason) {
   if (!['audio/wav', 'audio/mpeg'].includes(audio.type)) fail('unexpected content type ' + audio.type);
 
   console.log('SCHOOL_TTS_PROBE=PASS provider=' + audio.provider + ' bytes=' + audio.bytes.length + ' type=' + audio.type + ' parts=' + parts.length);
+  let english;
+  try {
+    english = await tts.synthesizePart('Welcome to the English lesson.', 'english-female');
+  } catch (error) {
+    fail('English voice: ' + String(error.message).slice(0, 350));
+    return;
+  }
+  if (!isValidAudioBytes(english.bytes)) fail('English voice returned invalid audio');
+  console.log('SCHOOL_TTS_ENGLISH_PROBE=PASS provider=' + english.provider + ' bytes=' + english.bytes.length);
 })().catch((error) => fail(error.message));
