@@ -1143,7 +1143,13 @@
         var response = await fetch('/api/school/virtual/sessions/' + encodeURIComponent(state.code) + '/messages/' + encodeURIComponent(key) + '/speech?part=' + part, {
           headers: { Authorization: 'Bearer ' + state.token }
         });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
+        if (!response.ok) {
+          var failure = null;
+          try { failure = await response.json(); } catch (_) {}
+          throw new Error(failure && failure.message ? failure.message : 'خادم الصوت أعاد HTTP ' + response.status);
+        }
+        var contentType = String(response.headers.get('Content-Type') || '').toLowerCase();
+        if (contentType.indexOf('audio/') !== 0) throw new Error('خادم الصوت لم يُرجع ملفًا صوتيًا');
         var total = Number(response.headers.get('X-Speech-Parts')) || 1;
         var url = URL.createObjectURL(await response.blob());
         try {
@@ -1162,7 +1168,7 @@
     } catch (error) {
       if (generation !== speechGeneration) return;
       if (key) spokenAnswers.delete(key);
-      notify('تعذر تشغيل الصوت المسجل؛ سأجرّب صوت المتصفح. ' + error.message, true);
+      notify('تعذر توليد صوت المعلم من الخادم: ' + error.message + ' — سيُستخدم صوت الجهاز كحل احتياطي فقط.', true);
       speakAiAnswer(text, null, true);
     }
   }
@@ -1181,7 +1187,7 @@
       var voices = window.speechSynthesis.getVoices();
       var arabic = voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); }) ||
         voices.find(function (v) { return /^ar[-_]/i.test(v.lang); });
-      if (!arabic && manual) notify('لم يجد المتصفح صوتًا عربيًا مثبتًا. ستحاول القراءة بالصوت المتاح؛ ثبّت صوت العربية في إعدادات الجهاز لتحسين النطق.', true);
+      if (!arabic && manual) notify('صوت الخادم غير متاح حاليًا، ولا يوجد صوت عربي محلي على هذا الجهاز. هذه حالة احتياطية وليست متطلبًا لتشغيل المدرسة.', true);
       // Chromium can silently stop a long utterance. Read shorter sentences in sequence.
       var parts = String(text).match(/.{1,160}(?:[.،؛؟!\s]|$)/g) || [String(text)];
       parts.forEach(function (part) {
