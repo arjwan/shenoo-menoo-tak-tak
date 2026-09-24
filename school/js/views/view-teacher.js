@@ -95,9 +95,21 @@
       card('الواجبات المنشورة',cache.assignments.length ? '<div class="teacher-list">'+cache.assignments.map(function(a){return '<div class="teacher-row"><div><b>'+esc(a.title)+'</b><small>'+esc(a.subject||'')+'</small></div><button data-submissions="'+esc(a._id||a.id)+'">التسليمات</button></div>';}).join('')+'</div><div id="teacher-submissions"></div>' : empty('لا توجد واجبات منشورة.'));
   }
   function gradebook() {
-    return head('دفتر الدرجات','رصد التقييمات وعرض السجل الأكاديمي.') +
-      card('رصد درجة','<form id="teacher-grade" class="teacher-form"><label>الطالب<select name="studentId" required><option value="">اختر الطالب</option>'+options()+
-      '</select></label><label>المادة<input name="subject" required></label><label>التقييم<input name="title" required></label><label>الدرجة<input name="score" type="number" min="0" required></label><label>من<input name="maxScore" type="number" min="1" value="100" required></label><button>حفظ الدرجة</button></form><div id="teacher-grade-result"></div>');
+    var groups={};
+    cache.students.forEach(function(st){
+      (st.assignedTeachers||[]).forEach(function(link){
+        if(String(link.teacher&&link.teacher._id||link.teacher)!==String(cache.teacher._id)||!link.subject)return;
+        var key=[st.stage,st.grade,st.section||'أ',link.subject].join('|');
+        (groups[key]||(groups[key]=[])).push(st);
+      });
+    });
+    var keys=Object.keys(groups);
+    return head('سجل الدرجات الإلكتروني','السجل مفصول حسب المرحلة والصف والشعبة والمادة، ولا تختلط مجموعات الطلاب.') +
+      (keys.length?keys.map(function(key){
+        var p=key.split('|'),list=groups[key];
+        return card(p[0]+' · '+p[1]+' · شعبة '+p[2]+' · '+p[3],
+          '<form class="teacher-form teacher-grade-group" data-subject="'+esc(p[3])+'"><input type="hidden" name="subject" value="'+esc(p[3])+'"><label>الطالب<select name="studentId" required><option value="">اختر الطالب</option>'+list.map(function(st){return '<option value="'+esc(st._id)+'">'+esc(st.name)+'</option>';}).join('')+'</select></label><label>نوع التقييم<select name="gradeType"><option value="oral">شفهي</option><option value="homework">واجب</option><option value="activity">نشاط</option><option value="quiz">يومي</option><option value="monthly">شهري</option><option value="midyear">نصف السنة</option><option value="final">نهائي</option></select></label><label>التقييم<input name="title" required></label><label>الدرجة<input name="score" type="number" min="0" required></label><label>من<input name="maxScore" type="number" min="1" value="100" required></label><label>ملاحظات<input name="notes"></label><button>حفظ الدرجة</button></form>');
+      }).join(''):empty('لا توجد مجموعات طلاب مرتبطة بموادك بعد.'));
   }
   function reports() {
     return head('التقارير','قراءة السجل الدائم للطلاب المكلفين.') +
@@ -122,7 +134,7 @@
       if(f.id==='teacher-exam-alert'){p=send('/api/school/management/schedules','POST',b);}
       if(f.id==='teacher-attendance') p=send('/api/school/management/attendance','POST',b);
       if(f.id==='teacher-assignment'){b.maxScore=Number(b.maxScore);p=send('/api/school/assignments','POST',b);}
-      if(f.id==='teacher-grade'){b.score=Number(b.score);b.maxScore=Number(b.maxScore);p=send('/api/school/management/grades','POST',b);}
+      if(f.id==='teacher-grade'||f.classList.contains('teacher-grade-group')){b.score=Number(b.score);b.maxScore=Number(b.maxScore);p=send('/api/school/management/grades','POST',b);}
       if(f.id==='teacher-report'){p=api.request('/api/school/management/students/'+encodeURIComponent(b.studentId)+'/record').then(function(r){var d=payload(r);resultBox('teacher-report-result',d?'<pre class="teacher-record">'+esc(JSON.stringify(d,null,2))+'</pre>':empty('تعذر قراءة السجل.'));});return;}
       if(p)p.then(function(r){if(!r.ok)throw new Error(r.message||'تعذر الحفظ');ui.showToast('تم الحفظ بنجاح','success');return load();}).then(renderNow).catch(function(err){ui.showToast(err.message||'تعذر التنفيذ','error');});
     });
