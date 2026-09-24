@@ -125,32 +125,29 @@
       html += '      صرح رقمي تعليمي متكامل يجمع عراقة بلاد الرافدين بأحدث تقنيات التعليم التفاعلي. كتب دراسية رسمية معتمدة، فصول حية مباشرة، معلمون أكفاء، ومساعدون أذكياء لدعم مسار الطالب الأكاديمي بأعلى معايير الخصوصية والأمان.';
       html += '    </p>';
 
-      // أزرار الإجراءات السريعة
+      // أزرار الإجراءات السريعة — تبقى ثابتة عند الرجوع إلى #welcome
+      // لا نخفي إجراءات البوابة لمجرد أن جلسة شنو منو أصبحت موثقة.
       html += '    <div class="sumer-hero-actions">';
-      if (!isAuth) {
-        html += '      <a href="#auth/register-student" class="sumer-btn sumer-btn-gold" id="btn-hero-register">';
-        html += '        تسجيل طالب جديد (تجربة 30 يوماً مجاناً)';
-        html += '      </a>';
-        html += '      <a href="#curriculum" class="sumer-btn sumer-btn-outline" style="border-color: rgba(255,255,255,0.4); color: #ffffff;">';
-        html += '        استعراض المنهج العراقي (108 كتب)';
-        html += '      </a>';
-        html += '      <a href="#auth/login" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">';
-        html += '        دخول المنصة';
-        html += '      </a>';
-        html += '      <a href="#auth/apply-teacher" class="sumer-btn sumer-btn-outline" style="border-color: var(--sumer-gold-400); color: var(--sumer-gold-300);">';
-        html += '        طلب انضمام كمعلم';
-        html += '      </a>';
+      html += '      <a href="#auth/register-student" class="sumer-btn sumer-btn-gold" id="btn-hero-register">';
+      html += isAuth ? '        تسجيل طالب جديد' : '        تسجيل طالب جديد (تجربة 30 يوماً مجاناً)';
+      html += '      </a>';
+      html += '      <a href="#curriculum" class="sumer-btn sumer-btn-outline" style="border-color: rgba(255,255,255,0.4); color: #ffffff;">';
+      html += '        استعراض المنهج العراقي (108 كتب)';
+      html += '      </a>';
+      if (isAuth && state.schoolContext && state.schoolContext.isTeacher) {
+        html += '      <a href="#teacher/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">لوحة المعلم</a>';
+      } else if (isAuth && state.schoolContext && state.schoolContext.isGuardian) {
+        html += '      <a href="#guardian/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">لوحة ولي الأمر</a>';
+      } else if (isAuth && state.schoolContext && state.schoolContext.isStudent) {
+        html += '      <a href="#student/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">لوحة الطالب</a>';
+      } else if (isAuth && state.schoolContext && (state.schoolContext.isManager || state.schoolContext.isDeveloper)) {
+        html += '      <a href="#admin/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">دخول المنصة</a>';
       } else {
-        html += '      <span style="color: var(--sumer-gold-300); font-size: var(--sumer-font-sm); margin-left: 1rem;">أهلاً بك، ' + escapeHtml(user ? user.fullName : 'عضو مدرستنا') + '</span>';
-        html += '      <a href="#curriculum" class="sumer-btn sumer-btn-gold">استعراض المنهج العراقي</a>';
-        html += '      <a href="#auth/register-student" class="sumer-btn sumer-btn-outline" style="border-color: rgba(255,255,255,0.4); color: #ffffff;">تسجيل طالب جديد</a>';
-        if (state.schoolContext.isTeacher) {
-          html += '      <a href="#teacher/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">لوحة المعلم</a>';
-        } else if (state.schoolContext.isGuardian) {
-          html += '      <a href="#guardian/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">لوحة ولي الأمر</a>';
-        } else if (state.schoolContext.isStudent) {
-          html += '      <a href="#student/overview" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">لوحة الطالب</a>';
-        }
+        html += '      <a href="#auth/login" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">دخول المنصة</a>';
+      }
+      html += '      <a href="#auth/apply-teacher" class="sumer-btn sumer-btn-outline" style="border-color: var(--sumer-gold-400); color: var(--sumer-gold-300);">طلب انضمام كمعلم</a>';
+      if (isAuth) {
+        html += '      <span class="sumer-welcome-user" style="color: var(--sumer-gold-300); font-size: var(--sumer-font-sm);">أهلاً بك، ' + escapeHtml(user ? user.fullName : 'عضو مدرستنا') + '</span>';
       }
       html += '    </div>';
 
