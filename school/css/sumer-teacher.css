@@ -1,0 +1,23 @@
+.teacher-workspace { max-width: 1120px; margin: auto; color: var(--sumer-text-primary, #173331); }
+.teacher-tabs { display: flex; gap: .45rem; overflow-x: auto; padding: .7rem 0 1.1rem; scrollbar-width: thin; }
+.teacher-tabs a { flex: 0 0 auto; padding: .65rem .85rem; border-radius: 1rem; background: #e6f0eb; color: #134a44; text-decoration: none; font-weight: 700; }
+.teacher-tabs a.active { background: #12685e; color: #fff; }
+.teacher-heading { padding: 1.5rem; border-radius: 1.5rem; background: linear-gradient(115deg, #0c564e, #177c70); color: #fff; margin-bottom: 1.25rem; }
+.teacher-heading p { color: #e4c37b; margin: 0 0 .5rem; }
+.teacher-heading h1 { color: #fff; margin: 0 0 .6rem; font-size: clamp(1.45rem, 3vw, 2.2rem); }
+.teacher-heading span { color: #eaf7ef; }
+.teacher-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px,1fr)); gap: .75rem; margin: 1rem 0; }
+.teacher-stats div, .teacher-card { border: 1px solid #d7e7de; border-radius: 1.25rem; background: #fff; padding: 1rem; margin: .65rem 0; }
+.teacher-stats b { display: block; font-size: 1.7rem; color: #116d60; }
+.teacher-card h2 { font-size: 1.15rem; margin: 0 0 .7rem; }
+.teacher-card p { margin: .45rem 0; overflow-wrap: anywhere; }
+.teacher-card a { color: #075950; font-weight: 700; }
+.teacher-form { display: grid; gap: .8rem; padding: 1rem 0; }
+.teacher-form label { display: grid; gap: .35rem; font-weight: 700; }
+.teacher-form input, .teacher-form select, .teacher-form textarea { width: 100%; box-sizing: border-box; padding: .7rem; border: 1px solid #9bb6ac; border-radius: .6rem; background: #fff; color: #163a33; }
+.teacher-form textarea { min-height: 85px; }
+.teacher-form button, .teacher-button { border: 0; border-radius: .7rem; padding: .75rem 1.1rem; background: #096359; color: #fff; font-weight: 700; cursor: pointer; width: fit-content; }
+.teacher-form button:disabled { opacity: .5; cursor: wait; }
+.teacher-submission { border-top: 1px solid #dde9e2; padding: 1rem 0; }
+.teacher-empty { border: 1px dashed #b2c7bd; border-radius: 1rem; padding: 1.25rem; }
+#teacher-feedback:not(:empty) { padding: .8rem; margin: .5rem 0; border-radius: .6rem; background: #fff3db; color: #603c00; }

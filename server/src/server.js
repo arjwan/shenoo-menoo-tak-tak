@@ -117,6 +117,7 @@ app.use('/api/school', schoolClassroomRoutes);
 // and virtual-classroom implementations.
 app.use('/api/school/management', schoolManagementRoutes);
 app.use('/api/school/assignments', schoolAssignmentRoutes);
+app.use('/api/school/teacher', require('./routes/school-teacher-workspace.routes'));
 app.use('/api/school/management/assignments', schoolAssignmentRoutes);
 app.use('/api/school/teachers/apply', schoolTeacherApplyRoutes);
 app.use('/api/school/portal', schoolPortalRoutes);

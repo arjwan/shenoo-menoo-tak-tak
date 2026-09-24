@@ -35,6 +35,9 @@
     '#student/reader':      { workspace: 'student', title: 'القارئ الرقمي المزدوج', roleRequired: 'student', phase: 7 },
 
     // 3. مساحة عمل المعلم (Teacher Workspace)
+    '#teacher/curriculum':  { workspace: 'teacher', title: 'المناهج والقارئ', roleRequired: 'teacher', phase: 8 },
+    '#teacher/classroom':   { workspace: 'teacher', title: 'الصف والسبورة', roleRequired: 'teacher', phase: 8 },
+    '#teacher/live':        { workspace: 'teacher', title: 'الحصة المباشرة', roleRequired: 'teacher', phase: 8 },
     '#teacher/overview':    { workspace: 'teacher', title: 'لوحة المعلم اليومية', roleRequired: 'teacher', phase: 8 },
     '#teacher/classes':     { workspace: 'teacher', title: 'الفصول والحصص', roleRequired: 'teacher', phase: 8 },
     '#teacher/students':    { workspace: 'teacher', title: 'قوائم الطلاب المكلفين', roleRequired: 'teacher', phase: 8 },

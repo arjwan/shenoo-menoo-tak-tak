@@ -223,7 +223,7 @@ router.get('/students', async (req, res, next) => {
   }
 });
 
-router.post('/students', requireSchoolStaff, async (req, res, next) => {
+router.post('/students', requireSchoolManager, async (req, res, next) => {
   try {
     const student = await managementService.registerStudent(req.user, req.schoolContext, req.body);
     res.status(201).json({ ok: true, student, message: 'تم تسجيل الطالب بنجاح' });
@@ -233,7 +233,7 @@ router.post('/students', requireSchoolStaff, async (req, res, next) => {
   }
 });
 
-router.put('/students/:id', requireSchoolStaff, async (req, res, next) => {
+router.put('/students/:id', requireSchoolManager, async (req, res, next) => {
   try {
     const student = await managementService.updateStudent(req.user, req.schoolContext, req.params.id, req.body);
     res.json({ ok: true, student, message: 'تم تحديث بيانات الطالب' });

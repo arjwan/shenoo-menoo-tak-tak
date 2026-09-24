@@ -18,6 +18,7 @@
 const router = require('express').Router();
 const mongoose = require('mongoose');
 const { requireAuth } = require('../middleware/auth');
+const { attachSchoolContext, requireSchoolStaff } = require('../middleware/school-auth');
 const Classroom = require('../models/SchoolClassroom');
 const Student = require('../models/SchoolStudent');
 const catalog = require('../data/iraqi-curriculum-catalog');
@@ -58,8 +59,16 @@ async function uniqueCode() {
 
 router.use(requireAuth);
 
-router.post('/classrooms', async (req, res, next) => {
+router.post('/classrooms', attachSchoolContext, requireSchoolStaff, async (req, res, next) => {
   try {
+    if (req.schoolContext.isTeacher) {
+      const teacher = req.schoolContext.teacher;
+      if ((teacher.stages || []).length && !(teacher.stages || []).includes(req.body.stage) ||
+          (teacher.grades || []).length && !(teacher.grades || []).includes(req.body.grade) ||
+          (teacher.subjects || []).length && !(teacher.subjects || []).includes(req.body.subject)) {
+        return res.status(403).json({ ok: false, message: 'الحصة خارج اختصاص المعلم المعتمد' });
+      }
+    }
     const existing = await Classroom.findOne({ teacher: req.user._id, status: 'live' });
     if (existing) {
       return res.status(409).json({ ok: false, message: 'لديك حصة مباشرة جارية بالفعل', classroom: live.publicClassroom(existing, { roster: true }), room: live.roomName(existing), iceServers: iceServers() });
@@ -115,6 +124,35 @@ router.get('/classrooms/:code', async (req, res, next) => {
     const you = live.findParticipant(classroom, req.user._id);
     res.json({ ok: true, classroom: live.publicClassroom(classroom, { roster }), you: you ? live.publicParticipant(you) : null, room: roster ? live.roomName(classroom) : undefined, iceServers: roster ? iceServers() : undefined });
   } catch (e) { next(e); }
+});
+
+router.get('/classrooms/:code/board', async (req, res, next) => {
+  try {
+    const classroom = await loadByCode(req, res);
+    if (!classroom) return;
+    if (!canSeeRoster(classroom, req.user)) return res.status(403).json({ ok: false, message: 'السبورة لأعضاء الحصة فقط' });
+    res.json({ ok: true, entries: classroom.boardEntries || [] });
+  } catch (error) { next(error); }
+});
+
+router.post('/classrooms/:code/board', attachSchoolContext, async (req, res, next) => {
+  try {
+    const classroom = await loadByCode(req, res);
+    if (!classroom) return;
+    if (!req.schoolContext.isTeacher || String(req.schoolContext.teacher?.user) !== String(req.user._id) ||
+        !live.isTeacher(classroom, req.user._id) || classroom.status !== 'live') {
+      return res.status(403).json({ ok: false, message: 'السبورة لمعلم الحصة الجارية فقط' });
+    }
+    const text = String(req.body.text || '').trim();
+    if (!text || text.length > 2000) return res.status(400).json({ ok: false, message: 'نص السبورة مطلوب وبحد أقصى ٢٠٠٠ حرف' });
+    const page = req.body.page === undefined || req.body.page === '' ? null : Number(req.body.page);
+    if (page !== null && (!Number.isInteger(page) || page < 1)) return res.status(400).json({ ok: false, message: 'رقم الصفحة غير صالح' });
+    classroom.boardEntries.push({ text, bookId: String(req.body.bookId || '').slice(0, 120), page });
+    await classroom.save();
+    const entry = classroom.boardEntries[classroom.boardEntries.length - 1];
+    events.emitToRoom(io(req), classroom, 'school:classroom:board', { entry });
+    res.status(201).json({ ok: true, entry });
+  } catch (error) { next(error); }
 });
 
 router.post('/classrooms/:code/join', async (req, res, next) => {
