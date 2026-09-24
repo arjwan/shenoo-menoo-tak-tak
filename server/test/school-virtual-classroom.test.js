@@ -28,6 +28,7 @@ process.env.JWT_SECRET = 'test-secret-school-virtual-classroom';
 
 const User = require('../src/models/User');
 const Student = require('../src/models/SchoolStudent');
+const Knowledge = require('../src/models/SchoolKnowledgeSource');
 const VirtualSession = require('../src/models/VirtualClassroomSession');
 const VirtualProfile = require('../src/models/VirtualTeacherProfile');
 const VirtualMessage = require('../src/models/VirtualClassroomMessage');
@@ -168,7 +169,28 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     assert.match(data.message, /لا يوجد مصدر منهج معتمد/);
   });
 
+  await t.test('2b. Rejects an invented lesson inside a real textbook subject', async () => {
+    const { status, data } = await call('POST', '/api/school/virtual/sessions', {
+      token: teacherToken,
+      body: {
+        stage: 'ابتدائي',
+        grade: 'السادس ابتدائي',
+        subject: 'الرياضيات',
+        lesson: 'احتفالات المجرات الوهمية على صفحة الكتاب',
+        profileId: 'sarah-smart'
+      }
+    });
+    assert.equal(status, 400);
+    assert.match(data.message, /عنوان الدرس غير موثق/);
+  });
+
   await t.test('3. Successfully creates session with real Iraqi curriculum textbook', async () => {
+    await Knowledge.create({
+      stage: 'ابتدائي', grade: 'السادس ابتدائي', subject: 'الرياضيات',
+      lesson: 'الكسور العشرية والكسور العادية', title: 'كتاب الرياضيات — السادس ابتدائي',
+      page: '14', content: 'الكسور العشرية والكسور العادية: الكسر العشري يكتب باستعمال الفاصلة العشرية.',
+      sourceType: 'official_textbook', verified: true
+    });
     const { status, data } = await call('POST', '/api/school/virtual/sessions', {
       token: teacherToken,
       body: {
@@ -216,6 +238,37 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     } finally {
       engine.synthesizePart = original;
       engine.isConfigured = originalConfigured;
+    }
+  });
+
+  await t.test('Teacher opens a verified lesson with an explanation before questions', async () => {
+    const ai = require('../src/services/school-ai');
+    const configured = ai.configured;
+    const ask = ai.ask;
+    let source;
+    ai.configured = () => true;
+    ai.ask = async (ctx) => {
+      source = ctx;
+      return { answer: 'الكسور العشرية تُكتب باستعمال الفاصلة. مثال: نصف يساوي 0.5. ما قيمة ربع؟', provider: 'test', model: 'test' };
+    };
+    try {
+      const { status, data } = await call('POST', '/api/school/virtual/sessions', {
+        token: teacherToken,
+        body: {
+          stage: 'ابتدائي', grade: 'السادس ابتدائي', subject: 'الرياضيات',
+          lesson: 'الكسور العشرية والكسور العادية', profileId: 'sarah-smart'
+        }
+      });
+      assert.equal(status, 201);
+      assert.equal(data.openingAvailable, true);
+      assert.equal(source.mode, 'opening');
+      assert.match(source.sources[0].content, /الكسور العشرية/);
+      const opening = await VirtualMessage.findOne({ code: data.code, type: 'answer' }).lean();
+      assert.match(opening.text, /الفاصلة/);
+      assert.equal(opening.sourceRefs[0].page, '14');
+    } finally {
+      ai.configured = configured;
+      ai.ask = ask;
     }
   });
 

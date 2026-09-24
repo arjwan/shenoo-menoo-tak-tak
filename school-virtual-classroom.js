@@ -36,6 +36,7 @@
   var displayedMessages = new Set();
   var spokenAnswers = new Set();
   var latestTeacherAnswerId = '';
+  var pendingOpeningSpeechCode = '';
   var speechPlayback = null;
   var speechObjectURL = null;
   var speechGeneration = 0;
@@ -278,7 +279,8 @@
             dialect: dialect
           }
         }).then(function (res) {
-          notify('تم بدء الحصة الافتراضية بنجاح!');
+          pendingOpeningSpeechCode = res.openingAvailable ? res.code : '';
+          notify(res.openingAvailable ? 'بدأت المعلمة شرح الدرس من الكتاب.' : 'بدأت الحصة، لكن تعذر توليد الشرح الآن. حاول مجددًا عندما تتوفر خدمة المعلمة.', !res.openingAvailable);
           loadSession(res.code);
         }).catch(function (err) {
           notify('خطأ في بدء الحصة: ' + err.message, true);
@@ -1094,6 +1096,11 @@
       messages.forEach(function (m) {
         appendMessage(m);
       });
+      if (pendingOpeningSpeechCode === code) {
+        pendingOpeningSpeechCode = '';
+        var opening = messages.slice().reverse().find(function (m) { return m.senderType === 'teacher_ai' && m.type === 'answer'; });
+        if (opening) playTeacherAnswer(opening.text, opening._id || opening.id);
+      }
     }).catch(function () {});
   }
 
