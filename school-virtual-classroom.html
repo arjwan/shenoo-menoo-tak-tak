@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-7">
   <link rel="stylesheet" href="theme-pages.css?v=20260913-2">
   <link rel="stylesheet" href="school.css?v=20260913-7">
-  <link rel="stylesheet" href="school-virtual-classroom.css?v=20260921-1">
+  <link rel="stylesheet" href="school-virtual-classroom.css?v=20260924-visibility-1">
   <script src="auth-guard.js?v=20260913-7"></script>
 </head>
 <body class="school-virtual-page">
@@ -38,7 +38,7 @@
       </nav>
     </div>
     <div class="top-nav-left">
-      <div id="topTeacherBadge" class="teacher-status-badge">
+      <div id="topTeacherBadge" class="teacher-status-badge" hidden>
         <div class="teacher-avatar-mini" id="topTeacherAvatar">👩‍🏫</div>
         <div class="teacher-status-info">
           <div class="teacher-name-tag">
@@ -52,7 +52,7 @@
   </header>
 
   <!-- Sub-Header: Classroom Status Bar -->
-  <div class="classroom-status-bar">
+  <div id="classroomStatusBar" class="classroom-status-bar" hidden>
     <div class="status-left">
       <span class="live-pill">مباشر</span>
       <span id="elapsedTimer" class="elapsed-time">00:00</span>
@@ -114,12 +114,9 @@
           <div class="form-group">
             <label for="selectProfile">شخصية المعلم الافتراضي</label>
             <select id="selectProfile">
-              <option value="sarah-smart">ست زهراء (رياضيات وعلوم) — AI</option>
-              <option value="ali-wise">أستاذ أحمد (عربية وإسلامية) — AI</option>
-              <option value="mariam-nour">ست علياء (اجتماعيات وتاريخ) — AI</option>
-              <option value="omar-digital">أستاذ عمر (إنجليزية وحاسوب) — AI</option>
-              <option value="kawthar-lab">ست كوثر (أحياء وكيمياء) — AI</option>
-              <option value="ali-physics">أستاذ علي (فيزياء ورياضيات) — AI</option>
+              <option value="sarah-smart">أ. سارة الذكية (رياضيات وعلوم) — AI</option>
+              <option value="ali-wise">أ. علي الحكيم (عربية وإسلامية) — AI</option>
+              <option value="mariam-nour">أ. مريم النور (اجتماعيات وتاريخ) — AI</option>
             </select>
           </div>
           <div class="form-group">
@@ -452,6 +449,6 @@
   <script src="social-api.js?v=20260916-identity-7"></script>
   <script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script>
   <script src="school-virtual-teacher-core.js?v=20260921-1"></script>
-  <script src="school-virtual-classroom.js?v=20260921-1"></script>
+  <script src="school-virtual-classroom.js?v=20260924-visibility-1"></script>
 </body>
 </html>
