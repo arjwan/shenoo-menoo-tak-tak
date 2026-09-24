@@ -104,6 +104,13 @@ jobs:
             sudo install -m 0644 "$file" "$webroot/$(basename "$file")"
           done
 
+          # Publish generated virtual teacher portraits under their referenced paths.
+          if [ -d school-assets/virtual-teachers ]; then
+            find school-assets/virtual-teachers -type f -name '*.svg' -print0 | while IFS= read -r -d '' file; do
+              sudo install -D -m 0644 "$file" "$webroot/$file"
+            done
+          fi
+
           # The Sumer portal loads its JavaScript and CSS from school/.
           # Preserve the directory structure when deploying the root school.html.
           if [ -d school ]; then
