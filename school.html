@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="school/css/sumer-components.css">
   <link rel="stylesheet" href="school/css/sumer-gateway.css">
   <link rel="stylesheet" href="school/css/sumer-student.css">
+  <link rel="stylesheet" href="school/css/sumer-teacher.css">
 </head>
 <body>
   <div id="sumer-app">
@@ -47,10 +48,11 @@
   <script src="school/js/sumer-ui.js"></script>
   <script src="school/js/views/view-guest.js"></script>
   <script src="school/js/views/view-student.js"></script>
+  <script src="school/js/views/view-teacher.js"></script>
   <script src="school/js/sumer-router.js"></script>
 
   <script>
-    // تهيئة صدفة وبوابة مدرسة سومر الموحدة (Phase 6 & 7 Bootstrap)
+    // تهيئة صدفة وبوابة مدرسة سومر الموحدة (Phase 6, 7 & 8 Bootstrap)
     (function () {
       'use strict';
 
@@ -59,6 +61,7 @@
       var ui = window.SumerUI;
       var guestView = window.SumerGuestView || window.ViewGuest;
       var studentView = window.SumerStudentView || window.ViewStudent;
+      var teacherView = window.SumerTeacherView || window.ViewTeacher;
       var router = window.SumerRouter;
 
       if (!store || !ui || !router) {
@@ -86,6 +89,10 @@
 
       function isGuestRoute(routeKey) {
         return GUEST_ROUTES.indexOf(routeKey) !== -1;
+      }
+
+      function isTeacherRoute(routeKey) {
+        return routeKey.indexOf("#teacher") === 0;
       }
 
       function isStudentRoute(routeKey) {
@@ -134,7 +141,9 @@
         routeKey = routeKey || window.location.hash || '#welcome';
         if (!contentMount) return;
 
-        if (isStudentRoute(routeKey) && studentView) {
+        if (isTeacherRoute(routeKey) && teacherView) {
+          teacherView.render(routeKey, contentMount);
+        } else if (isStudentRoute(routeKey) && studentView) {
           studentView.render(routeKey, contentMount);
         } else if (isGuestRoute(routeKey) && guestView) {
           guestView.render(routeKey, contentMount);
