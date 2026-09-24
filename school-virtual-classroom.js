@@ -250,6 +250,32 @@
       });
     }
 
+    function syncTeacherDialect(profileId, dialectId) {
+      var profileSelect = $(profileId);
+      var dialectSelect = $(dialectId);
+      if (!profileSelect || !dialectSelect) return;
+      var english = profileSelect.value === 'english-global';
+      var englishOption = dialectSelect.querySelector('option[value="en"]');
+      if (englishOption) englishOption.disabled = !english;
+      if (english) dialectSelect.value = 'en';
+      else if (dialectSelect.value === 'en') dialectSelect.value = 'ar-standard';
+    }
+    if ($('selectProfile')) {
+      $('selectProfile').addEventListener('change', function () {
+        syncTeacherDialect('selectProfile', 'selectDialect');
+      });
+    }
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function () {
+        var preferred = core.PROFILES.find(function (p) { return (p.subjectSpecialty || []).includes(subjectSelect.value); });
+        if (preferred && $('selectProfile')) {
+          $('selectProfile').value = preferred.profileId;
+          syncTeacherDialect('selectProfile', 'selectDialect');
+        }
+      });
+    }
+    syncTeacherDialect('selectProfile', 'selectDialect');
+
     var createForm = $('createVirtualForm');
     if (createForm) {
       createForm.addEventListener('submit', function (e) {
@@ -1355,6 +1381,7 @@
       var current = state.session && state.session.virtualTeacher;
       if ($('modalProfileSelect')) $('modalProfileSelect').value = current && current.profileId || 'sarah-smart';
       if ($('modalDialectSelect')) $('modalDialectSelect').value = current && current.dialect || 'ar-standard';
+      syncModalTeacherDialect();
       show('settingsModal');
     }
 
@@ -1377,11 +1404,23 @@
     }
   }
 
+  function syncModalTeacherDialect() {
+    var profile = $('modalProfileSelect');
+    var dialect = $('modalDialectSelect');
+    if (!profile || !dialect) return;
+    var english = profile.value === 'english-global';
+    var englishOption = dialect.querySelector('option[value="en"]');
+    if (englishOption) englishOption.disabled = !english;
+    if (english) dialect.value = 'en';
+    else if (dialect.value === 'en') dialect.value = 'ar-standard';
+  }
+
   function populateModalProfiles() {
     var box = $('modalProfilesList');
     if (!box) return;
     box.innerHTML = '<label for="modalProfileSelect">شخصية المعلم</label><select id="modalProfileSelect"></select>';
     var select = $('modalProfileSelect');
+    select.addEventListener('change', syncModalTeacherDialect);
     core.PROFILES.forEach(function (p) {
       var option = document.createElement('option');
       option.value = p.profileId;
