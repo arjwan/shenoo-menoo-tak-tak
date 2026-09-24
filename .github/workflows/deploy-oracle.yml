@@ -72,6 +72,49 @@ jobs:
             npm ci --omit=dev
           fi
 
+          # Production gate: verify the same Groq Arabic TTS used by the
+          # virtual teacher before publishing/restarting. Never print secrets.
+          node <<'NODE'
+          require('dotenv').config();
+          const key = process.env.GROQ_API_KEY;
+          if (!key) {
+            console.error('SCHOOL_TTS_PROBE=FAIL missing GROQ_API_KEY');
+            process.exit(1);
+          }
+          (async () => {
+            const response = await fetch('https://api.groq.com/openai/v1/audio/speech', {
+              method: 'POST',
+              signal: AbortSignal.timeout(20000),
+              headers: {
+                Authorization: 'Bearer ' + key,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: 'canopylabs/orpheus-arabic-saudi',
+                voice: 'fahad',
+                input: 'مرحبا بكم في مدرسة سومر. هذا اختبار صوت المعلم.',
+                response_format: 'wav'
+              })
+            });
+            if (!response.ok) {
+              let detail = '';
+              try { detail = await response.text(); } catch (_) {}
+              console.error('SCHOOL_TTS_PROBE=FAIL HTTP=' + response.status + ' BODY=' + detail.slice(0, 500));
+              process.exit(1);
+            }
+            const bytes = Buffer.from(await response.arrayBuffer());
+            const wav = bytes.length >= 12 && bytes.subarray(0, 4).toString('ascii') === 'RIFF' && bytes.subarray(8, 12).toString('ascii') === 'WAVE';
+            if (!wav) {
+              console.error('SCHOOL_TTS_PROBE=FAIL invalid_wav bytes=' + bytes.length);
+              process.exit(1);
+            }
+            console.log('SCHOOL_TTS_PROBE=PASS bytes=' + bytes.length);
+          })().catch(error => {
+            console.error('SCHOOL_TTS_PROBE=FAIL ' + error.message);
+            process.exit(1);
+          });
+          NODE
+
           # Publish all root web assets used by the site and games.
           # Remove only retired, verified-unreferenced backup pages. Normal
           # production data and still-linked legacy pages are preserved.
