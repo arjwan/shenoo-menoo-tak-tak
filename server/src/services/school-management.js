@@ -217,10 +217,7 @@ async function listStudents(actorUser, schoolContext, filters = {}) {
   if (schoolContext.isGuardian) {
     query.guardian = actorUser._id;
   } else if (schoolContext.isTeacher) {
-    query.$or = [
-      { 'assignedTeachers.teacher': schoolContext.teacher._id },
-      { stage: { $in: schoolContext.teacher.stages || [] }, grade: { $in: schoolContext.teacher.grades || [] } }
-    ];
+    query['assignedTeachers.teacher'] = schoolContext.teacher._id;
   } else if (schoolContext.isStudent) {
     query.studentUser = actorUser._id;
   }
@@ -1992,6 +1989,20 @@ function assertTeacherContext(schoolContext) {
     throw err;
   }
 }
+
+async function searchTeacherStudentCandidates(actorUser, schoolContext, q) {
+  assertTeacherContext(schoolContext);
+  const term=String(q||'').trim();
+  if (term.length<2) return [];
+  const safe=term.replace(/[^\u0600-\u06FFa-zA-Z0-9 _-]/g,'');
+  const regex=new RegExp(safe,'i');
+  const t=schoolContext.teacher;
+  const query={status:{$ne:'archived'},name:regex};
+  if (t.stages?.length) query.stage={$in:t.stages};
+  if (t.grades?.length) query.grade={$in:t.grades};
+  return SchoolStudent.find(query).select('name stage grade section subjects assignedTeachers guardian').limit(20).lean();
+}
+
 async function createTeacherStudentRequest(actorUser, schoolContext, data) {
   assertTeacherContext(schoolContext);
   const student = await SchoolStudent.findById(data.studentId);
@@ -2105,6 +2116,7 @@ module.exports = {
   listSubmissions,
   getSubmission,
   gradeSubmission,
+  searchTeacherStudentCandidates,
   createTeacherStudentRequest,
   requestStudentRemoval,
   listTeacherStudentRequests,
