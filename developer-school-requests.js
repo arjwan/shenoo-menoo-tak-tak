@@ -11,7 +11,7 @@
   let requests = [];
 
   async function schoolApi(path, options = {}) {
-    const response = await fetch((location.protocol === 'file:' ? 'https://shino-mino-tak-tak.duckdns.org' : location.origin) + '/api/school/portal' + path, {
+    const response = await fetch((location.protocol === 'file:' ? 'https://shino-mino-tak-tak.duckdns.org' : location.origin) + '/api/school/management' + path, {
       ...options,
       headers: { Authorization: 'Bearer ' + token(), ...(options.body ? { 'Content-Type': 'application/json' } : {}) }
     });
@@ -24,12 +24,12 @@
     if (dashboard.classList.contains('hidden') || !token()) return;
     message.textContent = '';
     try {
-      const result = await schoolApi('/enrollment/teacher-requests');
-      requests = result.requests || [];
+      const result = await schoolApi('/teacher-applications?status=pending');
+      requests = result.applications || [];
       count.textContent = String(requests.length);
       body.innerHTML = requests.map(request => `<tr>
-        <td>${escapeHtml(request.user?.fullName || 'حساب غير متاح')}<br><small>${escapeHtml(request.user?.username || '')}</small></td>
-        <td>${escapeHtml((request.subjects || []).join('، ') || '—')}<br><small>${escapeHtml([request.stage, request.grade].filter(Boolean).join(' · '))}</small></td>
+        <td>${escapeHtml(request.fullName || request.applicant?.fullName || 'حساب غير متاح')}<br><small>${escapeHtml(request.applicant?.username || '')}</small></td>
+        <td>${escapeHtml((request.subjects || []).join('، ') || '—')}<br><small>${escapeHtml([...(request.stages || []), ...(request.grades || [])].join(' · '))}</small></td>
         <td>${request.createdAt ? new Date(request.createdAt).toLocaleDateString('ar-IQ') : '—'}</td>
         <td><div class="actions"><button class="btn" data-school-action="details" data-school-id="${escapeHtml(request._id)}">التفاصيل</button><button class="btn primary" data-school-action="approved" data-school-id="${escapeHtml(request._id)}">اعتماد</button><button class="btn danger" data-school-action="rejected" data-school-id="${escapeHtml(request._id)}">رفض</button></div></td>
       </tr>`).join('') || '<tr><td colspan="4">لا توجد طلبات معلمين معلقة.</td></tr>';
@@ -46,18 +46,18 @@
     const request = requests.find(item => String(item._id) === button.dataset.schoolId);
     if (!request) return;
     if (button.dataset.schoolAction === 'details') {
-      alert(['المعلم: ' + (request.user?.fullName || '—'), 'اسم المستخدم: ' + (request.user?.username || '—'), 'الهاتف: ' + (request.user?.phone || '—'), 'البريد: ' + (request.user?.email || '—'), 'المرحلة: ' + (request.stage || '—'), 'الصف: ' + (request.grade || '—'), 'المواد: ' + ((request.subjects || []).join('، ') || '—'), 'ملاحظات: ' + (request.note || '—')].join('\n'));
+      alert(['المعلم: ' + (request.fullName || '—'), 'اسم المستخدم: ' + (request.applicant?.username || '—'), 'الهاتف: ' + (request.phone || request.applicant?.phone || '—'), 'البريد: ' + (request.email || request.applicant?.email || '—'), 'المراحل: ' + ((request.stages || []).join('، ') || '—'), 'الصفوف: ' + ((request.grades || []).join('، ') || '—'), 'المواد: ' + ((request.subjects || []).join('، ') || '—'), 'المؤهل: ' + (request.qualifications || '—'), 'سنوات الخبرة: ' + (request.experienceYears ?? '—'), 'نبذة: ' + (request.bio || '—'), 'ملاحظات: ' + (request.notes || '—')].join('\n'));
       return;
     }
     const decision = button.dataset.schoolAction;
-    const name = request.user?.fullName || 'المعلم';
+    const name = request.fullName || 'المعلم';
     if (!confirm(`${decision === 'approved' ? 'اعتماد' : 'رفض'} طلب ${name}؟`)) return;
     const reason = decision === 'rejected' ? prompt('سبب الرفض (اختياري):') : '';
     if (reason === null) return;
     root.querySelectorAll('[data-school-action]').forEach(item => { item.disabled = true; });
     try {
-      const result = await schoolApi('/enrollment/' + encodeURIComponent(request._id) + '/review', {
-        method: 'PATCH', body: JSON.stringify({ decision, reason })
+      const result = await schoolApi('/teacher-applications/' + encodeURIComponent(request._id) + '/' + (decision === 'approved' ? 'approve' : 'reject'), {
+        method: 'POST', body: JSON.stringify(decision === 'approved' ? { notes: '' } : { reason })
       });
       await load();
       message.textContent = result.message || 'تمت مراجعة الطلب';

@@ -1217,9 +1217,7 @@
               if (!res.ok) {
                 if (tSubmitBtn) tSubmitBtn.innerHTML = '<span>إرسال طلب الانضمام للمراجعة الإدارية</span>';
                 var msg = res.message || 'تعذر تقديم الطلب';
-                if (res.status === 409) {
-                  msg = 'تعارض: حسابك مسجل بالفعل كمعلم نشط أو لديك طلب انضمام معلق قيد المراجعة.';
-                } else if (res.status === 401) {
+                if (res.status === 401) {
                   msg = 'يجب تسجيل الدخول بحساب شكو ماكو المعتمد لتقديم طلب التدريس.';
                 }
                 if (tErrAlert && tErrText) {
