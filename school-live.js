@@ -44,6 +44,7 @@
     people.forEach(function (p) {
       var id = String(p.userId || p.user || p._id || '');
       if (boardPeerMode === 'one' && id !== boardSelectedPeer && id !== state.classroom.answeringStudent) return;
+      if (boardPeerMode === 'hidden' && id !== state.classroom.answeringStudent) return;
       var button = document.createElement('button');
       button.type = 'button'; button.className = 'board-peer';
       button.textContent = (id === state.classroom.answeringStudent ? '🎤 ' : '👤 ') + (p.name || 'طالب') + (p.online ? ' ●' : ' ○');
