@@ -21,7 +21,15 @@
   }
   function navigate(direction) {
     var tabs = visibleRoutes();
-    if (!tabs.length) return;
+    if (!tabs.length) {
+      var active = document.querySelector('.tab-btn.active[data-tab]');
+      if (active) {
+        var choices = Array.prototype.slice.call(document.querySelectorAll('.tab-btn[data-tab]'));
+        var nextTab = choices[choices.indexOf(active) + direction];
+        if (nextTab) nextTab.click();
+      } else if (direction < 0 && window.history.length > 1) window.history.back();
+      return;
+    }
     var current = location.hash || '#welcome';
     var index = tabs.findIndex(function (tab) { return current === tab || current.indexOf(tab + '/') === 0; });
     if (index < 0) index = 0;
@@ -32,7 +40,7 @@
     return !!target.closest('input,textarea,select,button,a,[contenteditable],video,canvas,[role="slider"],.sumer-drawer,.sumer-mobile-bar');
   }
   document.addEventListener('touchstart', function (event) {
-    if (window.innerWidth > 800 || event.touches.length !== 1 || interactive(event.target)) { start = null; return; }
+    if (Math.min(window.innerWidth, window.innerHeight) > 800 || event.touches.length !== 1 || interactive(event.target)) { start = null; return; }
     var t = event.touches[0];
     start = { x: t.clientX, y: t.clientY, target: event.target };
   }, { passive: true });
