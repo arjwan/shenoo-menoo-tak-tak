@@ -225,11 +225,34 @@ router.get('/classrooms/:code/whiteboard', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.post('/classrooms/:code/answering', async (req, res, next) => {
+  try {
+    const classroom = await loadByCode(req, res);
+    if (!classroom) return;
+    if (!live.isTeacher(classroom, req.user._id)) return res.status(403).json({ ok: false, message: 'اختيار الطالب المجيب من صلاحية المعلم' });
+    if (classroom.status !== 'live') return res.status(409).json({ ok: false, message: 'انتهت الحصة' });
+    const userId = String(req.body?.userId || '');
+    const student = userId && live.findParticipant(classroom, userId);
+    if (userId && (!student || student.role !== 'student' || student.leftAt || student.kicked || !student.online)) {
+      return res.status(400).json({ ok: false, message: 'اختر طالبًا متصلًا بالحصة' });
+    }
+    classroom.answeringStudent = student ? student.user : null;
+    classroom.studentMayWrite = Boolean(student && req.body?.mayWrite === true);
+    await classroom.save();
+    events.emitUpdate(io(req), classroom);
+    res.json({ ok: true, classroom: live.publicClassroom(classroom, { roster: true }) });
+  } catch (e) { next(e); }
+});
+
 router.post('/classrooms/:code/whiteboard', async (req, res, next) => {
   try {
     const classroom = await loadByCode(req, res);
     if (!classroom) return;
-    if (!live.isTeacher(classroom, req.user._id)) return res.status(403).json({ ok: false, message: 'السبورة للمعلم فقط' });
+    const invitedStudent = String(classroom.answeringStudent || '') === String(req.user._id) && classroom.studentMayWrite;
+    const participant = invitedStudent && live.findParticipant(classroom, req.user._id);
+    if (!live.isTeacher(classroom, req.user._id) && !(participant && participant.role === 'student' && !participant.leftAt && !participant.kicked && participant.online)) {
+      return res.status(403).json({ ok: false, message: 'كتابة السبورة تتطلب إذن المعلم لهذا الطالب' });
+    }
     if (classroom.status !== 'live') return res.status(409).json({ ok: false, message: 'انتهت الحصة' });
     const drawing = req.body?.drawing;
     if (typeof drawing !== 'string' || drawing.length > 500000 || (drawing && !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(drawing))) {
@@ -237,7 +260,7 @@ router.post('/classrooms/:code/whiteboard', async (req, res, next) => {
     }
     classroom.whiteboard = { drawing, updatedAt: new Date() };
     await classroom.save();
-    events.emitToRoom(io(req), classroom, 'school:classroom:whiteboard', { drawing, updatedAt: classroom.whiteboard.updatedAt });
+    events.emitToRoom(io(req), classroom, 'school:classroom:whiteboard', { drawing, authorId: String(req.user._id), updatedAt: classroom.whiteboard.updatedAt });
     res.json({ ok: true, updatedAt: classroom.whiteboard.updatedAt });
   } catch (e) { next(e); }
 });
