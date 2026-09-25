@@ -55,6 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" \
+            -o ServerAliveInterval=20 -o ServerAliveCountMax=30 -o TCPKeepAlive=yes \
             "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
           set -euo pipefail
           project=/home/opc/shenoo-menoo-tak-tak
