@@ -53,13 +53,19 @@ public final class MainActivity extends Activity {
                 catch (Exception e) { upload = null; return false; }
             }
             @Override public void onPermissionRequest(PermissionRequest request) {
-                if (!ORIGIN.equals(request.getOrigin().toString().replaceAll("/$", ""))) { request.deny(); return; }
-                mediaRequest = request;
                 runOnUiThread(() -> {
-                    if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                        checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-                        requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, 43);
-                    else grantMedia();
+                    if (!ORIGIN.equals(request.getOrigin().toString().replaceAll("/$", ""))) { request.deny(); return; }
+                    if (mediaRequest != null && mediaRequest != request) mediaRequest.deny();
+                    mediaRequest = request;
+                    java.util.ArrayList<String> needed = new java.util.ArrayList<>();
+                    for (String resource : request.getResources()) {
+                        if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource) && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+                            needed.add(Manifest.permission.CAMERA);
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource) && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                            needed.add(Manifest.permission.RECORD_AUDIO);
+                    }
+                    if (needed.isEmpty()) grantMedia();
+                    else requestPermissions(needed.toArray(new String[0]), 43);
                 });
             }
         });
