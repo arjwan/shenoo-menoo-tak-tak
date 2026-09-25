@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
   privacyVersion: { type: String, default: '2026-09-07' },
   role: { type: String, enum: ['user', 'moderator', 'admin', 'developer'], default: 'user' },
   schoolAccess: {
-    role: { type: String, enum: ['administration', 'teacher', 'student', 'guardian', 'guest'], default: 'guardian' },
+    role: { type: String, enum: ['administration', 'teacher', 'student', 'guardian', 'guest'], default: 'guest' },
     status: { type: String, enum: ['not_started', 'trial', 'subscribed', 'expired', 'suspended'], default: 'not_started' },
     activatedAt: { type: Date, default: null },
     trialStartedAt: { type: Date, default: null },

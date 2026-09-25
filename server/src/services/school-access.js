@@ -5,7 +5,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const SCHOOL_ROLES = new Set(['administration', 'teacher', 'student', 'guardian', 'guest']);
 
 function defaultSchoolRole(user) {
-  return ['admin', 'developer'].includes(user && user.role) ? 'administration' : 'guardian';
+  return ['admin', 'developer'].includes(user && user.role) ? 'administration' : 'guest';
 }
 
 function ensureContainer(user) {
