@@ -45,7 +45,7 @@
     $('[data-room-name]').textContent = room.name;
     $('[data-room-title]').textContent = room.name + (room.isOfficial ? ' ✓' : '');
     $('[data-room-description]').textContent = room.description || '';
-    $('[data-room-type]').textContent = ({ text: '💬 كتابية', voice: '🎙 صوتية', challenge: '🏆 تحديات' })[room.roomType];
+    $('[data-room-type]').textContent = room.teacherBroadcast ? '👩‍🏫 بث معلم حقيقي · مجاني' : ({ text: '💬 كتابية', voice: '🎙 صوتية', challenge: '🏆 تحديات' })[room.roomType];
     $('[data-room-privacy]').textContent = room.privacy === 'private' ? '🔒 خاصة' : '🌐 عامة';
     $('[data-live-state]').textContent = room.isLive ? '● مباشرة' : 'غير مباشرة';
     const banner = $('[data-privacy-banner]');

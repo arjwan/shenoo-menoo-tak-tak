@@ -9,6 +9,17 @@
 
   function esc(v) { return ui.escapeHtml(v == null ? '' : String(v)); }
   function arr(v) { return Array.isArray(v) ? v : []; }
+  function unique(values) { return Array.from(new Set(values.filter(Boolean))); }
+  function assignedValues(field) {
+    var teacherValues = unique(arr((cache.teacher || {})[field]));
+    if (teacherValues.length) return teacherValues;
+    return unique(cache.students.map(function (student) { return student[field === 'stages' ? 'stage' : field === 'grades' ? 'grade' : 'subject']; }));
+  }
+  function selectOptions(values, emptyText) {
+    return '<option value="">' + esc(emptyText) + '</option>' + values.map(function (value) {
+      return '<option value="' + esc(value) + '">' + esc(value) + '</option>';
+    }).join('');
+  }
   function payload(r, key) { return r && r.ok && r.data ? (key ? arr(r.data[key]) : r.data) : null; }
   function empty(t) { return '<div class="sumer-empty">' + esc(t) + '</div>'; }
   function head(title, text) {
@@ -69,9 +80,10 @@
       card('أدوات الصف','<div class="teacher-actions"><a href="/school-live.html">الصف المباشر</a><a href="/school-virtual-classroom.html">السبورة والصف</a><a href="#teacher/schedule">الجدول</a></div>');
   }
   function whiteboard(){
-    var t=cache.teacher||{};
+    var t=cache.teacher||{}, stages=assignedValues('stages'), grades=assignedValues('grades'), subjects=assignedValues('subjects');
     return head('السبورة الذكية','سبورة خاصة بالمعلم الحقيقي؛ لا يعدلها المعلم الافتراضي إلا إذا شاركت المحتوى معه.')+
-      card('سبورة جديدة','<form id="teacher-whiteboard" class="teacher-form"><label>العنوان<input name="title" required></label><label>المرحلة<select name="stage" required>'+arr(t.stages).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الصف<select name="grade" required>'+arr(t.grades).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الشعبة<input name="section" value="أ" required></label><label>المادة<select name="subject" required>'+arr(t.subjects).map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></label><label>الدرس<input name="lesson"></label><label>المشاركة<select name="visibility"><option value="PRIVATE">خاصة بي</option><option value="STUDENTS">نشر للطلاب</option></select></label><label class="wide">محتوى السبورة<textarea name="notes" rows="10" placeholder="اكتب الشرح، المسائل، المطلوب مراجعته..."></textarea></label><label><input type="checkbox" name="sharedWithVirtualTeacher" value="true"> مشاركة نسخة مع المعلم الافتراضي للمراجعة</label><button>حفظ السبورة</button></form><p><a class="sumer-btn sumer-btn-outline" href="/school-virtual-classroom.html">فتح أدوات الصف والسبورة التفاعلية</a></p>');
+      card('سبورة جديدة','<p class="teacher-scope-note">تظهر المراحل والصفوف والمواد المعتمدة لحسابك فقط. المتاح الآن: '+esc(stages.join('، ')||'لا توجد مرحلة')+' · '+esc(grades.join('، ')||'لا يوجد صف')+' · '+esc(subjects.join('، ')||'لا توجد مادة')+'.</p><form id="teacher-whiteboard" class="teacher-form"><label>العنوان<input name="title" required></label><label>المرحلة<select name="stage" required>'+selectOptions(stages,'اختر المرحلة')+'</select></label><label>الصف<select name="grade" required>'+selectOptions(grades,grades.length?'اختر الصف':'لا توجد صفوف في تكليفك')+'</select></label><label>الشعبة<input name="section" value="أ" required></label><label>المادة<select name="subject" required>'+selectOptions(subjects,subjects.length?'اختر المادة':'لا توجد مواد في تكليفك')+'</select></label><label>الدرس<input name="lesson"></label><label>المشاركة<select name="visibility"><option value="PRIVATE">خاصة بي</option><option value="STUDENTS">نشر للطلاب</option></select></label><label class="wide">محتوى السبورة<textarea name="notes" rows="10" placeholder="اكتب الشرح، المسائل، المطلوب مراجعته..."></textarea></label><label><input type="checkbox" name="sharedWithVirtualTeacher" value="true"> مشاركة نسخة مع المعلم الافتراضي للمراجعة</label><button>حفظ السبورة</button></form><p><a class="sumer-btn sumer-btn-outline" href="/school-virtual-classroom.html">فتح أدوات الصف والسبورة التفاعلية</a></p>')+
+      card('تحتاج مرحلة أو صفًا آخر؟','<p>أرسل طلب توسيع التكليف للإدارة. تظهر الخيارات الجديدة بعد تحديث تكليفك المعتمد.</p><form id="teacher-scope-request" class="teacher-form"><label>المرحلة المطلوبة<select name="stage" required>'+selectOptions(['ابتدائي','متوسط','إعدادي'],'اختر المرحلة')+'</select></label><label>الصف المطلوب<input name="grade" required placeholder="مثال: الثالث متوسط"></label><label class="wide">المادة المطلوبة<input name="subject" required placeholder="مثال: اللغة الإنكليزية"></label><button>إرسال الطلب للإدارة</button></form>');
   }
 
   function students() {
@@ -138,12 +150,13 @@
       var f=ev.target;if(!f.id&&!f.classList.contains('teacher-grade-group'))return;ev.preventDefault();var b=formData(f),p;
       if(f.id==='teacher-student-search'){api.request('/api/school/management/teacher-student-candidates?q='+encodeURIComponent(b.q)).then(function(r){var list=payload(r,'students')||[];resultBox('teacher-candidates',list.length?'<div class="teacher-list">'+list.map(function(x){return '<div class="teacher-row"><div><b>'+esc(x.name)+'</b><small>'+esc([x.stage,x.grade,x.section].filter(Boolean).join(' · '))+'</small></div><button data-add-student="'+esc(x._id)+'">طلب إضافة</button></div>';}).join('')+'</div>':empty('لا توجد نتائج ضمن مراحل وصفوف تكليفك.'));});return;}
       if(f.id==='teacher-whiteboard'){b.sharedWithVirtualTeacher=b.sharedWithVirtualTeacher==='true';p=send('/api/school/management/whiteboards','POST',b);}
+      if(f.id==='teacher-scope-request'){p=send('/api/school/portal/staff-requests','POST',{type:'permission',title:'توسيع تكليف المعلم للسبورة الذكية',details:'المرحلة: '+b.stage+'؛ الصف: '+b.grade+'؛ المادة: '+b.subject});}
       if(f.id==='teacher-exam-alert'){p=send('/api/school/management/schedules','POST',b);}
       if(f.id==='teacher-attendance') p=send('/api/school/management/attendance','POST',b);
       if(f.id==='teacher-assignment'){b.maxScore=Number(b.maxScore);p=send('/api/school/assignments','POST',b);}
       if(f.id==='teacher-grade'||f.classList.contains('teacher-grade-group')){b.score=Number(b.score);b.maxScore=Number(b.maxScore);p=send('/api/school/management/grades','POST',b);}
       if(f.id==='teacher-report'){p=api.request('/api/school/management/students/'+encodeURIComponent(b.studentId)+'/record').then(function(r){var d=payload(r);resultBox('teacher-report-result',d?'<pre class="teacher-record">'+esc(JSON.stringify(d,null,2))+'</pre>':empty('تعذر قراءة السجل.'));});return;}
-      if(p)p.then(function(r){if(!r.ok)throw new Error(r.message||'تعذر الحفظ');ui.showToast('تم الحفظ بنجاح','success');return load();}).then(renderNow).catch(function(err){ui.showToast(err.message||'تعذر التنفيذ','error');});
+      if(p)p.then(function(r){if(!r.ok)throw new Error(r.message||'تعذر الحفظ');ui.showToast(f.id==='teacher-scope-request'?'أُرسل طلب توسيع التكليف إلى الإدارة':'تم الحفظ بنجاح','success');return load();}).then(renderNow).catch(function(err){ui.showToast(err.message||'تعذر التنفيذ','error');});
     });
     mount.addEventListener('click',function(ev){
       var s=ev.target.closest('[data-submissions]'),r=ev.target.closest('[data-record]'),a=ev.target.closest('[data-add-student]'),rm=ev.target.closest('[data-remove-student]');
