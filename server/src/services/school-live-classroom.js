@@ -117,7 +117,9 @@ function publicClassroom(classroom, options) {
     endedAt: classroom.endedAt ? new Date(classroom.endedAt).toISOString() : null,
     presentCount: students.filter((p) => p.present).length,
     onlineCount: students.filter((p) => p.online).length,
-    handsRaised: students.filter((p) => p.present && p.handRaised).length
+    handsRaised: students.filter((p) => p.present && p.handRaised).length,
+    answeringStudent: classroom.answeringStudent ? idOf(classroom.answeringStudent) : null,
+    studentMayWrite: Boolean(classroom.studentMayWrite)
   };
   if (options.roster) out.participants = participants;
   return out;
