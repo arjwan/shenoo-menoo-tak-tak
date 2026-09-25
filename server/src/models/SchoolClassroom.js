@@ -51,6 +51,8 @@ const classroomSchema = new mongoose.Schema({
     drawing: { type: String, default: '', maxlength: 500000 },
     updatedAt: { type: Date, default: null }
   },
+  answeringStudent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  studentMayWrite: { type: Boolean, default: false },
   participants: [participantSchema]
 }, { timestamps: true });
 
