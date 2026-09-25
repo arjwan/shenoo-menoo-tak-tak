@@ -1022,6 +1022,8 @@ body.school-virtual-page [hidden] { display: none !important; }
   font-size: 20px;
   margin-bottom: 4px;
 }
+.student-self-camera-tile{min-width:104px;border-color:var(--primary-teal);background:#e9f5f2}
+.student-self-camera-tile video{width:88px;height:88px;object-fit:cover;border-radius:10px;transform:scaleX(-1);background:#142329}
 
 .carousel-name {
   font-size: 12px;
