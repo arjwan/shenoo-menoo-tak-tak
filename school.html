@@ -49,6 +49,7 @@
   <script src="school/js/views/view-guest.js"></script>
   <script src="school/js/views/view-student.js"></script>
   <script src="school/js/views/view-teacher.js"></script>
+  <script src="school/js/views/view-guardian.js"></script>
   <script src="school/js/sumer-router.js"></script>
 
   <script>
@@ -62,6 +63,7 @@
       var guestView = window.SumerGuestView || window.ViewGuest;
       var studentView = window.SumerStudentView || window.ViewStudent;
       var teacherView = window.SumerTeacherView || window.ViewTeacher;
+      var guardianView = window.SumerGuardianView || window.ViewGuardian;
       var router = window.SumerRouter;
 
       if (!store || !ui || !router) {
@@ -145,6 +147,8 @@
           teacherView.render(routeKey, contentMount);
         } else if (isStudentRoute(routeKey) && studentView) {
           studentView.render(routeKey, contentMount);
+        } else if (routeKey.indexOf("#guardian/") === 0 && guardianView) {
+          guardianView.render(routeKey, contentMount);
         } else if (isGuestRoute(routeKey) && guestView) {
           guestView.render(routeKey, contentMount);
         } else {
