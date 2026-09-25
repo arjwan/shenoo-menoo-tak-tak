@@ -105,9 +105,10 @@ app.use('/api/school', schoolCanvaRoutes);
 app.use('/api/school-canva', schoolCanvaRoutes);
 // REAL CLASSROOM V1: live classroom API; WebRTC signaling is handled by socket-school.js.
 app.use('/api/cards-canva', cardsCanvaRoutes);
+// Public curriculum choices must run before the blanket auth middleware in live/sync routers.
+app.use('/api/school', schoolIndexedCurriculumRoutes);
 app.use('/api/school', schoolLiveRoutes);
 app.use('/api/school', schoolSyncRoutes);
-app.use('/api/school', schoolIndexedCurriculumRoutes);
 app.use('/api/school', schoolRoutes);
 // Standalone school pages backend (/dashboard, /structure, /books,
 // /books/:id/reader, /classroom/options, /classroom/actions). Mounted last so
