@@ -32,7 +32,7 @@ public final class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         web.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                if (!url.startsWith(ORIGIN + "/school.html")) return;
+                if (!url.startsWith(ORIGIN + "/school")) return;
                 try (InputStream in = getAssets().open("mobile-navigation.js")) {
                     byte[] bytes = new byte[in.available()];
                     int count = in.read(bytes);
