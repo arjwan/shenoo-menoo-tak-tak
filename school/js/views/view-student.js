@@ -303,18 +303,6 @@
     html += '</div>'; // نهاية الشبكة
     html += '</div>'; // نهاية الحاوية
     container.innerHTML = html;
-    container.querySelectorAll('.student-enroll-teacher').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var select = container.querySelector('.student-teacher-subject[data-teacher="'+button.dataset.teacher+'"]');
-        var subject = select && select.value;
-        if (!subject) { window.alert('اختر المادة أولاً'); return; }
-        button.disabled = true;
-        api.request('/api/school/portal/enrollment', { method:'POST', body:{ requestedRole:'student', stage:student.stage, grade:student.grade, subjects:[subject], note:'طلب تسجيل لدى المعلم '+button.dataset.name+' في مادة '+subject } }).then(function (r) {
-          if (!r.ok) throw new Error(r.message || 'تعذر إرسال الطلب');
-          button.textContent = 'تم إرسال طلب التسجيل';
-        }).catch(function (e) { button.disabled=false; window.alert(e.message); });
-      });
-    });
   }
 
   // --------------------------------------------------------------------------
@@ -480,6 +468,18 @@
 
     html += '</div>'; // نهاية الحاوية
     container.innerHTML = html;
+    container.querySelectorAll('.student-enroll-teacher').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var select = container.querySelector('.student-teacher-subject[data-teacher="'+button.dataset.teacher+'"]');
+        var subject = select && select.value;
+        if (!subject) { window.alert('اختر المادة أولاً'); return; }
+        button.disabled = true;
+        api.request('/api/school/portal/enrollment', { method:'POST', body:{ requestedRole:'student', stage:student.stage, grade:student.grade, subjects:[subject], note:'طلب تسجيل لدى المعلم '+button.dataset.name+' في مادة '+subject } }).then(function (r) {
+          if (!r.ok) throw new Error(r.message || 'تعذر إرسال الطلب');
+          button.textContent = 'تم إرسال طلب التسجيل';
+        }).catch(function (e) { button.disabled=false; window.alert(e.message); });
+      });
+    });
   }
 
   // --------------------------------------------------------------------------
