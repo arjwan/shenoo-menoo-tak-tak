@@ -80,6 +80,12 @@
     }
     opts.headers = headers;
     return fetch(url, opts).then(function (res) {
+      var type = res.headers.get('content-type') || '';
+      if (!/\bjson\b/i.test(type)) {
+        var unexpected = new Error(res.status === 401 || res.status === 403 ? 'انتهت جلسة الدخول؛ سجّل الدخول مجددًا' : 'الخادم أعاد صفحة بدل بيانات المدرسة؛ حاول مجددًا');
+        unexpected.status = res.status;
+        throw unexpected;
+      }
       return res.json().then(function (data) {
         if (!res.ok) {
           var err = new Error(data && data.message ? data.message : 'HTTP ' + res.status);
@@ -130,7 +136,15 @@
 
   function loadLobbyData() {
     // 1) Load curriculum catalog for cascade
-    api('/api/school/curriculum/catalog').then(function (data) {
+    function fetchCatalog(attempt) {
+      return api('/api/school/curriculum/catalog').catch(function (error) {
+        if (attempt < 2 && error.status !== 401 && error.status !== 403) {
+          return delay(800 * (attempt + 1)).then(function () { return fetchCatalog(attempt + 1); });
+        }
+        throw error;
+      });
+    }
+    fetchCatalog(0).then(function (data) {
       state.catalogItems = Array.isArray(data.items) ? data.items : [];
       populateStages();
     }).catch(function (e) {
@@ -1288,22 +1302,25 @@
     speechObjectURL = url;
     var player = new Audio(url);
     speechPlayback = player;
-    try {
-      await player.play();
-    } catch (playError) {
-      // NotAllowedError: the browser blocked autoplay — surface it, do not
-      // treat it as a server failure.
-      releaseSpeechPlayback();
-      var blocked = new Error('المتصفح منع تشغيل الصوت تلقائيًا — اضغط زر 🔊 لتشغيل جواب المعلم');
-      blocked.autoplay = true;
-      throw blocked;
-    }
-    await new Promise(function (resolve, reject) {
+    // A very short part can end before play() settles. Attach listeners first.
+    var finished = new Promise(function (resolve, reject) {
       player.addEventListener('ended', resolve, { once: true });
       player.addEventListener('error', function () {
         reject(new Error('فشل تشغيل مقطع الصوت من الخادم'));
       }, { once: true });
     });
+    try {
+      await player.play();
+      await finished;
+    } catch (playError) {
+      releaseSpeechPlayback();
+      if (playError && playError.name === 'NotAllowedError') {
+        var blocked = new Error('المتصفح منع تشغيل الصوت تلقائيًا — اضغط زر 🔊 لتشغيل جواب المعلم');
+        blocked.autoplay = true;
+        throw blocked;
+      }
+      throw playError;
+    }
     releaseSpeechPlayback();
   }
 
@@ -1363,16 +1380,25 @@
       var voices = window.speechSynthesis.getVoices();
       var arabic = voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); }) ||
         voices.find(function (v) { return /^ar[-_]/i.test(v.lang); });
-      if (!arabic && manual) notify('صوت الخادم غير متاح حاليًا، ولا يوجد صوت عربي محلي على هذا الجهاز. هذه حالة احتياطية وليست متطلبًا لتشغيل المدرسة.', true);
+      if (!arabic) {
+        if (key) spokenAnswers.delete(key);
+        notify('صوت الخادم غير متاح حاليًا، ولا يوجد صوت عربي محلي على هذا الجهاز. اضغط 🔊 لإعادة المحاولة بعد عودة الخادم.', true);
+        return;
+      }
       // Chromium can silently stop a long utterance. Read shorter sentences in sequence.
       var parts = String(text).match(/.{1,160}(?:[.،؛؟!\s]|$)/g) || [String(text)];
-      parts.forEach(function (part) {
+      var generation = speechGeneration;
+      var index = 0;
+      function nextPart() {
+        if (generation !== speechGeneration || index >= parts.length) return;
+        var part = parts[index++];
         var utterance = new SpeechSynthesisUtterance(part);
-        if (arabic) utterance.voice = arabic;
-        utterance.lang = arabic ? arabic.lang : 'ar-IQ';
+        utterance.voice = arabic;
+        utterance.lang = arabic.lang;
         utterance.pitch = 1;
         utterance.rate = 1;
         utterance.volume = 1;
+        utterance.onend = nextPart;
         utterance.onerror = function (event) {
           if (key) spokenAnswers.delete(key);
           if (event.error !== 'interrupted' && event.error !== 'canceled') {
@@ -1380,7 +1406,8 @@
           }
         };
         window.speechSynthesis.speak(utterance);
-      });
+      }
+      nextPart();
       if (window.speechSynthesis.paused) window.speechSynthesis.resume();
     } catch (e) {
       if (key) spokenAnswers.delete(key);
