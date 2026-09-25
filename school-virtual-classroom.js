@@ -451,6 +451,7 @@
         carousel.innerHTML = '';
         show('carouselEmptyState');
       }
+      renderSelfCameraTile();
       return;
     }
 
@@ -484,6 +485,32 @@
         carousel.appendChild(tile);
       }
     });
+    renderSelfCameraTile();
+  }
+
+  function renderSelfCameraTile() {
+    var carousel = $('studentsCarousel');
+    if (!carousel) return;
+    var old = $('studentSelfCameraTile');
+    if (old) old.remove();
+    if (!state.devices.camera || !state.localStream || !state.localStream.getVideoTracks().some(function (track) { return track.readyState === 'live'; })) return;
+    var tile = document.createElement('div');
+    tile.id = 'studentSelfCameraTile';
+    tile.className = 'carousel-tile student-self-camera-tile';
+    var video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+    video.setAttribute('aria-label', 'معاينة كاميرتي');
+    video.srcObject = state.localStream;
+    tile.appendChild(video);
+    var caption = document.createElement('span');
+    caption.className = 'carousel-name';
+    caption.textContent = 'أنا · كاميرتي';
+    tile.appendChild(caption);
+    carousel.insertBefore(tile, carousel.firstChild);
+    hide('carouselEmptyState');
+    video.play().catch(function () {});
   }
 
   function startElapsedTimer(startTime) {
@@ -889,6 +916,7 @@
           camBtn.classList.remove('active');
           $('camLabel').textContent = 'تشغيل الكاميرا';
           hide('localVideoContainer');
+          renderSelfCameraTile();
           sendMediaState();
         } else {
           // Explicit user click triggers getUserMedia
@@ -906,6 +934,7 @@
             // Store tracks
             if (!state.localStream) state.localStream = stream;
             else stream.getVideoTracks().forEach(function (t) { state.localStream.addTrack(t); });
+            renderSelfCameraTile();
             sendMediaState().then(function (allowed) {
               if (allowed && !state.isHost) startStudentCamera();
             });
@@ -983,6 +1012,7 @@
       $('camLabel').textContent = 'تشغيل الكاميرا';
     }
     hide('localVideoContainer');
+    renderSelfCameraTile();
   }
 
   function sendMediaState() {
@@ -995,7 +1025,7 @@
       }
     }).then(function (result) {
       if (state.devices.camera && result.forced && result.forced.includes('camera')) {
-        stopVideoTracks(); state.devices.camera = false; hide('localVideoContainer');
+        stopVideoTracks(); state.devices.camera = false; hide('localVideoContainer'); renderSelfCameraTile();
         $('camLabel').textContent = 'تشغيل الكاميرا';
         notify('كاميرا الطالب غير مسموحة في هذه الحصة.', true);
         return false;
