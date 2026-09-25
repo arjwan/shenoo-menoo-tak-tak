@@ -131,7 +131,7 @@
   }
   function reports() {
     return head('التقارير','قراءة السجل الدائم للطلاب المكلفين.') +
-      card('سجل طالب','<form id="teacher-report" class="teacher-form"><label>الطالب<select name="studentId" required><option value="">اختر الطالب</option>'+options()+'</select></label><button>عرض السجل</button></form><div id="teacher-report-result"></div>');
+      card('سجل طالب','<form id="teacher-report" class="teacher-form"><label>الطالب<select name="studentId" required><option value="">اختر الطالب</option>'+options()+'</select></label><button>عرض السجل</button><button type="button" id="teacher-print-report" disabled>🖨️ طباعة / حفظ PDF</button></form><p class="hint">بعد عرض السجل اختر الطباعة ثم «حفظ بصيغة PDF» لإرساله إلى ولي الأمر.</p><div id="teacher-report-result"></div>');
   }
   function messages() {
     return head('الرسائل','التواصل المدرسي دون منح صلاحيات إدارة المدرسة.') +
@@ -146,6 +146,7 @@
   function send(path, method, body){return api.request(path,{method:method,body:body});}
   function resultBox(id, html){var x=document.getElementById(id);if(x)x.innerHTML=html;}
   function bind() {
+    mount.addEventListener('click',function(ev){if(ev.target.id==='teacher-print-report'){window.print();}});
     mount.addEventListener('submit',function(ev){
       var f=ev.target;if(!f.id&&!f.classList.contains('teacher-grade-group'))return;ev.preventDefault();var b=formData(f),p;
       if(f.id==='teacher-student-search'){api.request('/api/school/management/teacher-student-candidates?q='+encodeURIComponent(b.q)).then(function(r){var list=payload(r,'students')||[];resultBox('teacher-candidates',list.length?'<div class="teacher-list">'+list.map(function(x){return '<div class="teacher-row"><div><b>'+esc(x.name)+'</b><small>'+esc([x.stage,x.grade,x.section].filter(Boolean).join(' · '))+'</small></div><button data-add-student="'+esc(x._id)+'">طلب إضافة</button></div>';}).join('')+'</div>':empty('لا توجد نتائج ضمن مراحل وصفوف تكليفك.'));});return;}
@@ -155,7 +156,7 @@
       if(f.id==='teacher-attendance') p=send('/api/school/management/attendance','POST',b);
       if(f.id==='teacher-assignment'){b.maxScore=Number(b.maxScore);p=send('/api/school/assignments','POST',b);}
       if(f.id==='teacher-grade'||f.classList.contains('teacher-grade-group')){b.score=Number(b.score);b.maxScore=Number(b.maxScore);p=send('/api/school/management/grades','POST',b);}
-      if(f.id==='teacher-report'){p=api.request('/api/school/management/students/'+encodeURIComponent(b.studentId)+'/record').then(function(r){var d=payload(r);resultBox('teacher-report-result',d?'<pre class="teacher-record">'+esc(JSON.stringify(d,null,2))+'</pre>':empty('تعذر قراءة السجل.'));});return;}
+      if(f.id==='teacher-report'){p=api.request('/api/school/management/students/'+encodeURIComponent(b.studentId)+'/record').then(function(r){var d=payload(r);resultBox('teacher-report-result',d?'<pre class="teacher-record">'+esc(JSON.stringify(d,null,2))+'</pre>':empty('تعذر قراءة السجل.'));var print=document.getElementById('teacher-print-report');if(print)print.disabled=!d;});return;}
       if(p)p.then(function(r){if(!r.ok)throw new Error(r.message||'تعذر الحفظ');ui.showToast(f.id==='teacher-scope-request'?'أُرسل طلب توسيع التكليف إلى الإدارة':'تم الحفظ بنجاح','success');return load();}).then(renderNow).catch(function(err){ui.showToast(err.message||'تعذر التنفيذ','error');});
     });
     mount.addEventListener('click',function(ev){
