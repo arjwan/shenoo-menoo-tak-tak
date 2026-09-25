@@ -32,6 +32,49 @@
     handRaised: false, tiles: new Map()
   };
   var boardQueue = Promise.resolve(), boardPointer = false, boardTool = 'pen', boardLast = null;
+  var boardTextY = 44, boardPeerMode = 'all', boardSelectedPeer = '', micSwitching = false;
+
+  function renderBoardPeers() {
+    var tray = $('boardPeers');
+    if (!state.classroom || !state.you || !state.you.role || !$('liveBoardPanel').classList.contains('expanded')) {
+      tray.hidden = true; return;
+    }
+    var people = (state.classroom.participants || []).filter(function (p) { return p.role === 'student' && !p.leftAt && !p.kicked; });
+    tray.replaceChildren();
+    people.forEach(function (p) {
+      var id = String(p.userId || p.user || p._id || '');
+      if (boardPeerMode === 'one' && id !== boardSelectedPeer && id !== state.classroom.answeringStudent) return;
+      if (boardPeerMode === 'hidden' && id !== state.classroom.answeringStudent) return;
+      var button = document.createElement('button');
+      button.type = 'button'; button.className = 'board-peer';
+      button.textContent = (id === state.classroom.answeringStudent ? '🎤 ' : '👤 ') + (p.name || 'طالب') + (p.online ? ' ●' : ' ○');
+      button.classList.toggle('answering', id === state.classroom.answeringStudent);
+      button.title = 'عرض ' + (p.name || 'الطالب') + ' وحده';
+      button.addEventListener('click', function () {
+        if (state.you.role !== 'teacher') return;
+        boardPeerMode = 'one'; boardSelectedPeer = id;
+        if (state.classroom.answeringStudent !== id) setAnswering(id, false);
+        else renderBoardPeers();
+      });
+      tray.appendChild(button);
+      if (id === state.classroom.answeringStudent && state.you.role === 'teacher') {
+        var focus = document.createElement('video');
+        focus.className = 'board-answer-video'; focus.autoplay = true; focus.playsInline = true; focus.muted = true;
+        var peer = state.peers.get(id);
+        if (peer) { focus.srcObject = peer.stream; focus.play().catch(function () {}); }
+        tray.appendChild(focus);
+      }
+    });
+    tray.hidden = (boardPeerMode === 'hidden' && !state.classroom.answeringStudent) || !tray.childNodes.length;
+  }
+
+  async function setAnswering(userId, mayWrite) {
+    if (!state.code || !state.you || state.you.role !== 'teacher') return;
+    try {
+      var result = await post('/api/school/classrooms/' + encodeURIComponent(state.code) + '/answering', { userId: userId || '', mayWrite: Boolean(mayWrite) });
+      applyClassroom(result.classroom);
+    } catch (e) { msg(e.message, true); }
+  }
 
   function paintBoard(drawing) {
     var canvas = $('liveBoard'), ctx = canvas.getContext('2d');
@@ -55,7 +98,8 @@
   }
 
   function saveBoard(drawing) {
-    if (!state.code || !state.you || state.you.role !== 'teacher') return;
+    if (!state.code || !state.you || !(state.you.role === 'teacher' ||
+      (state.classroom && state.classroom.answeringStudent === me && state.classroom.studentMayWrite))) return;
     var code = state.code;
     $('boardStatus').textContent = 'جارٍ حفظ السبورة...';
     boardQueue = boardQueue.catch(function () {}).then(function () {
@@ -67,6 +111,43 @@
 
   function setupBoard() {
     var canvas = $('liveBoard'), ctx = canvas.getContext('2d');
+    $('boardExpand').addEventListener('click', function () {
+      var panel = $('liveBoardPanel');
+      panel.classList.toggle('expanded');
+      var expanded = panel.classList.contains('expanded');
+      $('boardExpand').textContent = expanded ? '✕ إغلاق التكبير' : '⛶ ملء الشاشة';
+      document.body.classList.toggle('board-expanded', expanded);
+      renderBoardPeers();
+    });
+    $('boardShowAll').addEventListener('click', function () { boardPeerMode = 'all'; renderBoardPeers(); });
+    $('boardHidePeers').addEventListener('click', function () { boardPeerMode = 'hidden'; renderBoardPeers(); });
+    $('boardAllowWrite').addEventListener('click', function () {
+      if (state.classroom && state.classroom.answeringStudent) setAnswering(state.classroom.answeringStudent, !state.classroom.studentMayWrite);
+    });
+    $('boardFinishAnswer').addEventListener('click', function () { setAnswering('', false); boardPeerMode = 'all'; });
+    $('boardAddText').addEventListener('click', function () {
+      if (!state.you || !state.classroom || state.classroom.status !== 'live' ||
+        !(state.you.role === 'teacher' || (state.classroom.answeringStudent === me && state.classroom.studentMayWrite))) return;
+      var input = $('boardText'), value = input.value.trim();
+      if (!value) return;
+      ctx.save(); ctx.globalCompositeOperation = 'source-over';
+      ctx.font = '28px sans-serif'; ctx.textAlign = 'right'; ctx.direction = 'rtl'; ctx.fillStyle = '#172554';
+      var lines = value.split('\n');
+      lines.forEach(function (line) {
+        var words = line.split(/\s+/), row = '';
+        words.forEach(function (word) {
+          var candidate = row ? row + ' ' + word : word;
+          if (row && ctx.measureText(candidate).width > canvas.width - 60) {
+            if (boardTextY > canvas.height - 24) boardTextY = 44;
+            ctx.fillText(row, canvas.width - 28, boardTextY); boardTextY += 38; row = word;
+          } else row = candidate;
+        });
+        if (boardTextY > canvas.height - 24) boardTextY = 44;
+        ctx.fillText(row, canvas.width - 28, boardTextY); boardTextY += 38;
+      });
+      ctx.restore(); input.value = '';
+      saveBoard(canvas.toDataURL('image/png'));
+    });
     function point(ev) {
       var rect = canvas.getBoundingClientRect();
       return { x: (ev.clientX - rect.left) * canvas.width / rect.width, y: (ev.clientY - rect.top) * canvas.height / rect.height };
@@ -92,7 +173,7 @@
     $('boardEraser').addEventListener('click', function () { boardTool = 'eraser'; $('boardEraser').classList.add('active'); $('boardPen').classList.remove('active'); });
     $('boardClear').addEventListener('click', function () {
       if (!state.you || state.you.role !== 'teacher' || !confirm('مسح السبورة لجميع المشاركين؟')) return;
-      paintBoard(''); saveBoard('');
+      paintBoard(''); boardTextY = 44; saveBoard('');
     });
   }
 
@@ -181,7 +262,8 @@
     show('lobby', false); show('room', true);
     var teacher = state.you.role === 'teacher';
     show('teacherPanel', teacher); show('endBtn', teacher); show('handBtn', !teacher); show('leaveBtn', !teacher); show('teacherTile', !teacher);
-    show('boardTools', teacher); show('muteAllBtn', teacher); show('attendanceBtn', teacher);
+    show('boardTools', teacher); show('boardAudienceControls', teacher);
+    show('muteAllBtn', teacher); show('attendanceBtn', teacher);
     $('selfName').textContent = state.you.name + (teacher ? ' (المعلم)' : '');
     history.replaceState(null, '', 'school-live.html?code=' + encodeURIComponent(state.code));
     renderRoom();
@@ -209,6 +291,14 @@
   function renderRoom() {
     var c = state.classroom; if (!c) return;
     var teacher = state.you.role === 'teacher';
+    var answering = c.answeringStudent && (c.participants || []).find(function (p) { return p.userId === c.answeringStudent; });
+    var mayWrite = teacher || (c.answeringStudent === me && c.studentMayWrite);
+    show('boardKeyboard', mayWrite);
+    show('boardAnswering', Boolean(answering));
+    $('boardAnswering').textContent = answering ? '🎤 الطالب المجيب الآن: ' + answering.name + (c.studentMayWrite ? ' · يستطيع الكتابة على السبورة' : '') : '';
+    show('boardAllowWrite', teacher && Boolean(answering));
+    show('boardFinishAnswer', teacher && Boolean(answering));
+    $('boardAllowWrite').textContent = c.studentMayWrite ? 'منع كتابة الطالب' : 'السماح للطالب بالكتابة';
     $('roomTitle').textContent = core.classroomTitle(c);
     $('roomMeta').textContent = teacher ? 'أنت المعلم: ' + c.teacherName : 'المعلم: ' + c.teacherName;
     $('roomCode').textContent = c.code;
@@ -234,6 +324,7 @@
       $('teacherBadges').textContent = t ? (t.media.camera ? '📷 ' : '') + (t.media.mic ? '🎙️' : '') : '';
       $('teacherTile').classList.toggle('offline', !(t && t.online));
     } else renderGrid();
+    renderBoardPeers();
   }
 
   function renderGrid() {
@@ -283,7 +374,7 @@
     });
     socket.on('disconnect', function () { $('roomStatus').textContent = 'انقطع الاتصال بالخادم — تجري إعادة المحاولة...'; });
     socket.on('school:classroom:update', function (d) { if (d && d.code === state.code) applyClassroom(d.classroom); });
-    socket.on('school:classroom:whiteboard', function (d) { if (d && d.code === state.code && state.you && state.you.role !== 'teacher') { paintBoard(d.drawing); $('boardStatus').textContent = 'تم تحديث السبورة'; } });
+    socket.on('school:classroom:whiteboard', function (d) { if (d && d.code === state.code && state.you && d.authorId !== me) { paintBoard(d.drawing); $('boardStatus').textContent = 'تم تحديث السبورة'; } });
     socket.on('school:classroom:peer', function (d) {
       if (!d || d.code !== state.code) return;
       if (state.you.role === 'teacher') { if (!d.online) closePeer(d.userId); }
@@ -346,6 +437,7 @@
     // Browsers may block un-muted autoplay when the page was reloaded without
     // a click: offer an explicit play button instead of failing silently.
     video.play().catch(function () { show('playBtn', true); });
+    if (state.classroom && state.classroom.answeringStudent === String(userId)) renderBoardPeers();
   }
   function playAllRemote() {
     var videos = [$('teacherVideo')].concat(Array.from(state.tiles.values()).map(function (el) { return el.querySelector('video'); }));
@@ -491,10 +583,12 @@
     renderRoom(); reportMedia();
   }
   async function onMicClick() {
+    if (micSwitching) return;
+    micSwitching = true; $('micBtn').disabled = true;
     try {
       if (state.local.audioTrack) stopMic(); else await startMic();
-    } catch (e) { msg(e.name === 'NotAllowedError' ? 'رفض المتصفح إذن المايك' : 'تعذر تشغيل المايك: ' + e.message, true); }
-    renderRoom(); reportMedia();
+    } catch (e) { msg(e.name === 'NotAllowedError' ? 'إذن الميكروفون مرفوض. افتح أذونات التطبيق واسمح بالميكروفون ثم أعد المحاولة.' : 'تعذر تشغيل المايك: ' + e.message, true); }
+    finally { micSwitching = false; renderRoom(); reportMedia(); }
   }
 
   // ---------------------------------------------------------------- actions
