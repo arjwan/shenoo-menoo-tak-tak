@@ -11,6 +11,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public final class MainActivity extends Activity {
     private static final String ORIGIN = "https://shino-mino-tak-tak.duckdns.org";
@@ -25,8 +27,18 @@ public final class MainActivity extends Activity {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                if (!url.startsWith(ORIGIN + "/school.html")) return;
+                try (InputStream in = getAssets().open("mobile-navigation.js")) {
+                    byte[] bytes = new byte[in.available()];
+                    int count = in.read(bytes);
+                    if (count > 0) view.evaluateJavascript(new String(bytes, 0, count, StandardCharsets.UTF_8), null);
+                } catch (Exception ignored) { }
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
                 if (ORIGIN.equals(request.getUrl().getScheme() + "://" + request.getUrl().getAuthority())) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl())); } catch (Exception ignored) { }
