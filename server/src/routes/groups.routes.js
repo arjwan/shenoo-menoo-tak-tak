@@ -6,6 +6,7 @@ const GroupMessage = require('../models/GroupMessage');
 const GroupReport = require('../models/GroupReport');
 const AuditLog = require('../models/AuditLog');
 const upload = require('../middleware/upload');
+const SchoolTeacher = require('../models/SchoolTeacher');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -37,6 +38,7 @@ function view(group, me) {
     id: group._id, name: group.name, description: group.description, privacy: group.privacy,
     joinApproval: group.privacy === 'private' ? 'owner_approval' : (group.joinApproval || 'open'), roomType: group.roomType,
     isOfficial: group.isOfficial, isLive: group.isLive, isLocked: group.isLocked,
+    teacherBroadcast: Boolean(group.teacherBroadcast),
     allowMemberAudio: group.allowMemberAudio, allowMemberVideo: group.allowMemberVideo, maxSpeakers: group.maxSpeakers,
     coverUrl: group.coverUrl || '', owner: group.owner, admins: group.admins, moderators: group.moderators,
     memberCount: group.members.length, pendingCount: manager(group, me) ? group.pendingMembers.length : undefined,
@@ -50,14 +52,22 @@ router.get('/', async (req, res) => {
   res.json({ ok: true, groups: groups.map(g => view(g, req.user)) });
 });
 
+router.get('/teacher-eligibility', async (req, res) => {
+  const teacher = await SchoolTeacher.findOne({ user: req.user._id, status: 'active' }).select('_id').lean();
+  res.json({ ok: true, eligible: Boolean(teacher) });
+});
+
 router.post('/', async (req, res) => {
   const name = String(req.body.name || '').trim();
   if (name.length < 3) return res.status(400).json({ ok: false, message: 'اسم المجموعة قصير' });
   if (req.body.communityConsent !== 'accepted') return res.status(400).json({ ok: false, message: 'يجب الموافقة على قواعد المجتمع والبث' });
-  const roomType = ['text', 'voice', 'challenge'].includes(req.body.roomType) ? req.body.roomType : 'text';
+  const teacherBroadcast = req.body.teacherBroadcast === true || req.body.teacherBroadcast === 'true';
+  const teacher = teacherBroadcast ? await SchoolTeacher.findOne({ user: req.user._id, status: 'active' }).select('_id').lean() : null;
+  if (teacherBroadcast && !teacher) return res.status(403).json({ ok: false, message: 'غرفة بث المعلم متاحة للمعلم الحقيقي المعتمد فقط' });
+  const roomType = teacherBroadcast ? 'voice' : (['text', 'voice', 'challenge'].includes(req.body.roomType) ? req.body.roomType : 'text');
   const privacy = req.body.privacy === 'private' ? 'private' : 'public';
   const joinApproval = privacy === 'private' ? 'owner_approval' : (req.body.joinApproval === 'owner_approval' ? 'owner_approval' : 'open');
-  const group = await Group.create({ name, description: String(req.body.description || '').trim(), privacy, joinApproval, roomType, maxSpeakers: roomType === 'challenge' ? 2 : 8, isOfficial: ['admin','developer'].includes(req.user.role) && req.body.isOfficial === true, owner: req.user._id, admins: [req.user._id], members: [req.user._id] });
+  const group = await Group.create({ name, description: String(req.body.description || '').trim(), privacy, joinApproval, roomType, teacherBroadcast, teacherProfile: teacher ? teacher._id : null, maxSpeakers: roomType === 'challenge' ? 2 : 8, isOfficial: ['admin','developer'].includes(req.user.role) && req.body.isOfficial === true, owner: req.user._id, admins: [req.user._id], members: [req.user._id] });
   await audit(req.user, 'room.created', group, `${name} join:${joinApproval}`);
   res.status(201).json({ ok: true, group: view(group, req.user) });
 });
