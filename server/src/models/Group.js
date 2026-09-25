@@ -6,6 +6,8 @@ const GroupSchema = new mongoose.Schema({
   privacy: { type: String, enum: ['public', 'private'], default: 'public', index: true },
   joinApproval: { type: String, enum: ['open', 'owner_approval'], default: 'open', index: true },
   roomType: { type: String, enum: ['text', 'voice', 'challenge'], default: 'text', index: true },
+  teacherBroadcast: { type: Boolean, default: false, index: true },
+  teacherProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'SchoolTeacher', default: null },
   isOfficial: { type: Boolean, default: false, index: true },
   isLive: { type: Boolean, default: false, index: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
