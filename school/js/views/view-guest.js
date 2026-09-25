@@ -944,6 +944,18 @@
           roleButtons[rb].onclick = function () {
             var selected = this.getAttribute('data-login-role') || 'student';
             if (roleInput) roleInput.value = selected;
+            var current = SumerStore.getState();
+            var context = current.schoolContext || {};
+            var permitted = { student: !!context.isStudent, guardian: !!context.isGuardian, teacher: !!context.isTeacher, admin: !!(context.isManager || context.isDeveloper) };
+            if (current.auth && current.auth.isAuthenticated) {
+              if (permitted[selected]) { window.location.hash = selected === 'admin' ? '#admin/overview' : '#' + selected + '/overview'; return; }
+              var roleError = mountEl.querySelector('#login-error-text');
+              var roleAlert = mountEl.querySelector('#login-error-alert');
+              if (roleError && roleAlert) { roleError.textContent = selected === 'student' ? 'هذا الحساب ليس حساب طالب معتمدًا. أنشئ حساب الطالب أو قدّم طلب تسجيله وانتظر الموافقة.' : 'هذا الحساب غير مرتبط بالدور المختار.'; roleAlert.style.display = 'flex'; }
+            } else {
+              var identifierField = mountEl.querySelector('#login-identifier');
+              if (identifierField) identifierField.focus();
+            }
             for (var rbi = 0; rbi < roleButtons.length; rbi++) {
               var on = roleButtons[rbi] === this;
               roleButtons[rbi].classList.toggle('active', on);
