@@ -37,7 +37,7 @@
       subjectSpecialty: ['الرياضيات', 'العلوم', 'كيمياء', 'فيزياء', 'أحياء'],
       supportedDialects: ['ar-standard', 'ar-iraqi', 'en'],
       defaultDialect: 'ar-standard',
-      avatar: 'avatar-sarah.png',
+      avatar: 'school-assets/virtual-teachers/math.svg',
       voiceSettings: { voiceGender: 'female', defaultPitch: 1.05, defaultRate: 1.0, lang: 'ar-IQ' },
       introGreeting: 'أهلاً بكم يا أبطال، اليوم سنتعلم بطريقة سهلة وتفاعلية خطوة بخطوة.',
       active: true
@@ -51,7 +51,7 @@
       subjectSpecialty: ['اللغة العربية', 'القراءة', 'قواعد اللغة العربية', 'التربية الإسلامية', 'القرآن الكريم'],
       supportedDialects: ['ar-standard', 'ar-iraqi', 'en'],
       defaultDialect: 'ar-standard',
-      avatar: 'avatar-layla.png',
+      avatar: 'school-assets/virtual-teachers/arabic.svg',
       voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 1.0, lang: 'ar-IQ' },
       introGreeting: 'مرحباً بكم أعزائي الطلبة، لنستكشف معاً جمال لغتنا العربية ومعانيها.',
       active: true
@@ -65,17 +65,44 @@
       subjectSpecialty: ['الاجتماعيات', 'التاريخ', 'الجغرافيا', 'الوطنية'],
       supportedDialects: ['ar-standard', 'ar-iraqi', 'en'],
       defaultDialect: 'ar-standard',
-      avatar: 'avatar-mariam.png',
+      avatar: 'school-assets/virtual-teachers/social.svg',
       voiceSettings: { voiceGender: 'female', defaultPitch: 1.0, defaultRate: 0.95, lang: 'ar-IQ' },
       introGreeting: 'أهلاً بكم في حصتنا، لنتعرف اليوم على تاريخ وحضارة بلادنا العريقة.',
       active: true
+    },
+    {
+      profileId: 'english-global', name: 'أ. نور الإنكليزية', label: 'معلم افتراضي / AI',
+      roleDescription: 'معلمة إنكليزي لكل المراحل', title: 'معلمة اللغة الإنكليزية لجميع المراحل',
+      subjectSpecialty: ['اللغة الإنكليزية', 'اللغة الإنجليزية', 'English'],
+      supportedDialects: ['en'], defaultDialect: 'en',
+      avatar: 'school-assets/virtual-teachers/english.svg',
+      voiceSettings: { voiceGender: 'female', defaultPitch: 1, defaultRate: 0.95, lang: 'en-US' },
+      introGreeting: 'Hello, everyone! Open your English textbook. We will learn together.', active: true
+    },
+    {
+      profileId: 'science-physics', name: 'أ. هدى الفيزياء', label: 'معلم افتراضي / AI',
+      roleDescription: 'معلمة فيزياء وكيمياء', title: 'معلمة الفيزياء والكيمياء',
+      subjectSpecialty: ['الفيزياء', 'الكيمياء', 'علم الأرض'],
+      supportedDialects: ['ar-standard', 'ar-iraqi'], defaultDialect: 'ar-standard',
+      avatar: 'school-assets/virtual-teachers/physics.svg',
+      voiceSettings: { voiceGender: 'female', defaultPitch: 1, defaultRate: 0.95, lang: 'ar-IQ' },
+      introGreeting: 'أهلاً بكم، سنفهم درس العلوم خطوة خطوة من الكتاب.', active: true
+    },
+    {
+      profileId: 'science-biology', name: 'أ. ريم الأحياء', label: 'معلم افتراضي / AI',
+      roleDescription: 'معلمة أحياء وعلوم الحياة', title: 'معلمة الأحياء وعلوم الحياة',
+      subjectSpecialty: ['الأحياء', 'العلوم', 'علوم الحياة'],
+      supportedDialects: ['ar-standard', 'ar-iraqi'], defaultDialect: 'ar-standard',
+      avatar: 'school-assets/virtual-teachers/biology.svg',
+      voiceSettings: { voiceGender: 'female', defaultPitch: 1, defaultRate: 0.95, lang: 'ar-IQ' },
+      introGreeting: 'أهلاً بكم، لنقرأ درس الأحياء ونفهمه من الكتاب معاً.', active: true
     }
   ];
 
   var DIALECTS = [
     { id: 'ar-standard', name: 'العربية الفصحى', description: 'لغة المناهج الرسمية المعتمدة', isDefault: true },
     { id: 'ar-iraqi', name: 'اللهجة العراقية', description: 'شرح مبسط ودافئ بالعامية العراقية', isDefault: false },
-    { id: 'en', name: 'English (قريباً)', description: 'English language support (future)', isDefault: false }
+    { id: 'en', name: 'English', description: 'English language support (future)', isDefault: false }
   ];
 
   var STUDENTS_EMPTY_TEXT = 'لا يوجد طلاب مسجلون أو حاضرون في هذا الصف بعد';

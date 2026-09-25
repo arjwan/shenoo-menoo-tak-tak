@@ -40,7 +40,7 @@ const TRANSIENT_RETRY_ATTEMPTS = 2;
 const TRANSIENT_RETRY_DELAY_MS = 700;
 
 const DEFAULT_EDGE_BIN = '/home/opc/.local/tts/venv/bin/edge-tts';
-const EDGE_VOICES = { male: 'ar-IQ-BasselNeural', female: 'ar-IQ-RanaNeural' };
+const EDGE_VOICES = { male: 'ar-IQ-BasselNeural', female: 'ar-IQ-RanaNeural', 'english-female': 'en-US-JennyNeural' };
 
 function redact(message, secrets) {
   let safe = String(message || '');
@@ -213,7 +213,7 @@ function createTeacherTTS(options = {}) {
           for (let attempt = 0; attempt <= TRANSIENT_RETRY_ATTEMPTS; attempt += 1) {
             if (attempt) await sleep(TRANSIENT_RETRY_DELAY_MS * attempt);
             try {
-              const bytes = await runEdgeTts(edgeBin, EDGE_VOICES[voice === 'male' ? 'male' : 'female'], text, 45000);
+              const bytes = await runEdgeTts(edgeBin, EDGE_VOICES[voice === 'english-female' ? 'english-female' : (voice === 'male' ? 'male' : 'female')], text, 45000);
               if (!isValidAudioBytes(bytes)) throw new Error(`edge-tts أعاد ملف صوت غير صالح (bytes=${bytes.length})`);
               return { bytes, type: 'audio/mpeg', provider: 'edge' };
             } catch (error) {
@@ -243,7 +243,7 @@ function createTeacherTTS(options = {}) {
             voice: 'alloy',
             input: text,
             response_format: 'mp3',
-            instructions: 'Speak clearly in Arabic for an Iraqi school lesson.'
+            instructions: voice === 'english-female' ? 'Speak clearly in English for an Iraqi school lesson with a warm female voice.' : 'Speak clearly in Arabic for an Iraqi school lesson.'
           })
         }).then((result) => ({ ...result, type: 'audio/mpeg', provider: 'openai' }))
       });
@@ -281,6 +281,7 @@ function createTeacherTTS(options = {}) {
       const failures = [];
       for (const provider of providers) {
         try {
+          if (voice === 'english-female' && provider.id === 'groq') continue;
           const audio = await provider.synthesize(String(text), voice);
           if (!isValidAudioBytes(audio.bytes)) throw new Error(`${provider.label} أعاد ملف صوت غير صالح`);
           return audio;

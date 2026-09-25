@@ -147,70 +147,53 @@ async function validateCurriculumSource(input) {
   };
 }
 
-/** Construct initial whiteboard slide(s) based on real curriculum lesson. */
+/** Build the first board slide from the verified book page, without canned examples. */
 function buildInitialWhiteboard(stage, grade, subject, lesson, sourceMeta = {}) {
-  // Check if it is the Mathematics lesson "الكسور العشرية والكسور العادية" or similar
-  const isMathFractions = subject.includes('الرياضيات') && (lesson.includes('الكسور') || lesson.includes('عشري'));
-  
-  if (isMathFractions) {
-    return {
-      slides: [
-        {
-          title: lesson || 'الكسور العشرية والكسور العادية',
-          subtitle: 'تمثيل الكسور على خط الأعداد وتحويل الكسر العادي إلى عشري',
-          leftColumn: {
-            title: 'تحويل الكسر العادي إلى عشري',
-            items: [
-              '1/2 = 0.5',
-              '3/4 = 0.75',
-              '1/4 = 0.25'
-            ]
-          },
-          rightColumn: {
-            title: 'تمثيل الكسور على خط الأعداد',
-            items: [
-              '0 ── 0.25 ── 0.5 ── 0.75 ── 1'
-            ],
-            diagram: 'number_line'
-          },
-          example: 'مثال: حول الكسر 3/5 إلى كسر عشري → 3 ÷ 5 = 0.6',
-          note: 'ملاحظة: ليس كل كسر عشري ينتهي. فبعضها دوري مثل 1/3 = 0.333...',
-          drawing: ''
-        }
-      ],
-      currentSlide: 0
-    };
-  }
-
-  // General structured lesson slides from real curriculum
+  const source = String(sourceMeta.lessonContent || '').replace(/\\s+/g, ' ').trim();
   return {
-    slides: [
-      {
-        title: lesson,
-        subtitle: `${stage} — ${grade} — ${subject} (المصدر: ${sourceMeta.sourceTitle || 'المنهج العراقي المعتمد'})`,
-        leftColumn: {
-          title: 'المفاهيم الأساسية للدرس',
-          items: [
-            `الدرس: ${lesson}`,
-            `المادة: ${subject}`,
-            `الصف: ${grade}`
-          ]
-        },
-        rightColumn: {
-          title: 'النقاط التعليمية',
-          items: [
-            'قراءة وتحليل أفكار الدرس خطوة بخطوة',
-            'حل الأمثلة التطبيقية من الكتاب المدرسي'
-          ],
-          diagram: 'concept_card'
-        },
-        example: `تطبيق عملي من ${sourceMeta.sourceBookName || 'الكتاب المنهجي'}`,
-        note: 'يمكن للطلاب طرح الأسئلة وسيقوم المعلم الافتراضي بالإجابة عليها ومناقشتها.',
-        drawing: ''
-      }
-    ],
+    slides: [{
+      title: lesson,
+      subtitle: `${stage} — ${grade} — ${subject}`,
+      leftColumn: {
+        title: subject === 'اللغة الإنكليزية' ? 'Textbook passage' : 'نص الصفحة من الكتاب',
+        items: [source.slice(0, 240) || lesson, `${subject} — ${grade}`]
+      },
+      rightColumn: {
+        title: subject === 'اللغة الإنكليزية' ? 'Source' : 'المصدر المعتمد',
+        items: [String(sourceMeta.sourceTitle || sourceMeta.sourceBookName || ''), sourceMeta.sourcePage ? `ص ${sourceMeta.sourcePage}` : ''],
+        diagram: ''
+      },
+      example: '',
+      note: '',
+      drawing: ''
+    }],
     currentSlide: 0
   };
+}
+
+/** Add the teacher's actual explanation to a new board slide. */
+function writeTeacherExplanation(session, answer) {
+  const text = String(answer || '').replace(/\\s+/g, ' ').trim();
+  if (!text || !session.whiteboardData?.slides) return false;
+  const sentences = text.match(/[^.!?؟؛]+[.!?؟؛]?/g) || [text];
+  const lines = sentences.flatMap((sentence) => {
+    const line = sentence.trim();
+    return line.length > 180 ? line.match(/.{1,180}/gu) || [] : [line];
+  }).filter(Boolean).slice(0, 7);
+  const slides = session.whiteboardData.slides;
+  const slide = {
+    title: session.lesson,
+    subtitle: session.virtualTeacher.name,
+    leftColumn: { title: session.virtualTeacher.dialect === 'en' ? 'Explanation' : 'شرح المعلمة', items: lines.slice(0, 4) },
+    rightColumn: { title: session.virtualTeacher.dialect === 'en' ? 'Practice' : 'تطبيق وفهم', items: lines.slice(4), diagram: '' },
+    example: '',
+    note: [session.sourceTitle, session.sourcePage ? `ص ${session.sourcePage}` : ''].filter(Boolean).join(' — '),
+    drawing: ''
+  };
+  if (slides.length >= 20) slides[slides.length - 1] = slide;
+  else slides.push(slide);
+  session.whiteboardData.currentSlide = slides.length - 1;
+  return true;
 }
 
 function findParticipant(session, userId) {
@@ -484,6 +467,7 @@ module.exports = {
   canManage,
   validateCurriculumSource,
   buildInitialWhiteboard,
+  writeTeacherExplanation,
   findParticipant,
   isPresent,
   joinParticipant,

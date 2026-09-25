@@ -250,6 +250,32 @@
       });
     }
 
+    function syncTeacherDialect(profileId, dialectId) {
+      var profileSelect = $(profileId);
+      var dialectSelect = $(dialectId);
+      if (!profileSelect || !dialectSelect) return;
+      var english = profileSelect.value === 'english-global';
+      var englishOption = dialectSelect.querySelector('option[value="en"]');
+      if (englishOption) englishOption.disabled = !english;
+      if (english) dialectSelect.value = 'en';
+      else if (dialectSelect.value === 'en') dialectSelect.value = 'ar-standard';
+    }
+    if ($('selectProfile')) {
+      $('selectProfile').addEventListener('change', function () {
+        syncTeacherDialect('selectProfile', 'selectDialect');
+      });
+    }
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function () {
+        var preferred = core.PROFILES.find(function (p) { return (p.subjectSpecialty || []).includes(subjectSelect.value); });
+        if (preferred && $('selectProfile')) {
+          $('selectProfile').value = preferred.profileId;
+          syncTeacherDialect('selectProfile', 'selectDialect');
+        }
+      });
+    }
+    syncTeacherDialect('selectProfile', 'selectDialect');
+
     var createForm = $('createVirtualForm');
     if (createForm) {
       createForm.addEventListener('submit', function (e) {
@@ -375,21 +401,20 @@
     $('topTeacherName').textContent = teacher.name || 'أ. سارة الذكية';
 
     // 3) Left Teacher Panel
-    $('teacherDisplayName').textContent = teacher.name || 'أ. سارة الذكية';
-    $('teacherRoleTag').textContent = teacher.title || 'معلم رياضيات افتراضي';
-    var dialectObj = core.getDialect(teacher.dialect);
-    $('teacherDialectLabel').textContent = dialectObj.name;
+    updateTeacherDisplay(teacher);
 
     // 4) Check Host Role for End Button
     // If authenticated user is host, show End Session button
     api('/api/school/virtual/sessions/mine').then(function (d) {
       if (d && d.hosting && d.hosting.code === session.code) {
         state.isHost = true;
+        syncBoardPointerMode();
         hide('handBtn');
         show('endClassBtn');
         show('virtualAttendanceBtn');
       } else {
         state.isHost = false;
+        syncBoardPointerMode();
         show('handBtn');
         hide('endClassBtn');
         hide('virtualAttendanceBtn');
@@ -533,6 +558,11 @@
     }).catch(function (error) { notify('تعذر حفظ موضع السبورة: ' + error.message, true); });
   }
 
+  function syncBoardPointerMode() {
+    var canvas = $('whiteboardCanvas');
+    if (canvas) canvas.classList.toggle('board-editable', state.isHost && state.whiteboard.getTool() !== 'select');
+  }
+
   function setupWhiteboardCanvas() {
     var canvas = $('whiteboardCanvas');
     if (!canvas) return;
@@ -629,8 +659,18 @@
     // Right Column
     if (slide.rightColumn) {
       $('boardRightTitle').textContent = slide.rightColumn.title || '';
+      var rightItems = $('boardRightItems');
+      if (rightItems) {
+        rightItems.replaceChildren();
+        (slide.rightColumn.items || []).filter(Boolean).forEach(function (item) {
+          var entry = document.createElement('p');
+          entry.textContent = item;
+          rightItems.appendChild(entry);
+        });
+      }
+      $('boardRightDiagram').hidden = slide.rightColumn.diagram !== 'number_line';
       if (slide.example) {
-        $('boardRightExample').innerHTML = '<div class="example-title">مثال:</div><div class="example-body">' + slide.example + '</div>';
+        $('boardRightExample').textContent = slide.example;
         show('boardRightExample');
       } else {
         hide('boardRightExample');
@@ -669,6 +709,7 @@
         btn.classList.add('active');
         var tool = btnId.replace('tool', '').toLowerCase();
         state.whiteboard.setTool(tool);
+        syncBoardPointerMode();
       });
     });
 
@@ -1348,6 +1389,7 @@
       var current = state.session && state.session.virtualTeacher;
       if ($('modalProfileSelect')) $('modalProfileSelect').value = current && current.profileId || 'sarah-smart';
       if ($('modalDialectSelect')) $('modalDialectSelect').value = current && current.dialect || 'ar-standard';
+      syncModalTeacherDialect();
       show('settingsModal');
     }
 
@@ -1370,11 +1412,23 @@
     }
   }
 
+  function syncModalTeacherDialect() {
+    var profile = $('modalProfileSelect');
+    var dialect = $('modalDialectSelect');
+    if (!profile || !dialect) return;
+    var english = profile.value === 'english-global';
+    var englishOption = dialect.querySelector('option[value="en"]');
+    if (englishOption) englishOption.disabled = !english;
+    if (english) dialect.value = 'en';
+    else if (dialect.value === 'en') dialect.value = 'ar-standard';
+  }
+
   function populateModalProfiles() {
     var box = $('modalProfilesList');
     if (!box) return;
     box.innerHTML = '<label for="modalProfileSelect">شخصية المعلم</label><select id="modalProfileSelect"></select>';
     var select = $('modalProfileSelect');
+    select.addEventListener('change', syncModalTeacherDialect);
     core.PROFILES.forEach(function (p) {
       var option = document.createElement('option');
       option.value = p.profileId;
@@ -1385,8 +1439,12 @@
 
   function updateTeacherDisplay(teacher) {
     if (!teacher) return;
+    var profile = core.getProfile(teacher.profileId);
+    var avatar = $('teacherAvatarImg');
+    if (avatar) avatar.src = teacher.avatar || profile.avatar || 'school-assets/virtual-teachers/math.svg';
     $('topTeacherName').textContent = teacher.name;
     $('teacherDisplayName').textContent = teacher.name;
+    if ($('rosterTeacherName')) $('rosterTeacherName').textContent = teacher.name;
     $('teacherRoleTag').textContent = teacher.title;
     $('teacherDialectLabel').textContent = core.getDialect(teacher.dialect).name;
   }
@@ -1500,7 +1558,7 @@
       });
 
       state.socket.on('school:virtual:whiteboard', function (data) {
-        if (!data || data.code !== state.code || !data.whiteboardData || state.isHost) return;
+        if (!data || data.code !== state.code || !data.whiteboardData) return;
         var board = data.whiteboardData;
         if (!board.slides || !board.slides.length) return;
         state.whiteboard = core.createWhiteboardState(board.slides);
