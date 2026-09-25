@@ -161,20 +161,23 @@
         renderShell(window.location.hash);
       });
 
-      // جلب سياق المستخدم الحالي إذا كان التوكن متوفراً
+      // استعد دور الحساب قبل تقييم حماية المسار عند تحديث صفحة داخلية.
+      function startRouter() {
+        router.init(function (routeKey, contract) {
+          renderShell(routeKey);
+          renderContent(routeKey, contract);
+        });
+      }
       if (api && api.getToken()) {
         api.getMe().then(function (res) {
-          if (res.ok && res.data) {
-            store.setSchoolContext(res.data.schoolContext, res.data.user);
-          }
-        }).catch(function () {});
+          if (res.ok && res.data) store.setSchoolContext(res.data.schoolContext, res.data.user);
+          else store.setAuth({ token: null, isAuthenticated: false });
+        }).catch(function () {
+          store.setAuth({ token: null, isAuthenticated: false });
+        }).then(startRouter);
+      } else {
+        startRouter();
       }
-
-      // تهيئة موجه المسارات
-      router.init(function (routeKey, contract) {
-        renderShell(routeKey);
-        renderContent(routeKey, contract);
-      });
     })();
   </script>
 </body>
