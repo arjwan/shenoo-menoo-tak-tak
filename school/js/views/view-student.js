@@ -418,6 +418,8 @@
         if (t.stages && t.stages.length > 0) {
           html += '        <div style="font-size: 0.85rem; color: var(--sumer-text-secondary);">المراحل: ' + escapeHtml(Array.isArray(t.stages) ? t.stages.join('، ') : t.stages) + '</div>';
         }
+        html += '        <label class="sumer-label">اختر المادة للتسجيل<select class="student-teacher-subject" data-teacher="'+escapeHtml(t._id||t.id||'')+'"><option value="">اختر المادة</option>'+((Array.isArray(t.subjects)?t.subjects:[]).map(function(s){return '<option value="'+escapeHtml(s)+'">'+escapeHtml(s)+'</option>';}).join(''))+'</select></label>';
+        html += '        <button type="button" class="sumer-btn sumer-btn-primary student-enroll-teacher" data-teacher="'+escapeHtml(t._id||t.id||'')+'" data-name="'+escapeHtml(t.name||t.fullName||'')+'">طلب التسجيل لدى هذا المعلم</button> <a class="sumer-btn sumer-btn-outline" href="/school-live.html">دخول الصف</a>';
         html += '      </div>';
         html += '    </div>';
       });
@@ -466,6 +468,18 @@
 
     html += '</div>'; // نهاية الحاوية
     container.innerHTML = html;
+    container.querySelectorAll('.student-enroll-teacher').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var select = container.querySelector('.student-teacher-subject[data-teacher="'+button.dataset.teacher+'"]');
+        var subject = select && select.value;
+        if (!subject) { window.alert('اختر المادة أولاً'); return; }
+        button.disabled = true;
+        api.request('/api/school/portal/enrollment', { method:'POST', body:{ requestedRole:'student', stage:student.stage, grade:student.grade, subjects:[subject], note:'طلب تسجيل لدى المعلم '+button.dataset.name+' في مادة '+subject } }).then(function (r) {
+          if (!r.ok) throw new Error(r.message || 'تعذر إرسال الطلب');
+          button.textContent = 'تم إرسال طلب التسجيل';
+        }).catch(function (e) { button.disabled=false; window.alert(e.message); });
+      });
+    });
   }
 
   // --------------------------------------------------------------------------
