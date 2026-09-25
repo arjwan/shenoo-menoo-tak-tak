@@ -409,6 +409,19 @@
       html += '        </div>';
       html += '      </div>';
 
+      // اختيار بوابة الدخول — لا يمنح صلاحية؛ الخادم يبقى المصدر الحاكم للدور
+      html += '      <div class="sumer-form-group">';
+      html += '        <label class="sumer-label">الدخول بصفتي</label>';
+      html += '        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;">';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role active" data-login-role="student" aria-pressed="true">طالب</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role" data-login-role="guardian" aria-pressed="false">ولي أمر</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role" data-login-role="teacher" aria-pressed="false">معلم</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role" data-login-role="admin" aria-pressed="false">إدارة</button>';
+      html += '        </div>';
+      html += '        <input type="hidden" id="login-role" value="student">';
+      html += '        <p class="sumer-form-help">يُستخدم الاختيار لتوجيهك فقط؛ صلاحية الحساب الفعلية تُتحقق من الخادم.</p>';
+      html += '      </div>';
+
       // زر الدخول
       html += '      <div style="margin-top: 1.75rem;">';
       html += '        <button type="submit" id="login-submit-btn" class="sumer-btn sumer-btn-primary" style="width: 100%; justify-content: center;">';
@@ -921,6 +934,19 @@
         }
 
         var loginForm = mountEl.querySelector('#sumer-login-form');
+        var roleInput = mountEl.querySelector('#login-role');
+        var roleButtons = mountEl.querySelectorAll('.sumer-login-role');
+        for (var rb = 0; rb < roleButtons.length; rb++) {
+          roleButtons[rb].onclick = function () {
+            var selected = this.getAttribute('data-login-role') || 'student';
+            if (roleInput) roleInput.value = selected;
+            for (var rbi = 0; rbi < roleButtons.length; rbi++) {
+              var on = roleButtons[rbi] === this;
+              roleButtons[rbi].classList.toggle('active', on);
+              roleButtons[rbi].setAttribute('aria-pressed', on ? 'true' : 'false');
+            }
+          };
+        }
         var errAlert = mountEl.querySelector('#login-error-alert');
         var errText = mountEl.querySelector('#login-error-text');
         var submitBtn = mountEl.querySelector('#login-submit-btn');
@@ -974,9 +1000,18 @@
                     error: null
                   });
 
-                  // التوجيه الذكي حسب الدور
+                  // التوجيه حسب الدور الحقيقي من الخادم. اختيار المستخدم لا يرفع الصلاحية.
                   var ctx = meRes.data.schoolContext || {};
-                  if (ctx.isTeacher) {
+                  var requestedRole = roleInput ? roleInput.value : '';
+                  var allowed = {
+                    student: !!ctx.isStudent,
+                    guardian: !!ctx.isGuardian,
+                    teacher: !!ctx.isTeacher,
+                    admin: !!(ctx.isManager || ctx.isDeveloper)
+                  };
+                  if (requestedRole && allowed[requestedRole]) {
+                    window.location.hash = requestedRole === 'admin' ? '#admin/overview' : '#' + requestedRole + '/overview';
+                  } else if (ctx.isTeacher) {
                     window.location.hash = '#teacher/overview';
                   } else if (ctx.isGuardian) {
                     window.location.hash = '#guardian/overview';
