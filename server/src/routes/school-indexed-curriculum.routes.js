@@ -4,13 +4,15 @@ const router = require('express').Router();
 const { requireAuth } = require('../middleware/auth');
 const linked = require('../services/iraqi-curriculum-linked');
 
-router.use(requireAuth);
-
+// The curriculum index contains public stage, grade and subject names.
+// Keep file listings and indexed book text behind the account gate.
 router.get('/curriculum/catalog', (req, res) => {
   const filters = ['stage', 'grade', 'subject'];
   const items = linked.catalogItems.filter((item) => filters.every((key) => !req.query[key] || item[key] === req.query[key]));
   res.json({ ok: true, version: linked.catalog.version, items, total: items.length });
 });
+
+router.use(requireAuth);
 
 router.get('/curriculum/files', (_req, res) => {
   res.json({ ...linked.manifest, files: linked.files, indexedTextCount: linked.files.filter((file) => file.textAvailable).length });
