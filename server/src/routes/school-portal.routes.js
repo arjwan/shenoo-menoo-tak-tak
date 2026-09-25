@@ -101,7 +101,14 @@ router.patch('/enrollment/:id/review', requireSchoolManager, async (req, res, ne
       await Teacher.findOneAndUpdate({ user: request.user._id }, { user: request.user._id, name: request.user.fullName, phone: request.user.phone || '', subjects: request.subjects, stages: [request.stage], grades: request.grade ? [request.grade] : [], status: 'active', registeredBy: req.user._id }, { upsert: true, new: true, runValidators: true });
     }
     if (decision === 'approved' && request.requestedRole === 'student') {
-      await Student.findOneAndUpdate({ studentUser: request.user._id }, { studentUser: request.user._id, name: request.user.fullName, stage: request.stage, grade: request.grade || 'غير محدد', subjects: request.subjects, active: true, 'subscription.status': 'active' }, { upsert: true, new: true, runValidators: true });
+      const linked = await Student.findOne({ studentUser: request.user._id }) || await Student.findOne({ guardian: request.user._id, name: request.user.fullName, studentUser: null, status: { $ne: 'archived' } });
+      const studentUpdate = { studentUser: request.user._id, name: request.user.fullName, stage: request.stage, grade: request.grade || 'غير محدد', subjects: request.subjects, active: true, 'subscription.status': 'active' };
+      if (linked) await Student.findByIdAndUpdate(linked._id, studentUpdate, { runValidators: true });
+      else await Student.findOneAndUpdate({ studentUser: request.user._id }, { ...studentUpdate, guardian: request.user._id }, { upsert: true, new: true, runValidators: true });
+      request.user.schoolAccess = request.user.schoolAccess || {};
+      request.user.schoolAccess.role = 'student';
+      request.user.markModified('schoolAccess');
+      await request.user.save();
     }
     request.status = decision;
     request.reviewedBy = req.user._id;

@@ -511,6 +511,10 @@
       html += '      <span id="student-error-text"></span>';
       html += '    </div>';
 
+      html += '    <p class="sumer-form-help">اختر نوع التسجيل: ملف الابن يرتبط بولي الأمر، أما دخول الطالب فيحتاج حسابه الخاص وموافقة الإدارة.</p>';
+      html += '    <label class="sumer-label" for="student-registration-mode">نوع التسجيل</label>';
+      html += '    <select id="student-registration-mode" class="sumer-select"><option value="child">أنا ولي الأمر وأضيف ابني</option><option value="student">أنا الطالب وأريد الدخول بحسابي</option></select>';
+      html += '    <p class="sumer-form-help">ليس للطالب حساب؟ <a href="signup.html">إنشاء حساب مستقل للطالب</a>، ثم العودة لطلب التسجيل هنا.</p>';
       html += '    <form id="sumer-register-student-form" novalidate>';
       // اسم الطالب
       html += '      <div class="sumer-form-group">';
@@ -1011,6 +1015,9 @@
                   };
                   if (requestedRole && allowed[requestedRole]) {
                     window.location.hash = requestedRole === 'admin' ? '#admin/overview' : '#' + requestedRole + '/overview';
+                  } else if (requestedRole === 'student' && !ctx.isStudent) {
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>دخول المنصة</span>'; }
+                    if (errAlert && errText) { errText.textContent = ctx.isGuardian ? 'هذا حساب ولي أمر. للدخول كطالب، استخدم حساب الطالب المستقل أو قدّم طلب تسجيل طالب من الرابط أدناه.' : 'لم يُعتمد حساب طالب مرتبط بهذا الدخول بعد. قدّم طلب التسجيل وانتظر موافقة الإدارة.'; errAlert.style.display = 'flex'; }
                   } else if (ctx.isTeacher) {
                     window.location.hash = '#teacher/overview';
                   } else if (ctx.isGuardian) {
@@ -1121,6 +1128,23 @@
               regSubmitBtn.innerHTML = '<span class="sumer-spinner" style="width: 16px; height: 16px; border-width: 2px;" aria-hidden="true"></span> <span>جاري تسجيل الطالب...</span>';
             }
             if (regErrAlert) regErrAlert.style.display = 'none';
+
+            var registrationModeEl = mountEl.querySelector('#student-registration-mode');
+            if (registrationModeEl && registrationModeEl.value === 'student') {
+              if (!SumerStore.getState().auth || !SumerStore.getState().auth.isAuthenticated) {
+                if (regSubmitBtn) { regSubmitBtn.disabled = false; regSubmitBtn.innerHTML = '<span>طلب تسجيل الطالب</span>'; }
+                if (regErrAlert && regErrText) { regErrText.innerHTML = 'سجّل الدخول بحساب الطالب أولاً أو <a href="signup.html">أنشئ حسابًا للطالب</a>.'; regErrAlert.style.display = 'flex'; }
+                return;
+              }
+              SumerAPI.request('/api/school/portal/enrollment', { method: 'POST', body: { requestedRole: 'student', stage: stage, grade: grade, subjects: checkedSubjects } }).then(function (res) {
+                if (regSubmitBtn) { regSubmitBtn.disabled = false; regSubmitBtn.innerHTML = '<span>طلب تسجيل الطالب</span>'; }
+                if (regErrAlert && regErrText) { regErrText.textContent = res.ok ? 'أُرسل طلب الطالب إلى الإدارة. بعد الموافقة ادخل من زر طالب.' : (res.message || 'تعذر إرسال الطلب'); regErrAlert.style.display = 'flex'; }
+              }).catch(function () {
+                if (regSubmitBtn) { regSubmitBtn.disabled = false; regSubmitBtn.innerHTML = '<span>طلب تسجيل الطالب</span>'; }
+                if (regErrAlert && regErrText) { regErrText.textContent = 'تعذر الاتصال بالخادم'; regErrAlert.style.display = 'flex'; }
+              });
+              return;
+            }
 
             SumerAPI.registerStudent({
               name: name,
