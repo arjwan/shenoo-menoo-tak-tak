@@ -4,7 +4,7 @@
 (function () {
   let currentUser = null;
   let schoolContext = null;
-  let token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+  const readAuthToken = () => localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('developerToken') || sessionStorage.getItem('developerToken') || '';\n  let token = readAuthToken();
   let allStudents = [];
   let allRealTeachers = [];
   let allVirtualTeachers = [];
@@ -27,7 +27,7 @@
   async function apiCall(endpoint, options = {}) {
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${readAuthToken()}`,
       ...(options.headers || {})
     };
     try {
