@@ -99,6 +99,8 @@ async function bootPage(baseUrl, token) {
     pretendToBeVisual: true,
     virtualConsole: vc,
     beforeParse(window) {
+      window.AbortController = globalThis.AbortController;
+      window.AbortSignal = globalThis.AbortSignal;
       window.fetch = (input, init) =>
         fetch(/^https?:/i.test(String(input)) ? String(input) : new URL(String(input), baseUrl).href, init);
       window.localStorage.setItem('token', token);
