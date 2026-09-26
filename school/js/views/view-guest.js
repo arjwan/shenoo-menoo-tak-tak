@@ -525,6 +525,16 @@
       html += '               placeholder="مثال: أحمد حيدر علي" required>';
       html += '      </div>';
 
+      // بيانات الحساب المستقل الذي ستنشئه الإدارة بعد الموافقة
+      html += '      <div id="guardian-child-account-fields">';
+      html += '        <div class="sumer-form-group"><label for="student-username" class="sumer-label">اسم مستخدم الطالب <span class="sumer-required">*</span></label><input type="text" id="student-username" class="sumer-input" autocomplete="off" placeholder="مثال: ali.ahmed" minlength="3" maxlength="30"></div>';
+      html += '        <div class="sumer-form-group"><label for="guardian-relationship" class="sumer-label">صلة ولي الأمر</label><select id="guardian-relationship" class="sumer-select"><option value="أب">أب</option><option value="أم">أم</option><option value="ولي أمر" selected>ولي أمر</option><option value="أخرى">أخرى</option></select></div>';
+      html += '        <div class="sumer-form-group"><label class="sumer-label">موافقات ولي الأمر السبعة <span class="sumer-required">*</span></label><div class="sumer-checkbox-group">';
+      var enrollmentConsents = [['microphone','استخدام الميكروفون'],['camera','استخدام الكاميرا'],['live_classroom_participation','المشاركة في الصف المباشر'],['virtual_teacher_participation','المشاركة مع المعلم الافتراضي'],['ai_voice_usage','استخدام الصوت والذكاء الاصطناعي'],['save_learning_qa','حفظ الأسئلة والأجوبة التعليمية'],['school_notifications','استلام تنبيهات المدرسة']];
+      for (var ec = 0; ec < enrollmentConsents.length; ec++) html += '<label class="sumer-checkbox-label"><input type="checkbox" name="enrollment-consent" value="' + enrollmentConsents[ec][0] + '" required> ' + enrollmentConsents[ec][1] + '</label>';
+      html += '        </div><p class="sumer-form-help">يمكن تعديل الموافقات لاحقاً من صفحة ولي الأمر.</p></div>';
+      html += '      </div>';
+
       // المرحلة الدراسية
       html += '      <div class="sumer-form-group">';
       html += '        <label for="student-stage" class="sumer-label">';
@@ -1158,13 +1168,28 @@
               return;
             }
 
-            SumerAPI.registerStudent({
-              name: name,
-              stage: stage,
-              grade: grade,
-              section: section,
-              subjects: checkedSubjects
-            }).then(function (res) {
+            // ولي الأمر ينشئ طلب حساب مستقل للابن. لا يُنشأ الحساب قبل موافقة الإدارة.
+            var authState = SumerStore.getState().auth || {};
+            if (!authState.isAuthenticated) {
+              if (regSubmitBtn) { regSubmitBtn.disabled = false; regSubmitBtn.innerHTML = '<span>إرسال طلب الطالب إلى الإدارة</span>'; }
+              if (regErrAlert && regErrText) { regErrText.textContent = 'سجّل الدخول بحساب ولي الأمر أولاً.'; regErrAlert.style.display = 'flex'; }
+              return;
+            }
+            var usernameEl = mountEl.querySelector('#student-username');
+            var relationshipEl = mountEl.querySelector('#guardian-relationship');
+            var studentUsername = (usernameEl ? usernameEl.value : '').trim().toLowerCase();
+            var consentBoxes = mountEl.querySelectorAll('input[name="enrollment-consent"]');
+            var consents = {}, allConsented = consentBoxes.length === 7;
+            for (var ci = 0; ci < consentBoxes.length; ci++) { consents[consentBoxes[ci].value] = consentBoxes[ci].checked; if (!consentBoxes[ci].checked) allConsented = false; }
+            if (!/^[\\p{L}\\p{M}0-9_.]{3,30}$/u.test(studentUsername) || !allConsented) {
+              if (regSubmitBtn) { regSubmitBtn.disabled = false; regSubmitBtn.innerHTML = '<span>إرسال طلب الطالب إلى الإدارة</span>'; }
+              if (regErrAlert && regErrText) { regErrText.textContent = !studentUsername ? 'أدخل اسم مستخدم مستقل للطالب.' : 'يجب تحديد الموافقات السبعة قبل إرسال الطلب.'; regErrAlert.style.display = 'flex'; }
+              return;
+            }
+            SumerAPI.request('/api/school/portal/guardian/student-enrollment', { method: 'POST', body: {
+              studentName: name, studentUsername: studentUsername, relationship: relationshipEl ? relationshipEl.value : 'ولي أمر',
+              stage: stage, grade: grade, section: section, subjects: checkedSubjects, consents: consents
+            }}).then(function (res) {
               if (regSubmitBtn) regSubmitBtn.disabled = false;
 
               if (!res.ok) {
@@ -1176,25 +1201,13 @@
                 return;
               }
 
-              // نجاح التسجيل: حساب وتخزين حالة التجربة المجانية من استجابة الخادم
-              var student = res.data && res.data.student;
-              if (student) {
-                var now = new Date();
-                var ends = student.trialEndsAt ? new Date(student.trialEndsAt) : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-                var daysRemaining = Math.max(0, Math.ceil((ends.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
-
-                SumerStore.setTrial({
-                  active: true,
-                  trialStatus: student.trialStatus || 'active',
-                  startedAt: student.trialStartedAt || now.toISOString(),
-                  endsAt: student.trialEndsAt || ends.toISOString(),
-                  daysRemaining: daysRemaining,
-                  studentId: String(student._id || student.id)
-                });
+              // الطلب ينتظر الإدارة؛ الحساب وكلمة المرور لا يُنشآن في المتصفح.
+              if (regSubmitBtn) regSubmitBtn.innerHTML = '<span>تم إرسال الطلب</span>';
+              if (regErrAlert && regErrText) {
+                regErrAlert.className = 'sumer-alert sumer-alert-info';
+                regErrText.textContent = 'تم إرسال طلب إنشاء حساب الطالب إلى الإدارة. بعد الموافقة ستُحدد كلمة المرور المؤقتة ويظهر الطالب في سجلات المدرسة.';
+                regErrAlert.style.display = 'flex';
               }
-
-              // إعادة رندرة الصفحة لعرض بطاقة تأكيد التجربة المجانية
-              self.render('#auth/register-student', mountEl);
             }).catch(function () {
               if (regSubmitBtn) {
                 regSubmitBtn.disabled = false;
