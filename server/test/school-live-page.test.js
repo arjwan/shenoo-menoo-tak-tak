@@ -68,6 +68,12 @@ function installFakes(window, tag) {
   window.MediaStream = FakeStream;
   window.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
   window.HTMLMediaElement.prototype.pause = function () {};
+  // jsdom intentionally has no canvas renderer; provide the tiny surface the
+  // classroom board uses so the DOM lifecycle can exercise the real page code.
+  window.HTMLCanvasElement.prototype.getContext = function () {
+    return { clearRect() {}, drawImage() {}, save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, fillText() {}, measureText(t) { return { width: String(t || '').length * 10 }; }, set globalCompositeOperation(v) {}, set font(v) {}, set textAlign(v) {}, set direction(v) {}, set fillStyle(v) {}, set lineWidth(v) {}, set lineCap(v) {}, set strokeStyle(v) {} };
+  };
+  window.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,AA=='; };
   Object.defineProperty(window.navigator, 'mediaDevices', { value: { getUserMedia: async (constraints) => {
     media.calls.push(constraints);
     const s = new FakeStream();
