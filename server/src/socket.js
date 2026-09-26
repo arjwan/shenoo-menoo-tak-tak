@@ -46,7 +46,18 @@ class PrivateCallRegistry {
 }
 
 function attachSocket(httpServer) {
-  const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
+  const allowedOrigins = String(process.env.CORS_ORIGINS || '')
+    .split(',').map((item) => item.trim()).filter(Boolean);
+  const production = process.env.NODE_ENV === 'production';
+  const socketOrigin = (origin, callback) => {
+    // Native clients and same-origin/non-browser clients may omit Origin.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Keep local development usable, but production must fail closed.
+    if (!production && allowedOrigins.length === 0) return callback(null, true);
+    return callback(new Error('Origin is not allowed'));
+  };
+  const io = new Server(httpServer, { cors: { origin: socketOrigin, credentials: true } });
   const voiceRooms = new Map();
   const groupVoiceRooms = new Map();
   const privateCalls = new PrivateCallRegistry();
