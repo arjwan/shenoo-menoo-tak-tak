@@ -28,6 +28,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const User = require('../src/models/User');
 const Student = require('../src/models/SchoolStudent');
+const SchoolTeacher = require('../src/models/SchoolTeacher');
 const Classroom = require('../src/models/SchoolClassroom');
 const liveRoutes = require('../src/routes/school-live.routes');
 const schoolRoutes = require('../src/routes/school.routes');
@@ -112,6 +113,7 @@ test('real classroom v1 page: teacher + real pupil end-to-end in the DOM (signal
   const mongod = await MongoMemoryServer.create({ instance: { args: ['--wiredTigerCacheSizeGB', '0.25'] } });
   await mongoose.connect(mongod.getUri('shno-school-live-page'));
   const teacher = await makeUser('أستاذ حسن علي', 'teacher-page', 'tp@example.com');
+  await SchoolTeacher.create({ user: teacher._id, name: 'أستاذ حسن علي', subjects: ['القراءة'], stages: ['ابتدائي'], grades: ['الأول ابتدائي'], status: 'active' });
   const guardian = await makeUser('أبو زياد', 'guardian-page', 'gp@example.com');
   const ziad = await Student.create({ guardian: guardian._id, name: 'زياد كريم', stage: 'ابتدائي', grade: 'الأول ابتدائي', subjects: ['القراءة'], learningPermissions: { camera: true, voice: false } });
 
