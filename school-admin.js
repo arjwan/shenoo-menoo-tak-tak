@@ -4,7 +4,8 @@
 (function () {
   let currentUser = null;
   let schoolContext = null;
-  const readAuthToken = () => localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('developerToken') || sessionStorage.getItem('developerToken') || '';\n  let token = readAuthToken();
+  const readAuthToken = () => localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('developerToken') || sessionStorage.getItem('developerToken') || '';
+  let token = readAuthToken();
   let allStudents = [];
   let allRealTeachers = [];
   let allVirtualTeachers = [];
