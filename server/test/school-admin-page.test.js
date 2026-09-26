@@ -48,6 +48,7 @@ test('School Admin Page: DOM Structure and Capabilities Verification', async (t)
     const tabs = Array.from(document.querySelectorAll('.tab-nav-btn')).map((b) => b.dataset.tab);
     assert.deepEqual(tabs, [
       'overview',
+      'applications',
       'teachers',
       'students',
       'guardians',
@@ -57,6 +58,13 @@ test('School Admin Page: DOM Structure and Capabilities Verification', async (t)
       'complaints',
       'audit'
     ]);
+  });
+
+  await t.test('Teacher applications approval queue exists in DOM', () => {
+    assert.ok(document.querySelector('[data-tab="applications"]'), 'Applications tab exists');
+    assert.ok(document.getElementById('pane-applications'), 'Applications pane exists');
+    assert.ok(document.getElementById('teacherApplicationsTableBody'), 'Applications table exists');
+    assert.ok(document.getElementById('refreshTeacherApplicationsBtn'), 'Applications refresh exists');
   });
 
   await t.test('2. "إضافة معلم حقيقي" UI and inputs exist in DOM', () => {
