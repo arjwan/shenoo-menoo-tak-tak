@@ -472,7 +472,7 @@
     if (filters.subject) queryParts.push('subject=' + encodeURIComponent(filters.subject));
 
     var q = queryParts.length > 0 ? ('?' + queryParts.join('&')) : '';
-    return this.request('/api/school/management/teachers' + q);
+    return this.request('/api/school/portal/teachers/directory' + q);
   };
 
   /**
