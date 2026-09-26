@@ -349,10 +349,10 @@ test('school canva views show the real account data (DOM E2E, original untouched
     assert.equal(core.packLibrary(emptyCatalog.items, filesJson.files).length, expectedRows.length,
       'library rows for zero students == full catalogue');
 
-    // 8b) ACTIVE export (what /api/school-canva/original serves today) booted
-    //     with the ZERO-student account through the adapter's data bridge: the
-    //     library must still be the full catalogue with real PDF links only.
-    const active = await bootExport(servedUpdateHtml, emptyToken);
+    // 8b) The maintained update export still boots through the adapter data bridge
+    //     while /original remains immutable.
+    const updateDiskHtml = read(path.join(ROOT, 'original-assets/school-canva/school-canva-update-20260920.html'));
+    const active = await bootExport(schoolCanvaRoutes.repairCanvaExport(updateDiskHtml), emptyToken);
     await poll(async () => active.doc.querySelectorAll('#catalog-list article').length >= expectedRows.length, { timeoutMs: 60000 });
     const activeCounts = assertRealLibrary(active.doc, 'active export / zero students');
     assert.equal(activeCounts.cards, expectedRows.length, 'active export: exactly one card per catalogue book for a zero-student account');
