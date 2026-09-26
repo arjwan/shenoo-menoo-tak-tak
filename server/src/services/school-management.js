@@ -335,12 +335,13 @@ async function updateStudent(actorUser, schoolContext, studentId, updates) {
     throw err;
   }
 
-  // Teacher scoping
+  // Teacher scoping: a teacher may modify only a student explicitly assigned
+  // to that teacher. Matching stage/grade alone is not an authorization grant.
   if (schoolContext.isTeacher) {
     const isAssigned = student.assignedTeachers?.some(
       (at) => String(at.teacher) === String(schoolContext.teacher._id)
     );
-    if (!isAssigned && (!schoolContext.teacher.grades.includes(student.grade) || !schoolContext.teacher.stages.includes(student.stage))) {
+    if (!isAssigned) {
       const err = new Error('ليس لديك صلاحية تعديل بيانات هذا الطالب');
       err.status = 403;
       throw err;
@@ -400,7 +401,9 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && student.assignedTeachers?.some(
+    (at) => String(at.teacher?._id || at.teacher) === String(schoolContext.teacher?._id)
+  );
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -489,7 +492,9 @@ async function getStudentAttendanceHistory(actorUser, schoolContext, studentId) 
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && student.assignedTeachers?.some(
+    (at) => String(at.teacher?._id || at.teacher) === String(schoolContext.teacher?._id)
+  );
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -559,7 +564,9 @@ async function getStudentGradesHistory(actorUser, schoolContext, studentId) {
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && student.assignedTeachers?.some(
+    (at) => String(at.teacher?._id || at.teacher) === String(schoolContext.teacher?._id)
+  );
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
@@ -630,7 +637,9 @@ async function getStudentProgress(actorUser, schoolContext, studentId) {
   }
 
   const isManagerOrDev = schoolContext.isManager || schoolContext.isDeveloper;
-  const isTeacher = schoolContext.isTeacher;
+  const isTeacher = schoolContext.isTeacher && student.assignedTeachers?.some(
+    (at) => String(at.teacher?._id || at.teacher) === String(schoolContext.teacher?._id)
+  );
   const isGuardianOwner = schoolContext.isGuardian && String(student.guardian?._id || student.guardian) === String(actorUser._id);
   const isStudentOwner = schoolContext.isStudent && (
     String(student.studentUser?._id || student.studentUser) === String(actorUser._id) ||
