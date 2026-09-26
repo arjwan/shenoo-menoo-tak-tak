@@ -187,7 +187,7 @@ router.patch('/enrollment/:id/review', requireSchoolManager, async (req, res, ne
         for (const consent of request.consents || []) {
           await require('../models/GuardianConsent').findOneAndUpdate(
             { student: student._id, consentType: consent.consentType },
-            { student: student._id, guardian: guardianUser._id, consentType: consent.consentType, granted: consent.granted === true, text: 'موافقة ولي الأمر عند طلب إنشاء حساب الطالب', version: '2026-09-26-v1', decidedAt: consent.decidedAt || new Date(), decidedBy: guardianUser._id },
+            { student: student._id, guardian: guardianUser._id, consentType: consent.consentType, granted: consent.granted === true, text: 'موافقة ولي الأمر عند طلب إنشاء حساب الطالب', version: '2026-09-26-v1', decidedAt: consent.decidedAt || new Date() },
             { upsert: true, new: true, runValidators: true }
           );
         }
