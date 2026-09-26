@@ -79,6 +79,27 @@ router.get('/bootstrap', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Student/guardian-safe directory: exposes only approved teaching profile fields.
+// Management records, phones, audit data and account internals never leave this endpoint.
+router.get('/teachers/directory', async (req, res, next) => {
+  try {
+    const filter = { status: 'active' };
+    if (req.query.stage) filter.stages = clean(req.query.stage);
+    if (req.query.grade) filter.grades = clean(req.query.grade);
+    if (req.query.subject) filter.subjects = clean(req.query.subject);
+    const teachers = await Teacher.find(filter)
+      .select('name subjects stages grades bio qualifications experienceYears schedule fees user')
+      .populate('user', 'fullName username profile.avatarUrl')
+      .sort({ name: 1 }).lean();
+    res.json({ ok: true, teachers: teachers.map((teacher) => ({
+      id: String(teacher._id), name: teacher.name, subjects: teacher.subjects || [], stages: teacher.stages || [], grades: teacher.grades || [],
+      bio: teacher.bio || '', qualifications: teacher.qualifications || '', experienceYears: teacher.experienceYears || 0,
+      schedule: teacher.schedule || [], fees: teacher.fees || null,
+      avatarUrl: teacher.user?.profile?.avatarUrl || '', username: teacher.user?.username || ''
+    })) });
+  } catch (error) { next(error); }
+});
+
 router.post('/enrollment', async (req, res, next) => {
   try {
     const requestedRole = clean(req.body.requestedRole);
