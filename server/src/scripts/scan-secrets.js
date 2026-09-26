@@ -51,12 +51,16 @@ for (const file of filesIn(root)) {
 
 if (process.argv.includes('--history')) {
   try {
-    const history = execFileSync('git', ['log', '--all', '-p', '--no-ext-diff', '--format=commit:%H'], {
+    // Stream Git history to avoid Node's maxBuffer limit on this large repository.
+    // GitHub Actions checks out full history, so this still scans every reachable ref.
+    const historyFile = path.join(require('node:os').tmpdir(), 'shno-mano-secret-history-' + process.pid + '.txt');
+    execFileSync('git', ['log', '--all', '-p', '--no-ext-diff', '--format=commit:%H'], {
       cwd: root,
       encoding: 'utf8',
-      maxBuffer: 128 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', fs.openSync(historyFile, 'w'), 'pipe']
     });
+    const history = fs.readFileSync(historyFile, 'utf8');
+    fs.rmSync(historyFile, { force: true });
     for (const [name, pattern] of rules) {
       if (pattern.test(history)) findings.push({ file: 'git-history', rule: name });
     }
