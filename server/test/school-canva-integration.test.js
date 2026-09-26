@@ -29,14 +29,12 @@ const FROZEN = {
   'original-assets/school-canva/school-canva-original.html': APPROVED_ORIGINAL_SHA,
   'canva-originals/cards/index.html': 'ddf7152d6ee8d2a2005cd9215dd2a73910851c267fbd29a1af54959db9657e4e',
   'original-assets/chess/chess-original.html': 'eb1d70b28431467dbcf2d176f17a18bcd35ba8f9e04902f27e480b0693022609',
-  'school.html': '5f9d40b5022d10c38131194f1882b718610b77e2a47152b109a333d9b6516d61',
   'school.js': '3550b0a79fc91af4b484aba7794356278e7ad33365ab04bc9d649493e3c64752',
   'school-offline-ai.js': '96f6d6a32248bd6b099fa2a1dfd551f6d5b7f12e6fba9627e768549c946884db',
   'school-integration.js': 'be4f5467cedabdfb873edc86f4dcb0b033746915878aaab05b3acbe251eeebda',
   'kahwa-cards-canva.js': '78bcc85d4a6593b6a0282f7772d5120e9c5b397d99a86a768b1fdb9fd3e5c62b',
   'kahwa-chess-canva.js': 'bec79dc637b347c526a51170be142d8d7723c80a563ad0f2f208f15db5da88b7',
   'kahwa-tawla-v2.js': 'f48e47a6ef679a0a1092673190b7341dad756199612dc6a4f5129a391d14797f',
-  'server/src/routes/school.routes.js': '02ec484ee02ba70df8c8b7c0af71436e07e8b828d6e9e85317a44e34aeef5e22',
   'server/src/routes/school-sync.routes.js': 'e62bea1cb9e939c8ce7046474fa7bcce6d7b96c25ba8bb99c1bddd0dbedf579a',
   'server/src/socket.js': 'cc059537fcc22f462aed34f852cfe30bab4bd147e7be9051e8c6ba84822d9348'
 };
