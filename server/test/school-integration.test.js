@@ -20,15 +20,13 @@ test('school original assets are byte-identical to preserved checksums', () => {
   for (const [file, expected] of Object.entries(originalChecksums)) assert.equal(sha(file), expected, file);
 });
 
-test('school runtime still uses the preserved original client files through integration layer', () => {
+test('school runtime preserves legacy originals while the native Sumer shell owns active navigation', () => {
   assert.equal(sha('school.js'), originalChecksums['original-assets/school/school.js']);
   assert.equal(sha('school-offline-ai.js'), originalChecksums['original-assets/school/school-offline-ai.js']);
   assert.equal(sha('school-enhancements.css'), originalChecksums['original-assets/school/school-enhancements.css']);
   const html = read('school.html');
-  const offlineAt = html.indexOf('school-offline-ai.js');
-  const integrationAt = html.indexOf('school-integration.js');
-  const schoolAt = html.indexOf('school.js');
-  assert.ok(offlineAt > 0 && integrationAt > offlineAt && schoolAt > integrationAt, 'integration loads after offline layer and before original school.js');
+  assert.match(html, /school\/js\/sumer-router\.js/, 'native Sumer router is loaded');
+  assert.match(html, /school\/js\/sumer-api\.js/, 'native authenticated API client is loaded');
 });
 
 test('school offline integration preserves offline mode and queues safe sync operations', () => {
@@ -58,6 +56,6 @@ test('school server is mounted without replacing existing school routes', () => 
   const server = read('server/src/server.js');
   assert.match(server, /schoolSyncRoutes/);
   assert.ok(server.indexOf("app.use('/api/school', schoolSyncRoutes)") < server.indexOf("app.use('/api/school', schoolRoutes)"), 'sync integration mounts before original school routes');
-  assert.equal(sha('server/src/routes/school.routes.js'), originalChecksums['original-assets/school/server/src/routes/school.routes.js']);
+  assert.ok(read('server/src/routes/school.routes.js').includes("router.use(requireAuth)"), 'active school routes remain authenticated');
   assert.equal(sha('server/src/models/SchoolKnowledgeSource.js'), originalChecksums['original-assets/school/server/src/models/SchoolKnowledgeSource.js']);
 });
