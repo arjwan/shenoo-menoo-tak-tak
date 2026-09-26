@@ -23,6 +23,7 @@ delete process.env.SCHOOL_TURN_URIS;
 
 const User = require('../src/models/User');
 const Student = require('../src/models/SchoolStudent');
+const SchoolTeacher = require('../src/models/SchoolTeacher');
 const Classroom = require('../src/models/SchoolClassroom');
 const liveRoutes = require('../src/routes/school-live.routes');
 const { attachSchoolSocket } = require('../src/socket-school');
@@ -97,6 +98,7 @@ test('real classroom v1: REST + Socket.IO lifecycle on real accounts', { timeout
   await mongoose.connect(mongod.getUri('shno-school-live-test'));
 
   const teacher = await makeUser('أستاذ حسن علي', 'teacher-hasan', 'hasan@example.com');
+  await SchoolTeacher.create({ user: teacher._id, name: 'أستاذ حسن علي', subjects: ['القراءة'], stages: ['ابتدائي'], grades: ['الأول ابتدائي'], status: 'active' });
   const guardian = await makeUser('أبو زياد', 'guardian-ziad', 'ziad@example.com');
   const sara = await makeUser('سارة محمد', 'sara-m', 'sara@example.com');
   const eve = await makeUser('حساب غريب', 'eve-x', 'eve@example.com');
