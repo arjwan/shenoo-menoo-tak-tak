@@ -77,6 +77,7 @@
     $('openAddGradeModalBtn')?.addEventListener('click', () => { $('modalAddGrade').hidden = false; populateStudentSelect('gradeStudentSelect'); });
     $('openAddAttendanceModalBtn')?.addEventListener('click', () => { $('modalAddAttendance').hidden = false; populateStudentSelect('attStudentSelect'); });
     $('openAddComplaintModalBtn')?.addEventListener('click', () => { $('modalAddComplaint').hidden = false; populateStudentSelect('complaintStudentSelect'); });
+    $('refreshTeacherApplicationsBtn')?.addEventListener('click', () => loadTeacherApplications());
 
     // Live search for Teacher Account
     setupLiveSearch('teacherUserSearchInput', 'teacherSearchResults', 'teacherUserId', (u) => {
@@ -158,7 +159,7 @@
         $('guardianComplaintAction').hidden = false;
       }
 
-      await loadOverview();
+      await Promise.all([loadOverview(), loadTeacherApplications(true)]);
     } catch (err) {
       showAlert(`فشل تحميل بيانات المستخدم: ${err.message}`, true);
     }
@@ -167,6 +168,7 @@
   // Load Tab Data Switcher
   function loadTabData(tab) {
     if (tab === 'overview') loadOverview();
+    else if (tab === 'applications') loadTeacherApplications();
     else if (tab === 'teachers') loadTeachers();
     else if (tab === 'students') loadStudents();
     else if (tab === 'guardians') loadGuardians();
@@ -202,6 +204,63 @@
       $('statComplaintsCount').textContent = newComplaints.length;
     } catch (err) {
       console.warn('Overview load error:', err.message);
+    }
+  }
+
+  // Teacher applications: admin approval queue
+  async function loadTeacherApplications(silent = false) {
+    const tbody = $('teacherApplicationsTableBody');
+    try {
+      const res = await apiCall('/teacher-applications?status=pending');
+      const applications = res.applications || [];
+      const badge = $('teacherApplicationsBadge');
+      if (badge) {
+        badge.textContent = String(applications.length);
+        badge.hidden = applications.length === 0;
+      }
+      if (!tbody) return;
+      if (!applications.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">لا توجد طلبات معلمين بانتظار الموافقة حالياً.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = applications.map((a) => {
+        const user = a.user || {};
+        return `
+          <tr>
+            <td><b>${escapeHtml(user.fullName || a.fullName || user.username || 'متقدم')}</b><div class="text-muted">@${escapeHtml(user.username || '')}</div></td>
+            <td>${escapeHtml(user.phone || a.phone || '-')}</td>
+            <td>${(a.subjects || []).map(escapeHtml).join('، ') || '-'}</td>
+            <td>${(a.stages || []).map(escapeHtml).join('، ') || escapeHtml(a.stage || '-')} ${(a.grades || []).length ? '— ' + a.grades.map(escapeHtml).join('، ') : ''}</td>
+            <td>${a.createdAt ? new Date(a.createdAt).toLocaleString('ar-IQ') : '-'}</td>
+            <td><span class="status-badge pending">بانتظار الموافقة</span></td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary approve-teacher-application" data-id="${a._id}">✓ اعتماد</button>
+              <button type="button" class="btn btn-sm btn-danger reject-teacher-application" data-id="${a._id}">✕ رفض</button>
+            </td>
+          </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('.approve-teacher-application').forEach((b) => b.addEventListener('click', async () => {
+        if (!confirm('اعتماد هذا المتقدم كمعلم حقيقي وتفعيل حسابه التعليمي؟')) return;
+        try {
+          await apiCall(`/teacher-applications/${b.dataset.id}/approve`, { method: 'POST', body: JSON.stringify({ notes: 'اعتماد من لوحة إدارة مدرسة سومر' }) });
+          showAlert('تم اعتماد المعلم وتفعيل حسابه التعليمي');
+          await Promise.all([loadTeacherApplications(), loadTeachers(), loadOverview()]);
+        } catch (e) { showAlert(e.message, true); }
+      }));
+      tbody.querySelectorAll('.reject-teacher-application').forEach((b) => b.addEventListener('click', async () => {
+        const reason = prompt('اكتب سبب رفض الطلب (سيحفظ في سجل الطلب):');
+        if (reason === null) return;
+        if (!reason.trim()) return showAlert('سبب الرفض مطلوب', true);
+        try {
+          await apiCall(`/teacher-applications/${b.dataset.id}/reject`, { method: 'POST', body: JSON.stringify({ reason: reason.trim() }) });
+          showAlert('تم رفض الطلب وتسجيل السبب');
+          await loadTeacherApplications();
+        } catch (e) { showAlert(e.message, true); }
+      }));
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="empty-state">تعذر تحميل الطلبات: ${escapeHtml(err.message)}</td></tr>`;
+      if (!silent) showAlert(`فشل تحميل طلبات المعلمين: ${err.message}`, true);
     }
   }
 
