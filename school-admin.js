@@ -44,6 +44,8 @@
     }
   }
 
+  async function portalApi(endpoint, options = {}) { const headers = { 'Content-Type':'application/json', Authorization:`Bearer ${readAuthToken()}`, ...(options.headers||{}) }; const res=await fetch(`/api/school/portal${endpoint}`,{...options,headers}); const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data.message||`خطأ في الخادم (${res.status})`); return data; }
+
   // Navigation Tab Switching
   function setupTabs() {
     const buttons = document.querySelectorAll('.tab-nav-btn');
@@ -159,7 +161,7 @@
         $('guardianComplaintAction').hidden = false;
       }
 
-      await Promise.all([loadOverview(), loadTeacherApplications(true)]);
+      await Promise.all([loadOverview(), loadTeacherApplications(true), loadStudentEnrollmentRequests(true)]);
     } catch (err) {
       showAlert(`فشل تحميل بيانات المستخدم: ${err.message}`, true);
     }
@@ -168,7 +170,7 @@
   // Load Tab Data Switcher
   function loadTabData(tab) {
     if (tab === 'overview') loadOverview();
-    else if (tab === 'applications') loadTeacherApplications();
+    else if (tab === 'applications') { loadTeacherApplications(); loadStudentEnrollmentRequests(); }
     else if (tab === 'teachers') loadTeachers();
     else if (tab === 'students') loadStudents();
     else if (tab === 'guardians') loadGuardians();
@@ -262,6 +264,16 @@
       if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="empty-state">تعذر تحميل الطلبات: ${escapeHtml(err.message)}</td></tr>`;
       if (!silent) showAlert(`فشل تحميل طلبات المعلمين: ${err.message}`, true);
     }
+  }
+
+  async function loadStudentEnrollmentRequests(silent=false) {
+    const tbody=$('studentEnrollmentRequestsBody'); if(!tbody) return;
+    try { const res=await portalApi('/bootstrap'); const rows=(res.pendingRequests||[]).filter(r=>r.requestedRole==='student'&&r.guardian&&r.studentUsername);
+      if(!rows.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">لا توجد طلبات طلاب بانتظار الموافقة.</td></tr>';return;}
+      tbody.innerHTML=rows.map(r=>{const granted=(r.consents||[]).filter(x=>x.granted).length;return `<tr><td><b>${escapeHtml(r.studentName)}</b></td><td>@${escapeHtml(r.studentUsername)}</td><td>${escapeHtml(r.user?.fullName||r.user?.username||'-')}</td><td>${escapeHtml(r.stage)} / ${escapeHtml(r.grade)}</td><td>${escapeHtml((r.subjects||[]).join('، '))}</td><td>${granted}/7</td><td><button class="btn btn-sm btn-primary approve-student-enrollment" data-id="${r._id}">اعتماد</button> <button class="btn btn-sm btn-danger reject-student-enrollment" data-id="${r._id}">رفض</button></td></tr>`;}).join('');
+      tbody.querySelectorAll('.approve-student-enrollment').forEach(b=>b.onclick=async()=>{const password=prompt('كلمة مرور مؤقتة للطالب (8 أحرف على الأقل):');if(!password||password.length<8)return showAlert('كلمة المرور يجب أن تكون 8 أحرف على الأقل',true);try{await portalApi(`/enrollment/${b.dataset.id}/review`,{method:'PATCH',body:JSON.stringify({decision:'approved',temporaryPassword:password})});showAlert('تم إنشاء حساب الطالب وربطه بولي الأمر');await Promise.all([loadStudentEnrollmentRequests(),loadStudents(),loadOverview()]);}catch(e){showAlert(e.message,true);}});
+      tbody.querySelectorAll('.reject-student-enrollment').forEach(b=>b.onclick=async()=>{const reason=prompt('سبب الرفض:');if(!reason||!reason.trim())return;try{await portalApi(`/enrollment/${b.dataset.id}/review`,{method:'PATCH',body:JSON.stringify({decision:'rejected',reason:reason.trim()})});showAlert('تم رفض طلب الطالب');await loadStudentEnrollmentRequests();}catch(e){showAlert(e.message,true);}});
+    } catch(err){tbody.innerHTML='<tr><td colspan="7" class="empty-state">تعذر تحميل طلبات الطلاب.</td></tr>';if(!silent)showAlert(`فشل تحميل طلبات الطلاب: ${err.message}`,true);}
   }
 
   // 2. Teachers
