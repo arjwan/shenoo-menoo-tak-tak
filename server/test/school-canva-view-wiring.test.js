@@ -130,19 +130,15 @@ test('school canva views show the real account data (DOM E2E, original untouched
     const config = await cfgRes.json();
     assert.equal(config.ok, true);
 
-    // Production serves /api/school-canva/original from the ACTIVE export
-    // (since "School: activate Canva update" that is school-canva-update-20260920.html),
-    // passed through the documented Canva-export regex repair. Prove the served
-    // bytes are exactly repair(disk) — nothing else is ever injected server-side.
-    const activeExportPath = path.join(ROOT, 'original-assets/school-canva/school-canva-update-20260920.html');
-    const activeDiskHtml = read(activeExportPath);
+    // /original is intentionally the immutable approved artifact. Updated Canva
+    // exports have their own explicit endpoints so the original contract cannot drift.
+    const originalExportPath = path.join(ROOT, 'original-assets/school-canva/school-canva-original.html');
+    const originalDiskHtml = read(originalExportPath);
     const servedRes = await fetch(baseUrl + '/api/school-canva/original');
     assert.equal(servedRes.status, 200);
-    const servedUpdateHtml = await servedRes.text();
-    assert.equal(servedUpdateHtml, schoolCanvaRoutes.repairCanvaExport(activeDiskHtml),
-      'served active export is exactly repair(disk) of school-canva-update-20260920.html');
-    assert.ok(servedUpdateHtml.includes('id="structure-list"') && servedUpdateHtml.includes('id="catalog-list"'),
-      'active export exposes the data-bridge hooks the adapter relies on');
+    const servedOriginalHtml = await servedRes.text();
+    assert.equal(servedOriginalHtml, schoolCanvaRoutes.repairCanvaExport(originalDiskHtml),
+      'served /original is exactly repair(disk) of the immutable approved original');
 
     // The immutable 2026-09-20 original is still shipped and the adapter still
     // hydrates it (state.library / renderLibrary path). Run its DOM E2E on the
