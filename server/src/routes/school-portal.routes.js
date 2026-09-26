@@ -1,6 +1,7 @@
 'use strict';
 
 const router = require('express').Router();
+const bcrypt = require('bcryptjs');
 const { requireAuth } = require('../middleware/auth');
 const { attachSchoolContext, requireSchoolManager, requireSchoolStaff } = require('../middleware/school-auth');
 const User = require('../models/User');
@@ -91,6 +92,43 @@ router.post('/enrollment', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.post('/guardian/student-enrollment', async (req, res, next) => {
+  try {
+    if (!req.schoolContext.isGuardian && !req.schoolContext.isManager && !req.schoolContext.isDeveloper) {
+      return res.status(403).json({ ok: false, message: 'إنشاء طلب طالب مخصص لولي الأمر أو الإدارة' });
+    }
+    const studentName = clean(req.body.studentName);
+    const studentUsername = clean(req.body.studentUsername).toLowerCase();
+    const grade = clean(req.body.grade);
+    const stage = clean(req.body.stage) || 'ابتدائي';
+    const subjects = Array.isArray(req.body.subjects) ? req.body.subjects.map(clean).filter(Boolean).slice(0, 20) : [];
+    const requiredConsents = ['microphone','camera','live_classroom_participation','virtual_teacher_participation','ai_voice_usage','save_learning_qa','school_notifications'];
+    const consentsInput = req.body.consents && typeof req.body.consents === 'object' ? req.body.consents : {};
+    if (!studentName || !grade || !/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(studentUsername)) {
+      return res.status(400).json({ ok: false, message: 'اسم الطالب واسم المستخدم الصحيح والمرحلة والصف مطلوبة' });
+    }
+    if (!['ابتدائي','متوسط','إعدادي'].includes(stage)) return res.status(400).json({ ok: false, message: 'المرحلة غير صالحة' });
+    const usernameTaken = await User.exists({ username: studentUsername });
+    if (usernameTaken) return res.status(409).json({ ok: false, message: 'اسم مستخدم الطالب مستخدم مسبقاً' });
+    const existingPending = await Enrollment.findOne({ guardian: req.user._id, studentUsername, status: 'pending' });
+    if (existingPending) return res.status(409).json({ ok: false, message: 'يوجد طلب طالب معلق بهذا الاسم المستخدم' });
+    const request = await Enrollment.create({
+      user: req.user._id,
+      guardian: req.user._id,
+      requestedRole: 'student',
+      studentName,
+      studentUsername,
+      guardianPhone: clean(req.user.phone),
+      relationship: ['أب','أم','ولي أمر','أخرى'].includes(req.body.relationship) ? req.body.relationship : 'ولي أمر',
+      stage, grade, subjects,
+      consents: requiredConsents.map((consentType) => ({ consentType, granted: consentsInput[consentType] === true, decidedAt: new Date() })),
+      note: clean(req.body.note).slice(0, 1000),
+      status: 'pending'
+    });
+    res.status(201).json({ ok: true, request, message: 'تم إرسال طلب حساب الطالب إلى الإدارة' });
+  } catch (error) { next(error); }
+});
+
 router.patch('/enrollment/:id/review', requireSchoolManager, async (req, res, next) => {
   try {
     const decision = clean(req.body.decision);
@@ -101,14 +139,68 @@ router.patch('/enrollment/:id/review', requireSchoolManager, async (req, res, ne
       await Teacher.findOneAndUpdate({ user: request.user._id }, { user: request.user._id, name: request.user.fullName, phone: request.user.phone || '', subjects: request.subjects, stages: [request.stage], grades: request.grade ? [request.grade] : [], status: 'active', registeredBy: req.user._id }, { upsert: true, new: true, runValidators: true });
     }
     if (decision === 'approved' && request.requestedRole === 'student') {
-      const linked = await Student.findOne({ studentUser: request.user._id }) || await Student.findOne({ guardian: request.user._id, name: request.user.fullName, studentUser: null, status: { $ne: 'archived' } });
-      const studentUpdate = { studentUser: request.user._id, name: request.user.fullName, stage: request.stage, grade: request.grade || 'غير محدد', subjects: request.subjects, active: true, 'subscription.status': 'active' };
-      if (linked) await Student.findByIdAndUpdate(linked._id, studentUpdate, { runValidators: true });
-      else await Student.findOneAndUpdate({ studentUser: request.user._id }, { ...studentUpdate, guardian: request.user._id }, { upsert: true, new: true, runValidators: true });
-      request.user.schoolAccess = request.user.schoolAccess || {};
-      request.user.schoolAccess.role = 'student';
-      request.user.markModified('schoolAccess');
-      await request.user.save();
+      if (request.guardian && request.studentName && request.studentUsername) {
+        const temporaryPassword = clean(req.body.temporaryPassword);
+        if (temporaryPassword.length < 8) return res.status(400).json({ ok: false, message: 'حدد كلمة مرور مؤقتة للطالب من 8 أحرف على الأقل' });
+        if (await User.exists({ username: request.studentUsername })) return res.status(409).json({ ok: false, message: 'اسم مستخدم الطالب مستخدم مسبقاً' });
+        const guardianUser = await User.findById(request.guardian);
+        if (!guardianUser) return res.status(404).json({ ok: false, message: 'حساب ولي الأمر غير موجود' });
+        const syntheticContact = `student.${request._id}@school.local`;
+        const studentUser = await User.create({
+          fullName: request.studentName,
+          username: request.studentUsername,
+          contact: syntheticContact,
+          contactType: 'email',
+          email: '',
+          phone: '',
+          contactVerified: true,
+          contactVerifiedAt: new Date(),
+          passwordHash: await bcrypt.hash(temporaryPassword, 12),
+          termsAccepted: true,
+          privacyAccepted: true,
+          privacyAcceptedAt: new Date(),
+          role: 'user',
+          status: 'active',
+          approvalSource: 'developer',
+          reviewedBy: req.user._id,
+          reviewedAt: new Date(),
+          schoolAccess: { role: 'student', status: 'trial', activatedAt: new Date(), trialStartedAt: new Date(), trialEndsAt: new Date(Date.now() + 30 * 86400000) }
+        });
+        const student = await Student.create({
+          studentUser: studentUser._id,
+          guardian: guardianUser._id,
+          name: request.studentName,
+          stage: request.stage,
+          grade: request.grade,
+          subjects: request.subjects,
+          registeredBy: req.user._id,
+          parentApproved: true,
+          trialStartedAt: new Date(),
+          trialEndsAt: new Date(Date.now() + 30 * 86400000),
+          trialStatus: 'active'
+        });
+        await Guardian.findOneAndUpdate(
+          { user: guardianUser._id },
+          { $set: { name: guardianUser.fullName, contactPhone: request.guardianPhone || guardianUser.phone || '', relationship: request.relationship, status: 'active' }, $addToSet: { students: student._id } },
+          { upsert: true, new: true, runValidators: true }
+        );
+        for (const consent of request.consents || []) {
+          await require('../models/GuardianConsent').findOneAndUpdate(
+            { student: student._id, consentType: consent.consentType },
+            { student: student._id, guardian: guardianUser._id, consentType: consent.consentType, granted: consent.granted === true, text: 'موافقة ولي الأمر عند طلب إنشاء حساب الطالب', version: '2026-09-26-v1', decidedAt: consent.decidedAt || new Date(), decidedBy: guardianUser._id },
+            { upsert: true, new: true, runValidators: true }
+          );
+        }
+      } else {
+        const linked = await Student.findOne({ studentUser: request.user._id }) || await Student.findOne({ guardian: request.user._id, name: request.user.fullName, studentUser: null, status: { $ne: 'archived' } });
+        const studentUpdate = { studentUser: request.user._id, name: request.user.fullName, stage: request.stage, grade: request.grade || 'غير محدد', subjects: request.subjects, active: true };
+        if (linked) await Student.findByIdAndUpdate(linked._id, studentUpdate, { runValidators: true });
+        else await Student.findOneAndUpdate({ studentUser: request.user._id }, { ...studentUpdate, guardian: request.user._id }, { upsert: true, new: true, runValidators: true });
+        request.user.schoolAccess = request.user.schoolAccess || {};
+        request.user.schoolAccess.role = 'student';
+        request.user.markModified('schoolAccess');
+        await request.user.save();
+      }
     }
     request.status = decision;
     request.reviewedBy = req.user._id;
