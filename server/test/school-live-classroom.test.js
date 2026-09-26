@@ -102,6 +102,7 @@ test('real classroom v1: REST + Socket.IO lifecycle on real accounts', { timeout
   const guardian = await makeUser('أبو زياد', 'guardian-ziad', 'ziad@example.com');
   const sara = await makeUser('سارة محمد', 'sara-m', 'sara@example.com');
   const eve = await makeUser('حساب غريب', 'eve-x', 'eve@example.com');
+  await SchoolTeacher.create({ user: eve._id, name: 'معلم غرفة ثانية', subjects: ['الرياضيات'], stages: ['ابتدائي'], grades: ['الأول ابتدائي'], status: 'active' });
   const ziad = await Student.create({ guardian: guardian._id, name: 'زياد كريم', stage: 'ابتدائي', grade: 'الأول ابتدائي', subjects: ['القراءة'], learningPermissions: { camera: true, voice: false } });
   const otherGradePupil = await Student.create({ guardian: guardian._id, name: 'ليان كريم', stage: 'متوسط', grade: 'الأول متوسط', subjects: ['الرياضيات'] });
   const evesPupil = await Student.create({ guardian: eve._id, name: 'طالب حساب آخر', stage: 'ابتدائي', grade: 'الأول ابتدائي' });
