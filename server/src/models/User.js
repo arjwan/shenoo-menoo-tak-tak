@@ -56,7 +56,16 @@ const userSchema = new mongoose.Schema({
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   tvPlaylists: { type: mongoose.Schema.Types.Mixed, default: {} },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-  reviewedAt: { type: Date, default: null }
+  reviewedAt: { type: Date, default: null },
+  // Platform-owned digital personas. Kept distinct from human accounts for safety, moderation and cleanup.
+  isSynthetic: { type: Boolean, default: false, index: true },
+  syntheticBatch: { type: String, trim: true, default: '', index: true },
+  syntheticPersona: {
+    disclosureLabel: { type: String, default: '' },
+    ageBand: { type: String, default: '' },
+    interests: { type: [String], default: [] },
+    activityLevel: { type: String, enum: ['', 'low', 'medium', 'high'], default: '' }
+  }
 }, { timestamps: true });
 
 userSchema.index({ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: 'string', $gt: '' } } });
