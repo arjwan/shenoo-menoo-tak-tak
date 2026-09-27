@@ -2,17 +2,17 @@
 
 /**
  * DESTRUCTIVE school reset.
- * Deletes Sumer School people/data and all non-developer User accounts.
- * Developer accounts are the only User records preserved.
+ * Deletes Sumer School profiles/data only.
+ * NEVER deletes platform User accounts.
  *
  * Safety:
- *   SCHOOL_RESET_CONFIRM=DELETE_ALL_EXCEPT_DEVELOPER node src/scripts/reset-school-people.js
+ *   SCHOOL_RESET_CONFIRM=DELETE_SCHOOL_DATA_ONLY node src/scripts/reset-school-people.js
  */
 require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
-const CONFIRM = 'DELETE_ALL_EXCEPT_DEVELOPER';
+const CONFIRM = 'DELETE_SCHOOL_DATA_ONLY';
 const mongo = process.env.MONGODB_URI || process.env.MONGO_URI;
 
 const MODEL_MODULES = [
@@ -35,7 +35,8 @@ const MODEL_MODULES = [
     const developers = await User.find({ role: 'developer' }).select('_id username role').lean();
     if (!developers.length) throw new Error('Safety stop: no developer account found; nothing deleted');
 
-    const result = { preservedDevelopers: developers.map(x => x.username), deleted: {} };
+    const platformUsersBefore = await User.countDocuments({});
+    const result = { preservedDevelopers: developers.map(x => x.username), platformUsersPreserved: platformUsersBefore, deleted: {} };
 
     // Remove dependent school records first to avoid orphaned academic/person records.
     for (const name of MODEL_MODULES) {
@@ -44,11 +45,14 @@ const MODEL_MODULES = [
       result.deleted[name] = r.deletedCount || 0;
     }
 
-    // Preserve platform developer account(s) only, exactly as requested.
-    const users = await User.deleteMany({ role: { $ne: 'developer' } });
-    result.deleted.User = users.deletedCount || 0;
+    // Platform identity is outside the scope of a school reset. Never delete User records here.
+    const platformUsersAfter = await User.countDocuments({});
+    if (platformUsersAfter !== platformUsersBefore) {
+      throw new Error('Safety invariant failed: platform User count changed during school reset');
+    }
+    result.deleted.User = 0;
 
-    console.log(JSON.stringify({ ok:true, operation:'school-full-reset', ...result }, null, 2));
+    console.log(JSON.stringify({ ok:true, operation:'school-data-only-reset', ...result }, null, 2));
   } finally {
     await mongoose.disconnect();
   }
