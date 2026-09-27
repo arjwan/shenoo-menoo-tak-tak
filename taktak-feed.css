@@ -66,9 +66,11 @@ html[data-theme="light"] .empty {
   color: #45494f;
 }
 .home-top {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 50;
+  inset-inline: 0;
+  width: 100%;
+  z-index: 1000;
   background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--line);
@@ -153,7 +155,7 @@ html[data-theme="light"] .empty {
 }
 .home-grid {
   max-width: 1540px;
-  margin: 18px auto;
+  margin: 80px auto 18px;
   padding: 0 16px;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 280px;
