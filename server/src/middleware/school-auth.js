@@ -15,7 +15,9 @@ async function resolveSchoolContext(user) {
     return { role: 'developer', isDeveloper: true, isManager: true, teacher: null, guardian: null };
   }
 
-  if (user.role === 'admin') {
+  // Platform admin is not automatically a Sumer School manager.
+  // School administration must be granted explicitly on the account.
+  if (user.role === 'admin' && user.schoolAccess && user.schoolAccess.role === 'administration') {
     return { role: 'manager', isDeveloper: false, isManager: true, teacher: null, guardian: null };
   }
 
