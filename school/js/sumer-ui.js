@@ -60,7 +60,7 @@
       if (state.schoolContext.isStudent) { roleLabel = 'طالب'; roleBadgeClass = 'badge-teal'; }
       else if (state.schoolContext.isTeacher) { roleLabel = 'معلم'; roleBadgeClass = 'badge-gold'; }
       else if (state.schoolContext.isGuardian) { roleLabel = 'ولي أمر'; roleBadgeClass = 'badge-success'; }
-      else if (state.schoolContext.isManager || state.schoolContext.isDeveloper) { roleLabel = 'إدارة المدرسة'; roleBadgeClass = 'badge-warning'; }
+      else if (state.auth && state.auth.isAuthenticated && state.schoolContext && (state.schoolContext.isManager === true || state.schoolContext.isDeveloper === true)) { roleLabel = 'إدارة المدرسة'; roleBadgeClass = 'badge-warning'; }
 
       var html = '<header class="sumer-header" role="banner">';
       html += '  <div class="sumer-header-start">';
@@ -200,7 +200,7 @@
         html += '</div>';
       }
 
-      if (state.schoolContext.isManager || state.schoolContext.isDeveloper) {
+      if (state.auth && state.auth.isAuthenticated && state.schoolContext && (state.schoolContext.isManager === true || state.schoolContext.isDeveloper === true)) {
         html += '<div class="sumer-sidebar-group">';
         html += '  <div class="sumer-sidebar-title">الإدارة المدرسية</div>';
         html += '  <ul class="sumer-nav-list">';
@@ -258,7 +258,7 @@
         html += '  <div class="sumer-mobile-tab-icon">' + ICONS.guardian + '</div>';
         html += '  <span>أبنائي</span>';
         html += '</a>';
-      } else if (state.schoolContext.isManager || state.schoolContext.isDeveloper) {
+      } else if (state.auth && state.auth.isAuthenticated && state.schoolContext && (state.schoolContext.isManager === true || state.schoolContext.isDeveloper === true)) {
         html += '<a href="#admin/overview" class="sumer-mobile-tab' + (currentHash.indexOf('#admin') === 0 ? ' active' : '') + '">';
         html += '  <div class="sumer-mobile-tab-icon">' + ICONS.admin + '</div>';
         html += '  <span>الإدارة</span>';
