@@ -149,6 +149,9 @@
       currentUser = me.user;
       schoolContext = me.schoolContext;
 
+      const developerPanelLink = $('schoolDeveloperPanelLink');
+      if (developerPanelLink) developerPanelLink.hidden = !(schoolContext && schoolContext.isDeveloper === true);
+
       $('currentUserName').textContent = currentUser.fullName || currentUser.username;
       const roleEl = $('currentUserRole');
       roleEl.textContent = schoolContext.role;
