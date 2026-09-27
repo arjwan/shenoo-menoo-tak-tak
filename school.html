@@ -162,7 +162,25 @@
       });
 
       // استعد دور الحساب قبل تقييم حماية المسار عند تحديث صفحة داخلية.
+      function defaultRouteForVerifiedUser() {
+        var state = store.getState();
+        var ctx = state.schoolContext || {};
+        if (ctx.isDeveloper || ctx.isManager) return '#admin/overview';
+        if (ctx.isTeacher) return '#teacher/overview';
+        if (ctx.isStudent) return '#student/overview';
+        if (ctx.isGuardian) return '#guardian/overview';
+        return '#welcome';
+      }
+
       function startRouter() {
+        var state = store.getState();
+        var rawHash = window.location.hash || '';
+        // Opening Sumer without a verified session must begin at login.
+        if (!state.auth.isAuthenticated && (!rawHash || rawHash === '#' || rawHash === '#welcome')) {
+          window.location.hash = '#auth/login';
+        } else if (state.auth.isAuthenticated && (!rawHash || rawHash === '#' || rawHash === '#welcome')) {
+          window.location.hash = defaultRouteForVerifiedUser();
+        }
         router.init(function (routeKey, contract) {
           renderShell(routeKey);
           renderContent(routeKey, contract);
