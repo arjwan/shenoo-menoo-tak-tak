@@ -77,6 +77,7 @@
       html += '  </div>';
 
       html += '  <div class="sumer-header-actions">';
+      html += '    <a href="taktak.html" class="sumer-badge badge-teal" aria-label="الخروج إلى شنو منو">← شنو منو</a>';
       html += '    <span class="sumer-badge ' + roleBadgeClass + '">' + escapeHtml(roleLabel) + '</span>';
       html += '    <button class="sumer-btn-icon" id="sumer-theme-toggle" aria-label="تبديل وضع العرض (نهاري/ليلي)">';
       html +=        themeIcon;
