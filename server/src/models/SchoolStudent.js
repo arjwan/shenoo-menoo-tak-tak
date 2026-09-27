@@ -75,7 +75,10 @@ const schema = new mongoose.Schema({
   scores: [{ subject: String, lesson: String, score: Number, maxScore: { type: Number, default: 10 }, createdAt: { type: Date, default: Date.now } }],
   trialStartedAt: { type: Date, default: null },
   trialEndsAt: { type: Date, default: null },
-  trialStatus: { type: String, enum: ['active', 'expired', 'converted'], default: 'active', index: true }
+  trialStatus: { type: String, enum: ['active', 'expired', 'converted'], default: 'active', index: true },
+  // Synthetic students are isolated from real school data and can be removed safely by batch.
+  isTestBot: { type: Boolean, default: false, index: true },
+  simulationBatch: { type: String, trim: true, default: '', index: true }
 }, { timestamps: true });
 
 // A guardian can register multiple children without separate User accounts.
