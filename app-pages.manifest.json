@@ -75,5 +75,13 @@
     "count": 16,
     "status": "removed",
     "note": "Legacy/duplicate Sumer HTML entry pages were removed after canonical admin links were redirected."
+  },
+  "retiredShenooMenooPages": {
+    "cards-canva.html": {
+      "status": "removed",
+      "replacement": "game-room.html",
+      "commit": "d6a61db5d6057d05eabbaa61b2825a7677f4e038",
+      "reason": "Cards runtime is already integrated into the canonical Kahwa game room."
+    }
   }
 }
