@@ -143,6 +143,14 @@
         routeKey = routeKey || window.location.hash || '#welcome';
         if (!contentMount) return;
 
+        // Administration is a complete operational page, not a placeholder workspace.
+        // Preserve the requested admin section in the hash for school-admin.js.
+        if (routeKey.indexOf('#admin/') === 0) {
+          var adminSection = routeKey.slice('#admin/'.length) || 'overview';
+          window.location.replace('school-admin.html#' + encodeURIComponent(adminSection));
+          return;
+        }
+
         if (isTeacherRoute(routeKey) && teacherView) {
           teacherView.render(routeKey, contentMount);
         } else if (isStudentRoute(routeKey) && studentView) {
