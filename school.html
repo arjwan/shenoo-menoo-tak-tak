@@ -170,10 +170,16 @@
       }
       if (api && api.getToken()) {
         api.getMe().then(function (res) {
-          if (res.ok && res.data) store.setSchoolContext(res.data.schoolContext, res.data.user);
-          else store.setAuth({ token: null, isAuthenticated: false });
+          if (res.ok && res.data) {
+            store.setSchoolContext(res.data.schoolContext, res.data.user);
+            store.setAuth({ token: api.getToken(), user: res.data.user, isAuthenticated: true, error: null });
+          } else {
+            api.clearToken();
+            store.logout();
+          }
         }).catch(function () {
-          store.setAuth({ token: null, isAuthenticated: false });
+          api.clearToken();
+          store.logout();
         }).then(startRouter);
       } else {
         startRouter();
