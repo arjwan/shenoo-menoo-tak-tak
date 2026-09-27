@@ -39,7 +39,7 @@ button,a,input,textarea,select{-webkit-tap-highlight-color:transparent}
   .top-actions::-webkit-scrollbar{display:none}
   .top-actions a,.top-actions button{flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;border-radius:11px!important}
 
-  .home-grid{display:block!important;width:100%!important;max-width:none!important;margin:6px 0 0!important;padding:0 6px calc(76px + env(safe-area-inset-bottom))!important}
+  .home-grid{display:block!important;width:100%!important;max-width:none!important;margin:72px 0 0!important;padding:0 6px calc(76px + env(safe-area-inset-bottom))!important}
   .left-side,.right-side{display:none!important}
   .feed{display:grid!important;width:100%!important;min-width:0!important;gap:8px!important}
   .compact-panel,.composer,.post-card{width:100%!important;max-width:100%!important;border-radius:14px!important}
