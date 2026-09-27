@@ -110,7 +110,7 @@
       html += '</div>';
 
       // مساحات العمل حسب الصلاحية
-      if (state.schoolContext.isStudent || state.schoolContext.isManager) {
+      if (state.schoolContext.isStudent) {
         html += '<div class="sumer-sidebar-group">';
         html += '  <div class="sumer-sidebar-title">مساحة الطالب</div>';
         html += '  <ul class="sumer-nav-list">';
@@ -148,7 +148,7 @@
         html += '</div>';
       }
 
-      if (state.schoolContext.isTeacher || state.schoolContext.isManager) {
+      if (state.schoolContext.isTeacher) {
         html += '<div class="sumer-sidebar-group">';
         html += '  <div class="sumer-sidebar-title">مساحة المعلم</div>';
         html += '  <ul class="sumer-nav-list">';
@@ -162,7 +162,7 @@
         html += '</div>';
       }
 
-      if (state.schoolContext.isGuardian || state.schoolContext.isManager) {
+      if (state.schoolContext.isGuardian) {
         html += '<div class="sumer-sidebar-group">';
         html += '  <div class="sumer-sidebar-title">مساحة ولي الأمر</div>';
         html += '  <ul class="sumer-nav-list">';
