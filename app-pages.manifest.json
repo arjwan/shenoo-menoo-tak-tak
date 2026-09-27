@@ -2,41 +2,78 @@
   "version": 1,
   "policy": "Only pages listed here are canonical product entry/workspace pages. Legacy pages must not be linked from production navigation and may be removed only after reference/tests verification.",
   "shenooMenoo": {
-    "entry": ["index.html", "signin.html", "signup.html", "pending.html"],
-    "core": ["taktak.html", "profile.html", "friends.html", "friend-qr.html", "messages.html", "calls.html", "notifications.html", "settings.html"],
-    "social": ["stories.html", "reels.html", "groups.html", "group-room.html", "live-create.html"],
-    "services": ["services.html", "my-service-requests.html", "mall.html", "stores.html", "store.html", "store-create.html", "store-dashboard.html"],
-    "games": ["game-room.html"],
-    "developer": ["developer.html", "developer-phone.html", "developer-rooms.html", "developer-services.html", "developer-ads.html", "developer-ticker.html", "admin-approvals.html"]
+    "entry": [
+      "index.html",
+      "signin.html",
+      "signup.html",
+      "pending.html"
+    ],
+    "core": [
+      "taktak.html",
+      "profile.html",
+      "friends.html",
+      "friend-qr.html",
+      "messages.html",
+      "calls.html",
+      "notifications.html",
+      "settings.html"
+    ],
+    "social": [
+      "stories.html",
+      "reels.html",
+      "groups.html",
+      "group-room.html",
+      "live-create.html"
+    ],
+    "services": [
+      "services.html",
+      "my-service-requests.html",
+      "mall.html",
+      "stores.html",
+      "store.html",
+      "store-create.html",
+      "store-dashboard.html"
+    ],
+    "games": [
+      "game-room.html"
+    ],
+    "developer": [
+      "developer.html",
+      "developer-phone.html",
+      "developer-rooms.html",
+      "developer-services.html",
+      "developer-ads.html",
+      "developer-ticker.html",
+      "admin-approvals.html"
+    ]
   },
   "sumerSchool": {
-    "entry": ["school.html"],
-    "administration": ["school-admin.html"],
-    "classrooms": ["school-live.html", "school-virtual-classroom.html"],
-    "curriculum": ["school-curriculum.html", "school-reader.html"]
+    "entry": [
+      "school.html"
+    ],
+    "administration": [
+      "school-admin.html"
+    ],
+    "classrooms": [
+      "school-live.html",
+      "school-virtual-classroom.html"
+    ],
+    "curriculum": [
+      "school-curriculum.html",
+      "school-reader.html"
+    ]
   },
-  "legacySchoolPagesToRetire": [
-    "school-canva.html",
-    "school-index.html",
-    "school-signin.html",
-    "school-structure.html",
-    "school-student-add.html",
-    "school-students.html",
-    "school-teacher-add.html",
-    "school-teachers.html",
-    "school-guardian-consents.html",
-    "school-classroom.html",
-    "sumer-school/index.html",
-    "sumer-school/dashboard.html",
-    "sumer-school/academics.html",
-    "sumer-school/communication.html",
-    "sumer-school/management.html",
-    "sumer-school/people.html"
-  ],
+  "legacySchoolPagesToRetire": [],
   "protectedArchives": [
     "original-assets/",
     "canva-originals/",
     "tests/fixtures/",
     "legacy-prototype/"
-  ]
+  ],
+  "retiredSchoolPages": {
+    "commit": "7a595f3ed9890a26610fc94ad5fc8c189f6a5f75",
+    "count": 16,
+    "status": "removed",
+    "note": "Legacy/duplicate Sumer HTML entry pages were removed after canonical admin links were redirected."
+  }
 }
