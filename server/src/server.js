@@ -126,6 +126,37 @@ app.use('/api/school/manage', schoolManagementRoutes);
 app.use('/api/school/virtual', schoolVirtualRoutes);
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
+
+// Serve browser pages and assets without exposing server or configuration files.
+const frontendPath = require('path');
+const frontendRoot = frontendPath.resolve(__dirname, '../..');
+const frontendStatic = express.static(frontendRoot, {
+  dotfiles: 'deny',
+  index: 'index.html',
+  fallthrough: true
+});
+app.use((req, res, next) => {
+  if (!['GET', 'HEAD'].includes(req.method)) return next();
+  let pathname;
+  try { pathname = decodeURIComponent(req.path); }
+  catch { return res.sendStatus(400); }
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.some(part => part.startsWith('.') || part.includes('\\'))) return next();
+  const assetDirectories = new Set([
+    'school-assets', 'original-assets', 'sumer-school',
+    'school', 'canva-originals'
+  ]);
+  const webExtension = /\.(html?|css|js|mjs|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|mp3|wav|ogg|mp4|webm|pdf)$/i;
+  const allowed = pathname === '/' ||
+    (parts.length === 1 && (
+      webExtension.test(pathname) ||
+      /^(manifest\.json|manifest\.webmanifest|robots\.txt)$/.test(parts[0])
+    )) ||
+    (assetDirectories.has(parts[0]) && webExtension.test(pathname));
+  if (!allowed) return next();
+  return frontendStatic(req, res, next);
+});
+
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
 const port=Number(process.env.PORT||3000);
 async function migrateSmartFriendIndexes(){try{const indexes=await SmartFriend.collection.indexes();const legacy=indexes.find(i=>i.unique&&i.key&&i.key.user===1&&!('slot' in i.key));if(legacy){await SmartFriend.collection.dropIndex(legacy.name);console.log('Removed legacy SmartFriend unique user index:',legacy.name);}await SmartFriend.collection.createIndex({user:1,slot:1},{unique:true,name:'user_1_slot_1'});}catch(error){console.error('SmartFriend index migration failed:',error.message);}}
