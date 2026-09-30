@@ -17,4 +17,5 @@ const gradeRecordSchema = new mongoose.Schema({
 
 gradeRecordSchema.index({ student: 1, subject: 1, recordedAt: -1 });
 
+gradeRecordSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('SchoolGradeRecord', gradeRecordSchema);

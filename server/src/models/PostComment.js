@@ -7,4 +7,5 @@ const postCommentSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 postCommentSchema.index({ post: 1, createdAt: 1 });
+postCommentSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('PostComment', postCommentSchema);

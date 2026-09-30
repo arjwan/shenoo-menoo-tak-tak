@@ -28,7 +28,9 @@
     "test:school-virtual": "node --test server/test/school-virtual-classroom.test.js && node tests/api-school-virtual-classroom-core.js",
     "test:school-management": "node --test server/test/school-management.test.js && node tests/api-school-management.js",
     "test:school-backend": "node --test server/test/school-backend-gaps.test.js && node tests/api-school-backend-gaps.js",
-    "test:school-legacy-runtime": "node tests/api-school-canva-runtime.js"
+    "test:school-legacy-runtime": "node tests/api-school-canva-runtime.js",
+    "simulation": "node server/src/scripts/simulation-batch.js",
+    "test:simulation": "node --test server/test/simulation-batch.test.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

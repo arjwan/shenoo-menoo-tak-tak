@@ -91,4 +91,5 @@ schema.methods.getTrialInfo = function(now) {
 
 schema.statics.computeTrialInfo = computeTrialInfo;
 
+schema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('SchoolStudent', schema);

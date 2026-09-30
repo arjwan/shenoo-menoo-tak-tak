@@ -33,5 +33,6 @@ const eventScheduleSchema = new mongoose.Schema({
 
 eventScheduleSchema.index({ scheduledAt: 1, stage: 1, grade: 1, status: 1 });
 
+eventScheduleSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('SchoolEventSchedule', eventScheduleSchema);
 module.exports.EVENT_TYPES = EVENT_TYPES;

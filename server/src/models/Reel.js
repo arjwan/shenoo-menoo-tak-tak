@@ -12,4 +12,5 @@ const reelSchema = new mongoose.Schema({
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
 reelSchema.index({ createdAt: -1 });
+reelSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('Reel', reelSchema);

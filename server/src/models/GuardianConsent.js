@@ -24,5 +24,6 @@ const consentSchema = new mongoose.Schema({
 
 consentSchema.index({ guardian: 1, student: 1, consentType: 1 }, { unique: true });
 
+consentSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('GuardianConsent', consentSchema);
 module.exports.CONSENT_TYPES = CONSENT_TYPES;

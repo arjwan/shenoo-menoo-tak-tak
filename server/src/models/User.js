@@ -60,6 +60,7 @@ const userSchema = new mongoose.Schema({
   // Platform-owned digital personas. Kept distinct from human accounts for safety, moderation and cleanup.
   isSynthetic: { type: Boolean, default: false, index: true },
   syntheticBatch: { type: String, trim: true, default: '', index: true },
+  simulationKey: { type: String, default: '' },
   syntheticPersona: {
     disclosureLabel: { type: String, default: '' },
     ageBand: { type: String, default: '' },

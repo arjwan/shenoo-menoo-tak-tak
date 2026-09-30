@@ -27,4 +27,5 @@ const storySchema = new mongoose.Schema({
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
 storySchema.index({ author: 1, createdAt: -1 });
+storySchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('Story', storySchema);

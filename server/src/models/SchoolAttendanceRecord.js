@@ -17,4 +17,5 @@ const attendanceRecordSchema = new mongoose.Schema({
 
 attendanceRecordSchema.index({ student: 1, date: -1 });
 
+attendanceRecordSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('SchoolAttendanceRecord', attendanceRecordSchema);

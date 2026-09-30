@@ -31,4 +31,5 @@ const postSchema = new mongoose.Schema({
 
 postSchema.index({ createdAt: -1 });
 postSchema.index({ type: 1, adStatus: 1, createdAt: -1 });
+postSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
 module.exports = mongoose.model('Post', postSchema);
