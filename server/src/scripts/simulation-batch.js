@@ -54,7 +54,7 @@ async function main(){
    await session.withTransaction(async()=>{
     for(const t of TYPES){
      const docs=plan.data[t];
-     for(let offset=0;offset<docs.length;offset+=200)await models[t].bulkWrite(docs.slice(offset,offset+200).map(doc=>({updateOne:{filter:{_id:doc._id,...filter},update:{$setOnInsert:doc},upsert:true}})),{session,ordered:true});
+     for(let offset=0;offset<docs.length;offset+=200)await models[t].bulkWrite(docs.slice(offset,offset+200).map(doc=>({updateOne:{filter:{_id:doc._id,...filter},update:{$setOnInsert:doc},upsert:true,timestamps:false}})),{session,ordered:true});
     }
    });
    const after={};for(const t of TYPES)after[t]=await models[t].countDocuments(filter);
