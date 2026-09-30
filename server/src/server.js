@@ -124,6 +124,7 @@ app.use('/api/school/teachers/apply', schoolTeacherApplyRoutes);
 app.use('/api/school/portal', schoolPortalRoutes);
 app.use('/api/school/manage', schoolManagementRoutes);
 app.use('/api/school/virtual', schoolVirtualRoutes);
+app.use('/uploads', express.static(require('path').resolve(__dirname, '../uploads')));
 app.use('/uploads', express.static(require('path').resolve(__dirname, '../../uploads')));
 app.use((error, req, res, next) => { if (error instanceof multer.MulterError) return res.status(400).json({ ok:false, message:error.code==='LIMIT_FILE_SIZE'?'حجم الملف أكبر من الحد المسموح':'نوع أو عدد الملفات غير مسموح' }); if(error)return res.status(500).json({ok:false,message:error.message||'حدث خطأ في الخادم'}); next(); });
 
