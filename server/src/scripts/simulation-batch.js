@@ -15,7 +15,7 @@ async function main(){
  if(!uri) throw Error('Choose SIMULATION_DATABASE_URI explicitly. Production URI is never inferred.');
  if(['seed','cleanup'].includes(command)&&!args.includes('--apply')) throw Error('Use --apply to perform the selected database mutation; preview and inspect do not write.');
  const mongoose=require('mongoose');
- await mongoose.connect(uri,{serverSelectionTimeoutMS:10000});
+ await mongoose.connect(uri,{serverSelectionTimeoutMS:10000,autoIndex:false});
  try {
   const models=Object.fromEntries(TYPES.map(t=>[t,require(`../models/${t}`)]));
   const filter={isSynthetic:true,syntheticBatch:plan.batch};
