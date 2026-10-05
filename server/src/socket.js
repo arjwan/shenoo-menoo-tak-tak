@@ -46,8 +46,10 @@ class PrivateCallRegistry {
 }
 
 function attachSocket(httpServer) {
-  const allowedOrigins = String(process.env.CORS_ORIGINS || '')
-    .split(',').map((item) => item.trim()).filter(Boolean);
+  const allowedOrigins = [...new Set([
+    'https://shino-mino-tak-tak.duckdns.org',
+    ...String(process.env.CORS_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean)
+  ])];
   const production = process.env.NODE_ENV === 'production';
   const socketOrigin = (origin, callback) => {
     // Native clients and same-origin/non-browser clients may omit Origin.
