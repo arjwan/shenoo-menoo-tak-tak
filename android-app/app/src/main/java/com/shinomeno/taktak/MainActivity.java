@@ -36,7 +36,7 @@ import com.google.zxing.integration.android.IntentResult;
 import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
-    private static final String HOME_URL = "https://shenoo-menoo-tak-tak.onrender.com/taktak.html";
+    private static final String HOME_URL = "https://shino-mino-tak-tak.duckdns.org/taktak.html";
     private static final int FILE_PICKER = 41;
     private static final int MEDIA_PERMISSIONS = 42;
     private static final int NOTIFICATION_PERMISSION = 43;
@@ -168,7 +168,7 @@ public final class MainActivity extends Activity {
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
                     Uri origin = request.getOrigin();
-                    if (origin == null || !"https".equalsIgnoreCase(origin.getScheme()) || !"shenoo-menoo-tak-tak.onrender.com".equalsIgnoreCase(origin.getHost())) {
+                    if (origin == null || !"https".equalsIgnoreCase(origin.getScheme()) || !"shino-mino-tak-tak.duckdns.org".equalsIgnoreCase(origin.getHost())) {
                         request.deny();
                         return;
                     }

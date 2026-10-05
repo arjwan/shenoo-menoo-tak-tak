@@ -15,7 +15,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-const val SHNO_MANO_BASE_URL = "https://shenoo-menoo-tak-tak.onrender.com/"
+const val SHNO_MANO_BASE_URL = "https://shino-mino-tak-tak.duckdns.org/"
 
 data class SignInRequest(val identifier: String, val password: String)
 data class SignedInUserDto(val id: String, val fullName: String, val username: String, val role: String? = null)

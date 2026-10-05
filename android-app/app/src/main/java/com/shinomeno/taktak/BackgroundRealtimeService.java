@@ -33,7 +33,7 @@ public final class BackgroundRealtimeService extends Service {
     public static final String KEY_BACKGROUND = "background_enabled";
     public static final String KEY_NOTIFICATION_PREFS = "notification_prefs";
 
-    private static final String API = "https://shenoo-menoo-tak-tak.onrender.com";
+    private static final String API = "https://shino-mino-tak-tak.duckdns.org";
     private static final String CHANNEL_REALTIME = "shno_realtime";
     private static final String CHANNEL_MESSAGES = "shno_messages";
     private static final String CHANNEL_CALLS = "shno_calls";
