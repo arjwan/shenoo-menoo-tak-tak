@@ -161,7 +161,7 @@ class WebCallActivity : ComponentActivity() {
 
         setContentView(root)
         webView.visibility = View.INVISIBLE
-        webView.loadUrl("https://shino-mino-tak-tak.duckdns.org/signin.html")
+        webView.loadUrl("https://shenoo-menoo-tak-tak.onrender.com/signin.html")
     }
 
     private fun controlButton(label: String, click: () -> Unit) = Button(this).apply {

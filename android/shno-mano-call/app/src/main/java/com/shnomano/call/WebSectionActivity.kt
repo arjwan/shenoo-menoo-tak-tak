@@ -62,6 +62,6 @@ class WebSectionActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_URL = "url"
-        const val BASE = "https://shino-mino-tak-tak.duckdns.org/"
+        const val BASE = "https://shenoo-menoo-tak-tak.onrender.com/"
     }
 }
