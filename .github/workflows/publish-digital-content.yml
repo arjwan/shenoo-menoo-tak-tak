@@ -1,0 +1,73 @@
+name: Publish disclosed digital content batch
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/src/simulation/content-catalog.json'
+      - 'server/src/simulation/content-plan.js'
+      - 'server/src/scripts/generate-digital-content-media.js'
+      - 'server/src/scripts/publish-digital-content.js'
+      - '.github/workflows/publish-digital-content.yml'
+permissions:
+  contents: read
+concurrency:
+  group: shno-mano-oracle-production
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate content and synthetic-account boundaries
+        run: |
+          npm ci --omit=dev
+          node --test server/test/digital-content.test.js
+      - name: Generate original cards and animated reels
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg librsvg2-bin fonts-noto-core
+          node server/src/scripts/generate-digital-content-media.js "$RUNNER_TEMP/social-content"
+      - name: Prepare SSH
+        run: |
+          set -euo pipefail
+          test -n "$ORACLE_HOST"
+          test -n "$ORACLE_USER"
+          test -n "$ORACLE_SSH_KEY"
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$RUNNER_TEMP/ssh/oracle_key"
+          chmod 600 "$RUNNER_TEMP/ssh/oracle_key"
+          ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
+      - name: Publish one-time content to existing synthetic accounts
+        run: |
+          set -euo pipefail
+          upload_dir="/home/opc/shenoo-content-upload-${{ github.run_id }}"
+          ssh -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$ORACLE_USER@$ORACLE_HOST" "mkdir -p '$upload_dir'"
+          scp -r -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$RUNNER_TEMP/social-content/social-content-20261005-v1" "$ORACLE_USER@$ORACLE_HOST:$upload_dir/"
+          ssh -i "$RUNNER_TEMP/ssh/oracle_key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" -o ServerAliveInterval=20 "$ORACLE_USER@$ORACLE_HOST" "bash -se -- '$upload_dir'" <<'REMOTE'
+          set -euo pipefail
+          cd /home/opc/shenoo-menoo-tak-tak
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+          mkdir -p server/uploads/simulation
+          cp -R "$1/social-content-20261005-v1" server/uploads/simulation/
+          node server/src/scripts/publish-digital-content.js --apply
+          sudo install -m 0644 profile.js /usr/share/nginx/html/shno-mano/profile.js
+          sudo systemctl restart shno-mano-tech.service
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+          REMOTE
