@@ -125,6 +125,7 @@ router.get('/', async (req, res) => {
     const seen = new Set();
     const users = [];
     for (const row of rows) {
+      if (!row.sender || !row.receiver) continue;
       const user = String(row.sender._id) === String(req.user._id) ? row.receiver : row.sender;
       if (!user || seen.has(String(user._id))) continue;
       seen.add(String(user._id));
@@ -132,6 +133,7 @@ router.get('/', async (req, res) => {
     }
     return res.json({ ok: true, friends: users, users });
   } catch (error) {
+    console.error('Friends list failed:', error.name);
     return res.status(500).json({ ok: false, message: 'تعذر تحميل الأصدقاء' });
   }
 });
@@ -148,7 +150,7 @@ router.get('/requests', async (req, res) => {
     return res.json({
       ok: true,
       direction: incoming ? 'incoming' : 'outgoing',
-      requests: rows.map((row) => ({
+      requests: rows.filter((row) => row.sender && row.receiver).map((row) => ({
         id: row._id,
         user: view(incoming ? row.sender : row.receiver),
         sender: view(row.sender),
@@ -158,6 +160,7 @@ router.get('/requests', async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('Friend requests list failed:', error.name);
     return res.status(500).json({ ok: false, message: 'تعذر تحميل طلبات الصداقة' });
   }
 });
