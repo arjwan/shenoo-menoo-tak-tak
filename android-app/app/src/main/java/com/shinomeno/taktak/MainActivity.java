@@ -36,7 +36,7 @@ import com.google.zxing.integration.android.IntentResult;
 import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
-    private static final String HOME_URL = "https://shino-mino-tak-tak.duckdns.org/taktak.html";
+    private static final String SITE_ORIGIN = "https://shino-mino-tak-tak.duckdns.org";
     private static final int FILE_PICKER = 41;
     private static final int MEDIA_PERMISSIONS = 42;
     private static final int NOTIFICATION_PERMISSION = 43;
@@ -58,8 +58,7 @@ public final class MainActivity extends Activity {
         handleIncomingIntent(getIntent());
         createNotificationChannels();
         buildView();
-        if (state == null) webView.loadUrl(HOME_URL);
-        else webView.restoreState(state);
+        loadAuthPage("signin.html");
     }
 
     @Override
@@ -139,6 +138,14 @@ public final class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri url = request.getUrl();
+                if (request.isForMainFrame() && SITE_ORIGIN.equals(url.getScheme() + "://" + url.getHost())) {
+                    String path = url.getPath();
+                    if ("/signin.html".equals(path) || "/signup.html".equals(path)) {
+                        loadAuthPage(path.substring(1));
+                        return true;
+                    }
+                }
                 return false;
             }
 
@@ -199,6 +206,31 @@ public final class MainActivity extends Activity {
         bannerParams.gravity = 48;
         root.addView(offlineBanner, bannerParams);
         setContentView(root);
+    }
+
+
+    private String readBundledPage(String name) throws java.io.IOException {
+        try (java.io.InputStream input = getAssets().open(name);
+             java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            return output.toString("UTF-8");
+        }
+    }
+
+    private void loadAuthPage(String page) {
+        try {
+            String html = readBundledPage(page);
+            if ("signin.html".equals(page)) {
+                html = html.replace("</body>", "<script>" + readBundledPage("entry-session.js") + "</script></body>");
+            }
+            webView.loadDataWithBaseURL(SITE_ORIGIN + "/" + page, html, "text/html", null, SITE_ORIGIN + "/" + page);
+        } catch (java.io.IOException error) {
+            offlineBanner.setText("تعذر فتح شاشة الدخول. اضغط لإعادة المحاولة");
+            offlineBanner.setVisibility(View.VISIBLE);
+            offlineBanner.setOnClickListener(view -> loadAuthPage("signin.html"));
+        }
     }
 
     private void syncWebSessionToNative(WebView view) {
