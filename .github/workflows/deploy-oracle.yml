@@ -73,6 +73,10 @@ jobs:
             npm ci --omit=dev
           fi
 
+          # Restore only missing deterministic avatars for the existing test batch.
+          # This does not seed, update or delete database records or overwrite media.
+          node -e "require('./server/src/simulation/assets').restoreMissingAvatars('shenoo-test-20260930',1200,require('path').resolve('server/uploads/simulation')).then(n=>console.log('Restored missing simulation avatars:',n)).catch(e=>{console.error(e.message);process.exit(1)})"
+
           # Server Arabic voice engine (edge-tts venv, Iraqi neural voices).
           # Always-available local fallback in the TTS provider chain, no API
           # key. Idempotent: safe to run on every deploy.

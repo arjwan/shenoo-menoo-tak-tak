@@ -25,7 +25,7 @@
     var upgradesCss=document.createElement('link'); upgradesCss.rel='stylesheet'; upgradesCss.href='platform-upgrades.css?v=20260913-1'; upgradesCss.setAttribute('data-platform-upgrades','1'); document.head.appendChild(upgradesCss);
   }
   if (!document.querySelector('script[data-shno-media-cache]')) {
-    var mediaCache=document.createElement('script'); mediaCache.src='media-cache.js?v=20260912-2'; mediaCache.defer=true; mediaCache.setAttribute('data-shno-media-cache','1'); document.head.appendChild(mediaCache);
+    var mediaCache=document.createElement('script'); mediaCache.src='media-cache.js?v=20261005-same-origin-3'; mediaCache.defer=true; mediaCache.setAttribute('data-shno-media-cache','1'); document.head.appendChild(mediaCache);
   }
   if (!document.querySelector('link[data-taktak-mobile-fixes]')) {
     var fixes=document.createElement('link'); fixes.rel='stylesheet'; fixes.href='taktak-mobile-fixes.css?v=20260910-2'; fixes.setAttribute('data-taktak-mobile-fixes','1'); document.head.appendChild(fixes);
@@ -50,7 +50,7 @@
     if (!document.querySelector('script[data-direct-post-upload]')) { var directPostUpload=document.createElement('script'); directPostUpload.src='taktak-direct-upload.js?v=20260912-1'; directPostUpload.defer=true; directPostUpload.setAttribute('data-direct-post-upload','1'); document.head.appendChild(directPostUpload); }
     if (!document.querySelector('script[data-home-rooms-link]')) { var roomsLink=document.createElement('script'); roomsLink.src='home-rooms-link.js?v=20260913-1'; roomsLink.defer=true; roomsLink.setAttribute('data-home-rooms-link','1'); document.head.appendChild(roomsLink); }
     if (!document.querySelector('link[data-home-live-now]')) { var liveNowCss=document.createElement('link'); liveNowCss.rel='stylesheet'; liveNowCss.href='home-live-now.css?v=20260913-4'; liveNowCss.setAttribute('data-home-live-now','1'); document.head.appendChild(liveNowCss); }
-    if (!document.querySelector('script[data-home-live-now]')) { var liveNow=document.createElement('script'); liveNow.src='home-live-now.js?v=20260913-4'; liveNow.defer=true; liveNow.setAttribute('data-home-live-now','1'); document.head.appendChild(liveNow); }
+    if (!document.querySelector('script[data-home-live-now]')) { var liveNow=document.createElement('script'); liveNow.src='home-live-now.js?v=20261005-archives-5'; liveNow.defer=true; liveNow.setAttribute('data-home-live-now','1'); document.head.appendChild(liveNow); }
     if (!document.querySelector('link[data-home-mini-tv]')) { var miniTvCss=document.createElement('link'); miniTvCss.rel='stylesheet'; miniTvCss.href='home-mini-tv.css?v=20260913-tvfix-2'; miniTvCss.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTvCss); }
     if (!document.querySelector('script[data-home-mini-tv]')) { var miniTv=document.createElement('script'); miniTv.src='home-mini-tv.js?v=20260913-tvfix-2'; miniTv.defer=true; miniTv.setAttribute('data-home-mini-tv','1'); document.head.appendChild(miniTv); }
     if (!document.querySelector('link[data-home-media-popups]')) { var mediaPopupsCss=document.createElement('link'); mediaPopupsCss.rel='stylesheet'; mediaPopupsCss.href='home-media-popups.css?v=20260913-1'; mediaPopupsCss.setAttribute('data-home-media-popups','1'); document.head.appendChild(mediaPopupsCss); }
