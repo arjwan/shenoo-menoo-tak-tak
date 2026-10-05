@@ -9,6 +9,7 @@ const reelSchema = new mongoose.Schema({
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: { type: [commentSchema], default: [] },
   savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  expiresAt: { type: Date, default: null, index: true },
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
 reelSchema.index({ createdAt: -1 });
