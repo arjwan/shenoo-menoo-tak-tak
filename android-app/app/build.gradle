@@ -11,8 +11,8 @@ android {
         minSdk 23
         targetSdk 35
         // Bundle authentication screens and validate saved sessions before opening the feed.
-        versionCode 23
-        versionName '2.0.3'
+        versionCode 24
+        versionName '2.0.4'
     }
 
     compileOptions {
