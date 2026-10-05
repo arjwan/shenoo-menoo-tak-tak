@@ -458,10 +458,15 @@
 
     const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
+    message.className = 'message info';
+    message.textContent = 'جارٍ الاتصال لتسجيل الدخول…';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json'
         },
@@ -492,8 +497,11 @@
       }
     } catch (error) {
       message.className = 'message info';
-      message.textContent = 'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى.';
+      message.textContent = error.name === 'AbortError'
+        ? 'الخادم لم يستجب خلال 15 ثانية. يرجى إعادة المحاولة.'
+        : 'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى.';
     } finally {
+      clearTimeout(timeout);
       submitButton.disabled = false;
     }
   });
