@@ -1,0 +1,56 @@
+name: Diagnose Oracle response
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-oracle.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    environment: production
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+    steps:
+      - name: Measure public HTTP responses
+        continue-on-error: true
+        run: |
+          for path in api/health api/auth/registration-config signin.html; do
+            curl --max-time 15 -sS -o /dev/null -w "$path code=%{http_code} first_byte=%{time_starttransfer} total=%{time_total}\n" "https://shino-mino-tak-tak.duckdns.org/$path" || true
+          done
+      - name: Inspect Oracle availability and database latency
+        run: |
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$RUNNER_TEMP/ssh/key"
+          chmod 600 "$RUNNER_TEMP/ssh/key"
+          ssh-keyscan -T 15 -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -i "$RUNNER_TEMP/ssh/key" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
+          uptime
+          free -m
+          df -h /
+          sudo systemctl is-active nginx shno-mano-tech.service
+          for path in api/health api/auth/registration-config; do
+            curl --max-time 10 -sS -o /dev/null -w "$path local code=%{http_code} total=%{time_total}\n" "http://127.0.0.1:3000/$path" || true
+          done
+          cd /home/opc/shenoo-menoo-tak-tak
+          node <<'NODE'
+          require('dotenv').config({quiet:true});
+          const mongoose=require('mongoose');
+          const start=Date.now();
+          (async()=>{
+            try {
+              await mongoose.connect(process.env.MONGODB_URI||process.env.MONGO_URI,{serverSelectionTimeoutMS:10000,connectTimeoutMS:10000,autoIndex:false});
+              await mongoose.connection.db.command({ping:1});
+              console.log('database_ping_ms='+ (Date.now()-start));
+              const t=Date.now();
+              await mongoose.connection.db.collection('users').findOne({username:'__diagnostic_nonexistent_user__'},{projection:{_id:1}});
+              console.log('user_lookup_ms='+(Date.now()-t));
+            } catch(e) { console.log('database_error_type='+e.name);process.exitCode=1; }
+            finally {await mongoose.disconnect();}
+          })();
+          NODE
+          REMOTE
