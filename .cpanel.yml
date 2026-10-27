@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/shinomin/shenoo-menoo-tak-tak
+    - /bin/mkdir -p "$DEPLOYPATH/server"
+    - /bin/cp package.json "$DEPLOYPATH/package.json"
+    - /bin/cp -R server/src "$DEPLOYPATH/server/"
