@@ -26,7 +26,7 @@ function loadModels() {
 }
 function sqlType(p, indexed = false) {
   switch (p.instance) {
-    case 'ObjectId': return 'CHAR(24) CHARACTER SET ascii COLLATE ascii_bin';
+    case 'ObjectId': return 'VARCHAR(24) CHARACTER SET ascii COLLATE ascii_bin';
     case 'String': {
       const max = Number(p.options.maxlength || p.options.maxLength || 0);
       if (indexed) return `VARCHAR(${Math.max(1, max || 255)})`;
@@ -49,10 +49,10 @@ function buildSchema(models = loadModels()) {
     const table = { name: tableName, model: source, parent, columns: [], indexes: [], generated: [] };
     tables.push(table);
     if (parent) {
-      table.columns.push({ name: 'parent_id', type: 'CHAR(24) CHARACTER SET ascii COLLATE ascii_bin', nullable: false });
+      table.columns.push({ name: 'parent_id', type: 'VARCHAR(24) CHARACTER SET ascii COLLATE ascii_bin', nullable: false });
       table.columns.push({ name: 'position', type: 'INT UNSIGNED', nullable: false });
       // Every array row has an independent id so nested arrays retain their parent.
-      table.columns.push({ name: '_row_id', type: 'CHAR(24) CHARACTER SET ascii COLLATE ascii_bin', nullable: false });
+      table.columns.push({ name: '_row_id', type: 'VARCHAR(24) CHARACTER SET ascii COLLATE ascii_bin', nullable: false });
       relations.push({ table: tableName, column: 'parent_id', target: parent.table, targetColumn: parent.column, onDelete: 'CASCADE' });
     }
     for (const [field, p] of Object.entries(schema.paths)) {
