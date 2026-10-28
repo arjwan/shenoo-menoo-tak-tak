@@ -53,7 +53,7 @@ function compatibleColumnType(expected, actual) {
   const normalizedActual = actual.toLowerCase();
   if (normalizedExpected === normalizedActual) return true;
   // MariaDB exposes INT UNSIGNED as int(10) unsigned.
-  if (normalizedExpected === 'int unsigned' && /^int(?:\\(\\d+\\))? unsigned$/.test(normalizedActual)) return true;
+  if (normalizedExpected === 'int unsigned' && /^int(?:\(\d+\))? unsigned$/.test(normalizedActual)) return true;
   // MariaDB stores JSON as LONGTEXT with a JSON_VALID CHECK constraint.
   if (normalizedExpected === 'json' && normalizedActual === 'longtext') return true;
   return false;
