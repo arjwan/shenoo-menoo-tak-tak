@@ -1,7 +1,7 @@
 const express=require('express'),jwt=require('jsonwebtoken'),crypto=require('crypto'),bcrypt=require('bcryptjs'),QRCode=require('qrcode');
 const {generateRegistrationOptions,verifyRegistrationResponse,generateAuthenticationOptions,verifyAuthenticationResponse}=require('@simplewebauthn/server');
 const User=require('../models/User'),DeveloperMfa=require('../models/DeveloperMfa');
-const router=express.Router(),ORIGIN=process.env.WEBAUTHN_ORIGIN||'https://shino-mino-tak-tak.duckdns.org',RPID=process.env.WEBAUTHN_RP_ID||'shino-mino-tak-tak.duckdns.org';
+const router=express.Router(),ORIGIN=process.env.WEBAUTHN_ORIGIN||'https://shinomino.com',RPID=process.env.WEBAUTHN_RP_ID||'shinomino.com';
 function fullToken(user){return jwt.sign({userId:user._id,role:user.role},process.env.JWT_SECRET,{expiresIn:'7d'});}
 async function preAuth(req,res,next){try{const raw=String(req.headers.authorization||'').replace(/^Bearer\s+/i,''),p=jwt.verify(raw,process.env.JWT_SECRET);if(p.scope!=='developer-mfa')throw Error();const u=await User.findOne({_id:p.userId,role:'developer',status:'active'});if(!u)throw Error();req.user=u;next();}catch(_){res.status(401).json({ok:false,message:'انتهت مهلة التحقق. أعد إدخال كلمة المرور'});}}
 async function security(user){return DeveloperMfa.findOneAndUpdate({user:user._id},{$setOnInsert:{user:user._id}},{new:true,upsert:true});}
