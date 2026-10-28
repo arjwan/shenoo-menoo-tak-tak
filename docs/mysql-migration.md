@@ -1,0 +1,69 @@
+# IQ Hosting MySQL migration — development only
+
+Status: **schema tooling implemented; application service conversion incomplete**.
+Do not deploy this branch to shinomino.com. The Oracle/MongoDB deployment and
+`main` remain the production source of truth.
+
+## Implemented
+
+- Deterministic schema conversion for all 60 current Mongoose models: 137 tables
+  and 231 foreign-key relationships. Nested lists become ordered child tables;
+  single nested documents become child tables with unique parent links.
+- Existing 24-character identifiers are preserved as ASCII keys. Arabic text
+  uses utf8mb4 with binary collation. Mixed data and maps use JSON.
+- Compound unique indexes and conditional unique contact/student indexes are
+  represented by generated columns. Missing optional unique keys become NULL.
+- A separate MySQL 8 connection, SQL preview, destination check, migration
+  journal, advisory migration lock, and schema verification. No runtime fallback
+  from MySQL to MongoDB is allowed.
+- CI uses an isolated MySQL 8 container and never production credentials.
+
+## Commands
+
+```sh
+npm run mysql:schema -- plan    # local inventory, no connection
+npm run mysql:schema -- sql     # candidate DDL on stdout, no connection
+npm run mysql:schema -- check   # read-only IQ Hosting connection/version check
+npm run mysql:schema -- apply   # writes only to the configured destination
+npm run mysql:schema -- verify # read-only structural and journal checks
+npm run test:mysql
+```
+
+Set private MYSQL_* variables in the server environment, using the exact existing
+IQ Hosting database/user names. Never commit .env or connection secrets. TLS is
+verified by default; a private CA can be supplied with MYSQL_SSL_CA_FILE. Local
+hosting connections without TLS can explicitly use MYSQL_SSL_MODE=disabled.
+
+`apply` requires an empty, already-created MySQL 8 database; it does not create a
+database or user, copy MongoDB data, drop tables, or deploy. It refuses existing
+untracked tables. Re-running a completed migration checks the checksum and
+returns without writes to the application tables. MySQL DDL commits separately:
+the journal records each completed statement. A crash between a DDL statement
+and its journal update requires manual inspection; no automatic table deletion
+or destructive rollback is attempted.
+
+## Required before runtime cutover
+
+1. Review and execute the candidate DDL against the isolated MySQL 8 CI database,
+   then verify IQ Hosting's exact MySQL version and privileges. MariaDB is not
+   accepted by this version of the tool.
+2. Convert all route/service/model operations, including population, nested
+   updates, bulk upserts and optimistic concurrency. No production route has
+   been switched yet. Mongoose validation/defaults and enums must be preserved
+   explicitly in the new repositories. Current SQL is a candidate structure,
+   not a complete implementation of those application rules.
+3. Review new bounds for formerly unlimited indexed strings (255 characters),
+   nullable uniqueness differences, case/collation behavior, optional nested
+   documents, and deletion order under foreign keys. Full-text keyword arrays
+   require searching their child table and unioning results with scalar fields.
+4. Build a read-only MongoDB export/import preserving IDs, dates, list ordering,
+   password hashes and references. Check orphan references before inserting;
+   compare counts and sampled records. Import is separate and not implemented.
+5. Test registration/login, approval/permissions, contacts/friends, messages,
+   posts/media, notifications, games, school flows and socket behavior against
+   MySQL; test backup/restore and restart persistence.
+6. Only then enable DB_CLIENT=mysql, publish to the destination, and switch
+   shinomino.com after a successful smoke test. Current runtime rejects this
+   setting because the service port is incomplete.
+
+No live IQ Hosting test or website deployment has been performed by this change.

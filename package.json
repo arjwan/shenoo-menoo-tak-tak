@@ -30,7 +30,10 @@
     "test:school-backend": "node --test server/test/school-backend-gaps.test.js && node tests/api-school-backend-gaps.js",
     "test:school-legacy-runtime": "node tests/api-school-canva-runtime.js",
     "simulation": "node server/src/scripts/simulation-batch.js",
-    "test:simulation": "node --test server/test/simulation-batch.test.js"
+    "test:simulation": "node --test server/test/simulation-batch.test.js",
+    "mysql:schema": "node server/src/scripts/mysql-schema.js",
+    "test:mysql": "node --test server/test/mysql-migration.test.js",
+    "test:mysql:integration": "node --test server/test/mysql-migration.integration.test.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",
@@ -44,6 +47,7 @@
     "mongodb": "^7.6.0",
     "mongoose": "^8.18.0",
     "multer": "^2.3.0",
+    "mysql2": "^3.24.6",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.3"
   },
