@@ -1,14 +1,6 @@
 name: Publish disclosed digital content batch
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'server/src/simulation/content-catalog.json'
-      - 'server/src/simulation/content-plan.js'
-      - 'server/src/scripts/generate-digital-content-media.js'
-      - 'server/src/scripts/publish-digital-content.js'
-      - '.github/workflows/publish-digital-content.yml'
 permissions:
   contents: read
 concurrency:
