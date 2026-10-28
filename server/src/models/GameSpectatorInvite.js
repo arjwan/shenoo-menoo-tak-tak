@@ -8,4 +8,4 @@ const inviteSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 inviteSchema.index({ room: 1, inviter: 1, invitee: 1 }, { unique: true });
-module.exports = mongoose.model('GameSpectatorInvite', inviteSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('GameSpectatorInvite', inviteSchema));

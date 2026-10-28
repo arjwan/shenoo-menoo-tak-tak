@@ -25,4 +25,4 @@ const schema = new mongoose.Schema({
 schema.index({ user: 1, requestedRole: 1 }, { unique: true, partialFilterExpression: { guardian: null } });
 schema.index({ guardian: 1, studentUsername: 1 }, { unique: true, partialFilterExpression: { guardian: { $type: 'objectId' }, studentUsername: { $type: 'string', $gt: '' } } });
 schema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
-module.exports = mongoose.model('SchoolEnrollmentRequest', schema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolEnrollmentRequest', schema));

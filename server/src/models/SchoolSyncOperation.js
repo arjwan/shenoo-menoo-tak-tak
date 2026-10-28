@@ -13,4 +13,4 @@ const schema = new mongoose.Schema({
 schema.index({ guardian: 1, clientOpId: 1 }, { unique: true });
 schema.index({ guardian: 1, localId: 1 });
 
-module.exports = mongoose.model('SchoolSyncOperation', schema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolSyncOperation', schema));

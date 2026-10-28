@@ -30,4 +30,4 @@ const assignmentSchema = new mongoose.Schema({
 assignmentSchema.index({ stage: 1, grade: 1, subject: 1 });
 assignmentSchema.index({ teacher: 1, status: 1 });
 
-module.exports = mongoose.model('SchoolAssignment', assignmentSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolAssignment', assignmentSchema));

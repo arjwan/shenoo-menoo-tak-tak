@@ -14,4 +14,4 @@ const SmartFriendMessageSchema=new mongoose.Schema({
 },{timestamps:true});
 SmartFriendMessageSchema.index({user:1,friend:1,createdAt:-1});
 SmartFriendMessageSchema.index({user:1,roomId:1,createdAt:-1});
-module.exports=mongoose.model('SmartFriendMessage',SmartFriendMessageSchema);
+module.exports= require('../mysql/model').wrap(mongoose.model('SmartFriendMessage',SmartFriendMessageSchema));

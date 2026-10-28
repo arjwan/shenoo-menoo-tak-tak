@@ -44,4 +44,4 @@ const gameRoomSchema = new mongoose.Schema({
 
 gameRoomSchema.index({ gameType: 1, visibility: 1, 'gameState.status': 1, updatedAt: -1 });
 gameRoomSchema.index({ roomCode: 1, isActive: 1 });
-module.exports = mongoose.model('GameRoom', gameRoomSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('GameRoom', gameRoomSchema));

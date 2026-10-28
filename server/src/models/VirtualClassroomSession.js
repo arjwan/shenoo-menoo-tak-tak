@@ -81,4 +81,4 @@ const virtualClassroomSessionSchema = new mongoose.Schema({
 
 virtualClassroomSessionSchema.index({ status: 1, stage: 1, grade: 1, subject: 1 });
 
-module.exports = mongoose.model('VirtualClassroomSession', virtualClassroomSessionSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('VirtualClassroomSession', virtualClassroomSessionSchema));

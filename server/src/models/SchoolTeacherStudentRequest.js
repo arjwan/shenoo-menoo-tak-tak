@@ -20,4 +20,4 @@ const SchoolTeacherStudentRequestSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 SchoolTeacherStudentRequestSchema.index({ teacher: 1, student: 1, kind: 1, status: 1 });
-module.exports = mongoose.model('SchoolTeacherStudentRequest', SchoolTeacherStudentRequestSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolTeacherStudentRequest', SchoolTeacherStudentRequestSchema));

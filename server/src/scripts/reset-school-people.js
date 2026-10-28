@@ -30,7 +30,8 @@ const MODEL_MODULES = [
     throw new Error('Refusing destructive reset: set SCHOOL_RESET_CONFIRM=' + CONFIRM);
   }
   if (!mongo) throw new Error('MONGODB_URI/MONGO_URI is required');
-  await mongoose.connect(mongo);
+  if(process.env.DB_CLIENT==='mysql') throw new Error('This legacy MongoDB maintenance script is not available in MySQL mode');
+ await mongoose.connect(mongo);
   try {
     const developers = await User.find({ role: 'developer' }).select('_id username role').lean();
     if (!developers.length) throw new Error('Safety stop: no developer account found; nothing deleted');

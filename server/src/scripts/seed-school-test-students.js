@@ -99,7 +99,8 @@ async function seed(){
 
 (async()=>{
   if(!mongo) throw new Error('MONGODB_URI/MONGO_URI is required');
-  await mongoose.connect(mongo);
+  if(process.env.DB_CLIENT==='mysql') throw new Error('This legacy MongoDB maintenance script is not available in MySQL mode');
+ await mongoose.connect(mongo);
   try { if(cleanup) await cleanupBatch(); else await seed(); }
   finally { await mongoose.disconnect(); }
 })().catch(err=>{ console.error(err); process.exit(1); });

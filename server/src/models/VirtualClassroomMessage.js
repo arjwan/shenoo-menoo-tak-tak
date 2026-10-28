@@ -35,4 +35,4 @@ const virtualClassroomMessageSchema = new mongoose.Schema({
 
 virtualClassroomMessageSchema.index({ code: 1, timestamp: 1 });
 
-module.exports = mongoose.model('VirtualClassroomMessage', virtualClassroomMessageSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('VirtualClassroomMessage', virtualClassroomMessageSchema));

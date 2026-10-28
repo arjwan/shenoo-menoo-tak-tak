@@ -27,4 +27,4 @@ const GroupSchema = new mongoose.Schema({
 
 GroupSchema.index({ name: 'text', description: 'text' });
 
-module.exports = mongoose.model('Group', GroupSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('Group', GroupSchema));

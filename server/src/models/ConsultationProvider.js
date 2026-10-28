@@ -14,4 +14,4 @@ const consultationProviderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 consultationProviderSchema.index({ user: 1, category: 1 }, { unique: true });
-module.exports = mongoose.model('ConsultationProvider', consultationProviderSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('ConsultationProvider', consultationProviderSchema));

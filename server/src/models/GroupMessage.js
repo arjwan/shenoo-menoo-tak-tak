@@ -14,4 +14,4 @@ const GroupMessageSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 GroupMessageSchema.index({ group: 1, createdAt: -1 });
-module.exports = mongoose.model('GroupMessage', GroupMessageSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('GroupMessage', GroupMessageSchema));

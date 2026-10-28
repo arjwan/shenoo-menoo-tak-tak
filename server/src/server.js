@@ -160,8 +160,9 @@ app.use((req, res, next) => {
 
 app.use((req,res)=>res.status(404).json({ok:false,message:'المسار غير موجود'}));
 const port=Number(process.env.PORT||3000);
-async function migrateSmartFriendIndexes(){try{const indexes=await SmartFriend.collection.indexes();const legacy=indexes.find(i=>i.unique&&i.key&&i.key.user===1&&!('slot' in i.key));if(legacy){await SmartFriend.collection.dropIndex(legacy.name);console.log('Removed legacy SmartFriend unique user index:',legacy.name);}await SmartFriend.collection.createIndex({user:1,slot:1},{unique:true,name:'user_1_slot_1'});}catch(error){console.error('SmartFriend index migration failed:',error.message);}}
+async function migrateSmartFriendIndexes(){if(process.env.DB_CLIENT==='mysql')return;try{const indexes=await SmartFriend.collection.indexes();const legacy=indexes.find(i=>i.unique&&i.key&&i.key.user===1&&!('slot' in i.key));if(legacy){await SmartFriend.collection.dropIndex(legacy.name);console.log('Removed legacy SmartFriend unique user index:',legacy.name);}await SmartFriend.collection.createIndex({user:1,slot:1},{unique:true,name:'user_1_slot_1'});}catch(error){console.error('SmartFriend index migration failed:',error.message);}}
 async function migrateSchoolStudentIndexes(){
+  if(process.env.DB_CLIENT==='mysql')return;
   let indexes=[];
   try{indexes=await SchoolStudent.collection.indexes();}catch(error){if(error.code!==26)throw error;}
   for(const index of indexes){

@@ -1,18 +1,6 @@
 name: Deploy TV updates to Oracle
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "tv.html"
-      - "tv.css"
-      - "tv.js"
-      - "tv-chat-popup.js"
-      - "broadcast-ticker-client.js"
-      - "tv-room-mode.js"
-      - "tv-current-channel.js"
-      - "tv-controls-autohide.js"
-      - ".github/workflows/deploy-tv-oracle.yml"
   workflow_dispatch:
 
 concurrency:

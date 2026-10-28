@@ -8,4 +8,4 @@ const SchoolGuardianRequestSchema=new mongoose.Schema({
  status:{type:String,enum:['OPEN','IN_REVIEW','RESOLVED','REJECTED'],default:'OPEN',index:true},
  response:{type:String,default:'',maxlength:3000},resolvedBy:{type:mongoose.Schema.Types.ObjectId,ref:'User',default:null}
 },{timestamps:true});
-module.exports=mongoose.model('SchoolGuardianRequest',SchoolGuardianRequestSchema);
+module.exports= require('../mysql/model').wrap(mongoose.model('SchoolGuardianRequest',SchoolGuardianRequestSchema));

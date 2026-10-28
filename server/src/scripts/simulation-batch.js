@@ -15,6 +15,7 @@ async function main(){
  if(!uri) throw Error('Choose SIMULATION_DATABASE_URI explicitly. Production URI is never inferred.');
  if(['seed','cleanup'].includes(command)&&!args.includes('--apply')) throw Error('Use --apply to perform the selected database mutation; preview and inspect do not write.');
  const mongoose=require('mongoose');
+ if(process.env.DB_CLIENT==='mysql') throw new Error('This legacy MongoDB maintenance script is not available in MySQL mode');
  await mongoose.connect(uri,{serverSelectionTimeoutMS:10000,autoIndex:false});
  try {
   const models=Object.fromEntries(TYPES.map(t=>[t,require(`../models/${t}`)]));

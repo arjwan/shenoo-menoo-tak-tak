@@ -24,4 +24,4 @@ const serviceProviderSchema = new mongoose.Schema({
 
 serviceProviderSchema.index({ kind: 1, category: 1, governorate: 1, status: 1 });
 
-module.exports = mongoose.model('ServiceProvider', serviceProviderSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('ServiceProvider', serviceProviderSchema));

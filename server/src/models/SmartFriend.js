@@ -13,4 +13,4 @@ const SmartFriendSchema=new mongoose.Schema({
   conversationStyle:{type:String,enum:['casual','balanced','advice'],default:'balanced'}
 },{timestamps:true});
 SmartFriendSchema.index({user:1,slot:1},{unique:true});
-module.exports=mongoose.model('SmartFriend',SmartFriendSchema);
+module.exports= require('../mysql/model').wrap(mongoose.model('SmartFriend',SmartFriendSchema));

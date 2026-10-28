@@ -71,4 +71,4 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: 'string', $gt: '' } } });
 userSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string', $gt: '' } } });
-module.exports = mongoose.model('User', userSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('User', userSchema));

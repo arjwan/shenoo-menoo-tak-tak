@@ -132,4 +132,4 @@ virtualTeacherProfileSchema.statics.findProfile = async function (profileId) {
   return BUILTIN_PROFILES.find((p) => p.profileId === norm) || null;
 };
 
-module.exports = mongoose.model('VirtualTeacherProfile', virtualTeacherProfileSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('VirtualTeacherProfile', virtualTeacherProfileSchema));

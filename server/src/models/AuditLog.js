@@ -9,4 +9,4 @@ const auditLogSchema = new mongoose.Schema({
 
 auditLogSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('AuditLog', auditLogSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('AuditLog', auditLogSchema));

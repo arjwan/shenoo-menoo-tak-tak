@@ -10,4 +10,4 @@ const schema = new mongoose.Schema({
   publishedAt: { type: Date, default: Date.now, index: true },
   active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
-module.exports = mongoose.model('SchoolAnnouncement', schema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolAnnouncement', schema));

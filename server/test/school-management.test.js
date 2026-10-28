@@ -73,10 +73,14 @@ async function request(method, path, body, token) {
 }
 
 test.before(async () => {
+  if (process.env.DB_CLIENT === 'mysql') {
+    await require('./helpers/mysql-test-database')('shinomino_management_test');
+  } else {
   mongod = await MongoMemoryServer.create({
     binary: { version: '7.0.14' }
   });
   await mongoose.connect(mongod.getUri(), { dbName: 'test-school-management' });
+  }
 
   const app = express();
   app.use(express.json());
@@ -90,6 +94,7 @@ test.before(async () => {
 
 test.after(async () => {
   if (server) await new Promise((resolve) => server.close(resolve));
+  if (process.env.DB_CLIENT === 'mysql') await require('../src/config/db').disconnect();
   if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
@@ -135,12 +140,12 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
 
     const resMgr = await request('GET', '/api/school/management/me', null, managerToken);
     assert.equal(resMgr.status, 200);
-    assert.equal(resMgr.data.schoolContext.role, 'manager');
+    assert.equal(resMgr.data.schoolContext.role, 'user');
     assert.equal(resMgr.data.schoolContext.isDeveloper, false);
-    assert.equal(resMgr.data.schoolContext.isManager, true);
+    assert.equal(resMgr.data.schoolContext.isManager, false);
   });
 
-  await t.test('3. Manager CANNOT elevate self or anyone to Developer and CANNOT modify Developer account', async () => {
+  await t.test('3. Platform admin has no implicit school administration or developer authority', async () => {
     // Attempt by non-privileged user to inject role into school management
     const tamperRole = await request('POST', '/api/school/management/complaints', {
       content: 'محاولة تصعيد صلاحيات',
@@ -157,11 +162,14 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     assert.equal(managerElevate.status, 403, 'Manager must be forbidden from granting developer role');
     assert.match(managerElevate.data.message, /لا يمكن منح رتبة المطور/);
 
-    // Attempt to register/update developer as teacher by manager
+    const adminRegistration = await request('POST', '/api/school/management/teachers', { userId: String(devUser._id), name: 'غير مصرح' }, managerToken);
+    assert.equal(adminRegistration.status, 403, 'Platform admin must not inherit school management');
+
+    // Only an authenticated developer may register the temporary teacher.
     const regDev = await request('POST', '/api/school/management/teachers', {
       userId: String(devUser._id),
       name: 'المطور كمعلم'
-    }, managerToken);
+    }, devToken);
     assert.equal(regDev.status, 201); // Can be a teacher, but...
 
     // Attempt by manager to modify developer teacher account
@@ -169,7 +177,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
       name: 'تعديل اسم المطور'
     }, managerToken);
     assert.equal(updateDev.status, 403, 'Manager must be forbidden from modifying developer user account');
-    assert.match(updateDev.data.message, /لا يمكن للمدير/);
+    assert.match(updateDev.data.message, /هذا الإجراء مخصص/);
 
     // Attempt by manager to archive developer account
     const archDev = await request('DELETE', `/api/school/management/teachers/${regDev.data.teacher._id}`, {}, managerToken);
@@ -184,7 +192,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     const fakeRes = await request('POST', '/api/school/management/teachers', {
       userId: new mongoose.Types.ObjectId().toString(),
       name: 'معلم وهمي'
-    }, managerToken);
+    }, devToken);
     assert.equal(fakeRes.status, 404, 'Must reject fake user ID');
 
     // Registers real teacher
@@ -197,7 +205,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
       grades: ['الخامس ابتدائي', 'السادس ابتدائي'],
       sections: ['أ', 'ب'],
       subjects: ['الرياضيات', 'العلوم']
-    }, managerToken);
+    }, devToken);
 
     assert.equal(regRes.status, 201);
     assert.equal(regRes.data.ok, true);
@@ -208,11 +216,11 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     const dupRes = await request('POST', '/api/school/management/teachers', {
       userId: String(teacherUser._id),
       name: 'أ. رافد مكرر'
-    }, managerToken);
+    }, devToken);
     assert.equal(dupRes.status, 409, 'Must reject duplicate teacher registration for same user');
 
     // List teachers: separates real from virtual
-    const listRes = await request('GET', '/api/school/management/teachers', null, managerToken);
+    const listRes = await request('GET', '/api/school/management/teachers', null, devToken);
     assert.equal(listRes.status, 200);
     assert.equal(listRes.data.counts.real, 1);
     assert.ok(listRes.data.counts.virtual >= 1);
@@ -231,7 +239,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
       studentUserId: String(studentUser._id),
       assignedTeachers: [{ teacher: String(teacherDoc._id), subject: 'الرياضيات' }],
       assignedVirtualTeacherId: String(virtualProfile._id)
-    }, managerToken);
+    }, devToken);
 
     assert.equal(regRes.status, 201);
     assert.equal(regRes.data.ok, true);
@@ -329,7 +337,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     assert.equal(replayRes.data.schedule.type, 'RECORDED_REPLAY');
 
     // 3) List schedules
-    const listSched = await request('GET', '/api/school/management/schedules', null, managerToken);
+    const listSched = await request('GET', '/api/school/management/schedules', null, devToken);
     assert.equal(listSched.status, 200);
     assert.equal(listSched.data.schedules.length, 2);
   });
@@ -365,10 +373,10 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
   });
 
   await t.test('9. Permanent Student Record (Archive instead of destructive deletion)', async () => {
-    // Archive student by manager
+    // Archive student by the authorized school administrator
     const archRes = await request('DELETE', `/api/school/management/students/${studentDoc._id}`, {
       reason: 'انتقال مؤقت'
-    }, managerToken);
+    }, devToken);
 
     assert.equal(archRes.status, 200);
     assert.equal(archRes.data.student.status, 'archived');
@@ -380,13 +388,22 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     assert.equal(permanentCheck.status, 'archived');
 
     // Query permanent record endpoint
-    const recordRes = await request('GET', `/api/school/management/students/${studentDoc._id}/record`, null, managerToken);
+    if (process.env.DB_CLIENT === 'mysql') {
+      await require('../src/models/VirtualClassroomSession').create({
+        code: 'RECORD001', hostUser: teacherUser._id, hostName: 'المعلم',
+        stage: studentDoc.stage, grade: studentDoc.grade, subject: 'الرياضيات',
+        lesson: 'درس محفوظ', sourceTitle: 'كتاب اختبار',
+        participants: [{ user: guardianUser._id, student: studentDoc._id, name: studentDoc.name, role: 'student' }]
+      });
+    }
+    const recordRes = await request('GET', `/api/school/management/students/${studentDoc._id}/record`, null, devToken);
     assert.equal(recordRes.status, 200);
     assert.equal(recordRes.data.record.student.name, 'كرار أحمد الرافدين');
     assert.equal(recordRes.data.record.student.status, 'archived');
     assert.equal(recordRes.data.record.gradeRecords.length, 1);
     assert.equal(recordRes.data.record.gradeRecords[0].score, 95);
     assert.equal(recordRes.data.record.attendanceRecords.length, 1);
+    if (process.env.DB_CLIENT === 'mysql') assert.equal(recordRes.data.record.virtualSessions[0].code, 'RECORD001');
   });
 
   await t.test('10. Guardian Complaints: Scoped, Admin reply, Status lifecycle', async () => {
@@ -418,11 +435,11 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     assert.equal(otherList.status, 200);
     assert.equal(otherList.data.complaints.length, 0, 'Other guardian must see 0 complaints');
 
-    // 4) Manager replies and updates status to IN_PROGRESS then CLOSED
+    // 4) Authorized school administrator replies and updates status to IN_PROGRESS then CLOSED
     const replyRes = await request('PATCH', `/api/school/management/complaints/${compId}/reply`, {
       status: 'CLOSED',
       text: 'تمت إضافة حصة مراجعة عامة يوم الأربعاء القادم في تمام الساعة الرابعة مساءً.'
-    }, managerToken);
+    }, devToken);
 
     assert.equal(replyRes.status, 200);
     assert.equal(replyRes.data.complaint.status, 'CLOSED');
@@ -430,7 +447,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
   });
 
   await t.test('11. Audit Log: All administrative actions are recorded with timestamps and actors', async () => {
-    const auditRes = await request('GET', '/api/school/management/audit-logs', null, managerToken);
+    const auditRes = await request('GET', '/api/school/management/audit-logs', null, devToken);
     assert.equal(auditRes.status, 200);
     const logs = auditRes.data.logs || [];
     assert.ok(logs.length >= 5, 'Multiple audit logs recorded');

@@ -21,4 +21,4 @@ const serviceRequestSchema = new mongoose.Schema({
 serviceRequestSchema.index({ providerOwner: 1, status: 1, createdAt: -1 });
 serviceRequestSchema.index({ requester: 1, createdAt: -1 });
 
-module.exports = mongoose.model('ServiceRequest', serviceRequestSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('ServiceRequest', serviceRequestSchema));

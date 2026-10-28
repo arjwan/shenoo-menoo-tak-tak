@@ -14,4 +14,4 @@ const schema = new mongoose.Schema({
 }, { timestamps: true });
 
 schema.index({ teacher: 1, createdAt: -1 });
-module.exports = mongoose.model('SchoolStaffRequest', schema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolStaffRequest', schema));

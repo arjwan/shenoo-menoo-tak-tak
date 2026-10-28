@@ -19,4 +19,4 @@ friendRequestSchema.index(
 );
 friendRequestSchema.index({ receiver: 1, status: 1 });
 
-module.exports = mongoose.model('FriendRequest', friendRequestSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('FriendRequest', friendRequestSchema));

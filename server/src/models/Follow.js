@@ -7,4 +7,4 @@ const followSchema = new mongoose.Schema({
 
 followSchema.index({ follower: 1, following: 1 }, { unique: true });
 followSchema.index({ following: 1, createdAt: -1 });
-module.exports = mongoose.model('Follow', followSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('Follow', followSchema));

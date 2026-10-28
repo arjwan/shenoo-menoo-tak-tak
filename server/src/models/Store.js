@@ -32,4 +32,4 @@ const storeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 storeSchema.index({ owner: 1, name: 1 }, { unique: true });
-module.exports = mongoose.model('Store', storeSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('Store', storeSchema));
