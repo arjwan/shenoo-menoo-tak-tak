@@ -66,6 +66,7 @@ function buildSchema(models = loadModels()) {
         const child = convert(childSchema, childName, { table: tableName, column: parentKey, field }, source + '.' + field + '[]');
         child.indexes.push({ name: name('ix_' + childName + '_parent'), columns: ['parent_id', 'position'], unique: true });
         if (!p.schema && indexed.has(field)) child.indexes.push({ name: name('ix_' + childName + '_value'), columns: ['value'], unique: false });
+        if (!p.schema && indexes.some(([keys]) => keys[field] === 'text')) child.indexes.push({ name: name('ft_' + childName + '_value'), columns: ['value'], fulltext: true });
         continue;
       }
       if (p.instance === 'Embedded') {
@@ -128,7 +129,24 @@ function buildSchema(models = loadModels()) {
     const definitions = table.columns.map(c => `${identifier(c.name)} ${c.type}${c.nullable ? ' NULL' : ' NOT NULL'}`);
     definitions.push(...table.generated.map(c => `${identifier(c.name)} ${c.type} GENERATED ALWAYS AS (${c.expression}) STORED`));
     definitions.push(`PRIMARY KEY (${identifier(table.parent ? '_row_id' : '_id')})`);
-    for (const ix of table.indexes) definitions.push(`${ix.fulltext ? 'FULLTEXT ' : ix.unique ? 'UNIQUE ' : ''}KEY ${identifier(ix.name)} (${ix.columns.map(identifier).join(', ')})`);
+    for (const ix of table.indexes) {
+      if (!ix.fulltext) {
+        const parts = ix.columns.map(n => {
+          const c = [...table.columns, ...table.generated].find(c => c.name === n);
+          const match = c.type.match(/(?:VAR)?CHAR\((\d+)\)/);
+          return { name: n, chars: match ? Number(match[1]) : null, bytesPerChar: c.type.includes('ascii') ? 1 : 4 };
+        });
+        const size = parts.reduce((sum, p) => sum + (p.chars ? p.chars * p.bytesPerChar : 8), 0);
+        if (size > 3072) {
+          if (ix.unique) throw new Error(`Unique key exceeds MySQL byte limit: ${table.name}.${ix.name}`);
+          // Prefixes only affect lookup performance, never uniqueness or stored data.
+          const stringParts = parts.filter(p => p.chars);
+          const budget = 3072 - (parts.length - stringParts.length) * 8;
+          ix.prefixes = Object.fromEntries(stringParts.map(p => [p.name, Math.min(p.chars, Math.floor(budget / stringParts.length / p.bytesPerChar))]));
+        }
+      }
+      definitions.push(`${ix.fulltext ? 'FULLTEXT ' : ix.unique ? 'UNIQUE ' : ''}KEY ${identifier(ix.name)} (${ix.columns.map(c => identifier(c) + (ix.prefixes?.[c] ? `(${ix.prefixes[c]})` : '')).join(', ')})`);
+    }
     statements.push(`CREATE TABLE ${identifier(table.name)} (\n  ${definitions.join(',\n  ')}\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=DYNAMIC`);
   }
   for (const r of relations) {

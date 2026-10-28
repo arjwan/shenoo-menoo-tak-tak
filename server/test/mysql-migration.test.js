@@ -47,6 +47,22 @@ test('long text remains long text in full-text indexes', () => {
   assert.equal(knowledge.columns.find(c => c.name === 'content').type, 'LONGTEXT');
   assert.ok(knowledge.indexes.some(i => i.fulltext && i.columns.includes('content')));
   assert.ok(schema.notes.some(n => n.includes('UNION')));
+  const keywords = schema.tables.find(t => t.name === 'schoolknowledgesources__keywords');
+  assert.ok(keywords.indexes.some(i => i.fulltext && i.columns.includes('value')));
+});
+
+test('compound lookup indexes fit MySQL byte limits without weakening unique indexes', () => {
+  for (const table of schema.tables) for (const ix of table.indexes) {
+    if (ix.fulltext) continue;
+    let bytes = 0;
+    for (const field of ix.columns) {
+      const c = [...table.columns, ...table.generated].find(c => c.name === field);
+      const match = c.type.match(/(?:VAR)?CHAR\((\d+)\)/);
+      bytes += match ? Number(ix.prefixes?.[field] || match[1]) * (c.type.includes('ascii') ? 1 : 4) : 8;
+    }
+    assert.ok(bytes <= 3072, `${table.name}.${ix.name}: ${bytes}`);
+    if (ix.unique) assert.equal(ix.prefixes, undefined);
+  }
 });
 
 test('SQL identifiers and literals remain data even with hostile input', () => {

@@ -51,23 +51,25 @@ async function applySchema(connection, schema) {
 async function verifySchema(connection, schema) {
   const problems = [];
   const [[{ databaseName }]] = await connection.query('SELECT DATABASE() AS databaseName');
-  const [columns] = await connection.execute('SELECT TABLE_NAME AS tableName, COLUMN_NAME AS columnName, IS_NULLABLE AS nullable, GENERATION_EXPRESSION AS expression FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ?', [databaseName]);
-  const [indexes] = await connection.execute('SELECT TABLE_NAME AS tableName, INDEX_NAME AS indexName, COLUMN_NAME AS columnName, NON_UNIQUE AS nonUnique, SEQ_IN_INDEX AS seq, INDEX_TYPE AS indexType FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = ?', [databaseName]);
-  const [foreignKeys] = await connection.execute('SELECT TABLE_NAME AS tableName, COLUMN_NAME AS columnName, REFERENCED_TABLE_NAME AS target, REFERENCED_COLUMN_NAME AS targetColumn FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME IS NOT NULL', [databaseName]);
+  const [columns] = await connection.execute('SELECT TABLE_NAME AS tableName, COLUMN_NAME AS columnName, COLUMN_TYPE AS columnType, CHARACTER_SET_NAME AS charset, IS_NULLABLE AS nullable, GENERATION_EXPRESSION AS expression FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ?', [databaseName]);
+  const [indexes] = await connection.execute('SELECT TABLE_NAME AS tableName, INDEX_NAME AS indexName, COLUMN_NAME AS columnName, SUB_PART AS prefix, NON_UNIQUE AS nonUnique, SEQ_IN_INDEX AS seq, INDEX_TYPE AS indexType FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = ?', [databaseName]);
+  const [foreignKeys] = await connection.execute('SELECT k.TABLE_NAME AS tableName, k.COLUMN_NAME AS columnName, k.REFERENCED_TABLE_NAME AS target, k.REFERENCED_COLUMN_NAME AS targetColumn, r.DELETE_RULE AS deleteRule FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME = k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA = ? AND k.REFERENCED_TABLE_NAME IS NOT NULL', [databaseName]);
   for (const table of schema.tables) {
     for (const column of [...table.columns, ...table.generated]) {
       const actual = columns.find(c => c.tableName === table.name && c.columnName === column.name);
       if (!actual) problems.push(`Missing column ${table.name}.${column.name}`);
+      else if (actual.columnType.toLowerCase() !== column.type.split(' CHARACTER SET')[0].toLowerCase()) problems.push(`Type mismatch ${table.name}.${column.name}`);
+      else if (column.type.includes('CHARACTER SET ascii') && actual.charset !== 'ascii') problems.push(`Character set mismatch ${table.name}.${column.name}`);
       else if (!column.expression && actual.nullable !== (column.nullable ? 'YES' : 'NO')) problems.push(`Nullability mismatch ${table.name}.${column.name}`);
       else if (column.expression && !actual.expression) problems.push(`Missing generated expression ${table.name}.${column.name}`);
     }
-    for (const ix of table.indexes) {
+    for (const ix of [...table.indexes, { name: 'PRIMARY', columns: [table.parent ? '_row_id' : '_id'], unique: true }]) {
       const found = indexes.filter(i => i.tableName === table.name && i.indexName === ix.name).sort((a, b) => a.seq - b.seq);
-      if (found.map(i => i.columnName).join('|') !== ix.columns.join('|') || found.some(i => !!Number(i.nonUnique) === !!ix.unique) || (ix.fulltext && found.some(i => i.indexType !== 'FULLTEXT'))) problems.push(`Index mismatch ${table.name}.${ix.name}`);
+      if (found.map(i => i.columnName).join('|') !== ix.columns.join('|') || found.some(i => !!Number(i.nonUnique) === !!ix.unique || Number(i.prefix || 0) !== Number(ix.prefixes?.[i.columnName] || 0)) || (ix.fulltext && found.some(i => i.indexType !== 'FULLTEXT'))) problems.push(`Index mismatch ${table.name}.${ix.name}`);
     }
   }
   for (const r of schema.relations) {
-    if (!foreignKeys.some(k => k.tableName === r.table && k.columnName === r.column && k.target === r.target && k.targetColumn === r.targetColumn)) problems.push(`Missing relationship ${r.table}.${r.column}`);
+    if (!foreignKeys.some(k => k.tableName === r.table && k.columnName === r.column && k.target === r.target && k.targetColumn === r.targetColumn && k.deleteRule === r.onDelete)) problems.push(`Missing relationship ${r.table}.${r.column}`);
   }
   const [journal] = await connection.execute(`SELECT checksum, status FROM ${identifier(JOURNAL)} WHERE migration = ?`, [MIGRATION]);
   if (journal[0]?.status !== 'complete' || journal[0]?.checksum !== checksum(schema)) problems.push('Migration journal is incomplete or checksum differs');
