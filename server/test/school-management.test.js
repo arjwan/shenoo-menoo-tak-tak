@@ -73,10 +73,14 @@ async function request(method, path, body, token) {
 }
 
 test.before(async () => {
+  if (process.env.DB_CLIENT === 'mysql') {
+    await require('./helpers/mysql-test-database')('shinomino_management_test');
+  } else {
   mongod = await MongoMemoryServer.create({
     binary: { version: '7.0.14' }
   });
   await mongoose.connect(mongod.getUri(), { dbName: 'test-school-management' });
+  }
 
   const app = express();
   app.use(express.json());
@@ -90,6 +94,7 @@ test.before(async () => {
 
 test.after(async () => {
   if (server) await new Promise((resolve) => server.close(resolve));
+  if (process.env.DB_CLIENT === 'mysql') await require('../src/config/db').disconnect();
   if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });

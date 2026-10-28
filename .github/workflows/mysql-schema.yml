@@ -43,3 +43,13 @@ jobs:
           MYSQL_USER: root
           MYSQL_PASSWORD: ephemeral-ci-password
           MYSQL_SSL_MODE: disabled
+      - run: node --test server/test/school-management.test.js
+        env:
+          MYSQL_INTEGRATION_TEST: '1'
+          DB_CLIENT: mysql
+          MYSQL_RUNTIME_EXPERIMENTAL: 'true'
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_DATABASE: shinomino_management_test
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ephemeral-ci-password
+          MYSQL_SSL_MODE: disabled
