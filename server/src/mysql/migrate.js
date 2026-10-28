@@ -48,6 +48,17 @@ async function applySchema(connection, schema) {
   } finally { await connection.execute('SELECT RELEASE_LOCK(?)', [lock]); }
 }
 
+function compatibleColumnType(expected, actual) {
+  const normalizedExpected = expected.split(' CHARACTER SET')[0].toLowerCase();
+  const normalizedActual = actual.toLowerCase();
+  if (normalizedExpected === normalizedActual) return true;
+  // MariaDB exposes INT UNSIGNED as int(10) unsigned.
+  if (normalizedExpected === 'int unsigned' && /^int(?:\\(\\d+\\))? unsigned$/.test(normalizedActual)) return true;
+  // MariaDB stores JSON as LONGTEXT with a JSON_VALID CHECK constraint.
+  if (normalizedExpected === 'json' && normalizedActual === 'longtext') return true;
+  return false;
+}
+
 async function verifySchema(connection, schema) {
   const problems = [];
   const [[{ databaseName }]] = await connection.query('SELECT DATABASE() AS databaseName');
@@ -58,7 +69,7 @@ async function verifySchema(connection, schema) {
     for (const column of [...table.columns, ...table.generated]) {
       const actual = columns.find(c => c.tableName === table.name && c.columnName === column.name);
       if (!actual) problems.push(`Missing column ${table.name}.${column.name}`);
-      else if (actual.columnType.toLowerCase() !== column.type.split(' CHARACTER SET')[0].toLowerCase()) problems.push(`Type mismatch ${table.name}.${column.name}`);
+      else if (!compatibleColumnType(column.type, actual.columnType)) problems.push(`Type mismatch ${table.name}.${column.name}`);
       else if (column.type.includes('CHARACTER SET ascii') && actual.charset !== 'ascii') problems.push(`Character set mismatch ${table.name}.${column.name}`);
       else if (!column.expression && actual.nullable !== (column.nullable ? 'YES' : 'NO')) problems.push(`Nullability mismatch ${table.name}.${column.name}`);
       else if (column.expression && !actual.expression) problems.push(`Missing generated expression ${table.name}.${column.name}`);
