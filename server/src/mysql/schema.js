@@ -142,7 +142,7 @@ function buildSchema(models = loadModels()) {
           // Prefixes only affect lookup performance, never uniqueness or stored data.
           const stringParts = parts.filter(p => p.chars);
           const budget = 3072 - (parts.length - stringParts.length) * 8;
-          ix.prefixes = Object.fromEntries(stringParts.map(p => [p.name, Math.min(p.chars, Math.floor(budget / stringParts.length / p.bytesPerChar))]));
+          ix.prefixes = Object.fromEntries(stringParts.map(p => [p.name, Math.min(p.chars, Math.floor(budget / stringParts.length / p.bytesPerChar)), p.chars]).filter(([, prefix, chars]) => prefix < chars).map(([field, prefix]) => [field, prefix]));
         }
       }
       definitions.push(`${ix.fulltext ? 'FULLTEXT ' : ix.unique ? 'UNIQUE ' : ''}KEY ${identifier(ix.name)} (${ix.columns.map(c => identifier(c) + (ix.prefixes?.[c] ? `(${ix.prefixes[c]})` : '')).join(', ')})`);
