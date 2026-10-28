@@ -124,7 +124,12 @@ test('migration records each DDL step and a failure without dropping data', asyn
 
 test('runtime requires experimental opt-in, without a MongoDB fallback', async () => {
   const old = process.env.DB_CLIENT;
+  const oldExperimental = process.env.MYSQL_RUNTIME_EXPERIMENTAL;
   process.env.DB_CLIENT = 'mysql';
+  delete process.env.MYSQL_RUNTIME_EXPERIMENTAL;
   try { await assert.rejects(require('../src/config/db')(), /runtime is experimental/); }
-  finally { if (old === undefined) delete process.env.DB_CLIENT; else process.env.DB_CLIENT = old; }
+  finally {
+    if (old === undefined) delete process.env.DB_CLIENT; else process.env.DB_CLIENT = old;
+    if (oldExperimental === undefined) delete process.env.MYSQL_RUNTIME_EXPERIMENTAL; else process.env.MYSQL_RUNTIME_EXPERIMENTAL = oldExperimental;
+  }
 });
