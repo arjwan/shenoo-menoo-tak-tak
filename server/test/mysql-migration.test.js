@@ -58,6 +58,7 @@ test('compound lookup indexes fit MySQL byte limits without weakening unique ind
     for (const field of ix.columns) {
       const c = [...table.columns, ...table.generated].find(c => c.name === field);
       const match = c.type.match(/(?:VAR)?CHAR\((\d+)\)/);
+      if (/TEXT$/.test(c.type)) assert.ok(ix.prefixes?.[field], `Missing TEXT prefix ${table.name}.${field}`);
       bytes += match ? Number(ix.prefixes?.[field] || match[1]) * (c.type.includes('ascii') ? 1 : 4) : 8;
     }
     assert.ok(bytes <= 3072, `${table.name}.${ix.name}: ${bytes}`);

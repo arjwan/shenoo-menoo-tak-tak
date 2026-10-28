@@ -134,7 +134,7 @@ function buildSchema(models = loadModels()) {
         const parts = ix.columns.map(n => {
           const c = [...table.columns, ...table.generated].find(c => c.name === n);
           const match = c.type.match(/(?:VAR)?CHAR\((\d+)\)/);
-          return { name: n, chars: match ? Number(match[1]) : null, bytesPerChar: c.type.includes('ascii') ? 1 : 4 };
+          return { name: n, chars: match ? Number(match[1]) : /TEXT$/.test(c.type) ? Infinity : null, bytesPerChar: c.type.includes('ascii') ? 1 : 4 };
         });
         const size = parts.reduce((sum, p) => sum + (p.chars ? p.chars * p.bytesPerChar : 8), 0);
         if (size > 3072) {
