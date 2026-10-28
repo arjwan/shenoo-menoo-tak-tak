@@ -5,7 +5,8 @@ async function main(){
  if(!process.argv.includes('--apply'))throw Error('Use --apply to publish this reviewed one-time batch');
  require('dotenv').config({quiet:true});
  const uri=process.env.MONGODB_URI||process.env.MONGO_URI;if(!uri)throw Error('Server database is not configured');
- const mongoose=require('mongoose');await mongoose.connect(uri,{serverSelectionTimeoutMS:15000,autoIndex:false});
+ const mongoose=require('mongoose');if(process.env.DB_CLIENT==='mysql') throw new Error('This legacy MongoDB maintenance script is not available in MySQL mode');
+ await mongoose.connect(uri,{serverSelectionTimeoutMS:15000,autoIndex:false});
  try{
   const User=require('../models/User');
   const users=await User.find({isSynthetic:true,status:'active',$or:[{birthDate:{$lte:new Date(new Date().setUTCFullYear(new Date().getUTCFullYear()-18))}},{birthDate:null}]}).sort({_id:1}).limit(40).select('_id isSynthetic status').lean();

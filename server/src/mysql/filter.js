@@ -94,7 +94,8 @@ function compileFilter(schema, table, filter = {}, alias = 'r') {
   }
   function regex(expression, pattern, flags) {
     if (/[^iums]/.test(flags)) throw new Error('Unsupported regular expression flags');
-    return `REGEXP_LIKE(${expression}, ${bind(pattern)}, ${bind((flags.includes('i') ? 'i' : 'c') + (flags.includes('m') ? 'm' : '') + (flags.includes('s') ? 'n' : ''))})`;
+    const matchType = (flags.includes('i') ? 'i' : 'c') + (flags.includes('m') ? 'm' : '') + (flags.includes('s') ? 'n' : '');
+    return `REGEXP_LIKE(${expression}, CAST(${bind(pattern)} AS CHAR CHARACTER SET utf8mb4), '${matchType}')`;
   }
   function group(t, a, conditions) {
     return Object.entries(conditions).map(([path, condition]) => {

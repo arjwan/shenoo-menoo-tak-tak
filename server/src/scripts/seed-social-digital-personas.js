@@ -29,6 +29,7 @@ function sample(a,n,k=3){const out=[];for(let i=0;i<k;i++)out.push(a[(n*7+i*5)%a
 function username(i,g){return `digital_${g==='male'?'m':'f'}_${String(i).padStart(5,'0')}`}
 (async()=>{
  if(!mongo)throw Error('MONGODB_URI/MONGO_URI is required');
+ if(process.env.DB_CLIENT==='mysql') throw new Error('This legacy MongoDB maintenance script is not available in MySQL mode');
  await mongoose.connect(mongo);
  try{
   const sharedHash=await bcrypt.hash(crypto.randomBytes(48).toString('hex'),12);

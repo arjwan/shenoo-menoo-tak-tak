@@ -39,6 +39,8 @@ test('real application operations run on MySQL without a MongoDB connection', {
   app.get('/admin', requireAuth, requireRole('developer'), (_req, res) => res.json({ ok: true }));
   app.use((error, _req, res, _next) => { console.error(error); res.status(500).json({ error: error.message }); });
   const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
+  const io = require('../src/socket').attachSocket(server); app.set('io', io);
+  require('../src/socket-school').attachSchoolSocket(io);
   const base = 'http://127.0.0.1:' + server.address().port;
   async function request(path, body, token, method = body ? 'POST' : 'GET') {
     const response = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
@@ -129,6 +131,15 @@ test('real application operations run on MySQL without a MongoDB connection', {
       assert.equal((await Teacher.find({ subjects: { $in: ['رياضيات'] } })).length, 1);
     });
     await t.test('atomic increments, list updates, pagination and transaction rollback work', async () => {
+      const Contact = require('../src/models/PhoneContact');
+      const operation = { updateOne: { filter: { owner: first._id, phone: '07788880001' }, update: { $set: { name: 'جهة اتصال' } }, upsert: true } };
+      assert.equal((await Contact.bulkWrite([operation])).upsertedCount, 1);
+      assert.equal((await Contact.bulkWrite([operation])).matchedCount, 1);
+      assert.equal(await Contact.countDocuments({ owner: first._id }), 1);
+      assert.equal(await Contact.countDocuments({ owner: second._id }), 0);
+      const contact = await Contact.findOneAndDelete({ owner: first._id, phone: '07788880001' });
+      assert.equal(contact.name, 'جهة اتصال');
+      assert.equal(await Contact.countDocuments({ owner: first._id }), 0);
       const post = await Post.create({ author: first._id, text: 'منشور', likes: [first._id] });
       await Promise.all(Array.from({ length: 8 }, () => Post.updateOne({ _id: post._id }, { $inc: { sharesCount: 1 } })));
       assert.equal((await Post.findById(post._id)).sharesCount, 8);
@@ -138,6 +149,32 @@ test('real application operations run on MySQL without a MongoDB connection', {
       assert.equal((await Post.find({ author: first._id }).sort({ createdAt: -1 }).skip(0).limit(1)).length, 1);
       await assert.rejects(Post.create({ author: first._id, text: 'rollback-marker', likes: [new mongoose.Types.ObjectId()] }), e => e.code === 'ER_NO_REFERENCED_ROW_2');
       assert.equal(await Post.countDocuments({ text: 'rollback-marker' }), 0);
+    });
+    await t.test('authenticated Socket.IO presence and private typing use MySQL accounts and membership', async () => {
+      const client = require('socket.io-client').io;
+      const event = (socket, name) => new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Socket event timed out: ' + name)), 5000);
+        socket.once(name, value => { clearTimeout(timeout); resolve(value); });
+      });
+      const a = client(base, { autoConnect: false, auth: { token }, transports: ['websocket'], reconnection: false });
+      const b = client(base, { autoConnect: false, auth: { token: secondToken }, transports: ['websocket'], reconnection: false });
+      const invalid = client(base, { autoConnect: false, auth: { token: 'invalid' }, transports: ['websocket'], reconnection: false });
+      try {
+        const rejected = event(invalid, 'connect_error'); invalid.connect();
+        assert.match((await rejected).message, /unauthorized/);
+        const aReady = event(a, 'connect'), bReady = event(b, 'connect'); a.connect(); b.connect();
+        await Promise.all([aReady, bReady]);
+        const conversation = await Conversation.findOne({ participants: { $all: [first._id, second._id] } });
+        const typing = event(b, 'private:typing'); a.emit('private:typing', { conversationId: String(conversation._id), active: true });
+        assert.equal((await typing).active, true);
+        const heartbeat = await new Promise(resolve => a.emit('school:heartbeat', {}, resolve));
+        assert.equal(heartbeat.ok, true);
+      } finally { a.disconnect(); b.disconnect(); invalid.disconnect(); }
+      for (let i = 0; i < 30; i++) {
+        if (!(await User.findById(first._id)).profile.online && !(await User.findById(second._id)).profile.online) break;
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      assert.equal((await User.findById(first._id)).profile.online, false);
     });
     await t.test('game state JSON, maps and mixed arrays persist across runtime restart', async () => {
       const room = await GameRoom.create({ owner: first._id, players: [first._id, second._id], gameState: { status: 'active', board: [{ a: 1, b: 2 }], engineState: { seed: 7, ready: true } } });
@@ -152,7 +189,7 @@ test('real application operations run on MySQL without a MongoDB connection', {
       assert.equal(mongoose.connection.readyState, 0);
     });
   } finally {
-    await new Promise(resolve => server.close(resolve));
+    await new Promise(resolve => io.close(resolve));
     await runtime.stop();
   }
 });
