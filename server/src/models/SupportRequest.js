@@ -12,4 +12,4 @@ const SupportRequestSchema = new mongoose.Schema({
   reviewedAt: { type: Date, default: null }
 }, { timestamps: true });
 
-module.exports = mongoose.model('SupportRequest', SupportRequestSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SupportRequest', SupportRequestSchema));

@@ -17,4 +17,4 @@ const DataSyncRecordSchema = new mongoose.Schema({
 
 DataSyncRecordSchema.index({ entityType: 1, entityId: 1, target: 1, status: 1 });
 
-module.exports = mongoose.model('DataSyncRecord', DataSyncRecordSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('DataSyncRecord', DataSyncRecordSchema));

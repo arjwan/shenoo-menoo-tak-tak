@@ -29,4 +29,4 @@ const submissionSchema = new mongoose.Schema({
 submissionSchema.index({ assignment: 1, student: 1 }, { unique: true });
 submissionSchema.index({ student: 1, status: 1 });
 
-module.exports = mongoose.model('SchoolAssignmentSubmission', submissionSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolAssignmentSubmission', submissionSchema));

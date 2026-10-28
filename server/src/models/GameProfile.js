@@ -22,4 +22,4 @@ const gameProfileSchema = new mongoose.Schema({
 
 gameProfileSchema.index({ points: -1, updatedAt: -1 });
 
-module.exports = mongoose.model('GameProfile', gameProfileSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('GameProfile', gameProfileSchema));

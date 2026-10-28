@@ -10,4 +10,4 @@ const GroupReportSchema = new mongoose.Schema({
   resolution: { type: String, trim: true, maxlength: 500, default: '' }
 }, { timestamps: true });
 GroupReportSchema.index({ group: 1, reporter: 1, createdAt: -1 });
-module.exports = mongoose.model('GroupReport', GroupReportSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('GroupReport', GroupReportSchema));

@@ -21,4 +21,4 @@ const complaintSchema = new mongoose.Schema({
 
 complaintSchema.index({ guardian: 1, status: 1, createdAt: -1 });
 
-module.exports = mongoose.model('GuardianComplaint', complaintSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('GuardianComplaint', complaintSchema));

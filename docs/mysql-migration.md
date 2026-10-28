@@ -1,6 +1,7 @@
 # IQ Hosting MySQL migration — development only
 
-Status: **schema tooling implemented; application service conversion incomplete**.
+Status: **schema tooling and experimental MySQL repositories implemented;
+full service acceptance and hosting validation incomplete**.
 Do not deploy this branch to shinomino.com. The Oracle/MongoDB deployment and
 `main` remain the production source of truth.
 
@@ -17,6 +18,14 @@ Do not deploy this branch to shinomino.com. The Oracle/MongoDB deployment and
   journal, advisory migration lock, and schema verification. No runtime fallback
   from MySQL to MongoDB is allowed.
 - CI uses an isolated MySQL 8 container and never production credentials.
+- An opt-in MySQL repository layer now backs all 60 model exports in MySQL mode.
+  It retains Mongoose validation, casting, defaults, validation hooks and domain
+  methods without opening a MongoDB connection. Filters execute as parameterized
+  SQL; normalized child tables implement arrays and references. Reads and writes
+  use transactions; document saves check versions to reject stale changes.
+- The development runtime requires both DB_CLIENT=mysql and
+  MYSQL_RUNTIME_EXPERIMENTAL=true. Startup verifies the migrated schema and never
+  creates or changes production tables implicitly. The default remains MongoDB.
 
 ## Commands
 
@@ -27,6 +36,7 @@ npm run mysql:schema -- check   # read-only IQ Hosting connection/version check
 npm run mysql:schema -- apply   # writes only to the configured destination
 npm run mysql:schema -- verify # read-only structural and journal checks
 npm run test:mysql
+npm run test:mysql:runtime # requires an isolated CI MySQL instance
 ```
 
 Set private MYSQL_* variables in the server environment, using the exact existing
@@ -47,11 +57,14 @@ or destructive rollback is attempted.
 1. Review and execute the candidate DDL against the isolated MySQL 8 CI database,
    then verify IQ Hosting's exact MySQL version and privileges. MariaDB is not
    accepted by this version of the tool.
-2. Convert all route/service/model operations, including population, nested
-   updates, bulk upserts and optimistic concurrency. No production route has
-   been switched yet. Mongoose validation/defaults and enums must be preserved
-   explicitly in the new repositories. Current SQL is a candidate structure,
-   not a complete implementation of those application rules.
+2. Complete acceptance tests for all route/service/model operations. The new
+   repositories implement find/count, projection, sort/pagination, population,
+   create/save, atomic updates, deletes and bulk upserts. Normalized array
+   predicates, regex searches and nested writes require live MySQL tests.
+   Unsupported query/update operators fail explicitly instead of falling back
+   to MongoDB. Administrative scripts that connect directly to MongoDB, the
+   user hard-delete workflow under restrictive foreign keys, full-text search,
+   and transaction/session-based simulation tooling still need separate review.
 3. Review new bounds for formerly unlimited indexed strings (255 characters),
    nullable uniqueness differences, case/collation behavior, optional nested
    documents, and deletion order under foreign keys. Full-text keyword arrays
@@ -62,8 +75,7 @@ or destructive rollback is attempted.
 5. Test registration/login, approval/permissions, contacts/friends, messages,
    posts/media, notifications, games, school flows and socket behavior against
    MySQL; test backup/restore and restart persistence.
-6. Only then enable DB_CLIENT=mysql, publish to the destination, and switch
-   shinomino.com after a successful smoke test. Current runtime rejects this
-   setting because the service port is incomplete.
+6. Only after acceptance remove the experimental gate, publish to the
+   destination, and switch shinomino.com after a successful smoke test.
 
 No live IQ Hosting test or website deployment has been performed by this change.

@@ -28,4 +28,4 @@ const storySchema = new mongoose.Schema({
 }, { timestamps: true });
 storySchema.index({ author: 1, createdAt: -1 });
 storySchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
-module.exports = mongoose.model('Story', storySchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('Story', storySchema));

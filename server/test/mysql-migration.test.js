@@ -122,9 +122,9 @@ test('migration records each DDL step and a failure without dropping data', asyn
   assert.ok(!calls.some(c => String(c).includes('DROP TABLE')));
 });
 
-test('runtime refuses MySQL until services are ported, without a MongoDB fallback', async () => {
+test('runtime requires experimental opt-in, without a MongoDB fallback', async () => {
   const old = process.env.DB_CLIENT;
   process.env.DB_CLIENT = 'mysql';
-  try { await assert.rejects(require('../src/config/db')(), /services are not yet migrated/); }
+  try { await assert.rejects(require('../src/config/db')(), /runtime is experimental/); }
   finally { if (old === undefined) delete process.env.DB_CLIENT; else process.env.DB_CLIENT = old; }
 });

@@ -27,4 +27,4 @@ const islamicPostSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 islamicPostSchema.index({ category: 1, createdAt: -1 });
-module.exports = mongoose.model('IslamicPost', islamicPostSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('IslamicPost', islamicPostSchema));

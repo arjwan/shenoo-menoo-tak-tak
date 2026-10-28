@@ -12,4 +12,4 @@ const broadcastTickerSchema = new mongoose.Schema({
 
 broadcastTickerSchema.index({ enabled: 1, priority: -1, createdAt: -1 });
 
-module.exports = mongoose.models.BroadcastTicker || mongoose.model('BroadcastTicker', broadcastTickerSchema);
+module.exports = require('../mysql/model').wrap(mongoose.models.BroadcastTicker || mongoose.model('BroadcastTicker', broadcastTickerSchema));

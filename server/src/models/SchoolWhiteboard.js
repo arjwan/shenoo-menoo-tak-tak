@@ -11,4 +11,4 @@ const SchoolWhiteboardSchema=new mongoose.Schema({
   sharedWithVirtualTeacher:{type:Boolean,default:false},archived:{type:Boolean,default:false}
 },{timestamps:true});
 SchoolWhiteboardSchema.index({owner:1,stage:1,grade:1,section:1,subject:1});
-module.exports=mongoose.model('SchoolWhiteboard',SchoolWhiteboardSchema);
+module.exports= require('../mysql/model').wrap(mongoose.model('SchoolWhiteboard',SchoolWhiteboardSchema));

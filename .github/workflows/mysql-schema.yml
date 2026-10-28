@@ -35,3 +35,11 @@ jobs:
           MYSQL_USER: root
           MYSQL_PASSWORD: ephemeral-ci-password
           MYSQL_SSL_MODE: disabled
+      - run: npm run test:mysql:runtime
+        env:
+          MYSQL_INTEGRATION_TEST: '1'
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_DATABASE: shinomino_runtime_test
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ephemeral-ci-password
+          MYSQL_SSL_MODE: disabled

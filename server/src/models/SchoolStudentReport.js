@@ -12,4 +12,4 @@ const schema = new mongoose.Schema({
   visibleToGuardian: { type: Boolean, default: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
-module.exports = mongoose.model('SchoolStudentReport', schema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolStudentReport', schema));

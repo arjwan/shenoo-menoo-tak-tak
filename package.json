@@ -32,8 +32,9 @@
     "simulation": "node server/src/scripts/simulation-batch.js",
     "test:simulation": "node --test server/test/simulation-batch.test.js",
     "mysql:schema": "node server/src/scripts/mysql-schema.js",
-    "test:mysql": "node --test server/test/mysql-migration.test.js",
-    "test:mysql:integration": "node --test server/test/mysql-migration.integration.test.js"
+    "test:mysql": "node --test server/test/mysql-migration.test.js server/test/mysql-query.test.js",
+    "test:mysql:integration": "node --test server/test/mysql-migration.integration.test.js",
+    "test:mysql:runtime": "node --test server/test/mysql-runtime.integration.test.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

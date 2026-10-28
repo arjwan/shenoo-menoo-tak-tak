@@ -5,4 +5,4 @@ const conversationSchema = new mongoose.Schema({
   unread: { type: Map, of: Number, default: {} }
 }, { timestamps: true });
 conversationSchema.index({ participants: 1 });
-module.exports = mongoose.model('Conversation', conversationSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('Conversation', conversationSchema));

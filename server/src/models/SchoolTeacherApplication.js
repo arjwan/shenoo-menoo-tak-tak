@@ -27,4 +27,4 @@ const teacherApplicationSchema = new mongoose.Schema({
 teacherApplicationSchema.index({ applicant: 1, status: 1 });
 teacherApplicationSchema.index({ status: 1, createdAt: -1 });
 
-module.exports = mongoose.model('SchoolTeacherApplication', teacherApplicationSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolTeacherApplication', teacherApplicationSchema));

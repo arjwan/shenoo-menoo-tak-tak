@@ -8,4 +8,4 @@ const postCommentSchema = new mongoose.Schema({
 
 postCommentSchema.index({ post: 1, createdAt: 1 });
 postCommentSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
-module.exports = mongoose.model('PostComment', postCommentSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('PostComment', postCommentSchema));

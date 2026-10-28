@@ -14,4 +14,4 @@ const SchoolGuardianNotificationSchema = new mongoose.Schema({
   meta: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { timestamps: true });
 
-module.exports = mongoose.model('SchoolGuardianNotification', SchoolGuardianNotificationSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolGuardianNotification', SchoolGuardianNotificationSchema));

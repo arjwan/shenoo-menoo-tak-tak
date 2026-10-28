@@ -13,4 +13,4 @@ const astrologyProviderSchema = new mongoose.Schema({
   rejectionReason: { type: String, trim: true, maxlength: 400, default: '' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('AstrologyProvider', astrologyProviderSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('AstrologyProvider', astrologyProviderSchema));

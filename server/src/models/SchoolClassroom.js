@@ -58,4 +58,4 @@ const classroomSchema = new mongoose.Schema({
 
 classroomSchema.index({ status: 1, stage: 1, grade: 1, subject: 1 });
 
-module.exports = mongoose.model('SchoolClassroom', classroomSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolClassroom', classroomSchema));

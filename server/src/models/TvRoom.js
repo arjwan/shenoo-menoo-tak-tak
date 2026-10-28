@@ -16,4 +16,4 @@ const tvRoomSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 tvRoomSchema.index({ isActive: 1, updatedAt: -1 });
-module.exports = mongoose.model('TvRoom', tvRoomSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('TvRoom', tvRoomSchema));

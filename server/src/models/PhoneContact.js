@@ -8,4 +8,4 @@ const phoneContactSchema = new mongoose.Schema({
 
 phoneContactSchema.index({ owner: 1, phone: 1 }, { unique: true });
 
-module.exports = mongoose.model('PhoneContact', phoneContactSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('PhoneContact', phoneContactSchema));

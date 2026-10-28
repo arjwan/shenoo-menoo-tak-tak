@@ -12,4 +12,4 @@ const guardianSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'archived'], default: 'active', index: true }
 }, { timestamps: true });
 
-module.exports = mongoose.model('SchoolGuardian', guardianSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolGuardian', guardianSchema));

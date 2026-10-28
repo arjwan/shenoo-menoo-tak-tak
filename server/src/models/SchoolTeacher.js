@@ -31,4 +31,4 @@ teacherSchema.index({ subjects: 1 });
 teacherSchema.index({ stages: 1 });
 
 teacherSchema.add({ isSynthetic: { type: Boolean, default: false, index: true }, syntheticBatch: { type: String, default: '', index: true }, simulationKey: { type: String, default: '' } });
-module.exports = mongoose.model('SchoolTeacher', teacherSchema);
+module.exports = require('../mysql/model').wrap(mongoose.model('SchoolTeacher', teacherSchema));
