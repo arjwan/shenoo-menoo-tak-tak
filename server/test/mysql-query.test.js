@@ -27,6 +27,13 @@ test('array membership and exact conversation size use normalized child tables',
   assert.match(result.sql, /COUNT\(\*\)/);
   assert.deepEqual(result.values, ['a', 'b', 2]);
 });
+test('regex predicates on normalized string lists preserve flags and negative membership', () => {
+  const regex = compileFilter(schema, table('schoolteachers'), { subjects: { $regex: 'رياضيات', $options: 'i' } });
+  assert.match(regex.sql, /EXISTS/); assert.match(regex.sql, /REGEXP_LIKE/);
+  assert.deepEqual(regex.values, ['رياضيات']);
+  const negative = compileFilter(schema, table('schoolteachers'), { subjects: { $not: /math/i } });
+  assert.match(negative.sql, /NOT \(EXISTS/);
+});
 test('nested elemMatch requires the same participant row', () => {
   const result = compileFilter(schema, table('schoolclassrooms'), { participants: { $elemMatch: { user: 'a', role: 'student', leftAt: null } } });
   assert.equal((result.sql.match(/EXISTS/g) || []).length, 1);

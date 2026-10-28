@@ -28,11 +28,19 @@ const { CONSENT_TYPES } = require('../models/GuardianConsent');
 
 async function logAudit(actorId, action, targetId = null, details = '') {
   try {
+    let target = targetId && mongoose.isValidObjectId(targetId) ? targetId : null;
+    let auditDetails = String(details);
+    if (process.env.DB_CLIENT === 'mysql' && target && !(await User.exists({ _id: target }))) {
+      // target is a User foreign key. School resources retain their own id in
+      // the audit details instead of making the whole audit insert fail.
+      auditDetails = `[resource:${target}] ${auditDetails}`;
+      target = null;
+    }
     await AuditLog.create({
       actor: actorId,
       action: String(action).slice(0, 80),
-      target: targetId && mongoose.isValidObjectId(targetId) ? targetId : null,
-      details: String(details).slice(0, 500)
+      target,
+      details: auditDetails.slice(0, 500)
     });
   } catch (err) {
     console.error('AuditLog write error:', err.message);
@@ -1530,7 +1538,7 @@ async function listAssignments(actorUser, schoolContext, filters = {}) {
     query.$or = [
       { section: '' },
       { section: sp.section },
-      { section: { $exists: false } },
+      process.env.DB_CLIENT === 'mysql' ? { section: null } : { section: { $exists: false } },
       { assignedStudents: sp._id }
     ];
   } else if (schoolContext.isGuardian && schoolContext.students?.length) {

@@ -65,7 +65,7 @@ async function populate(model, docs, input, select, lean) {
     const target = registry.get(ref) || require('../models/' + ref);
     const locations = docs.flatMap(d => slots(d, spec.path.split('.')));
     const ids = [...new Set(locations.flatMap(s => Array.isArray(s.parent[s.key]) ? s.parent[s.key] : [s.parent[s.key]]).filter(Boolean).map(v => String(v._id || v)))];
-    let query = target.find({ _id: { $in: ids }, ...(spec.match || {}) }).select(spec.select).lean(lean);
+    let query = target.find({ $and: [{ _id: { $in: ids } }, spec.match || {}] }).select(spec.select).lean(lean);
     if (spec.options?.sort) query = query.sort(spec.options.sort);
     if (spec.populate) query = query.populate(spec.populate);
     const found = ids.length ? await query : [];

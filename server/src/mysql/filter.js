@@ -25,7 +25,8 @@ function compileFilter(schema, table, filter = {}, alias = 'r') {
       const rest = path.slice(child.parent.field.length).replace(/^\./, '');
       const exists = predicate => `EXISTS (SELECT 1 FROM ${q(child.name)} ${q(ca)} WHERE ${join} AND (${predicate}))`;
       const count = () => `(SELECT COUNT(*) FROM ${q(child.name)} ${q(ca)} WHERE ${join})`;
-      if (!rest && condition && typeof condition === 'object' && !Array.isArray(condition) && !condition._bsontype) {
+      if (!rest && condition && typeof condition === 'object' && !Array.isArray(condition) && !condition._bsontype && !(condition instanceof RegExp) && !(condition instanceof Date)) {
+        if (Object.hasOwn(condition, '$regex')) return exists(field(child, ca, 'value', condition));
         return Object.entries(condition).map(([op, v]) => {
           if (op === '$elemMatch') return exists(group(child, ca, v));
           if (op === '$size') return `${count()} = ${bind(v)}`;
@@ -34,6 +35,7 @@ function compileFilter(schema, table, filter = {}, alias = 'r') {
             return v.length ? v.map(item => exists(field(child, ca, 'value', item))).join(' AND ') : 'FALSE';
           }
           if (op === '$ne' || op === '$nin') return `NOT (${exists(field(child, ca, 'value', { [op === '$ne' ? '$eq' : '$in']: v }))})`;
+          if (op === '$not') return `NOT (${exists(field(child, ca, 'value', v))})`;
           if (op === '$exists') throw new Error('Array field existence requires an explicit position');
           return exists(field(child, ca, 'value', { [op]: v }));
         }).map(s => `(${s})`).join(' AND ');

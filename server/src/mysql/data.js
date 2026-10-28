@@ -18,6 +18,7 @@ function unset(object, path) {
 }
 function clone(value) {
   if (value == null || typeof value !== 'object') return value;
+  if (value.$__ && typeof value.toObject === 'function') return clone(value.toObject({ depopulate: true, flattenMaps: true }));
   if (value instanceof Date) return new Date(value);
   if (value._bsontype === 'ObjectId') return new mongoose.Types.ObjectId(String(value));
   if (value instanceof Map) return Object.fromEntries([...value].map(([k, v]) => [k, clone(v)]));
