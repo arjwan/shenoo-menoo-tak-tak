@@ -8,6 +8,12 @@ const { project } = require('../src/mysql/model');
 const schema = buildSchema();
 const table = name => schema.tables.find(t => t.name === name);
 
+test('every model loads in MySQL mode and keeps exported constants without opening MongoDB', () => {
+  const { execFileSync } = require('node:child_process');
+  const output = execFileSync(process.execPath, ['-e', "const s=require('./server/src/mysql/schema').buildSchema();const r=require('./server/src/mysql/model').registry;if(r.size!==60)throw Error('Missing models');if(!require('./server/src/models/GuardianConsent').CONSENT_TYPES)throw Error('Missing constants');console.log(s.models,require('mongoose').connection.readyState)"], { cwd: require('node:path').resolve(__dirname, '../..'), env: { ...process.env, DB_CLIENT: 'mysql' }, encoding: 'utf8' });
+  assert.equal(output.trim(), '60 0');
+});
+
 test('filters keep user input in parameters and preserve nested authorization scopes', () => {
   const malicious = "x' OR 1=1 --";
   const result = compileFilter(schema, table('users'), { status: 'active', $or: [{ username: malicious }, { phone: '07700000000' }] });

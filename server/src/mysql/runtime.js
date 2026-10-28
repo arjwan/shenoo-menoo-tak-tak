@@ -4,7 +4,7 @@ const { openConnection } = require('./connection');
 const { buildSchema, verifySchema } = require('./migrate');
 const { identifier: q } = require('./schema');
 const { compileFilter } = require('./filter');
-const { readRows, writeDocument, clone, applyUpdate } = require('./data');
+const { readRows, writeDocument, clone, applyUpdate, equal, get } = require('./data');
 let current;
 
 async function start() {
@@ -96,7 +96,7 @@ async function insert(model, data) {
   await transaction(c => writeDocument(c, state().schema, tableFor(model), doc, true));
   return doc;
 }
-async function save(model, doc, expectedVersion) {
+async function save(model, doc, snapshot) {
   await doc.validate();
   if (doc.isNew) return insert(model, plain(doc));
   // Apply only changed fields. Projected documents cannot overwrite unseen fields.
@@ -104,7 +104,8 @@ async function save(model, doc, expectedVersion) {
   return transaction(async c => {
     const [stored] = await select(c, model, { _id: doc._id }, { limit: 1 }, true);
     if (!stored) throw new Error('Document no longer exists');
-    if (Number(stored.__v || 0) !== Number(expectedVersion || 0)) {
+    const changedPaths = [...Object.keys(update.$set || {}), ...Object.keys(update.$unset || {})].filter(p => p !== '__v');
+    if (Number(stored.__v || 0) !== Number(snapshot.version || 0) && changedPaths.some(p => !equal(get(stored, p), get(snapshot.baseline, p)))) {
       const error = new Error('Record changed in another request; reload it before saving');
       error.name = 'VersionError'; throw error;
     }

@@ -27,10 +27,12 @@ function decorate(model, raw, spec = null, fresh = false) {
   const original = model.$original;
   const doc = fresh ? new original(raw) : original.hydrate(project(raw, spec), projection(spec));
   let version = Number(raw?.__v || 0);
+  let baseline = clone(raw);
   Object.defineProperties(doc, {
     save: { configurable: true, value: async function () {
-      const stored = await runtime().save(original, this, version);
+      const stored = await runtime().save(original, this, { version, baseline });
       version = Number(stored.__v || 0);
+      baseline = clone(stored);
       this.__v = version;
       if (stored.createdAt) this.createdAt = stored.createdAt;
       if (stored.updatedAt) this.updatedAt = stored.updatedAt;

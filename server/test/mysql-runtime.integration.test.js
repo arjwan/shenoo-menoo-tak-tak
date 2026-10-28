@@ -81,6 +81,10 @@ test('real application operations run on MySQL without a MongoDB connection', {
       const saved = await User.findById(first._id).lean();
       assert.equal(saved.profile.bio, 'الأول');
       assert.equal((await User.findById(first._id)).privacy.get('messaging'), 'friends');
+      const independentA = await User.findById(first._id), independentB = await User.findById(first._id);
+      independentA.profile.city = 'بغداد'; await independentA.save();
+      independentB.profile.profession = 'محاسب'; await independentB.save();
+      assert.equal((await User.findById(first._id)).profile.city, 'بغداد');
       assert.deepEqual(Object.keys(await User.findById(first._id).select('_id').lean()), ['_id']);
       await assert.rejects(User.updateOne({ _id: first._id }, { $set: { phone: 'bad' } }), /validation/i);
     });
