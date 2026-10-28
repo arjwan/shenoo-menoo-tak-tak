@@ -37,6 +37,12 @@ test('unknown fields/operators fail closed and cannot remove a scope condition',
   assert.throws(() => compileFilter(schema, table('users'), { invented: 'x' }), /Unknown/);
   assert.throws(() => compileFilter(schema, table('users'), { phone: { $exists: true } }), /Unsupported/);
 });
+test('JSON filters preserve booleans and null semantics without interpolating values', () => {
+  const result = compileFilter(schema, table('gamerooms'), { 'gameState.engineState.ready': true });
+  assert.match(result.sql, /JSON_EXTRACT/);
+  assert.match(result.sql, /JSON_TYPE/);
+  assert.deepEqual(result.values, ['true']);
+});
 test('projections exclude password hashes and id-only projections remain id-only', () => {
   const user = { _id: 'id', fullName: 'name', passwordHash: 'secret', profile: { bio: 'bio', online: true } };
   assert.deepEqual(project(user, '_id'), { _id: 'id' });

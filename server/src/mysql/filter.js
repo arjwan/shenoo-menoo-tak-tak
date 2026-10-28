@@ -58,8 +58,16 @@ function compileFilter(schema, table, filter = {}, alias = 'r') {
       const parts = path.slice(json.name.length + 1).split('.');
       if (parts.some(p => !/^[a-zA-Z0-9_]+$/.test(p))) throw new Error('Invalid JSON query path');
       const jsonPath = '$.' + parts.map(p => '"' + p + '"').join('.');
-      const expression = `JSON_VALUE(${key(a, json.name)}, ${literal(jsonPath)} RETURNING CHAR(2048) NULL ON EMPTY NULL ON ERROR)`;
-      return compare(expression, condition);
+      const extracted = `JSON_EXTRACT(${key(a, json.name)}, ${literal(jsonPath)})`;
+      const expression = `(CASE WHEN JSON_TYPE(${extracted}) = 'NULL' THEN NULL ELSE JSON_UNQUOTE(${extracted}) END)`;
+      const normalize = v => {
+        if (typeof v === 'boolean') return String(v);
+        if (v instanceof RegExp || v instanceof Date || v?._bsontype) return v;
+        if (Array.isArray(v)) return v.map(normalize);
+        if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, normalize(x)]));
+        return v;
+      };
+      return compare(expression, normalize(condition));
     }
     throw new Error(`Unknown SQL query field ${t.model}.${path}`);
   }

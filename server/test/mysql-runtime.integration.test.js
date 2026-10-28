@@ -140,13 +140,14 @@ test('real application operations run on MySQL without a MongoDB connection', {
       assert.equal(await Post.countDocuments({ text: 'rollback-marker' }), 0);
     });
     await t.test('game state JSON, maps and mixed arrays persist across runtime restart', async () => {
-      const room = await GameRoom.create({ owner: first._id, players: [first._id, second._id], gameState: { status: 'active', board: [{ a: 1, b: 2 }], engineState: { seed: 7 } } });
+      const room = await GameRoom.create({ owner: first._id, players: [first._id, second._id], gameState: { status: 'active', board: [{ a: 1, b: 2 }], engineState: { seed: 7, ready: true } } });
       room.gameState.scores.set(String(first._id), 3); await room.save();
       await runtime.stop(); await runtime.start();
       const reloaded = await GameRoom.findById(room._id);
       assert.equal(reloaded.gameState.engineState.seed, 7);
       assert.equal(reloaded.gameState.scores.get(String(first._id)), 3);
       assert.deepEqual(reloaded.gameState.board[0], { a: 1, b: 2 });
+      assert.ok(await GameRoom.findOne({ 'gameState.engineState.seed': 7, 'gameState.engineState.ready': true }));
       assert.equal(await runtime.countOptional(['missing_optional_table']), 0);
       assert.equal(mongoose.connection.readyState, 0);
     });
