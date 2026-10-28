@@ -116,12 +116,7 @@ function buildSchema(models = loadModels()) {
         if (!options.partialFilterExpression) return field;
         const original = table.columns.find(c => c.name === field);
         const generatedName = name('_idx_' + indexName + '_' + i);
-        // MariaDB 10.11 rejects conditional STORED expressions returning fixed CHAR values.
-        // Keep the original ObjectId/FK columns unchanged; normalize only the indexed projection.
-        const fixedChar = /^CHAR\((\d+)\) CHARACTER SET ascii COLLATE ascii_bin$/.exec(original.type);
-        const generatedType = fixedChar ? `VARCHAR(${fixedChar[1]}) CHARACTER SET ascii COLLATE ascii_bin` : original.type;
-        const projectedValue = fixedChar ? `CONCAT(${identifier(field)}, '')` : identifier(field);
-        table.generated.push({ name: generatedName, type: generatedType, expression: `CASE WHEN ${partialExpression(options.partialFilterExpression)} THEN ${projectedValue} ELSE NULL END` });
+        table.generated.push({ name: generatedName, type: original.type, expression: `CASE WHEN ${partialExpression(options.partialFilterExpression)} THEN ${identifier(field)} ELSE NULL END` });
         return generatedName;
       });
       table.indexes.push({ name: indexName, columns: cols, unique: !!options.unique, fulltext: Object.values(keys).every(v => v === 'text') });
