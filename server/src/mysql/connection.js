@@ -25,6 +25,20 @@ function connectionOptions(env = process.env) {
   return options;
 }
 
+function isSupportedServerVersion(version) {
+  const raw = String(version || '');
+  // MariaDB 10.11 is supplied by the IQ Hosting environment. This checks
+  // the minimum server family/version only, not SQL schema compatibility.
+  if (/mariadb/i.test(raw)) {
+    const match = raw.match(/(?:^|[^\\d])(\\d+)\\.(\\d+)\\.(\\d+)/);
+    if (!match) return false;
+    const major = Number(match[1]), minor = Number(match[2]);
+    return major > 10 || (major === 10 && minor >= 11);
+  }
+  const match = raw.match(/^(\\d+)\\./);
+  return Boolean(match && Number(match[1]) >= 8);
+}
+
 async function openConnection(env = process.env) {
   const mysql = require('mysql2/promise');
   const pool = mysql.createPool(connectionOptions(env));
@@ -34,10 +48,10 @@ async function openConnection(env = process.env) {
       await connection.query("SET time_zone = '+00:00'");
       await connection.query("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");
       const [[info]] = await connection.query('SELECT VERSION() AS version, DATABASE() AS databaseName');
-      if (/mariadb/i.test(info.version) || Number(info.version.split('.')[0]) < 8) throw new Error('This migration targets MySQL 8 or newer; the server version is unsupported');
+      if (!isSupportedServerVersion(info.version)) throw new Error('This migration requires MySQL 8+ or MariaDB 10.11+; the server version is unsupported');
       return { pool, connection, info };
     } catch (error) { connection.release(); throw error; }
   } catch (error) { await pool.end(); throw error; }
 }
 
-module.exports = { connectionOptions, openConnection };
+module.exports = { connectionOptions, openConnection, isSupportedServerVersion };
