@@ -68,6 +68,8 @@ test('real application operations run on MySQL without a MongoDB connection', {
       assert.equal(first.contactVerified, true);
       await assert.rejects(User.create({ fullName: 'Duplicate', username: first.username, contact: 'duplicate@example.test', contactType: 'email', passwordHash: 'unused', termsAccepted: true }), e => e.code === 11000);
       assert.equal(mongoose.connection.readyState, 0);
+      assert.equal((await User.find({ username: /runtime/iu })).length, 2);
+      assert.equal((await User.find({ 'privacy.messaging': 'friends' })).length, 2);
     });
     assert.ok(first && second, 'Account setup must succeed before other scenarios');
     await t.test('projections, map defaults, validation, and stale saves preserve account data', async () => {
@@ -95,6 +97,9 @@ test('real application operations run on MySQL without a MongoDB connection', {
       const created = await request('/conversations/' + second._id, {}, token);
       assert.equal(created.status, 201, JSON.stringify(created));
       const id = created.body.conversation.id;
+      const outsider = await User.create({ fullName: 'خارج المحادثة', username: 'outsider', contact: 'outsider@example.test', contactType: 'email', passwordHash: 'unused', termsAccepted: true, status: 'active' });
+      const outsiderToken = require('jsonwebtoken').sign({ userId: outsider._id, role: 'user' }, process.env.JWT_SECRET);
+      assert.equal((await request('/conversations/' + id + '/messages', null, outsiderToken)).status, 404);
       assert.equal((await request('/conversations/' + second._id, {}, token)).body.conversation.id, id);
       const sent = await request('/conversations/' + id + '/messages', { text: 'رسالة محفوظة في MySQL' }, token);
       assert.equal(sent.status, 201, JSON.stringify(sent));

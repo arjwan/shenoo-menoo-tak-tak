@@ -8,8 +8,11 @@ const runtime = () => require('./runtime');
 
 function projection(spec) {
   if (!spec) return null;
-  if (typeof spec === 'object') return spec;
-  return Object.fromEntries(spec.split(/\s+/).filter(Boolean).filter(s => !s.startsWith('+')).map(s => [s.replace(/^-/, ''), s.startsWith('-') ? 0 : 1]));
+  const fields = typeof spec === 'object' ? { ...spec } : Object.fromEntries(spec.split(/\s+/).filter(Boolean).filter(s => !s.startsWith('+')).map(s => [s.replace(/^-/, ''), s.startsWith('-') ? 0 : 1]));
+  // hydrate() treats its projection literally; unlike a MongoDB server it does
+  // not automatically preserve _id in an inclusive field selection.
+  if (Object.entries(fields).some(([k, v]) => k !== '_id' && !!v) && fields._id === undefined) fields._id = 1;
+  return fields;
 }
 function project(raw, spec) {
   const fields = projection(spec);

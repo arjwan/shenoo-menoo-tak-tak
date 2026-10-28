@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { buildSchema } = require('../src/mysql/schema');
 const { compileFilter } = require('../src/mysql/filter');
 const { applyUpdate } = require('../src/mysql/data');
-const { project } = require('../src/mysql/model');
+const { project, projection } = require('../src/mysql/model');
 const schema = buildSchema();
 const table = name => schema.tables.find(t => t.name === name);
 
@@ -42,6 +42,10 @@ test('projections exclude password hashes and id-only projections remain id-only
   assert.deepEqual(project(user, '_id'), { _id: 'id' });
   assert.deepEqual(project(user, 'profile.bio'), { _id: 'id', profile: { bio: 'bio' } });
   assert.equal(project(user, '-passwordHash').passwordHash, undefined);
+  const User = require('../src/models/User');
+  const id = new (require('mongoose').Types.ObjectId)();
+  const hydrated = User.hydrate({ _id: id, displayName: 'name' }, projection('displayName'));
+  assert.equal(String(hydrated._id), String(id));
 });
 test('atomic update operations preserve distinct list elements and reject unsafe writes', () => {
   const result = applyUpdate({ ids: ['a', 'b'], progress: { score: 2 } }, { $pull: { ids: 'a' }, $addToSet: { ids: { $each: ['b', 'c'] } }, $inc: { 'progress.score': 3 } });
