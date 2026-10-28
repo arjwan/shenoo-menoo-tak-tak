@@ -10,7 +10,7 @@ const table = name => schema.tables.find(t => t.name === name);
 
 test('every model loads in MySQL mode and keeps exported constants without opening MongoDB', () => {
   const { execFileSync } = require('node:child_process');
-  const output = execFileSync(process.execPath, ['-e', "const s=require('./server/src/mysql/schema').buildSchema();const r=require('./server/src/mysql/model').registry;if(r.size!==60)throw Error('Missing models');if(!require('./server/src/models/GuardianConsent').CONSENT_TYPES)throw Error('Missing constants');console.log(s.models,require('mongoose').connection.readyState)"], { cwd: require('node:path').resolve(__dirname, '../..'), env: { ...process.env, DB_CLIENT: 'mysql' }, encoding: 'utf8' });
+  const output = execFileSync(process.execPath, ['-e', "const s=require('./server/src/mysql/schema').buildSchema();const r=require('./server/src/mysql/model').registry;if(r.size!==60)throw Error('Missing models');if(!require('./server/src/models/GuardianConsent').CONSENT_TYPES)throw Error('Missing constants');console.log(s.models,require('mongoose').connection.readyState)"], { cwd: require('node:path').resolve(__dirname, '../..'), env: { ...process.env, DB_CLIENT: 'mysql', FORCE_COLOR: '0', NO_COLOR: '1' }, encoding: 'utf8' });
   assert.equal(output.trim(), '60 0');
 });
 
