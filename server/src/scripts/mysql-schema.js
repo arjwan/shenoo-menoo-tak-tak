@@ -10,7 +10,7 @@ async function main() {
   if (!['plan', 'sql', 'check', 'apply', 'verify'].includes(action)) throw new Error('Usage: node server/src/scripts/mysql-schema.js [plan|sql|check|apply|verify]');
   const schema = buildSchema();
   if (action === 'sql') {
-    process.stdout.write('-- Candidate schema only. Application services are not yet migrated.\n' + schema.statements.join(';\n\n') + ';\n');
+    process.stdout.write('-- Candidate schema for the experimental MySQL runtime. Production cutover is not approved.\n' + schema.statements.join(';\n\n') + ';\n');
     return;
   }
   if (action === 'plan') {

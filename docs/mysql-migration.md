@@ -27,6 +27,24 @@ Do not deploy this branch to shinomino.com. The Oracle/MongoDB deployment and
   MYSQL_RUNTIME_EXPERIMENTAL=true. Startup verifies the migrated schema and never
   creates or changes production tables implicitly. The default remains MongoDB.
 
+## Acceptance coverage
+
+The isolated MySQL suite exercises real signup, OTP confirmation, password login,
+role checks, account projections, conflicting and independent saves, friendship
+validation hooks, conversation membership, message history and read receipts,
+ordered school attendance, nested teacher relationships, bulk contact upserts,
+atomic counters, rollback on invalid foreign keys, authenticated Socket.IO,
+JSON/map game state and persistence after reconnecting the runtime. It also
+starts the complete application server and tests its login endpoint.
+
+The existing school-management lifecycle suite can now run against an isolated
+MySQL database. Its administration fixture follows the current policy: platform
+admins have no implicit school-manager permissions; authorized management
+operations use a developer account. No production authorization rule is relaxed.
+Non-user school resource IDs are retained in audit details instead of violating
+the audit table's User foreign key. Virtual classroom history follows the actual
+participants-to-student relationship in MySQL.
+
 ## Commands
 
 ```sh
@@ -59,8 +77,8 @@ or destructive rollback is attempted.
    accepted by this version of the tool.
 2. Complete acceptance tests for all route/service/model operations. The new
    repositories implement find/count, projection, sort/pagination, population,
-   create/save, atomic updates, deletes and bulk upserts. Normalized array
-   predicates, regex searches and nested writes require live MySQL tests.
+   create/save, atomic updates, deletes and bulk upserts. The covered operations
+   above have isolated MySQL tests; other routes still require acceptance.
    Unsupported query/update operators fail explicitly instead of falling back
    to MongoDB. Administrative scripts that connect directly to MongoDB, the
    user hard-delete workflow under restrictive foreign keys, full-text search,
@@ -72,9 +90,9 @@ or destructive rollback is attempted.
 4. Build a read-only MongoDB export/import preserving IDs, dates, list ordering,
    password hashes and references. Check orphan references before inserting;
    compare counts and sampled records. Import is separate and not implemented.
-5. Test registration/login, approval/permissions, contacts/friends, messages,
-   posts/media, notifications, games, school flows and socket behavior against
-   MySQL; test backup/restore and restart persistence.
+5. Extend acceptance to all posts/media, notifications, payments/service flows,
+   game actions, virtual classroom media/signaling and backup/restore. Re-run the
+   covered flows on IQ Hosting with the actual deployment configuration.
 6. Only after acceptance remove the experimental gate, publish to the
    destination, and switch shinomino.com after a successful smoke test.
 

@@ -188,6 +188,28 @@ test('real application operations run on MySQL without a MongoDB connection', {
       assert.equal(await runtime.countOptional(['missing_optional_table']), 0);
       assert.equal(mongoose.connection.readyState, 0);
     });
+    await t.test('the complete application server starts in MySQL mode and serves real login', async () => {
+      const net = require('node:net');
+      const probe = net.createServer(); await new Promise(resolve => probe.listen(0, '127.0.0.1', resolve));
+      const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
+      const child = require('node:child_process').spawn(process.execPath, ['server/src/server.js'], {
+        cwd: require('node:path').resolve(__dirname, '../..'), env: { ...process.env, PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe']
+      });
+      let output = ''; child.stdout.on('data', d => { output = (output + d).slice(-4000); }); child.stderr.on('data', d => { output = (output + d).slice(-4000); });
+      try {
+        let ready = false;
+        for (let i = 0; i < 100; i++) {
+          if (child.exitCode !== null) break;
+          try { const response = await fetch(`http://127.0.0.1:${port}/api/health`); if (response.ok) { ready = true; break; } } catch (_) {}
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        assert.ok(ready, output);
+        const login = await fetch(`http://127.0.0.1:${port}/api/auth/signin`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: 'runtime1', password }) });
+        assert.equal(login.status, 200, await login.text());
+      } finally {
+        if (child.exitCode === null) { child.kill('SIGTERM'); await new Promise(resolve => child.once('exit', resolve)); }
+      }
+    });
   } finally {
     await new Promise(resolve => io.close(resolve));
     await runtime.stop();
