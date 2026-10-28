@@ -388,6 +388,14 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     assert.equal(permanentCheck.status, 'archived');
 
     // Query permanent record endpoint
+    if (process.env.DB_CLIENT === 'mysql') {
+      await require('../src/models/VirtualClassroomSession').create({
+        code: 'RECORD001', hostUser: teacherUser._id, hostName: 'المعلم',
+        stage: studentDoc.stage, grade: studentDoc.grade, subject: 'الرياضيات',
+        lesson: 'درس محفوظ', sourceTitle: 'كتاب اختبار',
+        participants: [{ user: guardianUser._id, student: studentDoc._id, name: studentDoc.name, role: 'student' }]
+      });
+    }
     const recordRes = await request('GET', `/api/school/management/students/${studentDoc._id}/record`, null, devToken);
     assert.equal(recordRes.status, 200);
     assert.equal(recordRes.data.record.student.name, 'كرار أحمد الرافدين');
@@ -395,6 +403,7 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     assert.equal(recordRes.data.record.gradeRecords.length, 1);
     assert.equal(recordRes.data.record.gradeRecords[0].score, 95);
     assert.equal(recordRes.data.record.attendanceRecords.length, 1);
+    if (process.env.DB_CLIENT === 'mysql') assert.equal(recordRes.data.record.virtualSessions[0].code, 'RECORD001');
   });
 
   await t.test('10. Guardian Complaints: Scoped, Admin reply, Status lifecycle', async () => {

@@ -454,7 +454,7 @@ async function getStudentPermanentRecord(actorUser, schoolContext, studentId) {
       $or: [{ students: student._id }, { stage: student.stage, grade: student.grade }]
     }).sort({ scheduledAt: -1 }).limit(30).lean(),
     SchoolSession.find({ student: student._id }).sort({ startedAt: -1 }).limit(30).lean(),
-    VirtualClassroomSession.find({ student: student._id }).sort({ createdAt: -1 }).limit(30).lean(),
+    VirtualClassroomSession.find(process.env.DB_CLIENT === 'mysql' ? { 'participants.student': student._id } : { student: student._id }).sort({ createdAt: -1 }).limit(30).lean(),
     // Privacy: Students should not see guardian complaints or confidential complaints
     schoolContext.isStudent ? Promise.resolve([]) : GuardianComplaint.find({ student: student._id }).sort({ createdAt: -1 }).lean(),
     schoolContext.isStudent ? Promise.resolve([]) : GuardianConsent.find({ student: student._id }).lean(),
