@@ -34,7 +34,8 @@
     "mysql:schema": "node server/src/scripts/mysql-schema.js",
     "test:mysql": "node --test server/test/mysql-migration.test.js server/test/mysql-query.test.js",
     "test:mysql:integration": "node --test server/test/mysql-migration.integration.test.js",
-    "test:mysql:runtime": "node --test server/test/mysql-runtime.integration.test.js"
+    "test:mysql:runtime": "node --test server/test/mysql-runtime.integration.test.js",
+    "recover:developer": "node server/src/scripts/recoverDeveloperAccess.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",
