@@ -36,8 +36,10 @@
     "test:mysql:integration": "node --test server/test/mysql-migration.integration.test.js",
     "test:mysql:runtime": "node --test server/test/mysql-runtime.integration.test.js",
     "mariadb:migrate": "node server/src/mariadb/migrate.js",
+    "mariadb:auth:migrate": "node server/src/mariadb/auth-schema.js",
+    "auth:configure": "node server/src/scripts/configureAuthEnvironment.js",
     "recover:developer": "node server/src/scripts/recoverDeveloperAccess.js",
-    "test:mariadb:native": "node --test server/test/mariadb-native.integration.test.js"
+    "test:mariadb:native": "node --test server/test/mariadb-native.integration.test.js server/test/mariadb-auth-upgrade.integration.test.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

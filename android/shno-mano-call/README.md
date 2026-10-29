@@ -3,7 +3,7 @@
 تطبيق Android مستقل للمكالمات والمراسلة الخاصة، لا يعرض الصفحة العامة لتك تك.
 
 ## المصدر والمزامنة
-- API: `https://shino-mino-tak-tak.duckdns.org`
+- API: `https://shinomino.com`
 - جهات الهاتف المحفوظة على الحساب: `/api/phone-contacts`
 - الأصدقاء: `/api/friends`
 - التخزين المحلي: Room (`contacts`, `messages`)
