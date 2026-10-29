@@ -7,7 +7,6 @@
 
 require('dotenv').config({ quiet: true });
 const bcrypt = require('bcryptjs');
-const crypto = require('node:crypto');
 const connectDB = require('../config/db');
 const User = require('../models/User');
 const DeveloperMfa = require('../models/DeveloperMfa');
