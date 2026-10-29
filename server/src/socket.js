@@ -72,10 +72,17 @@ function attachSocket(httpServer) {
     try {
       const authorization = socket.handshake.headers.authorization || '';
       const token = socket.handshake.auth?.token || authorization.replace(/^Bearer\s+/i, '');
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(payload.userId);
+      const user = await require('./middleware/auth').resolveToken(token);
       if (!user || user.status !== 'active') return next(new Error('unauthorized'));
       socket.user = user;
+      if (user.role === 'developer') {
+        // Re-check persisted developer sessions for every incoming packet so
+        // revoked/expired tokens cannot keep acting through an open socket.
+        socket.use(async (_packet, done) => {
+          try { await require('./mariadb/developer-auth').authenticate(token); done(); }
+          catch { done(new Error('unauthorized')); socket.disconnect(true); }
+        });
+      }
       next();
     } catch {
       next(new Error('unauthorized'));

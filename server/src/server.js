@@ -52,7 +52,7 @@ const { attachSchoolSocket } = require('./socket-school');
 
 const app = express();
 const httpServer = http.createServer(app);
-app.set('trust proxy', 1);
+app.set('trust proxy', process.env.TRUST_PROXY || false);
 const allowedOrigins = String(process.env.CORS_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
 app.use(cors({
   origin(origin, callback) {

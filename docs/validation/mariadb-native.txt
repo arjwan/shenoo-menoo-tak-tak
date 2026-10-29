@@ -1,0 +1,18 @@
+▶ native MariaDB migrations and developer authentication
+  ✔ empty schema, foreign keys and repeatable checked migrations (27419.7805ms)
+  ✔ explicit bootstrap, repeatability, no identity-based privilege escalation (4089.7205ms)
+  ✔ real HTTP password login, role guard and logout revocation (2608.8453ms)
+  ✔ ordinary and blocked accounts rejected, JWT expiry and forged scopes rejected (1953.6961ms)
+  ✔ persisted rate limit and bound input prevent injection (3383.7483ms)
+  ✔ recovery requires exact active developer ID, revokes sessions and preserves MFA data (3480.4299ms)
+  ✔ native profile validation, uniqueness and audit commit together (21.0097ms)
+  ✔ connection failure is explicit, sanitized and has no fallback (319.5742ms)
+✔ native MariaDB migrations and developer authentication (44015.6832ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44363.8104

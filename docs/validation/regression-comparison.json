@@ -1,0 +1,74 @@
+{
+  "base": "0c9fefc64773aa02da61711f85bdf06ee8438a78",
+  "baseline": {
+    "tests": 125,
+    "pass": 114,
+    "fail": 9,
+    "cancelled": 0,
+    "skipped": 2
+  },
+  "repair": {
+    "tests": 126,
+    "pass": 114,
+    "fail": 9,
+    "cancelled": 0,
+    "skipped": 3
+  },
+  "baselineFailures": [
+    "✖ 1. Core navigation tabs and header elements exist",
+    "✖ Sumer School ships independent responsive role pages",
+    "✖ active school page loads auth before the adapter; legacy loader keeps its iframe contract",
+    "✖ existing school pages, Kahwa Azzawi and game originals are untouched",
+    "✖ school Canva original is byte-identical to the approved SHA-256",
+    "✖ school original assets are byte-identical to preserved checksums",
+    "✖ school runtime preserves legacy originals while the native Sumer shell owns active navigation",
+    "✖ school server is mounted without replacing existing school routes"
+  ],
+  "repairFailures": [
+    "✖ 1. Core navigation tabs and header elements exist",
+    "✖ Sumer School ships independent responsive role pages",
+    "✖ active school page loads auth before the adapter; legacy loader keeps its iframe contract",
+    "✖ existing school pages, Kahwa Azzawi and game originals are untouched",
+    "✖ school Canva original is byte-identical to the approved SHA-256",
+    "✖ school original assets are byte-identical to preserved checksums",
+    "✖ school runtime preserves legacy originals while the native Sumer shell owns active navigation",
+    "✖ school server is mounted without replacing existing school routes"
+  ],
+  "newFailures": [],
+  "selection": {
+    "included": [
+      "digital-content.test.js",
+      "friendship.test.js",
+      "mariadb-native.integration.test.js",
+      "mysql-migration.integration.test.js",
+      "mysql-migration.test.js",
+      "mysql-query.test.js",
+      "mysql-runtime.integration.test.js",
+      "private-messaging.test.js",
+      "profile.test.js",
+      "registration-flow.test.js",
+      "registration-otp.test.js",
+      "rooms.test.js",
+      "school-access.test.js",
+      "school-admin-page.test.js",
+      "school-canva-integration.test.js",
+      "school-integration.test.js",
+      "simulation-batch.test.js",
+      "social-ui-regression.test.js",
+      "sumer-school-portal.test.js"
+    ],
+    "excluded": [
+      "cards-canva-view-wiring.test.js",
+      "school-backend-gaps.test.js",
+      "school-canva-runtime.test.js",
+      "school-canva-view-wiring.test.js",
+      "school-live-classroom.test.js",
+      "school-live-page.test.js",
+      "school-management.test.js",
+      "school-phase7-student.test.js",
+      "school-virtual-classroom-page.test.js",
+      "school-virtual-classroom.test.js",
+      "simulation-database.test.js"
+    ]
+  }
+}

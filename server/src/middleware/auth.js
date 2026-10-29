@@ -1,5 +1,13 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+async function resolveToken(token) {
+  const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+  if (payload.scope) throw new Error('Temporary token cannot authorize API access');
+  if (payload.aud === 'developer') return require('../mariadb/developer-auth').authenticate(token);
+  if (payload.role === 'developer') throw new Error('A native developer session is required');
+  const user = await require('../models/User').findById(payload.userId);
+  if (!user || user.status !== 'active' || user.role === 'developer') throw new Error('Account unavailable or developer session required');
+  return user;
+}
 
 async function requireAuth(req, res, next) {
   try {
@@ -13,13 +21,7 @@ async function requireAuth(req, res, next) {
     }
 
     const token = header.slice(7);
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (payload.scope) {
-      return res.status(401).json({ ok: false, message: 'رمز التحقق المؤقت لا يمنح صلاحية دخول التطبيق' });
-    }
-
-    const user = await User.findById(payload.userId);
+    const user = await resolveToken(token);
 
     if (!user || user.status !== 'active') {
       return res.status(401).json({
@@ -52,6 +54,7 @@ function requireRole(...roles) {
 }
 
 module.exports = {
+  resolveToken,
   requireAuth,
   requireRole
 };

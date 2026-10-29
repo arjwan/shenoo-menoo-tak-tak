@@ -3,7 +3,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '../../..');
-const ignoredDirectories = new Set(['.git', 'node_modules', 'build', '.gradle', '.idea', 'dist', 'coverage']);
+const ignoredDirectories = new Set(['.git', 'node_modules', 'build', '.gradle', '.idea', 'dist', 'coverage', 'work']);
 const ignoredFiles = new Set([path.resolve(__filename)]);
 const textExtensions = new Set(['.js', '.mjs', '.cjs', '.json', '.html', '.css', '.xml', '.yml', '.yaml', '.md', '.txt', '.properties', '.gradle', '.kts', '.kt', '.java', '.sh', '.env']);
 // A PEM/OpenSSH header can legitimately appear in deployment scripts that

@@ -1,20 +1,16 @@
-const mongoose = require('mongoose');
-
 async function connectDB() {
-  const client = process.env.DB_CLIENT || 'mongodb';
-  if (client === 'mysql') return require('../mysql/runtime').start();
-  if (client !== 'mongodb') throw new Error('Unsupported DB_CLIENT');
-  const uri = process.env.MONGODB_URI;
-
-  if (!uri) {
-    throw new Error('MONGODB_URI غير موجود في ملف .env');
-  }
-
-  await mongoose.connect(uri);
-  console.log('MongoDB connected');
+  if (process.env.DB_CLIENT !== 'mysql') throw new Error('Only MariaDB is supported. Configure MYSQL_* and DB_CLIENT=mysql; there is no MongoDB fallback.');
+  // Keep the existing unfinished adapter behind its original explicit guard.
+  // This is NOT native-service acceptance and must not be enabled by bootstrap.
+  if (process.env.MYSQL_RUNTIME_EXPERIMENTAL !== 'true') throw new Error('Legacy runtime is experimental; the remaining service repositories must be ported before production acceptance.');
+  const native = require('../mariadb/database');
+  await native.connect();
+  try { return await require('../mysql/runtime').start(); }
+  catch (error) { await native.close(); throw error; }
 }
 
 module.exports = connectDB;
-module.exports.disconnect = async () => process.env.DB_CLIENT === 'mysql'
-  ? require('../mysql/runtime').stop()
-  : mongoose.disconnect();
+module.exports.disconnect = async () => {
+  await require('../mysql/runtime').stop();
+  await require('../mariadb/database').close();
+};

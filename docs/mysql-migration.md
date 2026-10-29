@@ -1,9 +1,13 @@
-# IQ Hosting MySQL migration — development only
+# Historical experimental MySQL migration notes
+
+This document describes the earlier compatibility-layer experiment, not the
+approved native MariaDB implementation. Its commands are not production
+deployment instructions. See `mariadb-native.md` for the current work and blockers.
 
 Status: **schema tooling and experimental MySQL repositories implemented;
 full service acceptance and hosting validation incomplete**.
-Do not deploy this branch to shinomino.com. The Oracle/MongoDB deployment and
-`main` remain the production source of truth.
+Do not deploy this incomplete branch. Oracle and MongoDB are retired and must
+not be restored. Hosting acceptance will use IQ Hosting MariaDB only.
 
 ## Implemented
 
