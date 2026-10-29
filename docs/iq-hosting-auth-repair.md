@@ -63,3 +63,32 @@ No registration security policy is changed by these two commands.
 
 This targeted deployment repair does not complete the remaining native SQL
 service migration and does not replace or simplify developer services.
+
+## Observed deployment and Android follow-up (2026-10-30)
+
+The additive authentication repair from commit 9cadd93 was applied to the
+existing Passenger application. The deployment created the two missing auth
+tables and a private JWT configuration, verified unchanged account records,
+and preserved frontend bytes outside the login/logout handlers and existing
+service scripts. A private rollback copy remains under the application's
+.noah-repairs directory.
+
+Live checks: health 200, unauthenticated developer session/dashboard 401,
+private /.env access 403. Actual developer-password login has not yet been
+confirmed by the owner. Registration reports OTP-delivery failure; its email
+verification policy remains enabled pending the owner's configuration decision.
+
+Both Android source trees still targeted the retired DuckDNS origin. Their
+API, session resume, WebView and background service origins now target
+https://shinomino.com, including the exact trusted host for media permissions.
+Release versions are advanced to website APK 2.0.5 (25) and call APK 1.3.3 (16)
+so rebuilt APKs can upgrade installed copies. Existing signing configuration
+and application IDs are preserved. A previously installed APK is not updated
+by deploying the website; it must receive the rebuilt signed release.
+
+Re-run validation: 7 Android session-entry tests and 4 private-environment
+tests passed (11 passed, 0 failed, 0 skipped). Secret scan including history
+and git diff --check passed. APK compilation/signing/device installation have
+not been verified in this Windows workspace; the POSIX Gradle wrapper is
+present, but no Windows wrapper or known local JDK/SDK installation was found.
+No Oracle resource shutdown or R2 media round-trip is claimed by this repair.

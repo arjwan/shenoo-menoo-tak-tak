@@ -38,11 +38,11 @@ test('first install shows the login form without opening the feed or making an a
   assert.deepEqual(r.redirects, []);
   assert.equal(r.button.disabled, false);
 });
-test('only a session accepted by Oracle opens the feed', async () => {
+test('only a session accepted by the official hosting opens the feed', async () => {
   const r = await run({ token: 'saved', response: { ok: true, status: 200, json: async () => ({ ok: true, user: { id: 'u1' } }) } });
-  assert.equal(r.requests[0].url, 'https://shino-mino-tak-tak.duckdns.org/api/users/me');
+  assert.equal(r.requests[0].url, 'https://shinomino.com/api/users/me');
   assert.equal(r.requests[0].options.headers.Authorization, 'Bearer saved');
-  assert.deepEqual(r.redirects, ['https://shino-mino-tak-tak.duckdns.org/taktak.html']);
+  assert.deepEqual(r.redirects, ['https://shinomino.com/taktak.html']);
   assert.equal(JSON.parse(r.localStorage.getItem('user')).id, 'u1');
   assert.equal(r.cleared, true);
 });

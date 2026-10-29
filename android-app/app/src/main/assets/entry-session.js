@@ -14,7 +14,7 @@
     var controller = new AbortController();
     var timeout = setTimeout(function () { controller.abort(); }, 15000);
     try {
-      var response = await fetch('https://shino-mino-tak-tak.duckdns.org/api/users/me', {
+      var response = await fetch('https://shinomino.com/api/users/me', {
         headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' },
         cache: 'no-store',
         signal: controller.signal
@@ -35,7 +35,7 @@
       if ((localStorage.getItem('token') || sessionStorage.getItem('token')) !== token) return;
       var storage = localStorage.getItem('token') ? localStorage : sessionStorage;
       storage.setItem('user', JSON.stringify(data.user));
-      window.location.replace('https://shino-mino-tak-tak.duckdns.org/taktak.html');
+      window.location.replace('https://shinomino.com/taktak.html');
     } catch (error) {
       show('تعذر الاتصال بالخادم للتحقق من الجلسة. حاول تسجيل الدخول مجددًا.');
     } finally {
