@@ -17,7 +17,7 @@ async function main() {
   const password = String(process.env.DEVELOPER_PASSWORD || '');
   const fullName = String(process.env.DEVELOPER_NAME || 'Platform Developer').trim();
   if (!username || !contact || password.length < 12 || password === 'CHANGE_ME_NOW' ||
-      process.env.JWT_SECRET?.length < 32 || /change-this|replace-with/i.test(process.env.JWT_SECRET || '')) {
+      String(process.env.JWT_SECRET || '').length < 32 || /change-this|replace-with/i.test(process.env.JWT_SECRET || '')) {
     throw new Error('Set a unique developer username/contact, a password of at least 12 characters, and a strong JWT_SECRET in the server .env');
   }
 
