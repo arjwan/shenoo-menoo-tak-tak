@@ -1,0 +1,1275 @@
+{
+  "base": "0c9fefc64773aa02da61711f85bdf06ee8438a78",
+  "models": 60,
+  "baselineTables": 137,
+  "baselineRelations": 231,
+  "oldDependencies": [
+    "mongoose",
+    "mongodb",
+    "mongodb-memory-server-core"
+  ],
+  "consumers": [
+    {
+      "file": "server/src/games/domino-engine.js",
+      "imports": [],
+      "operations": {
+        "find": 1
+      }
+    },
+    {
+      "file": "server/src/games/tawla-engine.js",
+      "imports": [],
+      "operations": {
+        "find": 2
+      }
+    },
+    {
+      "file": "server/src/group-calls.js",
+      "imports": [],
+      "operations": {
+        "findById": 2
+      }
+    },
+    {
+      "file": "server/src/lib/social-audience.js",
+      "imports": [],
+      "operations": {
+        "find": 3,
+        "findOne": 1,
+        "save": 1,
+        "insertMany": 1
+      }
+    },
+    {
+      "file": "server/src/middleware/auth.js",
+      "imports": [],
+      "operations": {
+        "findById": 1
+      }
+    },
+    {
+      "file": "server/src/middleware/school-auth.js",
+      "imports": [],
+      "operations": {
+        "find": 1,
+        "findOne": 3,
+        "populate": 1,
+        "lean": 4
+      }
+    },
+    {
+      "file": "server/src/models/AstrologyProvider.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/AuditLog.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/BroadcastTicker.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/ConsultationProvider.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Conversation.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/DataSyncRecord.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/DeveloperMfa.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Follow.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/FriendRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GameProfile.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GameRoom.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GameSpectatorInvite.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Group.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GroupMessage.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GroupReport.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GuardianComplaint.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/GuardianConsent.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/IslamicPost.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Message.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Notification.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/PhoneContact.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Post.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/PostComment.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Reel.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolAnnouncement.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolAssignment.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolAssignmentSubmission.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolAttendanceRecord.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolClassroom.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolEnrollmentRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolEventSchedule.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolGradeRecord.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolGuardian.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolGuardianNotification.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolGuardianRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolKnowledgeSource.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolLearningRecord.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolSchedule.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolSession.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolStaffRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolStudent.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolStudentReport.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolSyncOperation.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolTeacher.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolTeacherApplication.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolTeacherStudentRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SchoolWhiteboard.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/ServiceProvider.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/ServiceRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SmartFriend.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SmartFriendMessage.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SmartFriendReminder.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Store.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/Story.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/SupportRequest.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/TvRoom.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/User.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/VirtualClassroomMessage.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/VirtualClassroomSession.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/models/VirtualTeacherProfile.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1
+      }
+    },
+    {
+      "file": "server/src/mysql/data.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/mysql/filter.js",
+      "imports": [],
+      "operations": {
+        "find": 2
+      }
+    },
+    {
+      "file": "server/src/mysql/migrate.js",
+      "imports": [],
+      "operations": {
+        "find": 1
+      }
+    },
+    {
+      "file": "server/src/mysql/model.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOne": 1,
+        "findOneAndUpdate": 1,
+        "findOneAndDelete": 1,
+        "save": 1,
+        "populate": 1,
+        "lean": 1,
+        "deleteOne": 1
+      }
+    },
+    {
+      "file": "server/src/mysql/runtime.js",
+      "imports": [],
+      "operations": {
+        "find": 4
+      }
+    },
+    {
+      "file": "server/src/mysql/schema.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 3
+      }
+    },
+    {
+      "file": "server/src/routes/admin.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 1,
+        "findOne": 2,
+        "save": 2
+      }
+    },
+    {
+      "file": "server/src/routes/astrology.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 1,
+        "findOne": 1,
+        "populate": 1,
+        "lean": 2
+      }
+    },
+    {
+      "file": "server/src/routes/auth.routes.js",
+      "imports": [],
+      "operations": {
+        "findOne": 5,
+        "findOneAndUpdate": 1,
+        "save": 5
+      }
+    },
+    {
+      "file": "server/src/routes/broadcast-ticker.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "findById": 1,
+        "findByIdAndDelete": 1,
+        "save": 1,
+        "lean": 2
+      }
+    },
+    {
+      "file": "server/src/routes/cards-canva.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "findOne": 1,
+        "findById": 1,
+        "save": 1
+      }
+    },
+    {
+      "file": "server/src/routes/consultations.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "populate": 1,
+        "lean": 2
+      }
+    },
+    {
+      "file": "server/src/routes/conversations.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 6,
+        "findOne": 3,
+        "findById": 1,
+        "findOneAndUpdate": 1,
+        "save": 3,
+        "populate": 4,
+        "updateMany": 1
+      }
+    },
+    {
+      "file": "server/src/routes/developer-mfa.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 3,
+        "findOne": 2,
+        "findOneAndUpdate": 1,
+        "save": 8
+      }
+    },
+    {
+      "file": "server/src/routes/developer.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 9,
+        "findOne": 8,
+        "findById": 1,
+        "findByIdAndUpdate": 1,
+        "save": 5,
+        "populate": 6,
+        "lean": 8,
+        "deleteMany": 3,
+        "deleteOne": 1,
+        "updateMany": 2,
+        "countDocuments": 9
+      }
+    },
+    {
+      "file": "server/src/routes/friends.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "findOne": 7,
+        "findById": 2,
+        "save": 6,
+        "populate": 2
+      }
+    },
+    {
+      "file": "server/src/routes/game-actions.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "findOne": 1,
+        "findById": 2,
+        "save": 3
+      }
+    },
+    {
+      "file": "server/src/routes/game-rooms.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 8,
+        "findOne": 2,
+        "findById": 3,
+        "findOneAndUpdate": 1,
+        "save": 11,
+        "populate": 1,
+        "updateMany": 2
+      }
+    },
+    {
+      "file": "server/src/routes/groups.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "findOne": 4,
+        "findById": 12,
+        "save": 8,
+        "populate": 2,
+        "lean": 3,
+        "deleteOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/islamic.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "findOne": 3,
+        "save": 3,
+        "populate": 4
+      }
+    },
+    {
+      "file": "server/src/routes/media-direct.routes.js",
+      "imports": [],
+      "operations": {
+        "populate": 2
+      }
+    },
+    {
+      "file": "server/src/routes/phone-contacts.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOneAndDelete": 1,
+        "lean": 2,
+        "bulkWrite": 1
+      }
+    },
+    {
+      "file": "server/src/routes/post-feed.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "populate": 2,
+        "countDocuments": 1
+      }
+    },
+    {
+      "file": "server/src/routes/posts.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 8,
+        "findOne": 5,
+        "findOneAndUpdate": 1,
+        "save": 4,
+        "populate": 9,
+        "deleteMany": 1,
+        "deleteOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/reels.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 3,
+        "findOne": 5,
+        "save": 3,
+        "populate": 3,
+        "deleteOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/registration-verification.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "findOne": 2,
+        "save": 2,
+        "lean": 1
+      }
+    },
+    {
+      "file": "server/src/routes/school-canva.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "findOne": 3,
+        "save": 4,
+        "lean": 1,
+        "updateOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/school-classroom.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 8,
+        "findOne": 5,
+        "findById": 1,
+        "save": 1,
+        "populate": 2,
+        "lean": 6,
+        "updateOne": 1,
+        "countDocuments": 1
+      }
+    },
+    {
+      "file": "server/src/routes/school-live.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "findOne": 6,
+        "save": 9,
+        "lean": 1
+      }
+    },
+    {
+      "file": "server/src/routes/school-portal.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 14,
+        "findOne": 6,
+        "findById": 3,
+        "findOneAndUpdate": 5,
+        "findByIdAndUpdate": 1,
+        "save": 3,
+        "populate": 10,
+        "lean": 15
+      }
+    },
+    {
+      "file": "server/src/routes/school-sync.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "findOne": 3,
+        "save": 1,
+        "lean": 2,
+        "updateOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/school-virtual.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 3,
+        "findOne": 6,
+        "save": 9,
+        "lean": 3,
+        "countDocuments": 1
+      }
+    },
+    {
+      "file": "server/src/routes/school.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 9,
+        "findOne": 5,
+        "save": 4,
+        "populate": 4,
+        "lean": 4,
+        "updateOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/service-approvals.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 3,
+        "findOne": 3,
+        "save": 3,
+        "populate": 3,
+        "lean": 3
+      }
+    },
+    {
+      "file": "server/src/routes/service-providers.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 5,
+        "findOne": 4,
+        "findById": 1,
+        "save": 4,
+        "populate": 5,
+        "lean": 4
+      }
+    },
+    {
+      "file": "server/src/routes/smart-friend-tools.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOne": 4,
+        "save": 2,
+        "lean": 1
+      }
+    },
+    {
+      "file": "server/src/routes/smart-friend.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 6,
+        "findOne": 6,
+        "findOneAndUpdate": 1,
+        "save": 2,
+        "lean": 3,
+        "deleteMany": 2,
+        "deleteOne": 1,
+        "updateMany": 1
+      }
+    },
+    {
+      "file": "server/src/routes/social.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "findOne": 1,
+        "findOneAndUpdate": 1,
+        "populate": 1,
+        "deleteOne": 1,
+        "updateOne": 1,
+        "updateMany": 1,
+        "countDocuments": 5
+      }
+    },
+    {
+      "file": "server/src/routes/stores.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOne": 1,
+        "lean": 3
+      }
+    },
+    {
+      "file": "server/src/routes/stories.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOne": 1,
+        "populate": 3,
+        "deleteOne": 1
+      }
+    },
+    {
+      "file": "server/src/routes/support.routes.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOne": 1,
+        "findById": 1,
+        "save": 1,
+        "populate": 1
+      }
+    },
+    {
+      "file": "server/src/routes/user.routes.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 4,
+        "findOne": 5,
+        "findById": 2,
+        "save": 10,
+        "lean": 2,
+        "countDocuments": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/auditMediaR2.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 3,
+        "lean": 3
+      }
+    },
+    {
+      "file": "server/src/scripts/closeAllGameRooms.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "updateMany": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/migrateMediaToR2.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "save": 2
+      }
+    },
+    {
+      "file": "server/src/scripts/publish-digital-content.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "lean": 1,
+        "countDocuments": 1,
+        "bulkWrite": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/reset-school-people.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "lean": 1,
+        "deleteMany": 1,
+        "countDocuments": 2
+      }
+    },
+    {
+      "file": "server/src/scripts/seed-school-test-students.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 2,
+        "findOne": 2,
+        "lean": 1,
+        "deleteMany": 1,
+        "updateOne": 1,
+        "updateMany": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/seed-social-digital-personas.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "countDocuments": 1,
+        "bulkWrite": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/seedOfficialRooms.js",
+      "imports": [],
+      "operations": {
+        "findOne": 2,
+        "findOneAndUpdate": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/simulation-batch.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 1,
+        "lean": 1,
+        "deleteMany": 1,
+        "countDocuments": 2,
+        "bulkWrite": 1
+      }
+    },
+    {
+      "file": "server/src/scripts/test-simulation-database.js",
+      "imports": [
+        "mongodb-memory-server-core"
+      ],
+      "operations": {}
+    },
+    {
+      "file": "server/src/server.js",
+      "imports": [],
+      "operations": {
+        "find": 1,
+        "updateMany": 1
+      }
+    },
+    {
+      "file": "server/src/services/data-distributor.js",
+      "imports": [],
+      "operations": {
+        "save": 2
+      }
+    },
+    {
+      "file": "server/src/services/iraqi-curriculum-linked.js",
+      "imports": [],
+      "operations": {
+        "find": 2
+      }
+    },
+    {
+      "file": "server/src/services/school-access.js",
+      "imports": [],
+      "operations": {
+        "save": 1
+      }
+    },
+    {
+      "file": "server/src/services/school-curriculum-index.js",
+      "imports": [],
+      "operations": {
+        "bulkWrite": 1
+      }
+    },
+    {
+      "file": "server/src/services/school-live-classroom.js",
+      "imports": [],
+      "operations": {
+        "find": 3
+      }
+    },
+    {
+      "file": "server/src/services/school-management.js",
+      "imports": [
+        "mongoose"
+      ],
+      "operations": {
+        "find": 43,
+        "findOne": 16,
+        "findById": 41,
+        "findOneAndUpdate": 1,
+        "save": 23,
+        "populate": 65,
+        "lean": 52,
+        "updateOne": 1,
+        "countDocuments": 2
+      }
+    },
+    {
+      "file": "server/src/services/school-virtual-classroom.js",
+      "imports": [],
+      "operations": {
+        "find": 3,
+        "findOne": 1,
+        "lean": 1
+      }
+    },
+    {
+      "file": "server/src/socket-school.js",
+      "imports": [],
+      "operations": {
+        "find": 2,
+        "findOne": 4,
+        "findById": 1,
+        "save": 3,
+        "lean": 1
+      }
+    },
+    {
+      "file": "server/src/socket.js",
+      "imports": [],
+      "operations": {
+        "find": 3,
+        "findOne": 7,
+        "findById": 5,
+        "findByIdAndUpdate": 2,
+        "save": 3,
+        "populate": 3
+      }
+    }
+  ],
+  "oracleReferences": [
+    {
+      "file": ".github/workflows/school-phase7-verify.yml",
+      "historical": false
+    },
+    {
+      "file": "canva-originals/cards/PRESERVATION.md",
+      "historical": false
+    },
+    {
+      "file": "docs/history/oracle/.github_workflows_deploy-oracle.yml.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/.github_workflows_deploy-tv-oracle.yml.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/.github_workflows_diagnose-oracle.yml.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/.github_workflows_publish-digital-content.yml.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/deploy-social-fix.sh.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/deploy-virtual-oracle-one-shot.sh.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/README.md",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/scripts_deploy-school-curriculum-oracle.sh.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/history/oracle/scripts_resume-school-oracle-deploy.sh.txt",
+      "historical": true
+    },
+    {
+      "file": "docs/mariadb-native.md",
+      "historical": true
+    },
+    {
+      "file": "docs/mysql-migration.md",
+      "historical": true
+    },
+    {
+      "file": "docs/SCHOOL-PHASES-1-4.md",
+      "historical": true
+    },
+    {
+      "file": "README-SOCIAL-FIX-AR.txt",
+      "historical": false
+    },
+    {
+      "file": "reels.html",
+      "historical": false
+    },
+    {
+      "file": "server/src/data/iraqi-curriculum-text/1iK2v3h-Q0Avn5CKOxUq8XTiQg_SLr9KN.txt",
+      "historical": false
+    },
+    {
+      "file": "server/src/models/DataSyncRecord.js",
+      "historical": false
+    },
+    {
+      "file": "server/src/routes/cards-canva.routes.js",
+      "historical": false
+    },
+    {
+      "file": "server/src/routes/school-canva.routes.js",
+      "historical": false
+    },
+    {
+      "file": "server/src/services/data-distributor.js",
+      "historical": false
+    },
+    {
+      "file": "server/src/services/school-live-ice.js",
+      "historical": false
+    },
+    {
+      "file": "server/test/cards-canva-view-wiring.test.js",
+      "historical": false
+    },
+    {
+      "file": "server/test/sumer-school-portal.test.js",
+      "historical": false
+    },
+    {
+      "file": "taktak-direct-upload.js",
+      "historical": false
+    },
+    {
+      "file": "tests/api-school-canva-library-catalog.js",
+      "historical": false
+    }
+  ],
+  "acceptance": "INCOMPLETE: only native developer auth is ported; remaining legacy consumers and the runtime adapter are deployment blockers."
+}

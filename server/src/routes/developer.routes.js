@@ -1,6 +1,5 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { requireAuth, requireRole } = require('../middleware/auth');
@@ -13,62 +12,10 @@ const GameRoom = require('../models/GameRoom');
 const Group = require('../models/Group');
 const GroupReport = require('../models/GroupReport');
 const AuditLog = require('../models/AuditLog');
-const DeveloperMfa = require('../models/DeveloperMfa');
 
 const router = express.Router();
 
-const loginAttempts = new Map();
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_MAX_ATTEMPTS = 5;
-
-function loginRateLimit(ip) {
-  const now = Date.now();
-  const current = loginAttempts.get(ip);
-  if (!current || now - current.startedAt > LOGIN_WINDOW_MS) {
-    loginAttempts.set(ip, { startedAt: now, attempts: 0 });
-    return false;
-  }
-  return current.attempts >= LOGIN_MAX_ATTEMPTS;
-}
-
-function recordLoginFailure(ip) {
-  const current = loginAttempts.get(ip) || { startedAt: Date.now(), attempts: 0 };
-  current.attempts += 1;
-  loginAttempts.set(ip, current);
-}
-
-router.post('/login', async (req, res) => {
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
-  if (loginRateLimit(ip)) {
-    return res.status(429).json({ ok: false, message: 'محاولات تسجيل الدخول كثيرة، حاول لاحقًا' });
-  }
-
-  try {
-    const identifier = String(req.body.identifier || '').trim().toLowerCase();
-    const password = String(req.body.password || '');
-    if (!identifier || !password) {
-      return res.status(400).json({ ok: false, message: 'أدخل اسم المستخدم وكلمة المرور' });
-    }
-
-    const user = await User.findOne({
-      role: 'developer',
-      status: 'active',
-      $or: [{ username: identifier }, { contact: identifier }]
-    });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      recordLoginFailure(ip);
-      return res.status(401).json({ ok: false, message: 'بيانات دخول المطور غير صحيحة' });
-    }
-
-    loginAttempts.delete(ip);
-    const security=await DeveloperMfa.findOne({user:user._id});
-    const preAuthToken=jwt.sign({userId:user._id,role:user.role,scope:'developer-mfa'},process.env.JWT_SECRET,{expiresIn:'5m'});
-    return res.json({ok:true,message:'تم قبول كلمة المرور. أكمل التحقق بالهاتف أو مفتاح FIDO',preAuthToken,mfa:{phone:Boolean(security?.phoneSecretHash),fido:Boolean(security?.credentials?.length),setupRequired:!security?.phoneSecretHash&&!security?.credentials?.length},user:safeUser(user)});
-  } catch (error) {
-    console.error('Developer login failed:', error.message);
-    return res.status(500).json({ ok: false, message: 'تعذر تسجيل دخول المطور' });
-  }
-});
+router.use(require('./developer-auth.routes'));
 
 router.use(requireAuth);
 router.use(requireRole('developer'));
@@ -101,15 +48,9 @@ async function writeAudit(actor, action, target, details = '') {
   await AuditLog.create({ actor: actor._id, action, target: target?._id || null, details });
 }
 
-router.get('/me',async(req,res)=>{const security=await DeveloperMfa.findOne({user:req.user._id});res.json({ok:true,user:safeUser(req.user),security:{phonePaired:Boolean(security?.phoneSecretHash),fidoKeys:security?.credentials?.length||0,pairedPhone:security?.pairedPhone||''}});});
-router.patch('/me',async(req,res)=>{try{const fullName=String(req.body.fullName||req.user.fullName).trim(),phone=String(req.body.phone||req.user.phone||'').replace(/\s+/g,''),email=String(req.body.email||req.user.email||'').trim().toLowerCase();if(!fullName||!/^07\d{9}$/.test(phone)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({ok:false,message:'الاسم والهاتف والبريد الصحيح مطلوبة'});const duplicate=await User.findOne({_id:{$ne:req.user._id},$or:[{phone},{email},{contact:phone},{contact:email}]});if(duplicate)return res.status(409).json({ok:false,message:'الهاتف أو البريد مستخدم بحساب آخر'});req.user.fullName=fullName;req.user.phone=phone;req.user.email=email;req.user.contact=phone;req.user.contactType='phone';if(req.body.password){if(String(req.body.password).length<8)return res.status(400).json({ok:false,message:'كلمة المرور 8 أحرف على الأقل'});req.user.passwordHash=await bcrypt.hash(String(req.body.password),12);}await req.user.save();await writeAudit(req.user,'developer.profile.updated',req.user,'حدّث بيانات حساب المطور');res.json({ok:true,message:'تم تحديث حساب المطور',user:safeUser(req.user)});}catch(e){res.status(500).json({ok:false,message:'تعذر تحديث حساب المطور'});}});
 
 async function countOptionalCollection(names) {
-  if (process.env.DB_CLIENT === 'mysql') return require('../mysql/runtime').countOptional(names);
-  const collections = await mongoose.connection.db.listCollections({}, { nameOnly: true }).toArray();
-  const available = new Set(collections.map((collection) => collection.name));
-  const collectionName = names.find((name) => available.has(name));
-  return collectionName ? mongoose.connection.db.collection(collectionName).countDocuments() : 0;
+  return require('../mysql/runtime').countOptional(names);
 }
 
 async function getDashboardStats() {
@@ -161,7 +102,6 @@ async function getDashboardStats() {
   };
 }
 
-router.get('/me', (req, res) => res.json({ ok: true, user: safeUser(req.user) }));
 
 router.get('/stats', async (req, res) => {
   try {

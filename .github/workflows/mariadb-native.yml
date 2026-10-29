@@ -1,0 +1,37 @@
+name: Native MariaDB authentication
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: isolated-ci-mariadb-only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:mariadb:native
+        env:
+          MARIADB_NATIVE_TEST: '1'
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: '3306'
+          MYSQL_DATABASE: shinomino_native_test_1
+          MYSQL_USER: root
+          MYSQL_PASSWORD: isolated-ci-mariadb-only
+          MYSQL_SSL_MODE: disabled
+          JWT_SECRET: isolated-ci-secret-only-32-characters-minimum

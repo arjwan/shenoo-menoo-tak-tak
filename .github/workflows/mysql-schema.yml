@@ -1,4 +1,4 @@
-name: MySQL candidate schema
+name: Legacy schema checks on MariaDB
 on:
   push:
     branches: [migration/mysql-iqhosting-20261028]
@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:11.4
         env:
-          MYSQL_ROOT_PASSWORD: ephemeral-ci-password
-          MYSQL_DATABASE: shinomino_migration_test
+          MARIADB_ROOT_PASSWORD: ephemeral-ci-password
+          MARIADB_DATABASE: shinomino_migration_test
         ports: ['3306:3306']
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -pephemeral-ci-password"
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
       - uses: actions/checkout@v4

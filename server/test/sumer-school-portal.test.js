@@ -54,8 +54,9 @@ test('server mounts namespaced role, management and virtual-classroom routes', (
   assert.doesNotMatch(auth, /\['student', 'teacher', 'admin'\]/);
 });
 
-test('Oracle workflow preserves the nested PWA and its service-worker scope', () => {
-  const workflow = read('.github/workflows/deploy-oracle.yml');
+test('retired deployment is historical only and preserves the PWA record', () => {
+  assert.equal(fs.existsSync(path.join(root, '.github/workflows/deploy-oracle.yml')), false);
+  const workflow = read('docs/history/oracle/.github_workflows_deploy-oracle.yml.txt');
   assert.match(workflow, /webroot\/sumer-school/);
   assert.match(workflow, /find sumer-school -type d/);
   assert.match(workflow, /find sumer-school -type f/);
