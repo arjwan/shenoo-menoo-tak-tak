@@ -33,6 +33,7 @@
     "test:simulation": "node --test server/test/simulation-batch.test.js"
   },
   "dependencies": {
+    "@cloudflare/containers": "^0.3.7",
     "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^13.2.2",
     "bcryptjs": "^3.0.2",
@@ -51,6 +52,7 @@
     "jsdom": "^29.1.1",
     "mongodb-memory-server-core": "^10.4.3",
     "nodemon": "^3.1.10",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "wrangler": "^4.156.1"
   }
 }
