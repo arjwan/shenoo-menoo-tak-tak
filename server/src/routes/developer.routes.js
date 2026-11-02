@@ -50,6 +50,49 @@ router.post('/logout', (_req, res) => res.json({ ok: true }));
 router.use(requireAuth);
 router.use(requireRole('developer'));
 
+router.get('/me', async (req, res) => {
+  try {
+    const security = await DeveloperMfa.findOne({ user: req.user._id }).lean();
+    return res.json({ ok: true, user: safeUser(req.user), security: {
+      phonePaired: Boolean(security?.phoneSecretHash),
+      fidoKeys: security?.credentials?.length || 0,
+      pairedPhone: security?.pairedPhone || ''
+    } });
+  } catch (error) {
+    console.error('Developer profile read failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تحميل بيانات حساب المطور' });
+  }
+});
+
+router.patch('/me', async (req, res) => {
+  try {
+    const fullName = String(req.body.fullName ?? req.user.fullName).trim();
+    const phone = String(req.body.phone ?? req.user.phone ?? '').replace(/\\s+/g, '');
+    const email = String(req.body.email ?? req.user.email ?? '').trim().toLowerCase();
+    if (!fullName || !/^07\\d{9}$/.test(phone) || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      return res.status(400).json({ ok: false, message: 'الاسم والهاتف والبريد الصحيح مطلوبة' });
+    }
+    const duplicate = await User.findOne({ _id: { $ne: req.user._id }, $or: [{ phone }, { email }, { contact: phone }, { contact: email }] });
+    if (duplicate) return res.status(409).json({ ok: false, message: 'الهاتف أو البريد مستخدم بحساب آخر' });
+    req.user.fullName = fullName;
+    req.user.phone = phone;
+    req.user.email = email;
+    req.user.contact = phone;
+    req.user.contactType = 'phone';
+    if (req.body.password) {
+      const password = String(req.body.password);
+      if (password.length < 8) return res.status(400).json({ ok: false, message: 'كلمة المرور 8 أحرف على الأقل' });
+      req.user.passwordHash = await bcrypt.hash(password, 12);
+    }
+    await req.user.save();
+    await writeAudit(req.user, 'developer.profile.updated', req.user, 'حدّث بيانات حساب المطور');
+    return res.json({ ok: true, message: 'تم تحديث حساب المطور', user: safeUser(req.user) });
+  } catch (error) {
+    console.error('Developer profile update failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تحديث حساب المطور' });
+  }
+});
+
 const safeUser = (user) => ({
   id: user._id,
   fullName: user.fullName,
