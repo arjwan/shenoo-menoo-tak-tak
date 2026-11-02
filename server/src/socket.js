@@ -79,7 +79,7 @@ function attachSocket(httpServer) {
         // Re-check persisted developer sessions for every incoming packet so
         // revoked/expired tokens cannot keep acting through an open socket.
         socket.use(async (_packet, done) => {
-          try { await require('./mariadb/developer-auth').authenticate(token); done(); }
+          try { const current = await require('./middleware/auth').resolveToken(token); if (String(current._id) !== String(socket.user._id) || current.role !== 'developer') throw new Error('Developer session revoked'); done(); }
           catch { done(new Error('unauthorized')); socket.disconnect(true); }
         });
       }
