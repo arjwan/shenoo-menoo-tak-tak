@@ -32,7 +32,7 @@ jobs:
           fi
           printf '%s\n' "$ORACLE_SSH_KEY" > "$RUNNER_TEMP/ssh/key"
           chmod 600 "$RUNNER_TEMP/ssh/key"
-          ssh-keyscan -T 15 -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
+          ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
           chmod 600 "$RUNNER_TEMP/ssh/known_hosts"
 
       - name: Inspect Oracle source without changing it
