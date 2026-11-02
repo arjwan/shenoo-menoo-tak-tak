@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sheno-meno-app",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-11-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "containers": [
+    {
+      "class_name": "ShenoManoApp",
+      "image": "./Dockerfile.cloudflare",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "ShenoManoApp",
+        "name": "SHENO_MANO_APP"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ShenoManoApp"]
+    }
+  ]
+}
