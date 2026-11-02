@@ -35,7 +35,7 @@ dialog{width:min(680px,calc(100% - 24px));border:1px solid var(--line);border-ra
         <label>رقم الهاتف العراقي أو البريد الإلكتروني<input name="contact" required></label>
         <label>كلمة المرور الجديدة<input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
         <div class="error" id="setupError" role="alert"></div>
-        <button class="btn primary" type="submit">إنشاء حساب المطوّر</button>
+        <button class="btn primary" type="button" id="developerSetupButton">إنشاء حساب المطوّر</button>
       </div>
     </details>
   </form>
@@ -93,7 +93,7 @@ async function deleteUser(id){const u=appUsers.find(x=>String(x.id)===id);if(!co
 async function loadDashboard(){const d=await api('/api/developer/dashboard');document.getElementById('usersCount').textContent=d.stats.users;document.getElementById('pendingCount').textContent=d.stats.pending;document.getElementById('storesCount').textContent=d.stats.stores;document.getElementById('reportsCount').textContent=d.stats.reports;[['apiStatus',d.services.api],['dbStatus',d.services.database],['socketStatus',d.services.socket]].forEach(([id,v])=>{const e=document.getElementById(id);e.textContent=v==='online'?'متصل':'غير متاح';e.className='pill '+(v==='online'?'ok':'bad')});await Promise.all([loadAdmins(),loadUsers()])}
 async function loadDeveloperAccount(){const d=await api('/api/developer/me'),f=document.getElementById('developerAccountForm');['fullName','username','phone','email'].forEach(k=>f.elements[k].value=d.user[k]||'');document.getElementById('phoneSecurity').textContent=d.security.phonePaired?'الهاتف: مقترن':'الهاتف: غير مقترن';document.getElementById('fidoSecurity').textContent='مفاتيح FIDO: '+d.security.fidoKeys}
 async function showDashboard(){setAuthenticated(true);try{await Promise.all([loadDashboard(),loadDeveloperAccount()])}catch(e){showToast(e.message)}}
-document.getElementById('developerSetupForm').querySelector('button').addEventListener('click',async()=>{
+document.getElementById('developerSetupButton').addEventListener('click',async(e)=>{e.preventDefault();e.stopPropagation();
   const f=document.getElementById('developerSetupForm'),b=f.querySelector('button'),m=document.getElementById('setupError');b.disabled=true;m.textContent='';
   try{const payload=Object.fromEntries([...f.querySelectorAll('input')].map(x=>[x.name,x.value]));if([...f.querySelectorAll('input[required]')].some(x=>!x.value.trim()))throw Error('أكمل جميع الحقول المطلوبة');const r=await fetch(API_BASE_URL+'/api/developer/bootstrap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||'تعذر تأسيس حساب المطور');f.querySelectorAll('input').forEach(x=>x.value='');m.textContent='تم إنشاء حساب المطور. سجّل الدخول بالبيانات الجديدة ثم أكمل ربط الهاتف أو مفتاح FIDO.';document.getElementById('developerIdentifier').value=payload.username;document.getElementById('developerPassword').focus();}catch(err){m.textContent=err.message}finally{b.disabled=false}
 });
