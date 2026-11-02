@@ -24,7 +24,8 @@ jobs:
     env:
       ORACLE_HOST: ${{ secrets.ORACLE_HOST || '130.110.115.101' }}
       ORACLE_USER: ${{ secrets.ORACLE_USER || 'opc' }}
-      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+      ORACLE_SSH_KEY_RAW: ${{ secrets.ORACLE_SSH_KEY }}
+      ORACLE_PRIVATE_KEY_RAW: ${{ secrets.ORACLE_PRIVATE_KEY }}
       ORACLE_SSH_KEY_B64: ${{ secrets.ORACLE_SSH_KEY_B64 }}
     steps:
       - name: Prepare read-only SSH identity
@@ -32,16 +33,30 @@ jobs:
         run: |
           set -euo pipefail
           install -d -m 700 "$RUNNER_TEMP/ssh"
-          if [ -n "${ORACLE_SSH_KEY:-}" ]; then
-            printf '%s\\n' "$ORACLE_SSH_KEY" > "$RUNNER_TEMP/ssh/key"
-          elif [ -n "${ORACLE_SSH_KEY_B64:-}" ]; then
+          valid_key=false
+          for candidate in "${ORACLE_SSH_KEY_RAW:-}" "${ORACLE_PRIVATE_KEY_RAW:-}"; do
+            [ -n "$candidate" ] || continue
+            printf '%b' "$candidate" | tr -d '\\r' > "$RUNNER_TEMP/ssh/key"
+            chmod 600 "$RUNNER_TEMP/ssh/key"
+            if ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null 2>&1; then
+              valid_key=true
+              break
+            fi
+            printf '%s' "$candidate" | tr -d '[:space:]' | base64 --decode 2>/dev/null > "$RUNNER_TEMP/ssh/key" || true
+            if ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null 2>&1; then
+              valid_key=true
+              break
+            fi
+          done
+          if [ "$valid_key" != true ] && [ -n "${ORACLE_SSH_KEY_B64:-}" ]; then
             printf '%s' "$ORACLE_SSH_KEY_B64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/ssh/key"
-          else
-            echo "Oracle SSH key secret is not configured (ORACLE_SSH_KEY, ORACLE_PRIVATE_KEY or ORACLE_SSH_KEY_B64)."
+            chmod 600 "$RUNNER_TEMP/ssh/key"
+            if ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null 2>&1; then valid_key=true; fi
+          fi
+          if [ "$valid_key" != true ]; then
+            echo "No configured Oracle SSH key could be parsed. No connection was attempted."
             exit 1
           fi
-          chmod 600 "$RUNNER_TEMP/ssh/key"
-          ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null
           ssh-keyscan -T 15 -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
           chmod 600 "$RUNNER_TEMP/ssh/known_hosts"
 
