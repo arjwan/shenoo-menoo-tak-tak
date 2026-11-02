@@ -1,0 +1,44 @@
+name: Prepare Cloudflare deployment dependencies
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-oracle-original-20261102
+    paths:
+      - wrangler.jsonc
+      - cloudflare/worker.js
+      - .github/workflows/cloudflare-dependencies.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-oracle-original-20261102
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Update lockfile for Cloudflare Container runtime
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --save @cloudflare/containers
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --save-dev wrangler
+      - name: Commit dependency manifest and lockfile
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Dependency manifest and lockfile already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Add Cloudflare Container deployment dependencies"
+          git push origin HEAD:migration/cloudflare-oracle-original-20261102
