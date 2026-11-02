@@ -33,30 +33,12 @@ jobs:
         run: |
           set -euo pipefail
           install -d -m 700 "$RUNNER_TEMP/ssh"
-          valid_key=false
-          for candidate in "${ORACLE_SSH_KEY_RAW:-}" "${ORACLE_PRIVATE_KEY_RAW:-}"; do
-            [ -n "$candidate" ] || continue
-            printf '%b' "$candidate" | tr -d '\\r' > "$RUNNER_TEMP/ssh/key"
-            chmod 600 "$RUNNER_TEMP/ssh/key"
-            if ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null 2>&1; then
-              valid_key=true
-              break
-            fi
-            printf '%s' "$candidate" | tr -d '[:space:]' | base64 --decode 2>/dev/null > "$RUNNER_TEMP/ssh/key" || true
-            if ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null 2>&1; then
-              valid_key=true
-              break
-            fi
-          done
-          if [ "$valid_key" != true ] && [ -n "${ORACLE_SSH_KEY_B64:-}" ]; then
-            printf '%s' "$ORACLE_SSH_KEY_B64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/ssh/key"
-            chmod 600 "$RUNNER_TEMP/ssh/key"
-            if ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null 2>&1; then valid_key=true; fi
-          fi
-          if [ "$valid_key" != true ]; then
-            echo "No configured Oracle SSH key could be parsed. No connection was attempted."
+          if [ -z "${ORACLE_SSH_KEY_RAW:-}" ]; then
+            echo "ORACLE_SSH_KEY secret is missing."
             exit 1
           fi
+          printf '%s\n' "$ORACLE_SSH_KEY_RAW" > "$RUNNER_TEMP/ssh/key"
+          chmod 600 "$RUNNER_TEMP/ssh/key"
           ssh-keyscan -T 15 -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
           chmod 600 "$RUNNER_TEMP/ssh/known_hosts"
 
