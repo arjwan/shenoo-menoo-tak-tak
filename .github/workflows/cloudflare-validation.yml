@@ -1,0 +1,31 @@
+name: Cloudflare migration validation
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-oracle-original-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-oracle-original-20261102
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run complete existing test suite
+        run: npm test
+      - name: Validate Cloudflare Worker bundle without deploying
+        run: npx wrangler deploy --dry-run --outdir /tmp/sheno-wrangler-dry-run
+      - name: Build original application container image
+        run: docker build -f Dockerfile.cloudflare -t sheno-meno-cloudflare:validation .
