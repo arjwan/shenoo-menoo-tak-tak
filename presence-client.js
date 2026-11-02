@@ -2,7 +2,11 @@
   'use strict';
   if (window.ShnoPresenceSocket) return;
 
-  var API = 'https://shino-mino-tak-tak.duckdns.org';
+  // Use the current platform gateway in browsers. Keep the legacy origin only
+  // for installed/file-based clients until their endpoint is configurable.
+  var API = window.location.protocol === 'file:'
+    ? 'https://shino-mino-tak-tak.duckdns.org'
+    : window.location.origin;
   var token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   if (!token) return;
 
