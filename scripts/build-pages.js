@@ -1,6 +1,7 @@
 'use strict';
 
 // Build a static-only Cloudflare Pages artifact. Never modifies source files.
+// Version: 2026-11-02. Backend runtime remains on the existing host.
 const fs = require('node:fs');
 const path = require('node:path');
 
