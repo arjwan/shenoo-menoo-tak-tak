@@ -18,17 +18,16 @@ const excludedFiles = new Set([
 ]);
 const manifestPath = path.join(root, 'app-pages.manifest.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-const requiredPages = [
-  ...Object.values(manifest.shenooMenoo).flat(),
-  ...Object.values(manifest.sumerSchool).flat()
-].filter(Array.isArray).flat();
+const requiredPages = Object.values(manifest.shenooMenoo)
+  .concat(Object.values(manifest.sumerSchool))
+  .flat();
 
 function copyTree(from, to, rel = '') {
   fs.mkdirSync(to, { recursive: true });
   for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
     const name = entry.name;
     const relative = rel ? rel + '/' + name : name;
-    if (excluded.has(name) || excludedFiles.has(name) || name.startsWith('.env')) continue;
+    if (excluded.has(name) || excludedFiles.has(name) || name.startsWith('.')) continue;
     const src = path.join(from, name);
     const dst = path.join(to, name);
     if (entry.isDirectory()) {
