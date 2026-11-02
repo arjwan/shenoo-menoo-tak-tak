@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { requireAuth, requireRole } = require('../middleware/auth');
@@ -12,10 +13,39 @@ const GameRoom = require('../models/GameRoom');
 const Group = require('../models/Group');
 const GroupReport = require('../models/GroupReport');
 const AuditLog = require('../models/AuditLog');
+const DeveloperMfa = require('../models/DeveloperMfa');
 
 const router = express.Router();
 
-router.use(require('./developer-auth.routes'));
+// Developer credentials and MFA remain native MongoDB services.
+const developerLoginAttempts = new Map();
+router.post('/login', async (req, res) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const attempt = developerLoginAttempts.get(ip);
+  if (attempt && now - attempt.startedAt < 15 * 60 * 1000 && attempt.count >= 5) {
+    return res.status(429).json({ ok: false, message: 'محاولات تسجيل الدخول كثيرة، حاول لاحقًا' });
+  }
+  try {
+    const identifier = String(req.body.identifier || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'أدخل اسم المستخدم وكلمة المرور' });
+    const user = await User.findOne({ role: 'developer', status: 'active', $or: [{ username: identifier }, { contact: identifier }] });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      const current = attempt && now - attempt.startedAt < 15 * 60 * 1000 ? attempt : { startedAt: now, count: 0 };
+      current.count += 1; developerLoginAttempts.set(ip, current);
+      return res.status(401).json({ ok: false, message: 'بيانات دخول المطور غير صحيحة' });
+    }
+    developerLoginAttempts.delete(ip);
+    const security = await DeveloperMfa.findOne({ user: user._id });
+    const preAuthToken = jwt.sign({ userId: user._id, role: 'developer', scope: 'developer-mfa' }, process.env.JWT_SECRET, { expiresIn: '5m' });
+    return res.set('Cache-Control', 'no-store').json({ ok: true, message: 'تم قبول كلمة المرور. أكمل التحقق بالهاتف أو مفتاح FIDO', preAuthToken, mfa: { phone: Boolean(security?.phoneSecretHash), fido: Boolean(security?.credentials?.length), setupRequired: !security?.phoneSecretHash && !security?.credentials?.length }, user: { id: user._id, fullName: user.fullName, username: user.username, role: user.role } });
+  } catch (error) {
+    console.error('Developer login failed:', error.message);
+    return res.status(500).json({ ok: false, message: 'تعذر تسجيل دخول المطور' });
+  }
+});
+router.post('/logout', (_req, res) => res.json({ ok: true }));
 
 router.use(requireAuth);
 router.use(requireRole('developer'));
