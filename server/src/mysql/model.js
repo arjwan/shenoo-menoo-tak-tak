@@ -123,7 +123,7 @@ class SQLQuery {
 }
 
 function wrap(original) {
-  if (process.env.DB_CLIENT !== 'mysql') return original;
+  if (process.env.DB_CLIENT !== 'mysql') return original; // Native Mongoose mode: use the original model and MongoDB driver.
   if (registry.has(original.modelName)) return registry.get(original.modelName);
   function Model(data) { return decorate(Model, data, null, true); }
   Object.assign(Model, { modelName: original.modelName, schema: original.schema, $original: original });
