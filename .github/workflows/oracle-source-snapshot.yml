@@ -1,0 +1,102 @@
+name: Read-only Oracle source snapshot for Cloudflare migration
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-oracle-original-20261102
+    paths:
+      - .github/workflows/oracle-source-snapshot.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: sheno-oracle-readonly-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST || '130.110.115.101' }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER || 'opc' }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+      ORACLE_SSH_KEY_B64: ${{ secrets.ORACLE_SSH_KEY_B64 }}
+    steps:
+      - name: Prepare read-only SSH identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          if [ -n "${ORACLE_SSH_KEY:-}" ]; then
+            printf '%s\\n' "$ORACLE_SSH_KEY" > "$RUNNER_TEMP/ssh/key"
+          elif [ -n "${ORACLE_SSH_KEY_B64:-}" ]; then
+            printf '%s' "$ORACLE_SSH_KEY_B64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/ssh/key"
+          else
+            echo "Oracle SSH key secret is not configured (ORACLE_SSH_KEY, ORACLE_PRIVATE_KEY or ORACLE_SSH_KEY_B64)."
+            exit 1
+          fi
+          chmod 600 "$RUNNER_TEMP/ssh/key"
+          ssh-keygen -y -f "$RUNNER_TEMP/ssh/key" >/dev/null
+          ssh-keyscan -T 15 -H "$ORACLE_HOST" > "$RUNNER_TEMP/ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/ssh/known_hosts"
+
+      - name: Inspect Oracle source without changing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/ssh/key" -o BatchMode=yes -o ConnectTimeout=20 -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$ORACLE_USER@$ORACLE_HOST" 'bash -se' > oracle-source-manifest.txt <<'REMOTE'
+          set -euo pipefail
+          project=/home/opc/shenoo-menoo-tak-tak
+          test -d "$project/.git"
+          cd "$project"
+          echo "ORACLE_HOST_SOURCE=/home/opc/shenoo-menoo-tak-tak"
+          echo "GIT_HEAD=$(git rev-parse HEAD)"
+          echo "GIT_BRANCH=$(git branch --show-current)"
+          echo "GIT_COMMIT_DATE=$(git show -s --format=%cI HEAD)"
+          echo "GIT_COMMIT_SUBJECT=$(git show -s --format=%s HEAD)"
+          echo "WORKTREE_STATUS_BEGIN"
+          git status --short
+          echo "WORKTREE_STATUS_END"
+          echo "SOURCE_SIZE_BEGIN"
+          du -sh .
+          du -sh server/uploads uploads original-assets school-assets 2>/dev/null || true
+          echo "SOURCE_SIZE_END"
+          echo "TOP_LEVEL_FILES_BEGIN"
+          find . -maxdepth 2 -type f ! -path './.git/*' ! -path './node_modules/*' -printf '%p\\n' | sort | head -n 500
+          echo "TOP_LEVEL_FILES_END"
+          REMOTE
+          cat oracle-source-manifest.txt
+
+      - name: Create source archive (exclude secrets and Git internals)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/ssh/key" -o BatchMode=yes -o ConnectTimeout=20 -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$ORACLE_USER@$ORACLE_HOST" 'bash -se' > oracle-source.tar.gz <<'REMOTE'
+          set -euo pipefail
+          project=/home/opc/shenoo-menoo-tak-tak
+          cd "$project"
+          tar -czf - \
+            --exclude='./.git' --exclude='./.git/*' --exclude='*/.git' --exclude='*/.git/*' \
+            --exclude='./node_modules' --exclude='./node_modules/*' --exclude='*/node_modules' --exclude='*/node_modules/*' \
+            --exclude='./.env' --exclude='*/.env' --exclude='*.log' --exclude='./coverage' --exclude='*/coverage' \
+            --exclude='./.cache' --exclude='*/.cache' --exclude='./tmp' --exclude='*/tmp' .
+          REMOTE
+          test -s oracle-source.tar.gz
+          sha256sum oracle-source.tar.gz | tee oracle-source.sha256
+          tar -tzf oracle-source.tar.gz | grep -E '(^|/)\\.env($|/)' && { echo "Unexpected .env file in archive"; exit 1; } || true
+
+      - name: Upload private migration artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheno-oracle-original-source-${{ github.run_id }}
+          path: |
+            oracle-source.tar.gz
+            oracle-source.sha256
+            oracle-source-manifest.txt
+          retention-days: 7
+          if-no-files-found: error
