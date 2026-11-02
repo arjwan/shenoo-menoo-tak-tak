@@ -67,9 +67,9 @@ router.get('/me', async (req, res) => {
 router.patch('/me', async (req, res) => {
   try {
     const fullName = String(req.body.fullName ?? req.user.fullName).trim();
-    const phone = String(req.body.phone ?? req.user.phone ?? '').replace(/\\s+/g, '');
+    const phone = String(req.body.phone ?? req.user.phone ?? '').replace(/\s+/g, '');
     const email = String(req.body.email ?? req.user.email ?? '').trim().toLowerCase();
-    if (!fullName || !/^07\\d{9}$/.test(phone) || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    if (!fullName || !/^07\d{9}$/.test(phone) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ ok: false, message: 'الاسم والهاتف والبريد الصحيح مطلوبة' });
     }
     const duplicate = await User.findOne({ _id: { $ne: req.user._id }, $or: [{ phone }, { email }, { contact: phone }, { contact: email }] });
