@@ -39,7 +39,8 @@
     "mariadb:auth:migrate": "node server/src/mariadb/auth-schema.js",
     "auth:configure": "node server/src/scripts/configureAuthEnvironment.js",
     "recover:developer": "node server/src/scripts/recoverDeveloperAccess.js",
-    "test:mariadb:native": "node --test server/test/mariadb-native.integration.test.js server/test/mariadb-auth-upgrade.integration.test.js"
+    "test:mariadb:native": "node --test server/test/mariadb-native.integration.test.js server/test/mariadb-auth-upgrade.integration.test.js",
+    "build:pages": "node scripts/build-pages.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",
