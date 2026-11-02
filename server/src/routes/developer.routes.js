@@ -17,6 +17,39 @@ const DeveloperMfa = require('../models/DeveloperMfa');
 
 const router = express.Router();
 
+// One-time first-owner bootstrap. Requires a secret configured only in hosting.
+router.post('/bootstrap', async (req, res) => {
+  try {
+    const configuredKey = String(process.env.DEVELOPER_SETUP_KEY || '');
+    const suppliedKey = String(req.body.setupKey || '');
+    if (configuredKey.length < 32) return res.status(503).json({ ok:false, message:'تأسيس حساب المطور غير مهيأ في إعدادات الخادم' });
+    const a=Buffer.from(configuredKey), b=Buffer.from(suppliedKey);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a,b)) return res.status(403).json({ok:false,message:'رمز التأسيس غير صحيح'});
+    if (await User.exists({ role:'developer' })) return res.status(409).json({ok:false,message:'تم تأسيس حساب المطور مسبقاً؛ التسجيل الأول مغلق'});
+    const fullName=String(req.body.fullName||'').trim();
+    const username=String(req.body.username||'').trim().toLowerCase();
+    const contact=String(req.body.contact||'').trim().toLowerCase();
+    const password=String(req.body.password||'');
+    const type=contactType(contact);
+    if(!fullName || !/^[a-z0-9_]{3,30}$/.test(username) || !type || password.length<10)
+      return res.status(400).json({ok:false,message:'تحقق من الاسم واسم المستخدم والهاتف أو البريد وكلمة المرور (10 أحرف على الأقل)'});
+    if(await User.exists({$or:[{username},{contact},{phone:type==='phone'?contact:'__none__'},{email:type==='email'?contact:'__none__'}]}))
+      return res.status(409).json({ok:false,message:'اسم المستخدم أو وسيلة الاتصال مستخدمة مسبقاً'});
+    const user=await User.create({
+      fullName,username,contact,contactType:type,
+      phone:type==='phone'?contact:'',email:type==='email'?contact:'',
+      passwordHash:await bcrypt.hash(password,12),
+      termsAccepted:true,privacyAccepted:true,privacyAcceptedAt:new Date(),privacyVersion:'2026-09-11',
+      contactVerified:false,role:'developer',status:'active',approvalSource:'developer'
+    });
+    await AuditLog.create({actor:user._id,action:'developer.bootstrap.created',target:user._id,details:'تم إنشاء حساب المطور الأول'});
+    return res.status(201).set('Cache-Control','no-store').json({ok:true,message:'تم إنشاء حساب المطور الأول',user:{id:user._id,username:user.username,role:user.role}});
+  } catch(error) {
+    console.error('Developer bootstrap failed:',error.message);
+    return res.status(500).json({ok:false,message:'تعذر إنشاء حساب المطور'});
+  }
+});
+
 // Developer credentials and MFA remain native MongoDB services.
 const developerLoginAttempts = new Map();
 router.post('/login', async (req, res) => {
