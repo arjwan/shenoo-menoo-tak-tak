@@ -4,7 +4,7 @@ const https=require('https');
 const crypto=require('crypto');
 
 const cleanBase=()=>String(process.env.MEDIA_CDN_BASE_URL||'').replace(/\/+$/,'');
-function configured(){return Boolean(process.env.R2_ACCOUNT_ID&&process.env.R2_BUCKET&&process.env.R2_ACCESS_KEY_ID&&process.env.R2_SECRET_ACCESS_KEY&&cleanBase());}
+function configured(){if(String(process.env.MEDIA_STORAGE_PROVIDER||'').toLowerCase()==='local')return false;return Boolean(process.env.R2_ACCOUNT_ID&&process.env.R2_BUCKET&&process.env.R2_ACCESS_KEY_ID&&process.env.R2_SECRET_ACCESS_KEY&&cleanBase());}
 const encKey=key=>String(key).split('/').map(encodeURIComponent).join('/');
 const hmac=(key,data,encoding)=>crypto.createHmac('sha256',key).update(data).digest(encoding);
 async function sha256File(file){return new Promise((resolve,reject)=>{const h=crypto.createHash('sha256'),s=fs.createReadStream(file);s.on('data',d=>h.update(d));s.on('end',()=>resolve(h.digest('hex')));s.on('error',reject)});}

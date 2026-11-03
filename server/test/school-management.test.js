@@ -24,7 +24,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { MongoMemoryServer } = require('mongodb-memory-server-core');
 
-process.env.JWT_SECRET = 'test-secret-school-management';
+process.env.JWT_SECRET = 'test-secret-school-management-native-auth-2026';
 
 const User = require('../src/models/User');
 const AuditLog = require('../src/models/AuditLog');
@@ -42,13 +42,15 @@ const managementRoutes = require('../src/routes/school-management.routes');
 
 let mongod, server, baseUrl;
 
-function makeUser(fullName, username, contact, role = 'user') {
+async function makeUser(fullName, username, contact, role = 'user') {
   return User.create({
     fullName,
     username,
     contact,
     contactType: 'email',
-    passwordHash: 'dummy-hash',
+    passwordHash: role === 'developer' && process.env.DB_CLIENT === 'mysql'
+      ? await require('bcryptjs').hash('native-school-dev-test-password-2026', 12)
+      : 'dummy-hash',
     termsAccepted: true,
     role,
     status: 'active'
@@ -75,6 +77,7 @@ async function request(method, path, body, token) {
 test.before(async () => {
   if (process.env.DB_CLIENT === 'mysql') {
     await require('./helpers/mysql-test-database')('shinomino_management_test');
+    await require('../src/mariadb/auth-schema').ensureDeveloperAuthSchema();
   } else {
   mongod = await MongoMemoryServer.create({
     binary: { version: '7.0.14' }
@@ -112,7 +115,14 @@ test('School Management: Full Lifecycle, Roles, Consents, Records, and Audit', a
     otherGuardianUser = await makeUser('أبو زينب', 'parent_zainab', 'zainab_dad@shnomano.iq', 'user');
     studentUser = await makeUser('كرار أحمد', 'student_karar', 'karar@shnomano.iq', 'user');
 
-    devToken = userToken(devUser);
+    if (process.env.DB_CLIENT === 'mysql') {
+      const login = await require('../src/mariadb/developer-auth').login(
+        'dev_super', 'native-school-dev-test-password-2026', 'school-management-test');
+      assert.equal(login.status, 200, 'native developer authentication must succeed in isolated CI');
+      devToken = login.token;
+    } else {
+      devToken = userToken(devUser);
+    }
     managerToken = userToken(managerUser);
     teacherToken = userToken(teacherUser);
     guardianToken = userToken(guardianUser);

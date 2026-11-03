@@ -2,7 +2,7 @@
   'use strict';
   if (window.ShnoPresenceSocket) return;
 
-  var API = 'https://shino-mino-tak-tak.duckdns.org';
+  var API = window.location.origin;
   var token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   if (!token) return;
 

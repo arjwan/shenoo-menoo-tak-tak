@@ -11,7 +11,7 @@
   let requests = [];
 
   async function schoolApi(path, options = {}) {
-    const response = await fetch((location.protocol === 'file:' ? 'https://shino-mino-tak-tak.duckdns.org' : location.origin) + '/api/school/management' + path, {
+    const response = await fetch((location.protocol === 'file:' ? 'https://shinomino.com' : location.origin) + '/api/school/management' + path, {
       ...options,
       headers: { Authorization: 'Bearer ' + token(), ...(options.body ? { 'Content-Type': 'application/json' } : {}) }
     });
