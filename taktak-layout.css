@@ -58,3 +58,6 @@ html.home-colors-scope .mobile-services-drawer{background:var(--panel)!important
 html.home-colors-scope .theme-toggle-global{display:none!important;}
 /* These services remain available from navigation and composer; keep the timeline unobstructed. */
 html.home-colors-scope :is(.sf-dock-launcher,.sf-dock-hide-pill,.calls-mobile-launcher){display:none!important;}
+html.home-colors-scope .mobile-services-drawer:not(.is-open){visibility:hidden;pointer-events:none;box-shadow:none!important;}
+html.home-colors-scope .mobile-services-backdrop{z-index:1490!important;}
+html.home-colors-scope .mobile-services-drawer{z-index:1500!important;}
