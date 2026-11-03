@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var API='https://shino-mino-tak-tak.duckdns.org';
+var API=window.location.origin;
 var token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';
 var dock=document.querySelector('[data-calls-dock]'),deskList=document.querySelector('[data-calls-dock-list]'),deskSearch=document.querySelector('[data-calls-dock-search]'),toggle=document.querySelector('[data-calls-dock-toggle]'),mobileLauncher=document.querySelector('[data-calls-mobile-launcher]'),mobileSheet=document.querySelector('[data-calls-mobile-sheet]'),mobileList=document.querySelector('[data-calls-mobile-list]'),mobileSearch=document.querySelector('[data-calls-mobile-search]'),mobileClose=document.querySelector('[data-calls-mobile-close]');
 if(!dock&&!mobileSheet)return;
