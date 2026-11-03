@@ -22,15 +22,15 @@ jobs:
           - area: unit-tests
             command: node --test server/test/*.test.js
           - area: school
-            command: npm run test:school-management && npm run test:school-portal && npm run test:school-virtual && npm run test:school-phase6 && npm run test:school-phase7
+            command: MYSQL_DATABASE=shinomino_management_test MYSQL_INTEGRATION_TEST=1 MYSQL_RUNTIME_EXPERIMENTAL=true npm run test:school-management && npm run test:school-portal && npm run test:school-virtual && npm run test:school-phase6 && npm run test:school-phase7
           - area: curriculum
             command: npm run test:school-curriculum && npm run test:school-pages && npm run test:school-server && npm run test:school-live && npm run test:school-backend
           - area: kahwa
             command: npm run test:kahwa
           - area: mysql
-            command: npm run test:mysql && npm run test:mysql:integration && npm run test:mysql:runtime
+            command: npm run test:mysql && MYSQL_DATABASE=shinomino_migration_test MYSQL_INTEGRATION_TEST=1 npm run test:mysql:integration && MYSQL_DATABASE=shinomino_runtime_test MYSQL_INTEGRATION_TEST=1 npm run test:mysql:runtime
           - area: mariadb-native
-            command: npm run test:mariadb:native
+            command: MARIADB_NATIVE_TEST=1 MYSQL_DATABASE=shinomino_native_test_1 npm run test:mariadb:native
           - area: simulation
             command: npm run test:simulation
     services:
@@ -47,14 +47,12 @@ jobs:
       CI: 'true'
       DB_CLIENT: mysql
       MYSQL_RUNTIME_EXPERIMENTAL: 'false'
-      MARIADB_NATIVE_TEST: '1'
-      MYSQL_INTEGRATION_TEST: '1'
       MYSQL_HOST: 127.0.0.1
       MYSQL_PORT: '3306'
       MYSQL_USER: root
       MYSQL_PASSWORD: isolated-ci-mariadb-only
       MYSQL_SSL_MODE: disabled
-      MYSQL_DATABASE: shinomino_ci_${{ matrix.area == 'mysql' && 'mysql' || 'native' }}
+      MYSQL_DATABASE: shinomino_native_test_1
       JWT_SECRET: isolated-ci-secret-only-32-characters-minimum
       MEDIA_STORAGE_PROVIDER: local
       CORS_ORIGINS: https://shinomino.com
