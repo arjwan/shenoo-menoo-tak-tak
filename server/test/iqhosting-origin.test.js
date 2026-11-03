@@ -9,6 +9,10 @@ const retiredHost = /shino-mino-tak-tak\.duckdns\.org/i;
 const publicEntrypoints = [
   'taktak-feed.js',
   'taktak-calls-dock.js',
+  'social-api.js',
+  'presence-client.js',
+  'my-service-requests.js',
+  'school-live.html',
   'reels-v2.js',
   'profile-posts.js',
   'profile.js',
