@@ -2,7 +2,7 @@
   "use strict";
 
   var API_BASE_URL = window.location.protocol === "file:"
-    ? "https://shino-mino-tak-tak.duckdns.org"
+    ? "https://shinomino.com"
     : window.location.origin;
 
   function tokenTime(token) {
