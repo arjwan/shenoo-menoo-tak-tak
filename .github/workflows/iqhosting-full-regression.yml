@@ -65,5 +65,22 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
         if: matrix.area == 'simulation'
+      - name: Create CI-only databases
+        if: matrix.area == 'mysql'
+        run: |
+          node - <<'NODE'
+          const mysql = require('mysql2/promise');
+          (async () => {
+            const db = await mysql.createConnection({
+              host: process.env.MYSQL_HOST, port: Number(process.env.MYSQL_PORT),
+              user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD
+            });
+            try {
+              for (const name of ['shinomino_migration_test', 'shinomino_runtime_test']) {
+                await db.query('CREATE DATABASE IF NOT EXISTS \`' + name + '\`');
+              }
+            } finally { await db.end(); }
+          })().catch(error => { console.error(error); process.exitCode = 1; });
+          NODE
       - name: Run ${{ matrix.area }}
         run: ${{ matrix.command }}
