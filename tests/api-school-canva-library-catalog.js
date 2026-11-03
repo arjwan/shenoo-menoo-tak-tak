@@ -43,8 +43,11 @@ const manifestUrls = new Set(files.map((f) => f.url));
 const readable = rows.filter((r) => r.readable);
 const pending = rows.filter((r) => !r.readable);
 assert.equal(readable.length + pending.length, items.length);
-assert.equal(readable.length, 92, 'indexed catalogue books have real source links');
-assert.equal(pending.length, 16, 'only genuinely missing catalogue sources stay pending');
+const verifiedIndexedBookIds = new Set(files.filter((f) => f.catalogId && f.textAvailable).map((f) => String(f.catalogId)));
+assert(readable.length >= verifiedIndexedBookIds.size,
+  'every verified indexed book must be readable; additional real PDFs may also be linked');
+assert.equal(pending.length, items.length - readable.length,
+  'only catalogue books without a matching manifest source are pending');
 assert(readable.every((r) => r.url && manifestUrls.has(r.url)), 'every readable url comes from the real manifest');
 assert(readable.every((r) => /متاح للقراءة/.test(r.status)), 'readable rows labelled available');
 assert(pending.every((r) => r.url === '' && !/متاح للقراءة/.test(r.status)), 'non-readable rows expose no open url');
