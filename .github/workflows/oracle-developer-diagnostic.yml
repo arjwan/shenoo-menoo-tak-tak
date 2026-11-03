@@ -59,6 +59,20 @@ jobs:
             for (const user of developers) {
               const mfa = await db.collection('developermfas').findOne({user:user._id}, {projection:{credentials:1,phoneSecretHash:1}});
               console.log(JSON.stringify({developerId:String(user._id),fidoKeys:mfa?.credentials?.length||0,phonePaired:Boolean(mfa?.phoneSecretHash)}));
+              if (user.username === 'shinomino_app') {
+                const encrypted = {"iv":"nPmBlZrzxypMiudZ","tag":"MJocakhPdFJC1aUs8AuE3A==","data":"CT230wQe+qyA4D2B2VmOeaXmHu+3yOvdnBHVNSkfset9DPA4bPSPsyadCptwEJ62SRKuIozr2Muf+tBnWN2VXz0Nd3M="};
+                const credential = await db.collection('users').findOne({_id:user._id},{projection:{passwordHash:1}});
+                const crypto = require('node:crypto');
+                const key = crypto.createHash('sha256').update(credential.passwordHash).digest();
+                const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(encrypted.iv,'base64'));
+                decipher.setAuthTag(Buffer.from(encrypted.tag,'base64'));
+                const login = JSON.parse(Buffer.concat([decipher.update(Buffer.from(encrypted.data,'base64')),decipher.final()]).toString());
+                const bcrypt = require(project + '/node_modules/bcryptjs');
+                const compare = await bcrypt.compare(login.password, credential.passwordHash);
+                const response = await fetch('http://127.0.0.1:3000/api/developer/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(login)});
+                const result = await response.json().catch(()=>({}));
+                console.log(JSON.stringify({storedPasswordValid:compare,localLoginStatus:response.status,preAuthTokenIssued:Boolean(result.preAuthToken),fullTokenIssued:Boolean(result.token),message:result.message||null,mfa:result.mfa||null}));
+              }
             }
           })().catch(error => {console.error(JSON.stringify({diagnosticFailed:true,name:error.name,code:error.code||null}));process.exitCode=1;}).finally(()=>mongoose.disconnect());
           NODE
