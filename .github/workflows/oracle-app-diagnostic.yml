@@ -1,0 +1,65 @@
+name: Inspect Oracle application startup
+on:
+  push:
+    branches: [diagnostic/oracle-developer-access-20261103]
+    paths: [.github/workflows/oracle-app-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    environment: production
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+    steps:
+      - name: Inspect startup and resource state with secret-redacted logs
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$(mktemp -d)"
+          trap 'rm -rf "$directory"' EXIT
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$directory/key"
+          chmod 600 "$directory/key"
+          ssh-keyscan -T 20 -H "$ORACLE_HOST" > "$directory/known_hosts" 2>/dev/null
+          ssh -i "$directory/key" -o BatchMode=yes -o ConnectTimeout=25 -o UserKnownHostsFile="$directory/known_hosts" "$ORACLE_USER@$ORACLE_HOST" 'sudo -n python3 -' <<'PY'
+          import subprocess,json,socket,re,shutil
+          from pathlib import Path
+          project=Path('/home/opc/shenoo-menoo-tak-tak')
+          output=subprocess.run(['systemctl','show','shno-mano-tech.service','--property=MainPID,ActiveState,SubState,ExecMainStatus,ExecMainStartTimestamp,WorkingDirectory,User'],capture_output=True,text=True).stdout
+          service=dict(line.split('=',1) for line in output.splitlines() if '=' in line)
+          print(json.dumps({'service':service}))
+          secrets=[]
+          pid=service.get('MainPID','0')
+          if pid.isdigit() and pid!='0':
+              for entry in Path('/proc/'+pid+'/environ').read_bytes().split(b'\0'):
+                  if b'=' in entry:
+                      key,value=entry.decode(errors='replace').split('=',1)
+                      if re.search(r'PASSWORD|SECRET|TOKEN|KEY|URI|URL',key,re.I) and len(value)>=6:secrets.append(value)
+              status=Path('/proc/'+pid+'/status').read_text().splitlines()
+              print(json.dumps({'process':[line for line in status if line.startswith(('State:','VmRSS:','Threads:'))],'waitChannel':Path('/proc/'+pid+'/wchan').read_text().strip()}))
+          envfile=project/'.env'
+          if envfile.exists():
+              for line in envfile.read_text().splitlines():
+                  if '=' in line and not line.lstrip().startswith('#'):
+                      key,value=line.split('=',1);value=value.strip().strip('"').strip("'")
+                      if re.search(r'PASSWORD|SECRET|TOKEN|KEY|URI|URL',key,re.I) and len(value)>=6:secrets.append(value)
+          def redact(text):
+              for secret in sorted(set(secrets),key=len,reverse=True):text=text.replace(secret,'[redacted]')
+              text=re.sub(r'mongodb(?:\+srv)?://[^\s\"\x27]+','[MongoDB URI redacted]',text)
+              text=re.sub(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+','[JWT redacted]',text)
+              return text
+          mem=dict((line.split(':')[0],int(line.split()[1])) for line in Path('/proc/meminfo').read_text().splitlines())
+          print(json.dumps({'memoryAvailableMB':round(mem['MemAvailable']/1024),'swapTotalMB':round(mem['SwapTotal']/1024),'swapFreeMB':round(mem['SwapFree']/1024),'diskFreeGB':round(shutil.disk_usage('/').free/1024**3,1)}))
+          top=subprocess.run(['ps','-eo','comm,pcpu,rss','--sort=-pcpu'],capture_output=True,text=True).stdout.splitlines()[:9]
+          print(json.dumps({'topProcesses':top}))
+          try:
+              with socket.create_connection(('127.0.0.1',3000),timeout=3):pass
+              print(json.dumps({'localPort3000':'listening'}))
+          except Exception as e:print(json.dumps({'localPort3000':type(e).__name__}))
+          for unit in ['shno-mano-tech.service','nginx']:
+              log=subprocess.run(['journalctl','-u',unit,'-n','30','--no-pager','--output=cat'],capture_output=True,text=True).stdout
+              print(json.dumps({'unit':unit,'recentLogs':redact(log)[-10000:]}))
+          PY
