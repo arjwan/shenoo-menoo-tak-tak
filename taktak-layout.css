@@ -1,0 +1,60 @@
+/* Home structure only. Approved shared colors and service behavior remain intact. */
+html.home-colors-scope .home-nav{max-width:1400px;min-height:76px;gap:20px;padding:12px 24px;}
+html.home-colors-scope .home-brand{font-size:17px;flex-shrink:0;}
+html.home-colors-scope .home-search{display:block;max-width:620px;min-width:0;min-height:44px;margin-inline:auto;padding:11px 18px;}
+html.home-colors-scope .top-actions{gap:8px;flex-shrink:0;overflow:visible;max-width:none;}
+html.home-colors-scope .top-actions button{width:44px;height:44px;min-height:44px;flex:0 0 44px;}
+/* Extension scripts may add legacy shortcuts; move them to navigation before displaying. */
+html.home-colors-scope .top-actions > :not(#theme-toggle):not(#logout){display:none!important;}
+html.home-colors-scope .home-grid{max-width:1400px;grid-template-columns:240px minmax(0,1fr) 240px;gap:22px;margin:100px auto 30px;padding:0 24px;}
+html.home-colors-scope .feed{gap:18px;}
+html.home-colors-scope .side-card{top:100px;padding:16px 10px;max-height:calc(100dvh - 124px);}
+html.home-colors-scope .home-side-title{font-size:12px;color:var(--muted)!important;margin:0 12px 10px;}
+html.home-colors-scope .side-card > :is(a,button){display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:10px 12px;border-radius:12px;text-align:start;font:inherit;font-size:13px;text-decoration:none;border:0;}
+html.home-colors-scope .side-card > a[aria-current="page"]{background:var(--home-soft)!important;color:var(--accent)!important;font-weight:700;}
+html.home-colors-scope .profile-cover{min-height:160px;border-radius:20px;}
+html.home-colors-scope .cover-avatar{width:64px;height:64px;font-size:25px;}
+html.home-colors-scope .cover-edit{font-size:11px;padding:8px 10px;}
+html.home-colors-scope :is(.compact-panel,.composer){padding:18px;}
+html.home-colors-scope .composer-top{align-items:center;gap:12px;}
+html.home-colors-scope .composer textarea{min-height:76px;resize:vertical;}
+html.home-colors-scope .composer-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:12px;}
+html.home-colors-scope .composer-tools .tool-btn{min-height:40px;border-radius:10px;gap:5px;}
+html.home-colors-scope .composer-tools .publish{margin-inline-start:auto;min-width:84px;}
+html.home-colors-scope .right-side{display:grid;gap:18px;}
+html.home-colors-scope .calls-dock{margin-top:0;}
+html.home-colors-scope [data-home-search-results][hidden]{display:none!important;}
+html.home-colors-scope .people-head h3{margin:0;}
+html.home-colors-scope [data-home-search-results] .people-list{display:flex;gap:12px;}
+html.home-colors-scope .mobile-services-drawer{background:var(--panel)!important;color:var(--text)!important;}
+@media(max-width:1200px) and (min-width:761px){
+ html.home-colors-scope .home-grid{grid-template-columns:220px minmax(0,1fr);grid-template-areas:"menu feed";}
+ html.home-colors-scope .right-side{display:none;}
+}
+@media(max-width:760px){
+ html.home-colors-scope .home-nav{min-height:116px!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;padding:10px 12px!important;}
+ html.home-colors-scope .home-brand{font-size:15px!important;max-width:none;flex:1;}
+ html.home-colors-scope .top-actions{margin-inline-start:0!important;gap:6px!important;max-width:none!important;}
+ html.home-colors-scope .top-actions button{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;flex:0 0 40px!important;}
+ html.home-colors-scope .home-search{display:block!important;order:3;flex:0 0 100%;width:100%;max-width:none;min-height:42px;margin:0;}
+ html.home-colors-scope .home-grid{margin:132px 0 0!important;padding:0 12px calc(92px + env(safe-area-inset-bottom))!important;}
+ html.home-colors-scope .feed{gap:14px!important;}
+ html.home-colors-scope .right-side{display:none!important;}
+ html.home-colors-scope .profile-cover{min-height:140px!important;border-radius:18px!important;}
+ html.home-colors-scope .cover-avatar{width:52px;height:52px;}
+ html.home-colors-scope .cover-user{right:12px;bottom:14px;gap:9px;}
+ html.home-colors-scope .cover-user strong{font-size:15px;}
+ html.home-colors-scope .cover-edit{left:10px;bottom:14px;max-width:115px;text-align:center;line-height:1.5;}
+ html.home-colors-scope :is(.compact-panel,.composer){padding:14px!important;border-radius:18px!important;}
+ html.home-colors-scope .composer textarea{min-height:64px!important;}
+ html.home-colors-scope .composer-tools{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;}
+ html.home-colors-scope .composer-tools .tool-btn{width:auto!important;min-width:0!important;min-height:42px!important;font-size:11px!important;padding:8px 5px!important;white-space:normal;}
+ html.home-colors-scope .composer-tools .tool-btn span{display:inline!important;}
+ html.home-colors-scope .composer-tools select{grid-column:span 2;}
+ html.home-colors-scope .composer-tools .publish{margin:0;min-width:0;}
+ html.home-colors-scope .mobile-bar{min-height:64px;padding-bottom:env(safe-area-inset-bottom);}
+}
+@media(prefers-reduced-motion:reduce){html.home-colors-scope *{scroll-behavior:auto!important;}}
+html.home-colors-scope .theme-toggle-global{display:none!important;}
+/* These services remain available from navigation and composer; keep the timeline unobstructed. */
+html.home-colors-scope :is(.sf-dock-launcher,.sf-dock-hide-pill,.calls-mobile-launcher){display:none!important;}

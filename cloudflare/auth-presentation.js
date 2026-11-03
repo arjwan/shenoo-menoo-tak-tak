@@ -7,7 +7,9 @@ const AUTH_UI_TYPES = {
   '/auth-ui.css': 'text/css; charset=utf-8',
   '/taktak.html': 'text/html; charset=utf-8',
   '/taktak-colors.css': 'text/css; charset=utf-8',
-  '/site-ui.css': 'text/css; charset=utf-8'
+  '/site-ui.css': 'text/css; charset=utf-8',
+  '/taktak-layout.css': 'text/css; charset=utf-8',
+  '/taktak-layout.js': 'application/javascript; charset=utf-8'
 };
 
 function authPresentationResponse(path, request) {

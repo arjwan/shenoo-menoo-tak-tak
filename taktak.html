@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="smart-friend-dock.css?v=20260911-1" />
     <link rel="stylesheet" href="taktak-mobile-drawer.css?v=20260911-1" />
     <link rel="stylesheet" href="taktak-colors.css?v=20261103-1" />
+    <link rel="stylesheet" href="taktak-layout.css?v=20261103-1" />
   </head>
   <body>
     <script src="auth-guard.js?v=20261005-media-5"></script>
@@ -37,35 +38,13 @@
           placeholder="ابحث عن أشخاص..."
           aria-label="البحث"
         />
-        <div class="top-actions" aria-label="اختصارات">
-          <a class="action-reels" href="reels.html" title="الريلز">▶</a
-          ><a class="action-ads" href="ads.html" title="الإعلانات المجانية"
-            >📣</a
-          ><a href="notifications.html" title="الإشعارات">🔔</a
-          ><a href="#smart-friend" data-sf-open title="صديقي الذكي">✨</a
-          ><a
-            class="action-school"
-            href="school.html"
-            title="المعلم الذكي | شنو منو مدرسة"
-            >🏫</a
-          ><a class="action-chat" href="taal-nsolf.html">💬</a
-          ><a class="action-mail" href="messages.html">✉</a
-          ><a class="action-call" href="calls.html">☎</a
-          ><a
-            class="action-friends"
-            href="friend-qr.html?v=20260913-1"
-            title="إضافة عبر QR"
-            >▦</a
-          ><a class="action-friends" href="friends.html" title="الأصدقاء">👥</a
-          ><a class="action-settings" href="settings.html">⚙</a
-          ><button id="theme-toggle" class="action-theme" type="button">
+        <div class="top-actions" aria-label="خيارات الحساب"><button id="theme-toggle" class="action-theme" type="button" aria-label="تغيير المظهر" title="تغيير المظهر">
             🌗</button
-          ><button id="logout" class="action-logout" type="button">↪</button>
-        </div>
+          ><button id="logout" class="action-logout" type="button" aria-label="تسجيل الخروج" title="تسجيل الخروج">↪</button></div>
       </nav>
     </header>
     <main class="home-grid">
-      <aside class="left-side side-card">
+      <aside class="left-side side-card" aria-label="قائمة التنقل"><h2 class="home-side-title">تصفح شنو منو</h2>
         <a href="taktak.html">🏠 الرئيسية</a
         ><a href="profile.html">👤 صفحتي الشخصية</a
         ><a href="notifications.html">🔔 الإشعارات</a
@@ -78,14 +57,14 @@
         ><a href="umm-abbas.html">🔮 ركن أم عباس</a
         ><a href="friends.html">👥 الأصدقاء وطلبات الإضافة</a
         ><a href="friend-qr.html?v=20260913-1">▦ إضافة صديق عبر QR</a
-        ><a href="messages.html">✉ المحادثات الخاصة</a
+        ><a data-messages-hub="1" href="messages.html">✉ المحادثات الخاصة</a
         ><a href="calls.html">☎ شنو منو اتصال</a
         ><a href="mall.html">🛍 مول العراق</a
         ><a href="challenges.html">🏆 التحديات والبث</a
         ><a href="game-room.html">🎲 كهوة عزاوي</a
         ><a href="islamic.html">☪ الصفحة الإسلامية</a
         ><a href="settings.html">⚙ الخصوصية والإعدادات</a>
-      </aside>
+      <a href="services.html">🛠 خدماتي</a><a href="transport.html">🚕 النقل والحمل</a><a href="reels.html">▶ الريلز</a><a href="stories.html">✨ القصص</a><a href="tv.html">📺 شنو منو TV</a></aside>
       <section class="feed">
         <section class="profile-cover" data-home-cover>
           <div class="cover-shade"></div>
@@ -96,50 +75,18 @@
               ><small data-cover-state>شنو منو تك تك</small></span
             >
           </div>
-          <a class="cover-edit" href="profile.html">✎ تعديل الصورة والغلاف</a>
+          <a class="cover-edit" title="تعديل الصورة والغلاف" href="profile.html">✎ تعديل الصورة والغلاف</a>
         </section>
-        <section class="compact-panel home-quick-panel">
-          <div class="section-head">
-            <h3>وصول سريع</h3>
-            <span></span>
-          </div>
-          <div class="quick-apps">
-            <a class="quick-app" href="services.html"
-              ><b>🛠</b><span>خدماتي</span></a
-            ><a class="quick-app" href="transport.html"
-              ><b>🚕</b><span>النقل والحمل</span></a
-            ><a class="quick-app" href="game-room.html"
-              ><b>☕</b><span>كهوة عزاوي</span></a
-            ><a class="quick-app" href="mall.html"
-              ><b>🛍</b><span>مول العراق</span></a
-            ><a class="quick-app" href="consultations.html"
-              ><b>🤝</b><span>الاستشارات</span></a
-            ><a class="quick-app" href="friends.html"
-              ><b>👥</b><span>الأصدقاء</span></a
-            ><a class="quick-app" href="friend-qr.html?v=20260913-1"
-              ><b>▦</b><span>إضافة QR</span></a
-            ><a class="quick-app" href="messages.html"
-              ><b>💬</b><span>الرسائل</span></a
-            ><a class="quick-app" href="calls.html"
-              ><b>☎</b><span>الاتصال</span></a
-            ><a class="quick-app" href="ads.html"
-              ><b>📣</b><span>الإعلانات</span></a
-            ><a class="quick-app" href="school.html"
-              ><b>🏫</b><span>المعلم الذكي</span></a
-            ><a class="quick-app" href="#smart-friend" data-sf-open
-              ><b>✨</b><span>صديقي الذكي</span></a
-            >
-          </div>
-        </section>
-        <section class="people-strip compact-panel">
+        <section class="people-strip compact-panel" data-home-search-results hidden>
           <div class="people-head">
-            <h3>أشخاص على شنو منو</h3>
+            <h3>نتائج البحث</h3>
             <a href="friends.html">عرض الكل</a>
           </div>
           <div class="people-list" data-people-list>
             <div class="empty">جارٍ تحميل الأشخاص…</div>
           </div>
         </section>
+
         <section class="stories-block compact-panel">
           <div class="section-head">
             <h3>القصص</h3>
@@ -153,15 +100,6 @@
             <div class="stories-list" data-stories-list>
               <div class="empty inline-empty">جارٍ تحميل القصص…</div>
             </div>
-          </div>
-        </section>
-        <section class="reels-block compact-panel">
-          <div class="section-head">
-            <h3>ريلز</h3>
-            <a href="reels.html">عرض الكل</a>
-          </div>
-          <div class="reels-list" data-reels-list>
-            <div class="empty inline-empty">جارٍ تحميل الريلز…</div>
           </div>
         </section>
         <form class="composer" data-composer>
@@ -205,6 +143,16 @@
         <div data-feed>
           <div class="post-card empty">جارٍ تحميل المنشورات…</div>
         </div>
+        <section class="reels-block compact-panel">
+          <div class="section-head">
+            <h3>ريلز</h3>
+            <a href="reels.html">عرض الكل</a>
+          </div>
+          <div class="reels-list" data-reels-list>
+            <div class="empty inline-empty">جارٍ تحميل الريلز…</div>
+          </div>
+        </section>
+
       </section>
       <aside class="right-side">
         <section class="paid-ads">
@@ -388,6 +336,7 @@
       ><a href="notifications.html"><b>🔔</b>الإشعارات</a
       ><a href="profile.html"><b>👤</b>حسابي</a>
     </nav>
+    <script defer src="taktak-layout.js?v=20261103-1"></script>
     <script defer src="taktak-feed.js?v=20261005-preview-3"></script>
     <script defer src="taktak-home-visual.js?v=20260910-1"></script>
     <script defer src="taktak-viewers.js?v=20261005-expiry-6"></script>
