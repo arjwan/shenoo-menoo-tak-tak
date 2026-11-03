@@ -72,6 +72,9 @@ jobs:
                 const response = await fetch('http://127.0.0.1:3000/api/developer/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(login)});
                 const result = await response.json().catch(()=>({}));
                 console.log(JSON.stringify({storedPasswordValid:compare,localLoginStatus:response.status,preAuthTokenIssued:Boolean(result.preAuthToken),fullTokenIssued:Boolean(result.token),message:result.message||null,mfa:result.mfa||null}));
+                const publicResponse = await fetch('https://shinomino.com/api/developer/login', {method:'POST',headers:{'Content-Type':'application/json','Origin':'https://shinomino.com'},body:JSON.stringify(login)});
+                const publicResult = await publicResponse.json().catch(()=>({}));
+                console.log(JSON.stringify({publicLoginStatus:publicResponse.status,preAuthTokenIssued:Boolean(publicResult.preAuthToken),message:publicResult.message||null,mfa:publicResult.mfa||null}));
               }
             }
           })().catch(error => {console.error(JSON.stringify({diagnosticFailed:true,name:error.name,code:error.code||null}));process.exitCode=1;}).finally(()=>mongoose.disconnect());
