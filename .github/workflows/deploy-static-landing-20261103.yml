@@ -1,0 +1,119 @@
+name: Publish reviewed static landing page to Oracle
+
+on:
+  push:
+    branches: [deploy/static-landing-20261103]
+    paths: [.github/workflows/deploy-static-landing-20261103.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oracle-static-landing
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: a580839a34613466d645ddec118b693039e8a12a
+          persist-credentials: false
+      - name: Verify reviewed artifact and publish only index.html
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=e0f2a9ef462cb50d3c6fc1530774592577134db5baf5b019bf387406be0d9dd5
+          printf '%s  index.html\n' "$expected" | sha256sum --check --status
+          for setting in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY; do
+            test -n "${!setting:-}" || { echo "Missing deployment setting: $setting"; exit 1; }
+          done
+          install -d -m 700 "$RUNNER_TEMP/landing-ssh"
+          key="$RUNNER_TEMP/landing-ssh/key"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$key"
+          chmod 600 "$key"
+          ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/landing-ssh/known_hosts" 2>/dev/null
+          ssh_opts=(-i "$key" -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/landing-ssh/known_hosts")
+          ssh "${ssh_opts[@]}" "$ORACLE_USER@$ORACLE_HOST" 'install -d -m 700 "$HOME/.cache/shenomino-landing"'
+          scp "${ssh_opts[@]}" index.html "$ORACLE_USER@$ORACLE_HOST:.cache/shenomino-landing/index-$GITHUB_RUN_ID.html"
+          ssh "${ssh_opts[@]}" "$ORACLE_USER@$ORACLE_HOST" "bash -se -- $GITHUB_RUN_ID" <<'REMOTE'
+          set -euo pipefail
+          umask 077
+          run_id="$1"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          staged="$HOME/.cache/shenomino-landing/index-$run_id.html"
+          expected=e0f2a9ef462cb50d3c6fc1530774592577134db5baf5b019bf387406be0d9dd5
+          baseline=9a3bfe4bdd539376c18459d6d867dbabf14197fd5aed1546a10752111eacac5f
+          test "$(sha256sum "$staged" | cut -d ' ' -f1)" = "$expected"
+          project="$HOME/shenoo-menoo-tak-tak"
+          webroot=/usr/share/nginx/html/shno-mano
+          candidates=("$project/index.html" "$webroot/index.html")
+          targets=()
+          for file in "${candidates[@]}"; do
+            if sudo -n test -f "$file"; then
+              test ! -L "$file" || { echo 'Refusing symlink target'; exit 1; }
+              hash="$(sudo -n sha256sum "$file" | cut -d ' ' -f1)"
+              printf 'Candidate %s sha256=%s\n' "$(dirname "$file" | xargs basename)" "$hash"
+              if [ "$hash" != "$baseline" ] && [ "$hash" != "$expected" ]; then
+                echo 'Origin file differs from the reviewed baseline; no live file changed.'
+                exit 1
+              fi
+              targets+=("$file")
+            fi
+          done
+          test "${#targets[@]}" -gt 0
+          origin_body="$(mktemp)"
+          curl --fail --silent --show-error --max-time 30 "https://shino-mino-tak-tak.duckdns.org/?landing_preflight=$run_id" -o "$origin_body"
+          origin_hash="$(sha256sum "$origin_body" | cut -d ' ' -f1)"
+          rm -f "$origin_body"
+          if [ "$origin_hash" != "$baseline" ] && [ "$origin_hash" != "$expected" ]; then
+            echo 'Served origin differs from the reviewed baseline; no live file changed.'
+            exit 1
+          fi
+          rollback="$HOME/shenomino-rollbacks/landing-$run_id"
+          install -d -m 700 "$rollback"
+          i=0
+          for file in "${targets[@]}"; do
+            sudo -n cp -p "$file" "$rollback/index-$i.html"
+            i=$((i+1))
+          done
+          restore() {
+            echo 'Verification failed; restoring original landing files.'
+            local j=0
+            for file in "${targets[@]}"; do
+              sudo -n cp -p "$rollback/index-$j.html" "$file.rollback-$run_id.tmp"
+              sudo -n mv -f "$file.rollback-$run_id.tmp" "$file"
+              j=$((j+1))
+            done
+          }
+          trap 'restore' ERR
+          for file in "${targets[@]}"; do
+            sudo -n cp -p "$file" "$file.landing-$run_id.tmp"
+            sudo -n sh -c 'cat "$1" > "$2"' sh "$staged" "$file.landing-$run_id.tmp"
+            sudo -n mv -f "$file.landing-$run_id.tmp" "$file"
+          done
+          verify_body="$(mktemp)"
+          for site in https://shino-mino-tak-tak.duckdns.org https://shinomino.com; do
+            curl --fail --silent --show-error --max-time 30 "$site/?landing_release=$run_id" -o "$verify_body"
+            served_hash="$(sha256sum "$verify_body" | cut -d ' ' -f1)"
+            test "$served_hash" = "$expected"
+            printf 'Verified reviewed landing through %s sha256=%s\n' "$site" "$served_hash"
+          done
+          for page in signin.html signup.html developer.html; do
+            curl --fail --silent --show-error --max-time 30 "https://shinomino.com/$page?landing_release=$run_id" -o "$verify_body"
+            grep -qi '<html' "$verify_body"
+            printf 'Verified public entry page: %s\n' "$page"
+          done
+          curl --fail --silent --show-error --max-time 30 https://shinomino.com/api/health -o "$verify_body"
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));if(r.ok!==true)process.exit(1)" "$verify_body"
+          rm -f "$verify_body" "$staged"
+          trap - ERR
+          echo 'Published and verified static landing. Original files retained in private rollback directory.'
+          REMOTE
