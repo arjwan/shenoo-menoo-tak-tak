@@ -38,7 +38,7 @@
     }
 
     html{
-      scroll-behavior:smooth;
+      scroll-behavior:auto;
     }
 
     body{
@@ -72,21 +72,19 @@
       margin:auto;
     }
 
-    /* خلفية متحركة */
+    /* Static soft lighting: no fixed blurred layers or continuous animation. */
     .orb{
-      position:fixed;
+      position:absolute;
       border-radius:50%;
-      filter:blur(15px);
       pointer-events:none;
       opacity:.45;
       z-index:-2;
-      animation:floatOrb 14s ease-in-out infinite;
     }
 
     .orb.one{
       width:260px;
       height:260px;
-      background:#6f4cff;
+      background:radial-gradient(circle, #6f4cff 0, transparent 70%);
       top:10%;
       right:-90px;
     }
@@ -94,25 +92,18 @@
     .orb.two{
       width:220px;
       height:220px;
-      background:#18cdb7;
+      background:radial-gradient(circle, #18cdb7 0, transparent 70%);
       bottom:8%;
       left:-70px;
-      animation-delay:-5s;
     }
 
     .orb.three{
       width:180px;
       height:180px;
-      background:#ff3f8f;
+      background:radial-gradient(circle, #ff3f8f 0, transparent 70%);
       top:55%;
       right:22%;
       opacity:.22;
-      animation-delay:-9s;
-    }
-
-    @keyframes floatOrb{
-      0%,100%{transform:translate3d(0,0,0) scale(1)}
-      50%{transform:translate3d(0,-30px,0) scale(1.08)}
     }
 
     /* Header */
@@ -120,8 +111,7 @@
       position:sticky;
       top:0;
       z-index:50;
-      backdrop-filter:blur(18px);
-      background:rgba(7,9,16,.70);
+      background:#070910;
       border-bottom:1px solid rgba(255,255,255,.05);
     }
 
@@ -183,7 +173,7 @@
     }
 
     .nav-links a{
-      transition:.25s ease;
+      transition:color .15s ease;
     }
 
     .nav-links a:hover{
@@ -207,15 +197,7 @@
       gap:8px;
       font-weight:700;
       cursor:pointer;
-      transition:
-        transform .25s ease,
-        box-shadow .25s ease,
-        border-color .25s ease,
-        background .25s ease;
-    }
-
-    .btn:hover{
-      transform:translateY(-2px);
+      transition:border-color .15s ease, background-color .15s ease;
     }
 
     .btn-ghost{
@@ -383,13 +365,6 @@
       border-radius:50%;
       background:
         radial-gradient(circle, rgba(124,92,255,.29), transparent 68%);
-      filter:blur(3px);
-      animation:pulseGlow 4s ease-in-out infinite;
-    }
-
-    @keyframes pulseGlow{
-      0%,100%{transform:scale(.96);opacity:.75}
-      50%{transform:scale(1.08);opacity:1}
     }
 
     .phone{
@@ -406,12 +381,6 @@
       position:relative;
       z-index:2;
       transform:rotate(-2deg);
-      animation:phoneFloat 5s ease-in-out infinite;
-    }
-
-    @keyframes phoneFloat{
-      0%,100%{transform:translateY(0) rotate(-2deg)}
-      50%{transform:translateY(-13px) rotate(-.5deg)}
     }
 
     .screen{
@@ -496,11 +465,10 @@
       display:flex;
       align-items:center;
       gap:12px;
-      transition:.25s ease;
+      transition:background-color .15s ease;
     }
 
     .chat-box:hover{
-      transform:translateX(-3px);
       background:rgba(255,255,255,.055);
     }
 
@@ -554,13 +522,11 @@
     .floating-card{
       position:absolute;
       z-index:3;
-      background:rgba(16,21,34,.78);
-      backdrop-filter:blur(17px);
+      background:#101522;
       border:1px solid rgba(255,255,255,.11);
       border-radius:20px;
       padding:14px 17px;
       box-shadow:var(--shadow);
-      animation:floatCard 5.5s ease-in-out infinite;
     }
 
     .fc1{
@@ -571,12 +537,6 @@
     .fc2{
       left:-30px;
       bottom:105px;
-      animation-delay:-2.5s;
-    }
-
-    @keyframes floatCard{
-      0%,100%{transform:translateY(0)}
-      50%{transform:translateY(-11px)}
     }
 
     .floating-title{
@@ -631,7 +591,7 @@
         linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
       border:1px solid var(--line);
       box-shadow:0 15px 45px rgba(0,0,0,.16);
-      transition:.35s ease;
+      transition:border-color .15s ease;
       position:relative;
       overflow:hidden;
     }
@@ -645,11 +605,10 @@
       left:-45px;
       top:-45px;
       opacity:0;
-      transition:.35s ease;
+      transition:opacity .15s ease;
     }
 
     .feature:hover{
-      transform:translateY(-8px);
       border-color:rgba(124,92,255,.35);
     }
 
@@ -730,16 +689,8 @@
       font-weight:700;
     }
 
-    /* reveal animation */
+    /* Content is visible immediately, including when JavaScript is unavailable. */
     .reveal{
-      opacity:0;
-      transform:translateY(24px);
-      transition:
-        opacity .75s ease,
-        transform .75s ease;
-    }
-
-    .reveal.show{
       opacity:1;
       transform:none;
     }
@@ -1310,64 +1261,6 @@
     document.getElementById("year").textContent =
       new Date().getFullYear();
 
-
-    // إظهار العناصر عند النزول
-    const observer = new IntersectionObserver(
-      entries => {
-
-        entries.forEach(entry => {
-
-          if(entry.isIntersecting){
-
-            entry.target.classList.add("show");
-
-            observer.unobserve(entry.target);
-
-          }
-
-        });
-
-      },
-      {
-        threshold:0.13
-      }
-    );
-
-
-    document
-      .querySelectorAll(".reveal")
-      .forEach(el => observer.observe(el));
-
-
-    // حركة خفيفة للبطاقات حسب الماوس
-    document
-      .querySelectorAll(".feature")
-      .forEach(card => {
-
-        card.addEventListener("mousemove", e => {
-
-          const rect = card.getBoundingClientRect();
-
-          const x =
-            (e.clientX - rect.left) / rect.width - .5;
-
-          const y =
-            (e.clientY - rect.top) / rect.height - .5;
-
-          card.style.transform =
-            `translateY(-8px)
-             rotateX(${y * -3}deg)
-             rotateY(${x * 3}deg)`;
-
-        });
-
-        card.addEventListener("mouseleave", () => {
-
-          card.style.transform = "";
-
-        });
-
-      });
 
   </script>
 
