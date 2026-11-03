@@ -11,6 +11,7 @@ const publicEntrypoints = [
   'taktak-calls-dock.js',
   'social-api.js',
   'presence-client.js',
+  'home-notifications.js',
   'my-service-requests.js',
   'school-live.html',
   'reels-v2.js',
