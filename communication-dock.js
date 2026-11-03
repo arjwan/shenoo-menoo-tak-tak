@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 if(window.ShnoCommunicationDock)return;
-var API=location.protocol==='file:'?'https://shino-mino-tak-tak.duckdns.org':location.origin;
+var API=location.origin;
 var token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';if(!token)return;
 var rail=document.createElement('div');rail.className='shno-comm-rail';rail.hidden=true;document.body.appendChild(rail);
 var launcher=document.createElement('button');launcher.className='shno-comm-launcher';launcher.type='button';launcher.textContent='☎ الاتصال والأصدقاء';launcher.setAttribute('aria-expanded','false');document.body.appendChild(launcher);
