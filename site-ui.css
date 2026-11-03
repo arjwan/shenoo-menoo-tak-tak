@@ -88,3 +88,4 @@ html.shenoo-ui-scope.shenoo-ui-scope.shenoo-ui-scope .ambient {background:var(--
 html.shenoo-ui-scope.shenoo-ui-scope.shenoo-ui-scope .brand-mark {background:#6551c9!important;color:#fff!important;}
 html.shenoo-ui-scope.shenoo-ui-scope.shenoo-ui-scope .password-line {display:flex!important;align-items:center;gap:8px;}
 html.shenoo-ui-scope.shenoo-ui-scope.shenoo-ui-scope .password-line input[type="checkbox"] {width:18px!important;height:18px!important;min-height:18px!important;margin:0!important;padding:0!important;accent-color:var(--accent);flex:0 0 18px;}
+html.shenoo-ui-scope.shenoo-ui-scope.shenoo-ui-scope .menu-toggle span {background:currentColor!important;}
