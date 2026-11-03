@@ -1,0 +1,72 @@
+name: Recover Oracle application after reboot
+on:
+  push:
+    branches: [diagnostic/oracle-developer-access-20261103]
+    paths: [.github/workflows/oracle-reboot-recovery.yml]
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+    steps:
+      - name: Check and start existing Oracle application services
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$RUNNER_TEMP/oracle-recovery"
+          key="$RUNNER_TEMP/oracle-recovery/key"
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$key"
+          chmod 600 "$key"
+          ssh-keyscan -T 20 -H "$ORACLE_HOST" > "$RUNNER_TEMP/oracle-recovery/known_hosts" 2>/dev/null
+          test -s "$RUNNER_TEMP/oracle-recovery/known_hosts"
+          ssh -i "$key" -o BatchMode=yes -o ConnectTimeout=25 -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o UserKnownHostsFile="$RUNNER_TEMP/oracle-recovery/known_hosts" "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
+          sudo -n python3 <<'PY'
+          import subprocess,json,time
+          from pathlib import Path
+          services=['shno-mano-tech.service','nginx']
+          def state(service):
+              r=subprocess.run(['systemctl','show',service,'--property=ActiveState,SubState,ExecMainStatus,MemoryCurrent'],capture_output=True,text=True)
+              return dict(line.split('=',1) for line in r.stdout.splitlines() if '=' in line)
+          def health(tls=False):
+              command=['curl','--silent','--connect-timeout','2','--max-time','6','-o','/dev/null','-w','%{http_code}']
+              if tls:command+=['--resolve','shino-mino-tak-tak.duckdns.org:443:127.0.0.1','https://shino-mino-tak-tak.duckdns.org/api/health']
+              else:command+=['http://127.0.0.1:3000/api/health']
+              result=subprocess.run(command,capture_output=True,text=True)
+              return result.stdout.strip() if result.returncode==0 else 'unresponsive'
+          print(json.dumps({'initialServices':{s:state(s) for s in services},'loadAverage':Path('/proc/loadavg').read_text().split()[:3]}))
+          api=health();https=health(True)
+          print(json.dumps({'initialLocalApi':api,'initialLocalHttps':https}))
+          if api!='200':
+              result=subprocess.run(['systemctl','restart','shno-mano-tech.service'],capture_output=True,text=True)
+              print(json.dumps({'apiRestarted':result.returncode==0}))
+              for attempt in range(4):
+                  if health()=='200':break
+                  time.sleep(3)
+          if https!='200':
+              test=subprocess.run(['nginx','-t'],capture_output=True,text=True)
+              print(json.dumps({'nginxConfigurationValid':test.returncode==0}))
+              if test.returncode==0:
+                  result=subprocess.run(['systemctl','restart','nginx'],capture_output=True,text=True)
+                  print(json.dumps({'nginxRestarted':result.returncode==0}))
+          finalApi=health();finalHttps=health(True)
+          if finalApi=='200' and finalHttps=='200':
+              result=subprocess.run(['systemctl','enable',*services],capture_output=True,text=True)
+              print(json.dumps({'automaticStartupEnabled':result.returncode==0}))
+          else:
+              for service in services:
+                  logs=subprocess.run(['journalctl','-u',service,'-n','40','--no-pager','--output=cat'],capture_output=True,text=True).stdout
+                  markers=['EADDRINUSE','ENOMEM','MODULE_NOT_FOUND','MongoServerSelectionError','MONGODB_URI is required','Authentication failed','permission denied','cannot load certificate','bind()','Cannot find module','out of memory']
+                  print(json.dumps({'service':service,'errorMarkers':[m for m in markers if m.lower() in logs.lower()]}))
+          print(json.dumps({'finalLocalApi':finalApi,'finalLocalHttps':finalHttps,'finalServices':{s:state(s) for s in services}}))
+          PY
+          REMOTE
+      - name: Verify application through custom domain
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 20 https://shinomino.com/api/health
