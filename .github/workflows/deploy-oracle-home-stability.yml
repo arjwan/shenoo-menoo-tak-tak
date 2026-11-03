@@ -1,0 +1,115 @@
+name: Deploy stable home frontend to Oracle
+on:
+  push:
+    branches: [deploy/oracle-home-stability-20261103]
+    paths: ['.github/workflows/deploy-oracle-home-stability.yml']
+permissions:
+  contents: read
+concurrency:
+  group: oracle-approved-ui
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package approved static files
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf "$RUNNER_TEMP/approved-ui.tar.gz" signin.html signup.html auth-ui.css taktak.html taktak-colors.css taktak-layout.css taktak-layout.js site-ui.css auth-guard.js home-live-now.js home-mini-tv.js home-media-popups.js platform-upgrades.js taktak-feed.js
+          cat > "$RUNNER_TEMP/apply-approved-ui.py" <<'PY'
+          from pathlib import Path
+          import os, re, shutil, tempfile, hashlib
+          from datetime import datetime, timezone
+          stage=Path('/tmp/shenoo-approved-ui-20261103')
+          roots=[Path('/usr/share/nginx/html/shno-mano'),Path('/home/opc/shenoo-menoo-tak-tak')]
+          names=['signin.html','signup.html','auth-ui.css','taktak.html','taktak-colors.css','taktak-layout.css','taktak-layout.js','site-ui.css','auth-guard.js','home-live-now.js','home-mini-tv.js','home-media-popups.js','platform-upgrades.js','taktak-feed.js']
+          stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+          backup=Path('/home/opc/shenoo-ui-backups')/stamp
+          def install(target,data,root):
+              relative=target.relative_to(root)
+              if target.exists():
+                  saved=backup/root.name/relative
+                  saved.parent.mkdir(parents=True,exist_ok=True)
+                  if not saved.exists():shutil.copy2(target,saved)
+              fd,name=tempfile.mkstemp(prefix='.approved-ui-',dir=target.parent)
+              try:
+                  with os.fdopen(fd,'wb') as out:out.write(data)
+                  os.chmod(name,0o644)
+                  if target.exists():
+                      st=target.stat();os.chown(name,st.st_uid,st.st_gid)
+                  os.replace(name,target)
+              finally:
+                  if os.path.exists(name):os.unlink(name)
+          for root in roots:
+              if not root.is_dir():raise SystemExit('Expected frontend root missing: '+str(root))
+              for name in names:
+                  data=(stage/name).read_bytes()
+                  if root.joinpath(name).exists() and root.joinpath(name).read_bytes()==data:continue
+                  install(root/name,data,root)
+              count=0
+              for page in root.glob('*.html'):
+                  if page.name in ['signin.html','signup.html','auth-preview.html','home-colors-preview.html','home-colors-review.html']:continue
+                  original=page.read_text(encoding='utf-8')
+                  def html_tag(m):
+                      tag=m.group()
+                      cm=re.search(r'\bclass\s*=\s*([\x22\x27])(.*?)\1',tag,re.I)
+                      if cm:
+                          classes=cm[2].split()
+                          if 'shenoo-ui-scope' not in classes:
+                              tag=tag[:cm.start(2)]+cm[2]+' shenoo-ui-scope'+tag[cm.end(2):]
+                      else:tag=tag[:-1]+' class="shenoo-ui-scope">'
+                      if not re.search(r'\bdata-theme\s*=',tag,re.I):tag=tag[:-1]+' data-theme="light">'
+                      return tag
+                  result=re.sub(r'<html\b[^>]*>',html_tag,original,count=1,flags=re.I)
+                  if not re.search(r'href=[\x22\x27]/?site-ui\.css',result,re.I):
+                      result=re.sub(r'</head\s*>','<link rel="stylesheet" href="/site-ui.css?v=20261103-1" />\n</head>',result,count=1,flags=re.I)
+                  if re.findall(r'<script\b.*?</script\s*>',original,re.I|re.S)!=re.findall(r'<script\b.*?</script\s*>',result,re.I|re.S):raise SystemExit('Script preservation check failed')
+                  if result!=original:install(page,result.encode(),root);count+=1
+              assert 'home-quick-panel' not in (root/'taktak.html').read_text()
+              assert 'taktak-layout.css?v=20261103-2' in (root/'taktak.html').read_text()
+              assert 'shenoo-ui-scope' in (root/'taktak.html').read_text()
+              for name in names:
+                  if name.endswith('.html'):continue
+                  assert hashlib.sha256((stage/name).read_bytes()).digest()==hashlib.sha256((root/name).read_bytes()).digest()
+              print('Updated frontend:',root,'; additional themed pages:',count)
+          print('Static frontend deployed and verified. Backup:',backup)
+          PY
+      - name: Upload and apply frontend
+        shell: bash
+        env:
+          ORACLE_DEPLOY_HOST: ${{ secrets.ORACLE_HOST || vars.ORACLE_HOST }}
+          ORACLE_DEPLOY_USER: ${{ secrets.ORACLE_USER || vars.ORACLE_USER }}
+          ORACLE_DEPLOY_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$ORACLE_DEPLOY_HOST"
+          test -n "$ORACLE_DEPLOY_USER"
+          test -n "$ORACLE_DEPLOY_KEY"
+          install -d -m 700 "$RUNNER_TEMP/oracle-ssh"
+          printf '%s\n' "$ORACLE_DEPLOY_KEY" | tr -d '\r' > "$RUNNER_TEMP/oracle-ssh/key"
+          chmod 600 "$RUNNER_TEMP/oracle-ssh/key"
+          ssh-keygen -y -f "$RUNNER_TEMP/oracle-ssh/key" >/dev/null
+          ssh_opts=(-i "$RUNNER_TEMP/oracle-ssh/key" -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new)
+          ssh "${ssh_opts[@]}" "$ORACLE_DEPLOY_USER@$ORACLE_DEPLOY_HOST" 'mkdir -p /tmp/shenoo-approved-ui-20261103 && chmod 700 /tmp/shenoo-approved-ui-20261103'
+          scp "${ssh_opts[@]}" "$RUNNER_TEMP/approved-ui.tar.gz" "$RUNNER_TEMP/apply-approved-ui.py" "$ORACLE_DEPLOY_USER@$ORACLE_DEPLOY_HOST:/tmp/shenoo-approved-ui-20261103/"
+          ssh "${ssh_opts[@]}" "$ORACLE_DEPLOY_USER@$ORACLE_DEPLOY_HOST" 'set -e; tar -xzf /tmp/shenoo-approved-ui-20261103/approved-ui.tar.gz -C /tmp/shenoo-approved-ui-20261103; sudo python3 /tmp/shenoo-approved-ui-20261103/apply-approved-ui.py; echo "Oracle frontend files verified on disk"'
+      - name: Check public Oracle frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --connect-timeout 20 --max-time 40 https://shino-mino-tak-tak.duckdns.org/taktak.html -o "$RUNNER_TEMP/oracle-home.html"
+          grep -q 'taktak-layout.css?v=20261103-2' "$RUNNER_TEMP/oracle-home.html"
+          if grep -q 'home-quick-panel' "$RUNNER_TEMP/oracle-home.html"; then exit 1; fi
+          curl -fsS --connect-timeout 20 --max-time 40 https://shino-mino-tak-tak.duckdns.org/site-ui.css -o "$RUNNER_TEMP/oracle-site-ui.css"
+          cmp site-ui.css "$RUNNER_TEMP/oracle-site-ui.css"
+          for asset in auth-guard.js home-live-now.js home-mini-tv.js home-media-popups.js platform-upgrades.js taktak-feed.js taktak-layout.css; do
+            curl -fsS --connect-timeout 20 --max-time 40 "https://shino-mino-tak-tak.duckdns.org/$asset" -o "$RUNNER_TEMP/verified-$asset"
+            cmp "$asset" "$RUNNER_TEMP/verified-$asset"
+          done
+          grep -q 'data-home-media-mode="popup"' "$RUNNER_TEMP/oracle-home.html"
+          curl -fsS --connect-timeout 20 --max-time 40 https://shino-mino-tak-tak.duckdns.org/api/health
+          echo 'Public Oracle stable home frontend verified' 
