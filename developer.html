@@ -15,7 +15,8 @@ dialog{width:min(680px,calc(100% - 24px));border:1px solid var(--line);border-ra
 </head>
 <body>
 <section class="auth" id="authScreen">
-  <form class="auth-card" id="developerLoginForm" autocomplete="off">
+  <div class="auth-card">
+  <form id="developerLoginForm" autocomplete="off">
     <div>🔐 وصول محمي</div><h1>دخول المطور</h1>
     <p>جلسة المطور مستقلة عن حساب المستخدم، ولا يتم حفظ كلمة المرور داخل الموقع.</p>
     <label for="developerIdentifier">اسم المستخدم أو البريد الإلكتروني</label>
@@ -25,6 +26,7 @@ dialog{width:min(680px,calc(100% - 24px));border:1px solid var(--line);border-ra
     <label class="password-line"><input id="showDeveloperPassword" type="checkbox"> إظهار كلمة المرور</label>
     <div class="error" id="authError" role="alert"></div>
     <button class="btn primary" type="submit">تسجيل الدخول</button>
+  </form>
     <details style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
       <summary style="cursor:pointer;color:var(--primary2);font-weight:800">تأسيس حساب المطوّر لأول مرة</summary>
       <p>يظهر هذا الخيار للتأسيس الأول فقط، ويتطلب رمز التفعيل الذي يضبطه مالك المشروع في إعدادات الخادم.</p>
@@ -38,7 +40,7 @@ dialog{width:min(680px,calc(100% - 24px));border:1px solid var(--line);border-ra
         <button class="btn primary" type="button" id="developerSetupButton">إنشاء حساب المطوّر</button>
       </div>
     </details>
-  </form>
+  </div>
 </section>
 
 <section class="auth hidden" id="mfaScreen"><div class="auth-card"><h1>تأكيد دخول المطور</h1><p id="mfaMessage">استخدم الهاتف المقترن أو مفتاح FIDO. يكفي نجاح أحدهما.</p><div id="mfaQr" style="text-align:center;margin:14px 0"></div><div class="actions"><button class="btn primary" id="phoneMfa" type="button">📱 موافقة الهاتف</button><button class="btn primary" id="fidoMfa" type="button">🔐 مفتاح FIDO</button><button class="btn" id="enrollPhone" type="button">ربط الهاتف أول مرة</button><button class="btn" id="enrollFido" type="button">تسجيل مفتاح FIDO</button><button class="btn" id="cancelMfa" type="button">إلغاء</button></div></div></section>
