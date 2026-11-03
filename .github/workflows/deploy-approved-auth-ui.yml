@@ -1,0 +1,106 @@
+name: Deploy approved authentication presentation
+on:
+  push:
+    branches: [deploy/auth-ui-approved-20261103]
+    paths: [.github/workflows/deploy-approved-auth-ui.yml]
+permissions:
+  contents: read
+concurrency:
+  group: shno-mano-oracle-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    environment: production
+    env:
+      ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+      ORACLE_USER: ${{ secrets.ORACLE_USER }}
+      ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY || secrets.ORACLE_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy only approved HTML and CSS, preserving production scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ORACLE_HOST ORACLE_USER ORACLE_SSH_KEY; do
+            if [ -z "${!name:-}" ]; then echo "Missing deployment setting: $name"; exit 1; fi
+          done
+          install -d -m 700 "$RUNNER_TEMP/auth-ui"
+          key="$RUNNER_TEMP/auth-ui/key"
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$key"
+          chmod 600 "$key"
+          ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/auth-ui/known_hosts" 2>/dev/null
+          args=(-i "$key" -o BatchMode=yes -o ConnectTimeout=15 -o UserKnownHostsFile="$RUNNER_TEMP/auth-ui/known_hosts")
+          remote_stage="$(ssh "${args[@]}" "$ORACLE_USER@$ORACLE_HOST" 'mktemp -d /home/opc/.shenoo-auth-ui.XXXXXXXX')"
+          [[ "$remote_stage" =~ ^/home/opc/\.shenoo-auth-ui\.[A-Za-z0-9]+$ ]] || exit 1
+          scp "${args[@]}" signin.html signup.html auth-ui.css "$ORACLE_USER@$ORACLE_HOST:$remote_stage/"
+          ssh "${args[@]}" "$ORACLE_USER@$ORACLE_HOST" "SHENOO_STAGE='$remote_stage' bash -se" <<'REMOTE'
+          set -euo pipefail
+          sudo -n env SHENOO_STAGE="$SHENOO_STAGE" python3 <<'PY'
+          import os, re, shutil, subprocess, tempfile, json
+          from pathlib import Path
+          from datetime import datetime, timezone
+          from html.parser import HTMLParser
+          root=Path('/usr/share/nginx/html/shno-mano')
+          stage=Path(os.environ['SHENOO_STAGE'])
+          assert re.fullmatch(r'/home/opc/\.shenoo-auth-ui\.[A-Za-z0-9]+',str(stage))
+          class Form(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.controls={}; self.ids=[]
+              def handle_starttag(self,tag,attrs):
+                  attrs=dict(attrs)
+                  if attrs.get('id'): self.ids.append(attrs['id'])
+                  if tag in ('input','select'): self.controls[attrs.get('id')]=attrs
+          built={}
+          for name in ('signin.html','signup.html'):
+              old=(root/name).read_text(); new=(stage/name).read_text()
+              old_form=Form(); old_form.feed(old)
+              new_form=Form(); new_form.feed(new)
+              assert old_form.controls.keys()==new_form.controls.keys(), 'Production fields differ: '+name
+              assert set(old_form.ids)<=set(new_form.ids), 'Production element IDs differ: '+name
+              for field,attrs in old_form.controls.items():
+                  for attr in ('type','maxlength','required'):
+                      assert attrs.get(attr)==new_form.controls[field].get(attr), 'Production constraint differs: '+name+':'+str(field)+':'+attr
+              scripts=re.findall(r'<script\b[^>]*>.*?</script>',old,re.S|re.I)
+              assert scripts, 'Missing production scripts: '+name
+              new=re.sub(r'<script\b[^>]*>.*?</script>','',new,flags=re.S|re.I)
+              new=new.replace('</body>','\n'.join(scripts)+'\n</body>')
+              assert re.findall(r'<script\b[^>]*>.*?</script>',new,re.S|re.I)==scripts
+              for index,body in enumerate(re.findall(r'<script\b[^>]*>(.*?)</script>',new,re.S|re.I)):
+                  test=stage/(name+'.'+str(index)+'.js'); test.write_text(body)
+                  subprocess.run(['node','--check',str(test)],check=True,capture_output=True)
+              built[name]=new.encode()
+          built['auth-ui.css']=(stage/'auth-ui.css').read_bytes()
+          assert b'--accent: #6551c9' in built['auth-ui.css']
+          backup=Path('/home/opc/.noah-repairs')/('auth-ui-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'))
+          backup.mkdir(parents=True,mode=0o700)
+          existed={name:(root/name).exists() for name in built}
+          for name in built:
+              if existed[name]: shutil.copy2(root/name,backup/name)
+          installed=[]
+          try:
+              for name,data in built.items():
+                  temporary=root/('.'+name+'.auth-ui-new')
+                  temporary.write_bytes(data); temporary.chmod(0o644)
+                  os.replace(temporary,root/name); installed.append(name)
+              restore=shutil.which('restorecon')
+              if restore: subprocess.run([restore,*[str(root/name) for name in built]],check=True,capture_output=True)
+              for name,data in built.items(): assert (root/name).read_bytes()==data
+          except Exception:
+              for name in installed:
+                  if existed[name]: shutil.copy2(backup/name,root/name)
+                  else: (root/name).unlink(missing_ok=True)
+              raise
+          print(json.dumps({'deployedFiles':list(built),'productionScriptsPreserved':True,'backendRestarted':False,'rollbackCopyCreated':True}))
+          PY
+          curl --fail --silent http://127.0.0.1:3000/api/health
+          REMOTE
+      - name: Verify custom domain serves the approved presentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error 'https://shinomino.com/signin.html?ui=20261103' | grep 'auth-ui.css?v=20261103-1' >/dev/null
+          curl --fail --silent --show-error 'https://shinomino.com/signup.html?ui=20261103' | grep 'auth-ui.css?v=20261103-1' >/dev/null
+          curl --fail --silent --show-error 'https://shinomino.com/auth-ui.css?v=20261103-1' | grep -- '--accent: #6551c9' >/dev/null
+          curl --fail --silent --show-error https://shinomino.com/api/health
