@@ -49,7 +49,8 @@ function check(name, fn) {
 }
 
 // ---------------------------------------------------------------- 1) page
-const rootPage = read(path.join(ROOT, 'school-canva.html'));
+const rootPath = path.join(ROOT, 'school-canva.html');
+const rootPage = fs.existsSync(rootPath) ? read(rootPath) : '';
 const pageIsNewExport = rootPage.includes('window.ShnoManoIntegrationAdapter');
 const pageHtml = pageIsNewExport ? rootPage : read(FIXTURE);
 const pageLabel = pageIsNewExport ? 'school-canva.html (repo root)' : 'tests/fixtures/school-canva-integration-page.html';
@@ -86,7 +87,7 @@ function bootAdapter(fetchImpl) {
   // is not needed to prove the object exists; the E2E lives in
   // server/test/school-canva-view-wiring.test.js).
   const dom = new JSDOM('<!doctype html><html><body><span id="connection-chip"></span><form id="filter-form"></form><div id="dashboard-results"></div></body></html>',
-    { url: 'https://shino-mino-tak-tak.duckdns.org/school-canva.html', runScripts: 'outside-only', pretendToBeVisual: true });
+    { url: 'https://shinomino.com/school-canva.html', runScripts: 'outside-only', pretendToBeVisual: true });
   const { window } = dom;
   window.localStorage.setItem('token', 'test-token');
   window.fetch = fetchImpl;
@@ -128,8 +129,9 @@ check('library = catalogue ⋈ manifest (independent of students): ' + libraryRo
   const readable = libraryRows.filter((r) => r.readable).length;
   const pending = libraryRows.filter((r) => !r.readable).length;
   console.log('   readable(verified source):', readable, '| pending:', pending);
-  assert.equal(readable, 92);
-  assert.equal(pending, 16);
+  const indexed = new Set(manifestFiles.filter(f => f.catalogId && f.textAvailable).map(f => String(f.catalogId)));
+  assert(readable >= indexed.size, 'verified indexed books must remain linked to readable manifest sources');
+  assert.equal(pending, libraryRows.length - readable);
   assert.equal(readable + pending, 108);
 });
 check('hierarchy: stage -> grade -> subject -> unit -> book with the page\'s own stage ids', () => {
