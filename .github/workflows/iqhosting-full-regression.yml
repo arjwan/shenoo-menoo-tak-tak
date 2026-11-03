@@ -1,0 +1,71 @@
+name: Comprehensive IQ Hosting regression tests
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: ${{ matrix.area }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - area: media-local
+            command: node --test server/test/media-storage-local.test.js
+          - area: unit-tests
+            command: node --test server/test/*.test.js
+          - area: school
+            command: npm run test:school-management && npm run test:school-portal && npm run test:school-virtual && npm run test:school-phase6 && npm run test:school-phase7
+          - area: curriculum
+            command: npm run test:school-curriculum && npm run test:school-pages && npm run test:school-server && npm run test:school-live && npm run test:school-backend
+          - area: kahwa
+            command: npm run test:kahwa
+          - area: mysql
+            command: npm run test:mysql && npm run test:mysql:integration && npm run test:mysql:runtime
+          - area: mariadb-native
+            command: npm run test:mariadb:native
+          - area: simulation
+            command: npm run test:simulation
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: isolated-ci-mariadb-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      CI: 'true'
+      DB_CLIENT: mysql
+      MYSQL_RUNTIME_EXPERIMENTAL: 'false'
+      MARIADB_NATIVE_TEST: '1'
+      MYSQL_INTEGRATION_TEST: '1'
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '3306'
+      MYSQL_USER: root
+      MYSQL_PASSWORD: isolated-ci-mariadb-only
+      MYSQL_SSL_MODE: disabled
+      MYSQL_DATABASE: shinomino_ci_${{ matrix.area == 'mysql' && 'mysql' || 'native' }}
+      JWT_SECRET: isolated-ci-secret-only-32-characters-minimum
+      MEDIA_STORAGE_PROVIDER: local
+      CORS_ORIGINS: https://shinomino.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+        if: matrix.area == 'simulation'
+      - name: Run ${{ matrix.area }}
+        run: ${{ matrix.command }}
