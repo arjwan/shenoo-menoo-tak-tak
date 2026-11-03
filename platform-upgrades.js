@@ -3,6 +3,8 @@ const path=location.pathname.split('/').pop()||'taktak.html';
 const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
 function text(el,v){if(el&&el.textContent!==v)el.textContent=v}
 function normalizeHome(){if(path!=='taktak.html'&&path!=='')return;
+ // The simplified home already defines its navigation and text; do not rewrite them after paint.
+ if(document.documentElement.dataset.homeMediaMode==='popup')return;
  const brand=q('.home-brand'); if(brand) brand.textContent='شنو منو تك تك — بنكهة عراقية 🇮🇶';
  const cover=q('[data-cover-state]'); if(cover) cover.textContent='لنا وللعرب ولكل العالم — ساهم، انشر، أضف أصدقاء، واستكشف عالمًا جديدًا من التواصل.';
  const removeHref=['calls.html','friends.html','friend-qr.html'];

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const assets = {};
-for (const name of ['signin.html', 'signup.html', 'auth-ui.css', 'auth-preview.html', 'taktak.html', 'taktak-colors.css', 'site-ui.css', 'taktak-layout.css', 'taktak-layout.js']) {
+for (const name of ['signin.html', 'signup.html', 'auth-ui.css', 'auth-preview.html', 'taktak.html', 'taktak-colors.css', 'site-ui.css', 'taktak-layout.css', 'taktak-layout.js', 'auth-guard.js', 'home-live-now.js', 'home-mini-tv.js', 'home-media-popups.js', 'platform-upgrades.js', 'taktak-feed.js']) {
   assets['/' + name] = fs.readFileSync(path.join(root, name), 'utf8');
 }
 const helper = fs.readFileSync(path.join(root, 'cloudflare/auth-presentation.js'), 'utf8');

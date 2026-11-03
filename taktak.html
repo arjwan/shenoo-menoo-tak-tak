@@ -1,11 +1,19 @@
 <!doctype html>
-<html lang="ar" dir="rtl" class="home-colors-scope">
+<html lang="ar" dir="rtl" class="home-colors-scope" data-home-media-mode="popup">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
     />
+    <script>
+      // Apply the saved appearance before styles paint the first frame.
+      (function () {
+        var saved = '';
+        try { saved = localStorage.getItem('shno-theme') || localStorage.getItem('taktak-theme') || ''; } catch (_) {}
+        document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
+      }());
+    </script>
     <meta name="theme-color" content="#f8f8fa" />
     <meta
       http-equiv="Cache-Control"
@@ -18,16 +26,22 @@
     />
     <link rel="stylesheet" href="post-menu.css?v=20260911-2" />
     <link rel="stylesheet" href="taktak-home-visual.css?v=20260910-1" />
-    <link rel="stylesheet" href="taktak-mobile-fixes.css?v=20260910-1" />
+    <link rel="stylesheet" href="taktak-mobile-fixes.css?v=20260910-2" data-taktak-mobile-fixes="1" />
     <link rel="stylesheet" href="taktak-calls-dock.css?v=20260908-5" />
     <link rel="stylesheet" href="taktak-viewers.css?v=20260913-actions-3" />
     <link rel="stylesheet" href="smart-friend-dock.css?v=20260911-1" />
     <link rel="stylesheet" href="taktak-mobile-drawer.css?v=20260911-1" />
+    <link rel="stylesheet" href="theme-light-fixes.css?v=20260913-6" data-theme-light-fixes="1" />
+    <link rel="stylesheet" href="theme-pages.css?v=20260913-2" data-theme-pages="1" />
+    <link rel="stylesheet" href="post-spacing.css?v=20260913-1" data-post-spacing="1" />
+    <link rel="stylesheet" href="platform-upgrades.css?v=20260913-1" data-platform-upgrades="1" />
+    <link rel="stylesheet" href="home-live-now.css?v=20260913-4" data-home-live-now="1" />
+    <link rel="stylesheet" href="home-media-popups.css?v=20260913-1" data-home-media-popups="1" />
     <link rel="stylesheet" href="taktak-colors.css?v=20261103-1" />
-    <link rel="stylesheet" href="taktak-layout.css?v=20261103-1" />
+    <link rel="stylesheet" href="taktak-layout.css?v=20261103-2" />
   </head>
   <body>
-    <script src="auth-guard.js?v=20261005-media-5"></script>
+    <script src="auth-guard.js?v=20261103-stability-1"></script>
     <header class="home-top">
       <nav class="home-nav">
         <a class="home-brand" href="taktak.html">شنو منو تك تك</a
@@ -43,7 +57,7 @@
           ><button id="logout" class="action-logout" type="button" aria-label="تسجيل الخروج" title="تسجيل الخروج">↪</button></div>
       </nav>
     </header>
-    <main class="home-grid">
+    <main class="home-grid" tabindex="0" aria-label="محتوى الرئيسية">
       <aside class="left-side side-card" aria-label="قائمة التنقل"><h2 class="home-side-title">تصفح شنو منو</h2>
         <a href="taktak.html">🏠 الرئيسية</a
         ><a href="profile.html">👤 صفحتي الشخصية</a
@@ -65,7 +79,7 @@
         ><a href="islamic.html">☪ الصفحة الإسلامية</a
         ><a href="settings.html">⚙ الخصوصية والإعدادات</a>
       <a href="services.html">🛠 خدماتي</a><a href="transport.html">🚕 النقل والحمل</a><a href="reels.html">▶ الريلز</a><a href="stories.html">✨ القصص</a><a href="tv.html">📺 شنو منو TV</a></aside>
-      <section class="feed">
+      <section class="feed" tabindex="0" aria-label="القصص والمنشورات">
         <section class="profile-cover" data-home-cover>
           <div class="cover-shade"></div>
           <div class="cover-user">
@@ -336,8 +350,14 @@
       ><a href="notifications.html"><b>🔔</b>الإشعارات</a
       ><a href="profile.html"><b>👤</b>حسابي</a>
     </nav>
+    <div class="home-media-popup-backdrop" data-home-live-popup hidden>
+      <section class="home-media-live-popup" role="dialog" aria-label="البث المباشر">
+        <div class="home-media-popup-head"><strong>🔴 البث المباشر</strong><button type="button" class="home-media-popup-close" data-live-popup-close aria-label="إغلاق البث">✕</button></div>
+        <div data-live-popup-body></div>
+      </section>
+    </div>
     <script defer src="taktak-layout.js?v=20261103-1"></script>
-    <script defer src="taktak-feed.js?v=20261005-preview-3"></script>
+    <script defer src="taktak-feed.js?v=20261103-stability-1"></script>
     <script defer src="taktak-home-visual.js?v=20260910-1"></script>
     <script defer src="taktak-viewers.js?v=20261005-expiry-6"></script>
     <script defer src="taktak-calls-dock.js?v=20260908-7"></script>

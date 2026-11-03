@@ -9,7 +9,13 @@ const AUTH_UI_TYPES = {
   '/taktak-colors.css': 'text/css; charset=utf-8',
   '/site-ui.css': 'text/css; charset=utf-8',
   '/taktak-layout.css': 'text/css; charset=utf-8',
-  '/taktak-layout.js': 'application/javascript; charset=utf-8'
+  '/taktak-layout.js': 'application/javascript; charset=utf-8',
+  '/auth-guard.js': 'application/javascript; charset=utf-8',
+  '/home-live-now.js': 'application/javascript; charset=utf-8',
+  '/home-mini-tv.js': 'application/javascript; charset=utf-8',
+  '/home-media-popups.js': 'application/javascript; charset=utf-8',
+  '/platform-upgrades.js': 'application/javascript; charset=utf-8',
+  '/taktak-feed.js': 'application/javascript; charset=utf-8'
 };
 
 function authPresentationResponse(path, request) {

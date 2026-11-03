@@ -1,5 +1,7 @@
 (function(){'use strict';
 if(!/\/(?:taktak\.html)?$/i.test(location.pathname))return;
+// The TV popup owns playback on the simplified home; never insert and remove a duplicate player.
+if(document.documentElement.dataset.homeMediaMode==='popup')return;
 function esc(v){return String(v||'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[s]));}
 function playlists(){try{return JSON.parse(localStorage.getItem('taktak_tv_playlists')||'{}')}catch(_){return {}}}
 function channels(){const out=[];for(const [playlist,groups] of Object.entries(playlists()))for(const [group,rows] of Object.entries(groups||{}))for(const [name,url] of Object.entries(rows||{}))out.push({playlist,group,name,url});return out;}

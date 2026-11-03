@@ -61,3 +61,23 @@ html.home-colors-scope :is(.sf-dock-launcher,.sf-dock-hide-pill,.calls-mobile-la
 html.home-colors-scope .mobile-services-drawer:not(.is-open){visibility:hidden;pointer-events:none;box-shadow:none!important;}
 html.home-colors-scope .mobile-services-backdrop{z-index:1490!important;}
 html.home-colors-scope .mobile-services-drawer{z-index:1500!important;}
+
+/* Live playback is prepared inside a hidden popup, never on the timeline. */
+html.home-colors-scope [data-home-live-popup][hidden],html.home-colors-scope [data-home-tv-popup][hidden]{display:none!important;}
+html.home-colors-scope .home-media-popup-backdrop{z-index:1600;}
+html.home-colors-scope .home-media-tv-popup{z-index:1610;}
+html.home-colors-scope .profile-cover{height:160px;}
+@media(max-width:760px){html.home-colors-scope .profile-cover{height:140px;}}
+/* Keep navigation still; each content column owns its scrolling. */
+html.home-colors-scope,html.home-colors-scope body{height:100%;overflow:hidden!important;}
+@media(min-width:761px){
+ html.home-colors-scope .home-grid{height:calc(100dvh - 124px);min-height:0;margin-bottom:0;overflow:hidden;}
+ html.home-colors-scope .feed{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;grid-auto-rows:max-content;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding-bottom:20px;}
+ html.home-colors-scope .side-card{position:static;top:auto;max-height:100%;overflow-y:auto;overscroll-behavior-y:contain;}
+ html.home-colors-scope .right-side{height:100%;min-height:0;overflow-y:auto;align-content:start;overscroll-behavior-y:contain;scrollbar-gutter:stable;}
+}
+@media(max-width:760px){
+ html.home-colors-scope .home-grid{position:fixed;inset:128px 0 calc(70px + env(safe-area-inset-bottom));width:100%!important;height:auto!important;margin:0!important;padding:0 12px 20px!important;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;}
+ html.home-colors-scope .feed{height:auto;overflow:visible;}
+}
+html.home-colors-scope [data-feed]{display:grid;gap:16px;}
