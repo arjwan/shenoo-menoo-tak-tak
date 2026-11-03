@@ -1,10 +1,13 @@
 // UI_ASSETS is generated from the approved HTML/CSS files at build time.
 // Authentication scripts and API endpoints in those pages remain unchanged.
-const AUTH_STYLE_VERSION = '20261103-1';
+const AUTH_STYLE_VERSION = '20261103-home-1';
 const AUTH_UI_TYPES = {
   '/signin.html': 'text/html; charset=utf-8',
   '/signup.html': 'text/html; charset=utf-8',
-  '/auth-ui.css': 'text/css; charset=utf-8'
+  '/auth-ui.css': 'text/css; charset=utf-8',
+  '/taktak.html': 'text/html; charset=utf-8',
+  '/taktak-colors.css': 'text/css; charset=utf-8',
+  '/site-ui.css': 'text/css; charset=utf-8'
 };
 
 function authPresentationResponse(path, request) {
