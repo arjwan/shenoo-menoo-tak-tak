@@ -3,7 +3,7 @@
 var id=new URLSearchParams(location.search).get('id')||'me',message=document.querySelector('[data-profile-message]'),currentUser=null,followState=null,editingSocialIndex=-1;
 function text(s,v){var e=document.querySelector(s);if(e&&v!==undefined)e.textContent=v;}
 function setMessage(t,type){if(message){message.textContent=t;message.className='form-message'+(type?' is-'+type:'');}}
-function abs(u){return !u?'':/^https?:/i.test(u)?u:'https://shino-mino-tak-tak.duckdns.org'+u;}
+function abs(u){return !u?'':/^https?:/i.test(u)?u:window.location.origin+u;}
 function safeUrl(v){try{var u=new URL(String(v||''));return /^(https?:)$/.test(u.protocol)?u.href:'';}catch(_){return'';}}
 function action(label,name,type){var b=document.createElement('button');b.className='icon-button '+(type||'');b.type='button';b.textContent=label;b.dataset.profileAction=name;return b;}
 function addInfo(label,value){if(value===undefined||value===null||value==='')return;var root=document.querySelector('[data-profile-details]'),row=document.createElement('div');row.className='profile-info-item';row.innerHTML='<b></b><span></span>';row.querySelector('b').textContent=label;row.querySelector('span').textContent=value;root.appendChild(row);}
