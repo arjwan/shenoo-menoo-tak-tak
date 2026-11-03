@@ -42,7 +42,7 @@ const managementRoutes = require('../src/routes/school-management.routes');
 
 let mongod, server, baseUrl;
 
-function makeUser(fullName, username, contact, role = 'user') {
+async function makeUser(fullName, username, contact, role = 'user') {
   return User.create({
     fullName,
     username,
