@@ -1,413 +1,60 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#070910">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f8f8fa">
   <title>تسجيل الدخول | شنو منو تك تك</title>
-
-  <style>
-    :root{
-      --bg:#070910;
-      --card:rgba(17,20,35,.80);
-      --line:rgba(255,255,255,.09);
-      --text:#f7f7fb;
-      --muted:#a9adc1;
-      --primary:#7c5cff;
-      --primary2:#27d8c4;
-      --pink:#ff4f9a;
-      --danger:#ff647c;
-    }
-
-    *{box-sizing:border-box}
-
-    body{
-      margin:0;
-      min-height:100vh;
-      font-family:Tahoma,Arial,sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at 16% 20%,rgba(124,92,255,.20),transparent 35%),
-        radial-gradient(circle at 84% 13%,rgba(39,216,196,.12),transparent 30%),
-        radial-gradient(circle at 60% 88%,rgba(255,79,154,.11),transparent 34%),
-        var(--bg);
-    }
-
-    .topbar{
-      max-width:1180px;
-      margin:auto;
-      padding:22px 24px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-
-    .brand{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      text-decoration:none;
-      color:white;
-      font-weight:800;
-      font-size:20px;
-    }
-
-    .logo{
-      width:44px;
-      height:44px;
-      display:grid;
-      place-items:center;
-      border-radius:15px;
-      background:linear-gradient(135deg,var(--primary),var(--pink));
-      box-shadow:0 12px 34px rgba(124,92,255,.34);
-    }
-
-    .back{
-      color:var(--muted);
-      text-decoration:none;
-      border:1px solid var(--line);
-      padding:10px 15px;
-      border-radius:14px;
-      background:rgba(255,255,255,.035);
-    }
-
-    main{
-      min-height:calc(100vh - 100px);
-      display:grid;
-      place-items:center;
-      padding:20px;
-    }
-
-    .layout{
-      width:min(940px,100%);
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      border-radius:30px;
-      overflow:hidden;
-      border:1px solid var(--line);
-      box-shadow:0 30px 85px rgba(0,0,0,.38);
-      background:rgba(11,13,25,.82);
-      backdrop-filter:blur(18px);
-    }
-
-    .visual{
-      padding:48px 36px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      background:
-        linear-gradient(145deg,rgba(124,92,255,.18),rgba(39,216,196,.05)),
-        rgba(255,255,255,.015);
-    }
-
-    .visual .badge{
-      width:max-content;
-      padding:8px 13px;
-      border-radius:999px;
-      color:#d2ccff;
-      border:1px solid rgba(124,92,255,.27);
-      background:rgba(124,92,255,.08);
-      margin-bottom:20px;
-      font-size:13px;
-    }
-
-    .visual h1{
-      font-size:43px;
-      line-height:1.15;
-      margin:0 0 15px;
-    }
-
-    .gradient{
-      background:linear-gradient(90deg,var(--primary2),#fff,var(--pink));
-      -webkit-background-clip:text;
-      color:transparent;
-    }
-
-    .visual p{
-      color:var(--muted);
-      line-height:1.9;
-      margin:0;
-    }
-
-    .form-side{
-      padding:40px 34px;
-      background:rgba(17,20,35,.68);
-    }
-
-    h2{
-      margin:0 0 7px;
-      font-size:29px;
-    }
-
-    .sub{
-      margin:0 0 25px;
-      color:var(--muted);
-      line-height:1.7;
-    }
-
-    .field{
-      margin-bottom:18px;
-    }
-
-    label{
-      display:block;
-      margin-bottom:8px;
-      font-size:14px;
-      font-weight:700;
-      color:#e0e2eb;
-    }
-
-    input{
-      width:100%;
-      padding:14px 15px;
-      border-radius:15px;
-      border:1px solid rgba(255,255,255,.09);
-      background:rgba(255,255,255,.045);
-      color:white;
-      outline:none;
-      font-size:15px;
-    }
-
-    input:focus{
-      border-color:rgba(124,92,255,.75);
-      box-shadow:0 0 0 4px rgba(124,92,255,.10);
-    }
-
-    .password-wrap{
-      position:relative;
-    }
-
-    .password-wrap input{
-      padding-left:53px;
-    }
-
-    .toggle{
-      position:absolute;
-      left:7px;
-      top:50%;
-      transform:translateY(-50%);
-      border:0;
-      background:transparent;
-      color:#c7c9d8;
-      cursor:pointer;
-      width:40px;
-      height:40px;
-      border-radius:10px;
-      font-size:18px;
-    }
-
-    .row{
-      display:flex;
-      justify-content:space-between;
-      gap:15px;
-      align-items:center;
-      margin:4px 0 20px;
-      font-size:14px;
-    }
-
-    .remember{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:#cfd2df;
-    }
-
-    .remember input{
-      width:18px;
-      height:18px;
-      accent-color:var(--primary);
-    }
-
-    .forgot{
-      color:#c4baff;
-      text-decoration:none;
-    }
-
-    .btn{
-      width:100%;
-      border:0;
-      border-radius:16px;
-      padding:15px;
-      color:#fff;
-      cursor:pointer;
-      font-weight:800;
-      font-size:16px;
-      background:linear-gradient(100deg,var(--primary),#8e64ff,var(--pink));
-      box-shadow:0 16px 40px rgba(124,92,255,.25);
-      transition:.2s;
-    }
-
-    .btn:hover{
-      transform:translateY(-2px);
-    }
-
-    .error-text{
-      min-height:16px;
-      margin-top:7px;
-      display:block;
-      color:#ff9dac;
-      font-size:12px;
-    }
-
-    .message{
-      display:none;
-      margin:0 0 15px;
-      padding:12px 14px;
-      border-radius:13px;
-      font-size:14px;
-      line-height:1.7;
-    }
-
-    .message.info{
-      display:block;
-      color:#d9f8f4;
-      border:1px solid rgba(39,216,196,.22);
-      background:rgba(39,216,196,.08);
-    }
-
-    .new{
-      text-align:center;
-      color:var(--muted);
-      margin-top:20px;
-      font-size:14px;
-    }
-
-    .new a{
-      color:#c9c0ff;
-      text-decoration:none;
-      font-weight:800;
-    }
-
-    @media(max-width:760px){
-      .layout{
-        grid-template-columns:1fr;
-        max-width:560px;
-      }
-
-      .visual{
-        padding:34px 25px;
-      }
-
-      .visual h1{
-        font-size:34px;
-      }
-    }
-
-    @media(max-width:500px){
-      .topbar{padding:16px}
-
-      .brand span:last-child{
-        display:none;
-      }
-
-      main{
-        padding:10px;
-      }
-
-      .form-side{
-        padding:28px 18px;
-      }
-
-      .visual{
-        padding:28px 18px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="auth-ui.css?v=20261103-1">
 </head>
-
 <body>
-
 <header class="topbar">
-  <a class="brand" href="index.html">
-    <span class="logo">تك</span>
-    <span>شنو منو تك تك</span>
+  <a class="brand" href="index.html" aria-label="شنو منو تك تك — الرئيسية">
+    <span class="logo" aria-hidden="true">تك</span>
+    <span>شنو منو تك تك<small>TAK TAK · IRAQ</small></span>
   </a>
-
-  <a class="back" href="index.html">← الرئيسية</a>
+  <a class="back" href="index.html">الرئيسية <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6M16 12H3"/></svg></a>
 </header>
-
-<main>
-  <div class="layout">
-
-    <section class="visual">
-      <div class="badge">🇮🇶 تك تك بس عراقي</div>
-
-      <h1>
-        رجعت؟<br>
-        <span class="gradient">نورت المكان</span>
-      </h1>
-
-      <p>
-        سجّل دخولك وارجع للدردشة والغرف والأسواق والخدمات وكل عالم شنو منو تك تك.
-      </p>
-    </section>
-
-    <section class="form-side">
-      <h2>تسجيل الدخول</h2>
-      <p class="sub">أدخل بيانات حسابك للمتابعة.</p>
-
-      <form id="signinForm" novalidate>
-
-        <div class="field">
-          <label for="identity">رقم الهاتف أو اسم المستخدم</label>
-          <input
-            id="identity"
-            autocomplete="username"
-            maxlength="100"
-            placeholder="أدخل بيانات تسجيل الدخول"
-          >
-          <span class="error-text" id="identityError"></span>
+<main class="auth-shell">
+  <section class="form-panel" aria-labelledby="signin-title">
+    <p class="eyebrow">أهلًا بعودتك</p>
+    <h1 id="signin-title">تسجيل الدخول</h1>
+    <p class="sub">أدخل بيانات حسابك، وخلّينا نكمل السالفة.</p>
+    <form id="signinForm" novalidate>
+      <div class="field">
+        <label for="identity">رقم الهاتف أو اسم المستخدم</label>
+        <input id="identity" autocomplete="username" maxlength="100" placeholder="مثال: 07xxxxxxxxx" aria-describedby="identityError" autocapitalize="none" spellcheck="false">
+        <span class="error-text" id="identityError"></span>
+      </div>
+      <div class="field">
+        <label for="password">كلمة المرور</label>
+        <div class="password-wrap">
+          <input id="password" type="password" autocomplete="current-password" maxlength="128" placeholder="أدخل كلمة المرور" aria-describedby="passwordError">
+          <button class="toggle" type="button" aria-controls="password" aria-label="إظهار أو إخفاء كلمة المرور">👁</button>
         </div>
-
-        <div class="field">
-          <label for="password">كلمة المرور</label>
-
-          <div class="password-wrap">
-            <input
-              id="password"
-              type="password"
-              autocomplete="current-password"
-              maxlength="128"
-              placeholder="كلمة المرور"
-            >
-            <button
-              type="button"
-              class="toggle"
-              aria-label="إظهار أو إخفاء كلمة المرور"
-            >👁</button>
-          </div>
-
-          <span class="error-text" id="passwordError"></span>
-        </div>
-
-        <div class="row">
-          <label class="remember">
-            <input id="remember" type="checkbox">
-            <span>تذكرني</span>
-          </label>
-
-          <a
-            class="forgot"
-            href="#"
-            id="forgotPassword"
-          >نسيت كلمة المرور؟</a>
-        </div>
-
-        <div id="formMessage" class="message"></div>
-
-        <button class="btn" type="submit">دخول</button>
-
-        <div class="new">
-          ما عندك حساب؟
-          <a href="signup.html">أنشئ حسابًا جديدًا</a>
-        </div>
-
-      </form>
-    </section>
-
-  </div>
+        <span class="error-text" id="passwordError"></span>
+      </div>
+      <div class="row">
+        <label class="remember"><input id="remember" type="checkbox"><span>تذكّرني على هذا الجهاز</span></label>
+        <a class="forgot" id="forgotPassword" href="#">نسيت كلمة المرور؟</a>
+      </div>
+      <div id="formMessage" class="message" role="status" aria-live="polite"></div>
+      <button class="btn" type="submit">تسجيل الدخول <span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h13"/></svg></span></button>
+      <div class="new">أول مرة ويّانا؟ <a href="signup.html">أنشئ حسابًا</a></div>
+    </form>
+  </section>
+  <aside class="welcome-panel" aria-label="عن المنصة">
+    <div class="welcome-overline">صُنعت بروح عراقية</div>
+    <div class="welcome-content">
+      <div class="welcome-mark" aria-hidden="true">تك</div>
+      <h2>هلا بيك،<br><span>بين أهلك.</span></h2>
+      <p>سوالفك، أصحابك، وكل اللي تحبّه.<br>ارجع وكمل حكايتك ويّانا.</p>
+      <div class="welcome-features"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-1 1v-8.5A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 10h8M8 14h5"/></svg> سوالف</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 4v2"/></svg> أصحاب</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="m10 8 6 4-6 4Z"/></svg> لحظات</span></div>
+    </div>
+    <div class="welcome-bottom"><strong>شنو منو تك تك</strong> — تك تك بس عراقي.</div>
+  </aside>
 </main>
-
+<footer class="page-footer"><span>شنو منو تك تك © 2026</span><a href="privacy.html">الخصوصية والشروط</a></footer>
 <script>
   if ('caches' in window) {
     caches.keys().then(keys => Promise.all(keys.filter(k => /^shenoo-(mall-shell|shell|offline)-v[1-5]$/.test(k)).map(k => caches.delete(k)))).catch(() => {});
@@ -506,6 +153,5 @@
     }
   });
 </script>
-
 </body>
 </html>

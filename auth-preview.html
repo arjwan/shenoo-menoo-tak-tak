@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>معاينة الدخول والتسجيل | شنو منو تك تك</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#eeedf2;color:#2a2638;font:14px/1.7 "Segoe UI",Tahoma,Arial,sans-serif}
+    header{padding:20px 32px;background:white;border-bottom:1px solid #dedbe5;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    h1{margin:0;font-size:18px}p{margin:3px 0 0;color:#87818f;font-size:12px}.tabs{display:flex;padding:4px;background:#f0edf7;border-radius:10px;gap:4px}
+    button{font:inherit;border:0;background:transparent;color:#81768e;padding:9px 17px;border-radius:7px;cursor:pointer}button[aria-pressed="true"]{background:white;color:#5c46bb;box-shadow:0 1px 5px #39304b0d}
+    main{max-width:1600px;margin:26px auto;padding:0 28px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;align-items:start}
+    .caption{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;color:#7c7389}.caption span{font-size:11px;color:#98909f}
+    .stage{position:relative;overflow:hidden;background:white;border:1px solid #dcd7e4;box-shadow:0 5px 22px #33274706;direction:ltr}.desktop{border-radius:12px;aspect-ratio:1200 / 900}
+    .phone{border:7px solid #272331;border-radius:36px;aspect-ratio:390 / 844;box-shadow:0 12px 30px #33274712}
+    iframe{position:absolute;left:0;top:0;border:0;transform:scale(var(--scale,1));transform-origin:top left;background:white}
+    a{color:#6551c9;text-decoration:none;font-size:12px}.open{display:block;margin-top:12px;text-align:center}
+    @media(max-width:900px){main{grid-template-columns:minmax(0,1fr) 260px;gap:18px;padding:0 16px}}
+    @media(max-width:650px){main{display:flex;flex-direction:column;align-items:center}.desktop-column{width:100%}.phone-column{width:min(360px,100%)}header{padding:16px 20px}.tabs{width:100%}.tabs button{flex:1}.desktop{min-height:220px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>واجهة بسيطة، على كل شاشة.</h1><p>معاينة بصرية مستقلة عن التطبيق المنشور.</p></div>
+    <div class="tabs" aria-label="اختيار الواجهة"><button type="button" data-page="signin.html" aria-pressed="true">تسجيل الدخول</button><button type="button" data-page="signup.html" aria-pressed="false">إنشاء حساب</button></div>
+  </header>
+  <main>
+    <section class="desktop-column"><div class="caption"><strong>الحاسوب</strong><span dir="ltr">1200 px</span></div><div class="stage desktop"><iframe title="معاينة الحاسوب" src="signin.html" width="1200" height="900"></iframe></div><a class="open" href="signin.html" target="_blank" rel="noopener">فتح الواجهة بالحجم الكامل ↗</a></section>
+    <section class="phone-column"><div class="caption"><strong>الهاتف</strong><span dir="ltr">390 px</span></div><div class="stage phone"><iframe title="معاينة الهاتف" src="signin.html" width="390" height="844"></iframe></div></section>
+  </main>
+  <script>
+    const stages=[...document.querySelectorAll('.stage')];
+    function resize(){for(const stage of stages){const frame=stage.querySelector('iframe');frame.style.setProperty('--scale',stage.clientWidth / Number(frame.width));}}
+    const observer=new ResizeObserver(resize);stages.forEach(stage=>observer.observe(stage));
+    for(const button of document.querySelectorAll('[data-page]'))button.addEventListener('click',()=>{
+      for(const tab of document.querySelectorAll('[data-page]'))tab.setAttribute('aria-pressed',String(tab===button));
+      const signup=button.dataset.page==='signup.html';
+      for(const frame of document.querySelectorAll('iframe'))frame.src=button.dataset.page;
+      const desktop=document.querySelector('.desktop'),frame=desktop.querySelector('iframe');frame.height=signup?'1140':'900';desktop.style.aspectRatio=signup?'1200 / 1140':'1200 / 900';
+      document.querySelector('.open').href=button.dataset.page;resize();
+    });resize();
+  </script>
+</body>
+</html>
