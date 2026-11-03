@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - area: media-local
-            command: node --test server/test/media-storage-local.test.js
+            command: node --test server/test/media-storage-local.test.js server/test/iqhosting-origin.test.js
           - area: unit-tests
             command: node --test server/test/*.test.js
           - area: school
