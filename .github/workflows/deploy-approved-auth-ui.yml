@@ -30,10 +30,16 @@ jobs:
           key="$RUNNER_TEMP/auth-ui/key"
           printf '%s\n' "$ORACLE_SSH_KEY" > "$key"
           chmod 600 "$key"
-          ssh-keyscan -H "$ORACLE_HOST" > "$RUNNER_TEMP/auth-ui/known_hosts" 2>/dev/null
+          echo "Checking Oracle SSH connectivity."
+          for attempt in 1 2 3; do
+            if ssh-keyscan -T 10 -t ed25519,rsa -H "$ORACLE_HOST" > "$RUNNER_TEMP/auth-ui/known_hosts" 2>/dev/null && [ -s "$RUNNER_TEMP/auth-ui/known_hosts" ]; then break; fi
+          done
+          if [ ! -s "$RUNNER_TEMP/auth-ui/known_hosts" ]; then echo "Oracle SSH host key lookup failed; production files were not changed."; exit 1; fi
+          echo "Oracle host keys received."
           args=(-i "$key" -o BatchMode=yes -o ConnectTimeout=15 -o UserKnownHostsFile="$RUNNER_TEMP/auth-ui/known_hosts")
           remote_stage="$(ssh "${args[@]}" "$ORACLE_USER@$ORACLE_HOST" 'mktemp -d /home/opc/.shenoo-auth-ui.XXXXXXXX')"
-          [[ "$remote_stage" =~ ^/home/opc/\.shenoo-auth-ui\.[A-Za-z0-9]+$ ]] || exit 1
+          [[ "$remote_stage" =~ ^/home/opc/\.shenoo-auth-ui\.[A-Za-z0-9]+$ ]] || { echo "Unexpected staging path; production files were not changed."; exit 1; }
+          echo "Temporary upload directory created."
           scp "${args[@]}" signin.html signup.html auth-ui.css "$ORACLE_USER@$ORACLE_HOST:$remote_stage/"
           ssh "${args[@]}" "$ORACLE_USER@$ORACLE_HOST" "SHENOO_STAGE='$remote_stage' bash -se" <<'REMOTE'
           set -euo pipefail
