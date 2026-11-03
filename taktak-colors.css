@@ -1,0 +1,53 @@
+/* Color-only home refresh. Existing layout, media, controls and scripts are preserved. */
+html.home-colors-scope.home-colors-scope {
+ --bg:#f8f8fa!important; --bg-soft:#f1eefb!important;
+ --panel:#fff!important; --panel2:#f6f5f9!important;
+ --card:#fff!important; --card2:#f6f5f9!important;
+ --text:#242239!important; --muted:#686575!important; --line:#e8e6ed!important;
+ --accent:#6551c9!important; --accent-2:#6551c9!important;
+ --home-soft:#f1eefb; --home-hover:#e9e3fa; --home-danger:#ad3547;
+ --social-card:var(--panel)!important; --social-line:var(--line)!important;
+ --social-muted:var(--muted)!important;
+ --shadow:0 10px 30px rgba(46,35,78,.05)!important;
+}
+html.home-colors-scope.home-colors-scope[data-theme="dark"] {
+ --bg:#14121c!important; --bg-soft:#211d30!important;
+ --panel:#1e1b29!important; --panel2:#272334!important;
+ --card:#1e1b29!important; --card2:#272334!important;
+ --text:#f4f1fa!important; --muted:#b9b2c8!important; --line:#373043!important;
+ --accent:#b3a1ff!important; --accent-2:#b3a1ff!important;
+ --home-soft:#302840; --home-hover:#3a3051; --home-danger:#ff9baa;
+ --shadow:0 10px 30px rgba(0,0,0,.15)!important;
+}
+html.home-colors-scope.home-colors-scope body { background:var(--bg)!important; color:var(--text)!important; }
+html.home-colors-scope.home-colors-scope :is(h1,h2,h3,h4,h5,h6,strong,b,label) { color:var(--text)!important; }
+html.home-colors-scope.home-colors-scope :is(p,small,.muted,.hint,.meta,.empty,.calls-dock-empty,.calls-dock-copy small,.calls-dock-title small) { color:var(--muted)!important; }
+html.home-colors-scope.home-colors-scope :is(.side-card,.compact-panel,.composer,.post-card,.paid-ads,.calls-dock,.calls-mobile-card,.sf-dock-panel) {
+ background:var(--panel)!important; color:var(--text)!important; border-color:var(--line)!important; box-shadow:var(--shadow)!important;
+}
+html.home-colors-scope.home-colors-scope :is(.home-top,.mobile-bar,.mobile-drawer,.mobile-drawer-head) {
+ background:var(--panel)!important; color:var(--text)!important; border-color:var(--line)!important;
+}
+html.home-colors-scope.home-colors-scope :is(input,textarea,select) {background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important;}
+html.home-colors-scope.home-colors-scope :is(input,textarea)::placeholder {color:var(--muted)!important;}
+html.home-colors-scope.home-colors-scope :is(input,textarea,select):focus {border-color:var(--accent)!important;outline-color:var(--accent)!important;}
+html.home-colors-scope.home-colors-scope :is(button,.tool-btn,.top-actions a,.quick-app,.calls-dock-actions a,.calls-pick-button) {
+ background:var(--home-soft)!important; color:var(--accent)!important; border-color:var(--line)!important; box-shadow:none!important;
+}
+html.home-colors-scope.home-colors-scope :is(button,.tool-btn,.top-actions a,.quick-app,.calls-dock-actions a,.calls-pick-button):hover {background:var(--home-hover)!important;}
+html.home-colors-scope.home-colors-scope :is(.home-brand,.section-head a,.people-head a,.mobile-bar a) {color:var(--accent)!important;}
+html.home-colors-scope.home-colors-scope :is(.left-side a,.mobile-drawer a) {color:var(--text)!important;border-color:var(--line)!important;}
+html.home-colors-scope.home-colors-scope :is(.left-side a,.mobile-drawer a):hover {background:var(--home-soft)!important;color:var(--accent)!important;}
+html.home-colors-scope.home-colors-scope :is(.publish,button[type="submit"],.paid-ad-slide a,.sf-dock-launcher,.calls-mobile-launcher,.story-plus) {
+ background:#6551c9!important; color:#fff!important; border-color:#6551c9!important;
+}
+html.home-colors-scope.home-colors-scope :is(.publish,button[type="submit"],.paid-ad-slide a):hover {background:#5340b2!important;color:#fff!important;}
+html.home-colors-scope.home-colors-scope :is(.action-logout,.danger,.btn-danger) {background:var(--panel2)!important;color:var(--home-danger)!important;}
+html.home-colors-scope.home-colors-scope .profile-cover:not(.has-image) {background:linear-gradient(115deg,#6551c9,#8e7bdc)!important;}
+html.home-colors-scope.home-colors-scope .cover-user :is(strong,small) {color:#fff!important;}
+html.home-colors-scope.home-colors-scope .cover-edit {background:rgba(255,255,255,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;}
+html.home-colors-scope.home-colors-scope :is(.avatar,.cover-avatar,.story-avatar,.calls-dock-avatar) {background:var(--home-soft)!important;color:var(--accent)!important;border-color:var(--line)!important;}
+html.home-colors-scope.home-colors-scope :is(.paid-ad-slide,.paid-label,.story-me,.quick-app b) {background:var(--home-soft)!important;color:var(--accent)!important;}
+html.home-colors-scope.home-colors-scope :is(.calls-dock-head,.calls-mobile-head,.composer-tools) {border-color:var(--line)!important;}
+html.home-colors-scope.home-colors-scope :focus-visible {outline-color:var(--accent)!important;}
+html.home-colors-scope.home-colors-scope .profile-cover:not(.has-image) .cover-shade {background:linear-gradient(0deg,rgba(53,35,110,.3),transparent)!important;}
