@@ -76,7 +76,7 @@ jobs:
               user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD
             });
             try {
-              for (const name of ['shinomino_migration_test', 'shinomino_runtime_test']) {
+              for (const name of ['shinomino_migration_test']) {
                 await db.query('CREATE DATABASE IF NOT EXISTS \`' + name + '\`');
               }
             } finally { await db.end(); }
