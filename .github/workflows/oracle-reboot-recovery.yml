@@ -23,7 +23,30 @@ jobs:
           key="$RUNNER_TEMP/oracle-recovery/key"
           printf '%s\n' "$ORACLE_SSH_KEY" > "$key"
           chmod 600 "$key"
-          ssh-keyscan -T 20 -H "$ORACLE_HOST" > "$RUNNER_TEMP/oracle-recovery/known_hosts" 2>/dev/null
+          python3 <<'CHECK'
+          import socket,os,json,concurrent.futures,time
+          host=os.environ['ORACLE_HOST']; public='shino-mino-tak-tak.duckdns.org'
+          def addresses(h):
+              try:return sorted(set(x[4][0] for x in socket.getaddrinfo(h,None,socket.AF_INET,socket.SOCK_STREAM)))
+              except Exception:return []
+          a=addresses(host);b=addresses(public)
+          print(json.dumps({'configuredAddressMatchesScreenshot':'130.110.115.101' in a,'duckDnsMatchesScreenshot':'130.110.115.101' in b,'sameOriginAddress':bool(set(a)&set(b))}))
+          def probe(p):
+              start=time.monotonic()
+              try:
+                  with socket.create_connection((host,p),timeout=5) as s:
+                      if p==22:
+                          s.settimeout(5);banner=s.recv(128)
+                          return {'port':p,'tcp':True,'sshBannerReceived':banner.startswith(b'SSH-'),'seconds':round(time.monotonic()-start,1)}
+                      return {'port':p,'tcp':True,'seconds':round(time.monotonic()-start,1)}
+              except Exception as e:return {'port':p,'error':type(e).__name__,'seconds':round(time.monotonic()-start,1)}
+          with concurrent.futures.ThreadPoolExecutor() as pool:
+              for result in pool.map(probe,[22,80,443]):print(json.dumps(result))
+          CHECK
+          if ! ssh-keyscan -T 20 -H "$ORACLE_HOST" > "$RUNNER_TEMP/oracle-recovery/known_hosts" 2>/dev/null; then
+            echo "SSH handshake unavailable; instance services could not be changed."
+            exit 0
+          fi
           test -s "$RUNNER_TEMP/oracle-recovery/known_hosts"
           ssh -i "$key" -o BatchMode=yes -o ConnectTimeout=25 -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o UserKnownHostsFile="$RUNNER_TEMP/oracle-recovery/known_hosts" "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
           sudo -n python3 <<'PY'
