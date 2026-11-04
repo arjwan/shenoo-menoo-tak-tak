@@ -473,7 +473,8 @@
         },
         body: JSON.stringify({
           identifier: identity.value.trim(),
-          password: password.value
+          password: password.value,
+          remember: document.getElementById('remember').checked
         })
       });
 
