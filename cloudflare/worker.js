@@ -56,8 +56,10 @@ async function main(req,env){
     if(!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(username)||fullName.length<2||fullName.length>100||password.length<10||password.length>128||!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))return err('اسم المستخدم أو البريد أو كلمة المرور غير صالحة',400);
     if(b.confirmPassword!==undefined&&b.confirmPassword!==password)return err('كلمتا المرور غير متطابقتين');
     let salt,digest;
-    try { salt=b64(crypto.getRandomValues(new Uint8Array(16))); digest=await hash(password,salt); }
-    catch(e) { console.error('Signup crypto',String(e)); return json({ok:false,message:'تعذر تجهيز الحساب',code:'SIGNUP_CRYPTO'},500); }
+    try { salt=b64(crypto.getRandomValues(new Uint8Array(16))); }
+    catch(e) { console.error('Signup random',String(e)); return json({ok:false,message:'تعذر تجهيز الحساب',code:'SIGNUP_RANDOM',type:e.name},500); }
+    try { digest=await hash(password,salt); }
+    catch(e) { console.error('Signup derivation',String(e)); return json({ok:false,message:'تعذر تجهيز الحساب',code:'SIGNUP_HASH',type:e.name},500); }
     try{await env.DB.prepare('INSERT INTO users(id,username,full_name,email,password_salt,password_hash,role,status) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),username,fullName,email,salt,digest,'user','active').run();}
     catch(e){if(String(e.message||e).includes('UNIQUE'))return err('اسم المستخدم أو البريد مستخدم مسبقاً',409); console.error('Signup D1',String(e));return json({ok:false,message:'تعذر حفظ الحساب',code:'SIGNUP_DATABASE'},500); }
     return json({ok:true,status:'active',verificationRequired:false,message:'تم إنشاء الحساب وتفعيله'},201);
