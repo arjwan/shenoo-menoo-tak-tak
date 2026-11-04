@@ -693,6 +693,38 @@ async function main(req,env){
     return json({ok:true,notifications:rows.results.map(n=>({id:n.id,type:n.kind,message:n.body,read:!!n.read_at,createdAt:n.created_at}))});
   }
 
+  // Persist smart-friend persona settings in the authenticated user's D1 account.
+  const personaRow=p=>({id:p.id,slot:p.slot,name:p.name,gender:p.gender,age:p.age,personality:p.personality,conversationStyle:p.conversation_style,interests:JSON.parse(p.interests_json||'[]')});
+  if(req.method==='GET'&&path==='/api/smart-friend/friends'){
+    const rows=await env.DB.prepare('SELECT id,slot,name,gender,age,personality,conversation_style,interests_json FROM smart_friend_personas WHERE user_id=? ORDER BY slot').bind(user.id).all();
+    return json({ok:true,friends:rows.results.map(personaRow),providerConfigured:false});
+  }
+  if(req.method==='POST'&&path==='/api/smart-friend/friends'){
+    const b=await bodyJSON(req),name=String(b.name||'').trim(),gender=String(b.gender||'male'),age=Number(b.age||25),personality=String(b.personality||'friendly'),style=String(b.conversationStyle||'balanced');
+    if(!name||name.length>40||!['male','female'].includes(gender)||!Number.isInteger(age)||age<18||age>80||!['friendly','calm','funny','serious','listener','educated'].includes(personality)||!['casual','balanced','advice'].includes(style))return err('إعدادات الشخصية غير صالحة',400);
+    const interests=Array.isArray(b.interests)?b.interests.map(x=>String(x).trim().slice(0,80)).filter(Boolean).slice(0,20):String(b.interests||'').split(/[،,]/).map(x=>x.trim().slice(0,80)).filter(Boolean).slice(0,20);
+    const existing=await env.DB.prepare('SELECT slot FROM smart_friend_personas WHERE user_id=? ORDER BY slot').bind(user.id).all();
+    const used=new Set(existing.results.map(x=>x.slot));let slot=0;for(let i=1;i<=10;i++){if(!used.has(i)){slot=i;break}}
+    if(!slot)return err('وصلت إلى الحد الأقصى: 10 شخصيات',409);
+    const id=crypto.randomUUID();
+    await env.DB.prepare('INSERT INTO smart_friend_personas(id,user_id,slot,name,gender,age,personality,conversation_style,interests_json) VALUES(?,?,?,?,?,?,?,?,?)').bind(id,user.id,slot,name,gender,age,personality,style,JSON.stringify(interests)).run();
+    return json({ok:true,friend:{id,slot,name,gender,age,personality,conversationStyle:style,interests}},201);
+  }
+  const personaMatch=path.match(/^\/api\/smart-friend\/friends\/(\d+)$/);
+  if(personaMatch&&req.method==='PUT'){
+    const slot=Number(personaMatch[1]),b=await bodyJSON(req),name=String(b.name||'').trim(),gender=String(b.gender||'male'),age=Number(b.age||25),personality=String(b.personality||'friendly'),style=String(b.conversationStyle||'balanced');
+    if(!Number.isInteger(slot)||slot<1||slot>10||!name||name.length>40||!['male','female'].includes(gender)||!Number.isInteger(age)||age<18||age>80||!['friendly','calm','funny','serious','listener','educated'].includes(personality)||!['casual','balanced','advice'].includes(style))return err('إعدادات الشخصية غير صالحة',400);
+    const interests=Array.isArray(b.interests)?b.interests.map(x=>String(x).trim().slice(0,80)).filter(Boolean).slice(0,20):String(b.interests||'').split(/[،,]/).map(x=>x.trim().slice(0,80)).filter(Boolean).slice(0,20);
+    const update=await env.DB.prepare('UPDATE smart_friend_personas SET name=?,gender=?,age=?,personality=?,conversation_style=?,interests_json=?,updated_at=CURRENT_TIMESTAMP WHERE user_id=? AND slot=?').bind(name,gender,age,personality,style,JSON.stringify(interests),user.id,slot).run();
+    if(!update.meta.changes)return err('الشخصية غير موجودة',404);
+    const p=await env.DB.prepare('SELECT id,slot,name,gender,age,personality,conversation_style,interests_json FROM smart_friend_personas WHERE user_id=? AND slot=?').bind(user.id,slot).first();
+    return json({ok:true,friend:personaRow(p)});
+  }
+  if(req.method==='GET'&&path==='/api/posts/ads'){
+    // No approved advertising records exist in the current D1 schema.
+    // Never substitute invented approved ads or claim a campaign is live.
+    return json({ok:true,ads:[]});
+  }
   return err('هذه الوظيفة لم تُحوّل إلى Cloudflare بعد',501);
 }
 export default {async fetch(req,env){
