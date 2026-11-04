@@ -1,10 +1,12 @@
+import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
 const json = (data, status=200) => new Response(JSON.stringify(data), {status, headers: {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err = (message,status=400) => json({ok:false,message},status);
 const b64 = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const unb64 = str => Uint8Array.from(atob(str.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4-str.length%4)%4)), c=>c.charCodeAt(0));
-const hash = async (password,salt) => { let baseKey; try {baseKey=await crypto.subtle.importKey('raw',encoder.encode(password),{name:'PBKDF2'},false,['deriveBits']);} catch(e){throw Error('HASH_IMPORT_'+e.name);} try {return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:unb64(salt),iterations:120000,hash:'SHA-256'},baseKey,256));} catch(e){throw Error('HASH_DERIVE_'+e.name);} };
+const hash = async (password,salt) => b64(pbkdf2Sync(password, unb64(salt), 120000, 32, 'sha256'));
+
 const key = async secret => crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);
 async function tokenFor(user,secret) {
   const payload=b64(encoder.encode(JSON.stringify({id:user.id,role:user.role,exp:Math.floor(Date.now()/1000)+7*86400})));
@@ -71,7 +73,7 @@ async function main(req,env){
     if(!user||user.status!=='active')return err('بيانات تسجيل الدخول غير صحيحة',401);
     const attempt=await hash(password,user.password_salt);
     const a=unb64(attempt),c=unb64(user.password_hash);
-    if(a.length!==c.length||!a.every((v,i)=>v===c[i]))return err('بيانات تسجيل الدخول غير صحيحة',401);
+    if(a.length!==c.length||!timingSafeEqual(a,c))return err('بيانات تسجيل الدخول غير صحيحة',401);
     return json({ok:true,token:await tokenFor(user,env.AUTH_SECRET),user:safeUser(user),message:'تم تسجيل الدخول'});
   }
   if(req.method==='GET'&&path.startsWith('/media/')){
