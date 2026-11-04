@@ -29,6 +29,20 @@ const verifyOrigin=req=>{
   if(origin&&origin!==new URL(req.url).origin)throw {status:403,message:'طلب من مصدر غير موثوق'};
   if(!origin&&req.headers.get('Sec-Fetch-Site')==='cross-site')throw {status:403,message:'طلب من مصدر غير موثوق'};
 };
+// D1-backed, atomic rate limits for unauthenticated authentication requests.
+// Identity and IP are HMACed; raw addresses and email identifiers are not stored.
+async function enforceAuthRateLimit(req,env,scope,identifier,limit,windowSeconds){
+  const ip=req.headers.get('CF-Connecting-IP')||'unknown';
+  const input=scope+':'+ip+(identifier?':'+String(identifier).trim().toLowerCase():'');
+  const h=b64(await crypto.subtle.sign('HMAC',await key(env.AUTH_SECRET),encoder.encode(input)));
+  const windowStart=Math.floor(Date.now()/1000/windowSeconds)*windowSeconds;
+  const row=await env.DB.prepare('INSERT INTO auth_rate_limits(scope,identifier_hash,window_start,attempts) VALUES(?,?,?,1) ON CONFLICT(scope,identifier_hash,window_start) DO UPDATE SET attempts=attempts+1 RETURNING attempts').bind(scope,h,windowStart).first();
+  if(Number(row?.attempts)>limit){
+    const remain=windowSeconds-(Math.floor(Date.now()/1000)-windowStart);
+    return new Response(JSON.stringify({ok:false,message:'محاولات كثيرة. أعد المحاولة بعد قليل.'}),{status:429,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Retry-After':String(Math.max(1,remain))}});
+  }
+  return null;
+}
 async function authenticate(req,env) {
   const cookie=cookieValue(req);
   if(cookie){
@@ -118,6 +132,9 @@ async function main(req,env){
   if(req.method==='GET'&&path==='/api/health')return json({ok:true,service:'shenoo-cloudflare-clean-api',storage:'d1+r2'});
   if(req.method==='GET'&&path==='/api/auth/registration-config')return json({ok:true,otpRequired:false,phoneRequired:false,developerCanCreateWithoutPhone:false});
   if(req.method==='POST'&&path==='/api/auth/signup'){
+    verifyOrigin(req);
+    const limited=await enforceAuthRateLimit(req,env,'signup-ip','',5,3600);
+    if(limited)return limited;
     const b=await bodyJSON(req),username=String(b.username||'').trim().toLowerCase(),fullName=String(b.fullName||'').trim(),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');
     if(!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(username)||fullName.length<2||fullName.length>100||password.length<10||password.length>128||!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))return err('اسم المستخدم أو البريد أو كلمة المرور غير صالحة',400);
     if(b.confirmPassword!==undefined&&b.confirmPassword!==password)return err('كلمتا المرور غير متطابقتين');
@@ -131,7 +148,12 @@ async function main(req,env){
     return json({ok:true,status:'active',verificationRequired:false,message:'تم إنشاء الحساب وتفعيله'},201);
   }
   if(req.method==='POST'&&path==='/api/auth/signin'){
+    verifyOrigin(req);
     const b=await bodyJSON(req),identifier=String(b.identifier||'').trim().toLowerCase(),password=String(b.password||'');
+    const ipLimited=await enforceAuthRateLimit(req,env,'signin-ip','',30,900);
+    if(ipLimited)return ipLimited;
+    const identityLimited=await enforceAuthRateLimit(req,env,'signin-identity',identifier,12,900);
+    if(identityLimited)return identityLimited;
     if(!identifier||!password)return err('أدخل بيانات تسجيل الدخول',400);
     const user=await env.DB.prepare('SELECT * FROM users WHERE username=? OR email=?').bind(identifier,identifier).first();
     if(!user||user.status!=='active')return err('بيانات تسجيل الدخول غير صحيحة',401);
