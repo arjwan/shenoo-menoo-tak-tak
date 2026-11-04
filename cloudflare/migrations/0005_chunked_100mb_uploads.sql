@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS media_upload_sessions (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, purpose TEXT NOT NULL, r2_key TEXT NOT NULL UNIQUE, r2_upload_id TEXT NOT NULL, mime_type TEXT NOT NULL, kind TEXT NOT NULL, file_size INTEGER NOT NULL, part_size INTEGER NOT NULL, completed INTEGER NOT NULL DEFAULT 0, consumed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS media_upload_parts (session_id TEXT NOT NULL REFERENCES media_upload_sessions(id) ON DELETE CASCADE, part_number INTEGER NOT NULL, etag TEXT NOT NULL, PRIMARY KEY(session_id,part_number));
+CREATE INDEX IF NOT EXISTS idx_media_upload_sessions_owner ON media_upload_sessions(owner_id,created_at);
