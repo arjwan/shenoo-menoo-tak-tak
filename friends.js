@@ -8,10 +8,15 @@
   var requestedIntent = new URLSearchParams(location.search).get("intent") || "";
   var cache = {};
   function feedback(text, type) { message.textContent = text; message.className = "form-message" + (type ? " is-" + type : ""); }
-  function avatar(person) { return person.avatarUrl ? '<span class="avatar"><img src="' + person.avatarUrl + '" alt=""><i class="presence ' + (person.online ? "online" : "") + '"></i></span>' : '<span class="avatar">' + (person.fullName || person.name || "?").slice(0, 1) + '<i class="presence ' + (person.online ? "online" : "") + '"></i></span>'; }
-  function commButtons(person, cls) {
-    cls = cls || "small-button";
-    return '<span class="request-actions"><button class="' + cls + '" type="button" data-comm-chat="' + person.id + '">💬 شات</button><button class="' + cls + '" type="button" data-comm-call="audio" data-user-id="' + person.id + '">☎ صوت</button><button class="' + cls + '" type="button" data-comm-call="video" data-user-id="' + person.id + '">🎥 فيديو</button></span>';
+  function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function safeAvatar(value) { try { var url=new URL(value,location.origin);return url.protocol==='https:'?url.href:''; } catch (_) { return ''; } }
+  function avatar(person) {
+    var src=safeAvatar(person.avatarUrl);
+    return src?'<span class="avatar"><img src="'+esc(src)+'" alt=""></span>':'<span class="avatar">'+esc((person.fullName||person.name||'?').slice(0,1))+'</span>';
+  }
+  function commButtons(person,cls) {
+    cls=cls||'small-button';
+    return '<span class="request-actions"><a class="'+cls+'" href="messages.html?user='+encodeURIComponent(person.id)+'">💬 شات</a></span>';
   }
   function actionButtons(person) {
     if (currentTab === "incoming") return '<span class="request-actions"><button class="small-button primary" type="button" data-request-action="accept" data-request-id="' + (person.requestId || "") + '">✓ قبول</button><button class="small-button danger" type="button" data-request-action="reject" data-request-id="' + (person.requestId || "") + '">✕ رفض</button></span>';
@@ -23,7 +28,7 @@
   function render(items) {
     if (!items.length) { list.innerHTML = '<div class="social-empty" style="min-height:220px"><span class="social-empty-icon">◇</span><strong>لا توجد نتائج</strong><p>لا توجد بيانات حقيقية في هذا القسم حالياً.</p>' + (currentTab === "friends" ? '<button class="icon-button primary" type="button" data-open-suggestions>اكتشف أشخاصاً</button>' : "") + '</div>'; return; }
     list.innerHTML = items.map(function (person) {
-      return '<div class="social-list-item" data-person-id="' + person.id + '">' + avatar(person) + '<span class="social-list-copy"><strong>' + (person.fullName || person.name || "مستخدم") + '</strong><small>@' + (person.username || "غير متاح") + '</small></span><span class="social-list-meta"><small>' + (person.online ? "متصل الآن" : (person.status || "مستخدم")) + '</small>' + actionButtons(person) + '</span></div>';
+      return '<div class="social-list-item" data-person-id="' + esc(person.id) + '">' + avatar(person) + '<span class="social-list-copy"><strong>' + esc(person.fullName || person.name || "مستخدم") + '</strong><small>@' + esc(person.username || "غير متاح") + '</small></span><span class="social-list-meta"><small>' + (person.online ? "متصل الآن" : (person.status || "مستخدم")) + '</small>' + actionButtons(person) + '</span></div>';
     }).join("");
   }
   async function enrichRelations(items) {
@@ -51,19 +56,20 @@
     } catch (error) { list.innerHTML = '<div class="social-empty" style="min-height:220px"><strong>تعذر تحميل البيانات</strong><p>' + error.message + "</p></div>"; feedback(error.message, "error"); }
   }
   function showPerson(person) {
-    if (!person) return;
-    detail.className = "social-card";
-    var actions = (person.isFriend || currentTab === "friends") ? '<button class="icon-button primary" type="button" data-comm-chat="' + person.id + '">💬 مراسلة</button><button class="icon-button" type="button" data-comm-call="audio" data-user-id="' + person.id + '">☎ اتصال صوتي</button><button class="icon-button" type="button" data-comm-call="video" data-user-id="' + person.id + '">🎥 اتصال فيديو</button>' : currentTab === "incoming" ? '<button class="icon-button primary" data-request-action="accept" data-request-id="' + (person.requestId || "") + '">✓ قبول الطلب</button><button class="icon-button danger" data-request-action="reject" data-request-id="' + (person.requestId || "") + '">✕ رفض الطلب</button>' : currentTab === "outgoing" || person.friendStatus === "pending" ? '<button class="icon-button" type="button" disabled>⏳ طلب الصداقة قيد الانتظار</button>' : '<button class="icon-button primary" data-friend-action="add" data-user-id="' + person.id + '">＋ إضافة صديق</button>';
-    detail.innerHTML = '<div class="profile-head" style="margin-top:0;padding-top:25px"><div class="profile-avatar">' + (person.fullName || "?").slice(0, 1) + '</div><div class="profile-summary"><h1>' + (person.fullName || "مستخدم") + '</h1><p>@' + (person.username || "غير متاح") + '</p><span class="status-badge ' + (person.online ? "is-open" : "") + '">' + (person.online ? "متصل الآن" : "غير متصل") + '</span></div></div><div class="profile-grid"><section class="profile-section"><h2>النبذة</h2><p>' + (person.bio || "لا توجد نبذة منشورة.") + '</p></section><section class="profile-section"><h2>إجراءات</h2><div class="profile-actions" style="margin:0"><a class="icon-button" href="profile.html?id=' + person.id + '">فتح الملف</a>' + actions + '<button class="icon-button danger" data-friend-action="block" data-user-id="' + person.id + '">حظر</button></div></section></div>';
+    if(!person)return;
+    detail.className='social-card';
+    var id=esc(person.id||''),requestId=esc(person.requestId||'');
+    var actions=(person.isFriend||currentTab==='friends')
+      ?'<a class="icon-button primary" href="messages.html?user='+encodeURIComponent(person.id)+'">💬 مراسلة</a>'
+      :currentTab==='incoming'
+        ?'<button class="icon-button primary" data-request-action="accept" data-request-id="'+requestId+'">✓ قبول</button><button class="icon-button danger" data-request-action="reject" data-request-id="'+requestId+'">✕ رفض</button>'
+        :currentTab==='outgoing'||person.friendStatus==='pending'
+          ?'<button class="icon-button" type="button" disabled>⏳ طلب الصداقة قيد الانتظار</button>'
+          :'<button class="icon-button primary" data-friend-action="add" data-user-id="'+id+'">＋ إضافة صديق</button>';
+    detail.innerHTML='<div class="profile-head" style="margin-top:0;padding-top:25px"><div class="profile-avatar">'+esc((person.fullName||'?').slice(0,1))+'</div><div class="profile-summary"><h1>'+esc(person.fullName||'مستخدم')+'</h1><p>@'+esc(person.username||'غير متاح')+'</p><span class="status-badge">'+(person.online?'متصل الآن':'غير متصل')+'</span></div></div><div class="profile-grid"><section class="profile-section"><h2>النبذة</h2><p>'+esc(person.bio||'لا توجد نبذة منشورة.')+'</p></section><section class="profile-section"><h2>إجراءات</h2><div class="profile-actions"><a class="icon-button" href="profile.html?id='+encodeURIComponent(person.id)+'">فتح الملف</a>'+actions+'</div></section></div>';
   }
-  function openCommChat(id) {
-    if (window.ShnoCommunicationDock && typeof window.ShnoCommunicationDock.chat === 'function') { window.ShnoCommunicationDock.chat(id); return true; }
-    feedback('جارٍ تحميل واجهة المراسلة، حاول مرة أخرى بعد لحظة.', 'success'); return false;
-  }
-  function openCommCall(id, type) {
-    if (window.ShnoCommunicationDock && typeof window.ShnoCommunicationDock.call === 'function') { window.ShnoCommunicationDock.call(id, type); return true; }
-    feedback('جارٍ تحميل واجهة الاتصال، حاول مرة أخرى بعد لحظة.', 'success'); return false;
-  }
+  function openCommChat(id){location.href='messages.html?user='+encodeURIComponent(id);return true;}
+  function openCommCall(id,type){feedback('المكالمات غير متاحة حتى يكتمل خادم الاتصال','error');return false;}
   function handleCommButton(event) {
     var chat = event.target.closest('[data-comm-chat]');
     if (chat) { event.preventDefault(); event.stopPropagation(); openCommChat(chat.dataset.commChat); return true; }
