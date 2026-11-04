@@ -479,21 +479,37 @@
       });
 
       const data = await response.json().catch(() => ({}));
-      const succeeded = response.ok && data.ok === true && !!data.user;
 
-      message.className = 'message info';
-      message.textContent = data.message || 'تعذر تسجيل الدخول.';
-
-      if (succeeded) {
-        // Auth is an HttpOnly, Secure, server-side revocable D1 session.
-        // No credentials or user profile are persisted by frontend JavaScript.
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('user');
-        message.textContent = 'تم تسجيل الدخول باسم ' + (data.user.displayName || data.user.fullName || data.user.username || 'المستخدم') + '، جارٍ فتح المنصة...';
-        setTimeout(() => { window.location.href = 'taktak.html'; }, 500);
+      if (!response.ok || data.ok !== true) {
+        message.className = 'message error';
+        message.textContent = data.message || 'تعذر تسجيل الدخول. رمز الخادم: ' + response.status;
+        return;
       }
+
+      // An API success message alone does not prove login. The next request must
+      // authenticate against the real D1-backed HttpOnly session cookie.
+      message.className = 'message info';
+      message.textContent = 'تم قبول بيانات الدخول، جارٍ التحقق من الجلسة الآمنة…';
+      const sessionResponse = await fetch(`${API_BASE_URL}/api/auth/session`, {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      const session = await sessionResponse.json().catch(() => ({}));
+      if (!sessionResponse.ok || session.ok !== true || !session.user?.id) {
+        message.className = 'message error';
+        message.textContent = 'قُبل تسجيل الدخول لكن جلسة Cloudflare لم تثبت. رمز فحص الجلسة: ' + sessionResponse.status;
+        return;
+      }
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      message.className = 'message info';
+      message.textContent = 'تم التحقق من الجلسة، جارٍ فتح الواجهة الرئيسية…';
+      window.location.replace('/taktak.html');
     } catch (error) {
       message.className = 'message info';
       message.textContent = error.name === 'AbortError'
