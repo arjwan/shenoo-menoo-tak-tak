@@ -1,0 +1,30 @@
+name: Diagnose signup DNS across resolvers
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-signup-client-dns.yml']
+  workflow_dispatch:
+jobs:
+  investigate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare DNS A AAAA and authoritative servers
+        run: |
+          set -u
+          for resolver in 1.1.1.1 8.8.8.8 9.9.9.9 208.67.222.222; do
+            echo "### resolver=$resolver"
+            for host in shinomino.com www.shinomino.com; do
+              echo "$host A"; dig +short @"$resolver" "$host" A
+              echo "$host AAAA"; dig +short @"$resolver" "$host" AAAA
+              echo "$host NS"; dig +short @"$resolver" "$host" NS
+            done
+          done
+          echo "### authoritative"
+          dig +short @hugh.ns.cloudflare.com shinomino.com A
+          dig +short @hugh.ns.cloudflare.com shinomino.com AAAA
+          echo "### exact post on both IP families"
+          for family in -4 -6; do
+            curl "$family" -sS --max-time 15 -D - -o /tmp/signup-response -w "ip_family=$family HTTP=%{http_code} remote_ip=%{remote_ip}\n" -H 'Content-Type: application/json' -d '{}' https://shinomino.com/api/auth/signup | head -25 || true
+            head -c 200 /tmp/signup-response 2>/dev/null || true
+            echo
+          done
