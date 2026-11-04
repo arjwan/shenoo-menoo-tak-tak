@@ -241,7 +241,7 @@ async function main(req,env){
       const b=await bodyJSON(req);
       if(b.password||b.phone)return err('تغيير كلمة المرور والهاتف يتطلب التحقق من الحساب في إعدادات الأمان',400);
       const fullName=String(b.fullName||'').trim(),email=String(b.email||'').trim().toLowerCase(),username=String(b.username||'').trim().toLowerCase();
-      if(fullName.length<2||fullName.length>100||!/^[\\p{L}\\p{M}0-9_.]{3,30}$/u.test(username)||!email.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/))return err('البيانات غير صالحة',400);
+      if(fullName.length<2||fullName.length>100||!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(username)||!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))return err('البيانات غير صالحة',400);
       const current=await env.DB.prepare('SELECT username,email FROM users WHERE id=?').bind(user.id).first();
       if(current.username!==username||String(current.email||'')!==email)return err('تغيير هوية الدخول يتطلب التحقق من كلمة المرور في إعدادات الحساب',400);
       await env.DB.prepare('UPDATE users SET full_name=? WHERE id=?').bind(fullName,user.id).run();
