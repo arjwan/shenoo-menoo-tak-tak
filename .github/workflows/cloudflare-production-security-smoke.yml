@@ -24,6 +24,9 @@ jobs:
         run: |
           set -euo pipefail
           node --check cloudflare/worker.js
+          grep -q 'auth_rate_limits' cloudflare/worker.js
+          grep -q "'/api/users/me/profile'" cloudflare/worker.js
+          grep -q "'/api/auth/upgrade'" cloudflare/worker.js
           node --check auth-guard.js
           node --check smart-friend-dock.js
           node --check taktak-calls-dock.js
@@ -53,6 +56,16 @@ jobs:
           status="$(curl -sS -o /tmp/bad-signin.json -w '%{http_code}' --max-time 25 -H 'Content-Type: application/json' --data '{}' "$host/api/auth/signin")"
           echo "Invalid empty signin request -> $status"
           test "$status" = "400"
+          for endpoint in signup signin; do
+            bad="$(curl -sS -o /tmp/cross-site.json -w '%{http_code}' --max-time 25 -H 'Origin: https://evil.invalid' -H 'Content-Type: application/json' --data '{}' "$host/api/auth/$endpoint")"
+            echo "Cross-site $endpoint -> $bad"
+            test "$bad" = "403"
+          done
+          for path in /api/users/me /api/users/me/profile; do
+            status="$(curl -sS -o /tmp/account.json -w '%{http_code}' --max-time 25 -H 'Content-Type: application/json' -X PATCH -d '{}' "$host$path")"
+            echo "Anonymous PATCH $path -> $status"
+            test "$status" = "401"
+          done
           status="$(curl -sS -o /tmp/csrf.json -w '%{http_code}' --max-time 25 -H 'Origin: https://not-the-site.invalid' -X POST "$host/api/auth/logout")"
           echo "Cross-site logout -> $status"
           test "$status" = "403"
