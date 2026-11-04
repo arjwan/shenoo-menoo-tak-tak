@@ -9,6 +9,7 @@
   function getToken(){return '';}
 
   async function request(path, options) {
+    if (global.shnoSessionReady && !(await global.shnoSessionReady)) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول');
     var config = Object.assign({ cache: "no-store" }, options || {});
     config.headers = Object.assign({ Accept: "application/json" }, config.headers || {});
 
