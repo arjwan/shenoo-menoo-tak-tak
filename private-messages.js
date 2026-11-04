@@ -144,5 +144,16 @@
   }
   document.querySelector("[data-conversation-search]").oninput = function () { var q = this.value.trim().toLowerCase(); list.querySelectorAll("[data-conversation-id]").forEach(function (row) { row.hidden = Boolean(q && !row.textContent.toLowerCase().includes(q)); }); };
   addEventListener("beforeunload", function () { if (activeCall && socket) socket.emit("call:end", callPayload({ reason: "page-closed" })); stopMedia(); if (peer) peer.close(); });
+  // Poll D1 without a fake WebSocket; do not overwrite draft text or reading position.
+  setInterval(function(){
+    if(document.hidden)return;
+    loadList();
+    if(!currentId)return;
+    var draft=windowEl.querySelector('[data-message-input]');
+    if(draft&&draft.value.trim())return;
+    var pane=windowEl.querySelector('[data-chat-messages]');
+    if(pane&&pane.scrollHeight-pane.scrollTop-pane.clientHeight>80)return;
+    openConversation(currentId);
+  },15000);
   loadList().then(start);
 }());
