@@ -59,12 +59,23 @@
 
   if (!document.querySelector('script[data-platform-upgrades]')) { var upgrades=document.createElement('script'); upgrades.src='platform-upgrades.js?v=20260913-3'; upgrades.defer=true; upgrades.setAttribute('data-platform-upgrades','1'); document.head.appendChild(upgrades); }
 
-  var token=localStorage.getItem('token')||sessionStorage.getItem('token');
-  if (!token) {
-    var isSchoolPage=/\/(?:school(?:-[^/]+)?\.html)$/i.test(location.pathname);
-    window.location.replace(isSchoolPage?'school-signin.html':'signin.html');
-    return;
-  }
+  // Server-issued HttpOnly session is authoritative. Existing bearer tokens are
+  // exchanged for a server-side session and deleted from browser storage.
+  window.shnoSessionReady=(async function(){
+    var response=await fetch('/api/auth/session',{credentials:'same-origin',cache:'no-store'}).catch(function(){return null;});
+    if(response&&response.ok)return true;
+    var legacy=localStorage.getItem('token')||sessionStorage.getItem('token');
+    if(legacy){
+      var upgrade=await fetch('/api/auth/upgrade',{method:'POST',credentials:'same-origin',headers:{Authorization:'Bearer '+legacy}}).catch(function(){return null;});
+      if(upgrade&&upgrade.ok){
+        localStorage.removeItem('token');sessionStorage.removeItem('token');
+        localStorage.removeItem('user');sessionStorage.removeItem('user');
+        return true;
+      }
+    }
+    location.replace(location.pathname.indexOf('/school')===0?'school-signin.html':'signin.html');
+    return false;
+  }());
 
   if (!document.querySelector('script[data-shno-presence]')) { var presence=document.createElement('script'); presence.src='presence-client.js?v=20260913-1'; presence.defer=true; presence.setAttribute('data-shno-presence','1'); document.head.appendChild(presence); }
 
