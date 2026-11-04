@@ -1,5 +1,5 @@
 (function(){'use strict';
-const API='https://shino-mino-tak-tak.duckdns.org';
+const API=window.location.origin;
 const token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';
 const abs=u=>!u?'':(/^https?:\/\//i.test(u)?u:API+u);
 const esc=v=>String(v||'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
