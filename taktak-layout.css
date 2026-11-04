@@ -1,0 +1,83 @@
+/* Home structure only. Approved shared colors and service behavior remain intact. */
+html.home-colors-scope .home-nav{max-width:1400px;min-height:76px;gap:20px;padding:12px 24px;}
+html.home-colors-scope .home-brand{font-size:17px;flex-shrink:0;}
+html.home-colors-scope .home-search{display:block;max-width:620px;min-width:0;min-height:44px;margin-inline:auto;padding:11px 18px;}
+html.home-colors-scope .top-actions{gap:8px;flex-shrink:0;overflow:visible;max-width:none;}
+html.home-colors-scope .top-actions button{width:44px;height:44px;min-height:44px;flex:0 0 44px;}
+/* Extension scripts may add legacy shortcuts; move them to navigation before displaying. */
+html.home-colors-scope .top-actions > :not(#theme-toggle):not(#logout){display:none!important;}
+html.home-colors-scope .home-grid{max-width:1400px;grid-template-columns:240px minmax(0,1fr) 240px;gap:22px;margin:100px auto 30px;padding:0 24px;}
+html.home-colors-scope .feed{gap:18px;}
+html.home-colors-scope .side-card{top:100px;padding:16px 10px;max-height:calc(100dvh - 124px);}
+html.home-colors-scope .home-side-title{font-size:12px;color:var(--muted)!important;margin:0 12px 10px;}
+html.home-colors-scope .side-card > :is(a,button){display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:10px 12px;border-radius:12px;text-align:start;font:inherit;font-size:13px;text-decoration:none;border:0;}
+html.home-colors-scope .side-card > a[aria-current="page"]{background:var(--home-soft)!important;color:var(--accent)!important;font-weight:700;}
+html.home-colors-scope .profile-cover{min-height:160px;border-radius:20px;}
+html.home-colors-scope .cover-avatar{width:64px;height:64px;font-size:25px;}
+html.home-colors-scope .cover-edit{font-size:11px;padding:8px 10px;}
+html.home-colors-scope :is(.compact-panel,.composer){padding:18px;}
+html.home-colors-scope .composer-top{align-items:center;gap:12px;}
+html.home-colors-scope .composer textarea{min-height:76px;resize:vertical;}
+html.home-colors-scope .composer-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:12px;}
+html.home-colors-scope .composer-tools .tool-btn{min-height:40px;border-radius:10px;gap:5px;}
+html.home-colors-scope .composer-tools .publish{margin-inline-start:auto;min-width:84px;}
+html.home-colors-scope .right-side{display:grid;gap:18px;}
+html.home-colors-scope .calls-dock{margin-top:0;}
+html.home-colors-scope [data-home-search-results][hidden]{display:none!important;}
+html.home-colors-scope .people-head h3{margin:0;}
+html.home-colors-scope [data-home-search-results] .people-list{display:flex;gap:12px;}
+html.home-colors-scope .mobile-services-drawer{background:var(--panel)!important;color:var(--text)!important;}
+@media(max-width:1200px) and (min-width:761px){
+ html.home-colors-scope .home-grid{grid-template-columns:220px minmax(0,1fr);grid-template-areas:"menu feed";}
+ html.home-colors-scope .right-side{display:none;}
+}
+@media(max-width:760px){
+ html.home-colors-scope .home-nav{min-height:116px!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;padding:10px 12px!important;}
+ html.home-colors-scope .home-brand{font-size:15px!important;max-width:none;flex:1;}
+ html.home-colors-scope .top-actions{margin-inline-start:0!important;gap:6px!important;max-width:none!important;}
+ html.home-colors-scope .top-actions button{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;flex:0 0 40px!important;}
+ html.home-colors-scope .home-search{display:block!important;order:3;flex:0 0 100%;width:100%;max-width:none;min-height:42px;margin:0;}
+ html.home-colors-scope .home-grid{margin:132px 0 0!important;padding:0 12px calc(92px + env(safe-area-inset-bottom))!important;}
+ html.home-colors-scope .feed{gap:14px!important;}
+ html.home-colors-scope .right-side{display:none!important;}
+ html.home-colors-scope .profile-cover{min-height:140px!important;border-radius:18px!important;}
+ html.home-colors-scope .cover-avatar{width:52px;height:52px;}
+ html.home-colors-scope .cover-user{right:12px;bottom:14px;gap:9px;}
+ html.home-colors-scope .cover-user strong{font-size:15px;}
+ html.home-colors-scope .cover-edit{left:10px;bottom:14px;max-width:115px;text-align:center;line-height:1.5;}
+ html.home-colors-scope :is(.compact-panel,.composer){padding:14px!important;border-radius:18px!important;}
+ html.home-colors-scope .composer textarea{min-height:64px!important;}
+ html.home-colors-scope .composer-tools{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;}
+ html.home-colors-scope .composer-tools .tool-btn{width:auto!important;min-width:0!important;min-height:42px!important;font-size:11px!important;padding:8px 5px!important;white-space:normal;}
+ html.home-colors-scope .composer-tools .tool-btn span{display:inline!important;}
+ html.home-colors-scope .composer-tools select{grid-column:span 2;}
+ html.home-colors-scope .composer-tools .publish{margin:0;min-width:0;}
+ html.home-colors-scope .mobile-bar{min-height:64px;padding-bottom:env(safe-area-inset-bottom);}
+}
+@media(prefers-reduced-motion:reduce){html.home-colors-scope *{scroll-behavior:auto!important;}}
+html.home-colors-scope .theme-toggle-global{display:none!important;}
+/* These services remain available from navigation and composer; keep the timeline unobstructed. */
+html.home-colors-scope :is(.sf-dock-launcher,.sf-dock-hide-pill,.calls-mobile-launcher){display:none!important;}
+html.home-colors-scope .mobile-services-drawer:not(.is-open){visibility:hidden;pointer-events:none;box-shadow:none!important;}
+html.home-colors-scope .mobile-services-backdrop{z-index:1490!important;}
+html.home-colors-scope .mobile-services-drawer{z-index:1500!important;}
+
+/* Live playback is prepared inside a hidden popup, never on the timeline. */
+html.home-colors-scope [data-home-live-popup][hidden],html.home-colors-scope [data-home-tv-popup][hidden]{display:none!important;}
+html.home-colors-scope .home-media-popup-backdrop{z-index:1600;}
+html.home-colors-scope .home-media-tv-popup{z-index:1610;}
+html.home-colors-scope .profile-cover{height:160px;}
+@media(max-width:760px){html.home-colors-scope .profile-cover{height:140px;}}
+/* Keep navigation still; each content column owns its scrolling. */
+html.home-colors-scope,html.home-colors-scope body{height:100%;overflow:hidden!important;}
+@media(min-width:761px){
+ html.home-colors-scope .home-grid{height:calc(100dvh - 124px);min-height:0;margin-bottom:0;overflow:hidden;}
+ html.home-colors-scope .feed{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;grid-auto-rows:max-content;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding-bottom:20px;}
+ html.home-colors-scope .side-card{position:static;top:auto;max-height:100%;overflow-y:auto;overscroll-behavior-y:contain;}
+ html.home-colors-scope .right-side{height:100%;min-height:0;overflow-y:auto;align-content:start;overscroll-behavior-y:contain;scrollbar-gutter:stable;}
+}
+@media(max-width:760px){
+ html.home-colors-scope .home-grid{position:fixed;inset:128px 0 calc(70px + env(safe-area-inset-bottom));width:100%!important;height:auto!important;margin:0!important;padding:0 12px 20px!important;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;}
+ html.home-colors-scope .feed{height:auto;overflow:visible;}
+}
+html.home-colors-scope [data-feed]{display:grid;gap:16px;}
