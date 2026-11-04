@@ -342,7 +342,49 @@ async function main(req,env){
     await env.DB.prepare('UPDATE auth_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND secret_hash<>? AND revoked_at IS NULL').bind(user.id,sha).run();
     return json({ok:true,message:'تم تغيير كلمة المرور وإغلاق جميع الجلسات الأخرى'});
   }
-  if(req.method==='GET'&&path==='/api/users/me')return json({ok:true,user:safeUser(user)});
+  if(req.method==='GET'&&path==='/api/users/me'){
+    const [account,extra]=await Promise.all([
+      env.DB.prepare('SELECT id,username,full_name,email,created_at FROM users WHERE id=?').bind(user.id).first(),
+      env.DB.prepare('SELECT birth_date,gender,profile_json FROM user_profiles WHERE user_id=?').bind(user.id).first()
+    ]);
+    if(!account)return err('الحساب غير متاح',404);
+    let profile={};try{profile=JSON.parse(extra?.profile_json||'{}')}catch{profile={}}
+    return json({ok:true,user:{...safeUser(account),email:account.email,contactType:account.email?'email':null,contact:account.email||null,birthDate:extra?.birth_date||null,gender:extra?.gender||'other',profile,createdAt:account.created_at}});
+  }
+  if(req.method==='PATCH'&&path==='/api/users/me'){
+    const b=await bodyJSON(req);
+    const username=String(b.username||'').trim().toLowerCase(),fullName=String(b.fullName||'').trim();
+    const birthDate=String(b.birthDate||'').trim(),gender=String(b.gender||'other');
+    if(!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(username)||fullName.length<2||fullName.length>100||!['male','female','other'].includes(gender))return err('معلومات الحساب غير صالحة',400);
+    if(birthDate){
+      if(!/^\d{4}-\d\d-\d\d$/.test(birthDate)||!Number.isFinite(Date.parse(birthDate))||birthDate>new Date().toISOString().slice(0,10))return err('تاريخ الميلاد غير صالح',400);
+    }
+    try{
+      await env.DB.batch([
+        env.DB.prepare('UPDATE users SET username=?,full_name=? WHERE id=?').bind(username,fullName,user.id),
+        env.DB.prepare("INSERT INTO user_profiles(user_id,birth_date,gender) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET birth_date=excluded.birth_date,gender=excluded.gender,updated_at=CURRENT_TIMESTAMP").bind(user.id,birthDate||null,gender)
+      ]);
+    }catch(e){if(String(e?.message||e).includes('UNIQUE'))return err('اسم المستخدم مستخدم مسبقاً',409);throw e;}
+    return json({ok:true,message:'حُفظت معلومات الحساب في Cloudflare'});
+  }
+  if(req.method==='PATCH'&&path==='/api/users/me/profile'){
+    const b=await bodyJSON(req),keys=['bio','governorate','city','profession','workplace','education','website'],clean={};
+    const limits={bio:500,governorate:100,city:100,profession:120,workplace:120,education:160,website:250};
+    for(const k of keys){
+      const v=String(b[k]||'').trim();
+      if(v.length>limits[k])return err('حقل '+k+' طويل جداً',400);
+      clean[k]=v;
+    }
+    if(clean.website){
+      let url;try{url=new URL(clean.website)}catch{return err('عنوان الموقع غير صالح',400)}
+      if(!['https:','http:'].includes(url.protocol)||url.username||url.password)return err('عنوان الموقع غير آمن',400);
+      clean.website=url.href;
+    }
+    const jsonProfile=JSON.stringify(clean);
+    await env.DB.prepare("INSERT INTO user_profiles(user_id,profile_json) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json,updated_at=CURRENT_TIMESTAMP").bind(user.id,jsonProfile).run();
+    return json({ok:true,message:'حُفظ الملف الشخصي على Cloudflare',profile:clean});
+  }
+
   if(req.method==='GET'&&path==='/api/posts'){
     const rows=await env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at,u.id as author_id,u.username,u.full_name FROM posts p JOIN users u ON u.id=p.author_id WHERE p.visibility=? OR p.author_id=? ORDER BY p.created_at DESC LIMIT 30').bind('everyone',user.id).all();
     const ids=rows.results.map(p=>p.id);
