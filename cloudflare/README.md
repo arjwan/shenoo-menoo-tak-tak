@@ -35,3 +35,16 @@ The existing UI still uses legacy API endpoints and is not wired to this Worker.
 - No developer backdoor / automatic role promotion. Design separate secure developer bootstrap before cutover.
 - Follow `cloudflare/migrations/0001_clean.sql` for schema. Existing D1 schema has already been applied.
 - Test with preview URL and isolated test accounts before enabling signups to users.
+
+## New Arabic interface preview
+
+- Worker: `shenoo-cloudflare-ui-preview` (separate from API Worker)
+- Preview: https://shenoo-cloudflare-ui-preview.arjwan307.workers.dev/signin.html
+- `/signin.html`: new login, same-origin `/api/auth/signin`
+- `/signup.html`: new D1 signup with email and 10+ character password; phone/OTP intentionally not requested in this experimental version
+- `/taktak.html`: new staged home UI with authenticated post listing and multipart posting
+- `/stories.html`, `/reels.html`, `/messages.html`, `/school.html`: explicitly marked not yet implemented
+- API requests are forwarded through a Cloudflare **service binding** (`API`) to the `shenoo-cloudflare-clean` Worker, without an external origin.
+- Other production assets/pages and legacy route contracts are **not** deployed here.
+- The current signup endpoint still needs security hardening (rate limits, bot mitigation, email verification) before production cutover.
+- CI: `Cloudflare clean Worker smoke` verifies published auth/API endpoints and preview pages; inspect passing status before claiming functional parity.
