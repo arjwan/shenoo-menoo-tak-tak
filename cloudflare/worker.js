@@ -577,6 +577,58 @@ async function main(req,env){
     const rows=await env.DB.prepare("SELECT m.id AS media_id,m.kind,m.mime_type,m.size,p.id,p.text,p.created_at,u.id AS author_id,u.username,u.full_name,(SELECT COUNT(*) FROM post_likes l WHERE l.post_id=p.id) AS likes,(SELECT COUNT(*) FROM post_comments c WHERE c.post_id=p.id) AS comments_count,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=p.id AND l.user_id=?) AS liked,EXISTS(SELECT 1 FROM reel_saves q WHERE q.post_id=p.id AND q.user_id=?) AS saved FROM media m JOIN posts p ON p.id=m.post_id JOIN users u ON u.id=p.author_id WHERE m.kind IN ('video','audio') AND p.visibility='everyone' ORDER BY p.created_at DESC LIMIT 50").bind(user.id,user.id).all();
     return json({ok:true,reels:rows.results.map(v=>({id:v.id,postId:v.id,text:v.text,createdAt:v.created_at,author:{id:v.author_id,username:v.username,fullName:v.full_name},media:[{url:'/media/'+v.media_id,type:v.kind,mimeType:v.mime_type,size:v.size}],likes:v.likes,commentsCount:v.comments_count,liked:!!v.liked,saved:!!v.saved,canDelete:v.author_id===user.id}))});
   }
+  // Friend requests are persisted in D1; accepted relationships create mutual follows.
+  if(req.method==='GET'&&path==='/api/friends'){
+    const rows=await env.DB.prepare("SELECT u.id,u.username,u.full_name FROM follows a JOIN follows b ON b.follower_id=a.followed_id AND b.followed_id=a.follower_id JOIN users u ON u.id=a.followed_id WHERE a.follower_id=? AND u.status='active' ORDER BY u.username LIMIT 150").bind(user.id).all();
+    return json({ok:true,friends:rows.results.map(x=>({...safeUser(x),isFriend:true,friendStatus:'friends'}))});
+  }
+  if(req.method==='GET'&&path==='/api/friends/requests'){
+    const type=new URL(req.url).searchParams.get('type')||'incoming';
+    if(!['incoming','sent'].includes(type))return err('نوع الطلب غير صالح',400);
+    const rows=await env.DB.prepare("SELECT f.id,f.sender_id,f.receiver_id,u.id AS other_id,u.username,u.full_name FROM friend_requests f JOIN users u ON u.id=(CASE WHEN ?='incoming' THEN f.sender_id ELSE f.receiver_id END) WHERE f.status='pending' AND ((?='incoming' AND f.receiver_id=?) OR (?='sent' AND f.sender_id=?)) AND u.status='active' ORDER BY f.created_at DESC LIMIT 100").bind(type,type,user.id,type,user.id).all();
+    return json({ok:true,requests:rows.results.map(x=>({id:x.id,...(type==='incoming'?{sender:safeUser({id:x.other_id,username:x.username,full_name:x.full_name})}:{receiver:safeUser({id:x.other_id,username:x.username,full_name:x.full_name})})}))});
+  }
+  const friendStatus=path.match(/^\/api\/friends\/status\/([a-f0-9-]{36})$/i);
+  if(req.method==='GET'&&friendStatus){
+    const target=friendStatus[1];
+    const mutual=await env.DB.prepare('SELECT COUNT(*) AS n FROM follows WHERE (follower_id=? AND followed_id=?) OR (follower_id=? AND followed_id=?)').bind(user.id,target,target,user.id).first();
+    const friends=Number(mutual?.n)===2;
+    const pending=await env.DB.prepare("SELECT sender_id FROM friend_requests WHERE status='pending' AND ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) LIMIT 1").bind(user.id,target,target,user.id).first();
+    return json({ok:true,friends,status:friends?'friends':pending?(pending.sender_id===user.id?'pending':'incoming'):'none'});
+  }
+  const requestCreate=path.match(/^\/api\/friends\/request\/([a-f0-9-]{36})$/i);
+  if(req.method==='POST'&&requestCreate){
+    const target=requestCreate[1];
+    if(target===user.id)return err('لا يمكنك إرسال طلب لنفسك',400);
+    const exists=await env.DB.prepare("SELECT id FROM users WHERE id=? AND status='active'").bind(target).first();
+    if(!exists)return err('المستخدم غير موجود',404);
+    const count=await env.DB.prepare("SELECT COUNT(*) AS n FROM friend_requests WHERE sender_id=? AND created_at>datetime('now','-1 day')").bind(user.id).first();
+    if(Number(count?.n)>=30)return err('بلغت الحد اليومي لطلبات الصداقة',429);
+    const mutual=await env.DB.prepare('SELECT COUNT(*) AS n FROM follows WHERE (follower_id=? AND followed_id=?) OR (follower_id=? AND followed_id=?)').bind(user.id,target,target,user.id).first();
+    if(Number(mutual?.n)===2)return err('أنتما صديقان بالفعل',409);
+    const pending=await env.DB.prepare("SELECT sender_id FROM friend_requests WHERE status='pending' AND ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) LIMIT 1").bind(user.id,target,target,user.id).first();
+    if(pending)return err('يوجد طلب صداقة معلّق بين الحسابين',409);
+    const id=crypto.randomUUID();
+    try{await env.DB.prepare('INSERT INTO friend_requests(id,sender_id,receiver_id) VALUES(?,?,?)').bind(id,user.id,target).run();}
+    catch(e){if(String(e?.message||e).includes('UNIQUE'))return err('طلب الصداقة موجود مسبقاً',409);throw e;}
+    return json({ok:true,request:{id,status:'pending'}},201);
+  }
+  const requestAction=path.match(/^\/api\/friends\/requests\/([a-f0-9-]{36})\/(accept|reject|cancel)$/i);
+  if(req.method==='PATCH'&&requestAction){
+    const id=requestAction[1],action=requestAction[2];
+    const pending=await env.DB.prepare('SELECT sender_id,receiver_id,status FROM friend_requests WHERE id=?').bind(id).first();
+    if(!pending||pending.status!=='pending')return err('طلب الصداقة غير موجود أو تمت معالجته',404);
+    if(action==='cancel'?pending.sender_id!==user.id:pending.receiver_id!==user.id)return err('غير مخول لتعديل هذا الطلب',403);
+    const status=action==='accept'?'accepted':action==='reject'?'rejected':'canceled';
+    if(action==='accept'){
+      await env.DB.batch([
+        env.DB.prepare("UPDATE friend_requests SET status='accepted',responded_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'").bind(id),
+        env.DB.prepare('INSERT OR IGNORE INTO follows(follower_id,followed_id) VALUES(?,?)').bind(pending.sender_id,pending.receiver_id),
+        env.DB.prepare('INSERT OR IGNORE INTO follows(follower_id,followed_id) VALUES(?,?)').bind(pending.receiver_id,pending.sender_id)
+      ]);
+    }else await env.DB.prepare("UPDATE friend_requests SET status=?,responded_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'").bind(status,id).run();
+    return json({ok:true,status});
+  }
   // D1 private text messages. Every read/write requires conversation membership.
   if(req.method==='GET'&&path==='/api/conversations'){
     const rows=await env.DB.prepare("SELECT p.conversation_id AS id,u.id AS other_id,u.username,u.full_name,(SELECT m.text FROM messages m WHERE m.conversation_id=p.conversation_id ORDER BY m.created_at DESC,m.id DESC LIMIT 1) AS last_text,(SELECT COUNT(*) FROM messages m WHERE m.conversation_id=p.conversation_id AND m.sender_id<>? AND m.created_at>COALESCE(rr.last_read_at,'1970-01-01 00:00:00')) AS unread_count FROM conversation_pairs p JOIN users u ON u.id=(CASE WHEN p.user_low=? THEN p.user_high ELSE p.user_low END) LEFT JOIN conversation_read_receipts rr ON rr.conversation_id=p.conversation_id AND rr.user_id=? WHERE (p.user_low=? OR p.user_high=?) AND u.status='active' ORDER BY COALESCE((SELECT MAX(m.created_at) FROM messages m WHERE m.conversation_id=p.conversation_id),'1970-01-01 00:00:00') DESC LIMIT 70").bind(user.id,user.id,user.id,user.id,user.id).all();
