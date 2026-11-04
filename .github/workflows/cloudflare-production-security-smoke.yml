@@ -1,0 +1,66 @@
+name: Cloudflare production security smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cloudflare-production-security-smoke.yml'
+      - 'cloudflare/worker.js'
+      - 'signin.html'
+      - 'auth-guard.js'
+      - 'cloudflare-upload.js'
+      - 'stories.html'
+      - 'reels.html'
+      - 'reels-v2.js'
+      - 'smart-friend-dock.js'
+      - 'taktak-calls-dock.js'
+  workflow_dispatch:
+jobs:
+  anonymous-and-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check syntax and production client contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check cloudflare/worker.js
+          node --check auth-guard.js
+          node --check smart-friend-dock.js
+          node --check taktak-calls-dock.js
+          node --check reels-v2.js
+          node --check cloudflare-upload.js
+          ! grep -q 'duckdns.org' smart-friend-dock.js
+          ! grep -q "storage.setItem('token'" signin.html
+          ! grep -q 'shnoPhoneContacts' taktak-calls-dock.js
+          grep -q "cloudflare-upload.js" stories.html
+          grep -q "cloudflare-upload.js" reels.html
+          grep -q "uploadedMedia" cloudflare/worker.js
+          grep -q "__Host-shino_session" cloudflare/worker.js
+          echo 'PASS: no exposed token on new sign-in; cloud-native drafts/contacts and 100 MiB scripts wired'
+      - name: Probe actual primary domain without creating users or data
+        shell: bash
+        run: |
+          set -euo pipefail
+          host=https://shinomino.com
+          health="$(curl -fsS --retry 4 --retry-delay 2 --max-time 25 "$host/api/health")"
+          echo "$health"
+          echo "$health" | grep -q '"storage":"d1+r2"'
+          for path in /api/auth/session /api/users/me/drafts /api/phone-contacts /api/uploads; do
+            status="$(curl -sS -o /tmp/probe.json -w '%{http_code}' --max-time 25 "$host$path")"
+            echo "GET $path -> $status"
+            test "$status" = "401"
+          done
+          status="$(curl -sS -o /tmp/bad-signin.json -w '%{http_code}' --max-time 25 -H 'Content-Type: application/json' --data '{}' "$host/api/auth/signin")"
+          echo "Invalid empty signin request -> $status"
+          test "$status" = "400"
+          status="$(curl -sS -o /tmp/csrf.json -w '%{http_code}' --max-time 25 -H 'Origin: https://not-the-site.invalid' -X POST "$host/api/auth/logout")"
+          echo "Cross-site logout -> $status"
+          test "$status" = "403"
+          for page in /signin.html /taktak.html /stories.html /reels.html /cloudflare-upload.js; do
+            code="$(curl -sS -o /tmp/page.html -w '%{http_code}' --max-time 25 "$host$page")"
+            echo "GET $page -> $code"
+            test "$code" = "200"
+          done
+          curl -fsS "$host/stories.html" | grep -q "cloudflare-upload.js"
+          curl -fsS "$host/reels.html" | grep -q "cloudflare-upload.js"
+          echo 'PASS: primary domain API auth boundaries, CSRF rejection and production pages'
