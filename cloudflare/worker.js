@@ -577,6 +577,65 @@ async function main(req,env){
     const rows=await env.DB.prepare("SELECT m.id AS media_id,m.kind,m.mime_type,m.size,p.id,p.text,p.created_at,u.id AS author_id,u.username,u.full_name,(SELECT COUNT(*) FROM post_likes l WHERE l.post_id=p.id) AS likes,(SELECT COUNT(*) FROM post_comments c WHERE c.post_id=p.id) AS comments_count,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=p.id AND l.user_id=?) AS liked,EXISTS(SELECT 1 FROM reel_saves q WHERE q.post_id=p.id AND q.user_id=?) AS saved FROM media m JOIN posts p ON p.id=m.post_id JOIN users u ON u.id=p.author_id WHERE m.kind IN ('video','audio') AND p.visibility='everyone' ORDER BY p.created_at DESC LIMIT 50").bind(user.id,user.id).all();
     return json({ok:true,reels:rows.results.map(v=>({id:v.id,postId:v.id,text:v.text,createdAt:v.created_at,author:{id:v.author_id,username:v.username,fullName:v.full_name},media:[{url:'/media/'+v.media_id,type:v.kind,mimeType:v.mime_type,size:v.size}],likes:v.likes,commentsCount:v.comments_count,liked:!!v.liked,saved:!!v.saved,canDelete:v.author_id===user.id}))});
   }
+  // D1 private text messages. Every read/write requires conversation membership.
+  if(req.method==='GET'&&path==='/api/conversations'){
+    const rows=await env.DB.prepare("SELECT p.conversation_id AS id,u.id AS other_id,u.username,u.full_name,(SELECT m.text FROM messages m WHERE m.conversation_id=p.conversation_id ORDER BY m.created_at DESC,m.id DESC LIMIT 1) AS last_text,(SELECT COUNT(*) FROM messages m WHERE m.conversation_id=p.conversation_id AND m.sender_id<>? AND m.created_at>COALESCE(rr.last_read_at,'1970-01-01 00:00:00')) AS unread_count FROM conversation_pairs p JOIN users u ON u.id=(CASE WHEN p.user_low=? THEN p.user_high ELSE p.user_low END) LEFT JOIN conversation_read_receipts rr ON rr.conversation_id=p.conversation_id AND rr.user_id=? WHERE (p.user_low=? OR p.user_high=?) AND u.status='active' ORDER BY COALESCE((SELECT MAX(m.created_at) FROM messages m WHERE m.conversation_id=p.conversation_id),'1970-01-01 00:00:00') DESC LIMIT 70").bind(user.id,user.id,user.id,user.id,user.id).all();
+    return json({ok:true,conversations:rows.results.map(x=>({id:x.id,otherUser:{id:x.other_id,username:x.username,fullName:x.full_name},lastMessage:x.last_text?{text:x.last_text}:null,unreadCount:Number(x.unread_count||0)}))});
+  }
+  const conversationRoute=path.match(/^\/api\/conversations\/([a-f0-9-]{36})(?:\/(messages|read))?$/i);
+  if(conversationRoute){
+    const id=conversationRoute[1],suffix=conversationRoute[2]||'';
+    if(req.method==='POST'&&!suffix){
+      if(id===user.id)return err('لا يمكنك مراسلة نفسك',400);
+      const target=await env.DB.prepare("SELECT id FROM users WHERE id=? AND status='active'").bind(id).first();
+      if(!target)return err('المستخدم غير موجود',404);
+      // Direct messages are enabled only between mutually following users.
+      const mutual=await env.DB.prepare("SELECT COUNT(*) AS n FROM follows WHERE (follower_id=? AND followed_id=?) OR (follower_id=? AND followed_id=?)").bind(user.id,id,id,user.id).first();
+      if(Number(mutual?.n)!==2)return err('المحادثات الخاصة متاحة بين المتابعين المتبادلين فقط',403);
+      const lo=user.id<id?user.id:id,hi=user.id<id?id:user.id;
+      let row=await env.DB.prepare('SELECT conversation_id FROM conversation_pairs WHERE user_low=? AND user_high=?').bind(lo,hi).first();
+      if(!row){
+        const conversationId=crypto.randomUUID();
+        try{
+          await env.DB.batch([
+            env.DB.prepare('INSERT INTO conversations(id) VALUES(?)').bind(conversationId),
+            env.DB.prepare('INSERT INTO conversation_members(conversation_id,user_id) VALUES(?,?)').bind(conversationId,lo),
+            env.DB.prepare('INSERT INTO conversation_members(conversation_id,user_id) VALUES(?,?)').bind(conversationId,hi),
+            env.DB.prepare('INSERT INTO conversation_pairs(user_low,user_high,conversation_id) VALUES(?,?,?)').bind(lo,hi,conversationId)
+          ]);
+        }catch(e){
+          row=await env.DB.prepare('SELECT conversation_id FROM conversation_pairs WHERE user_low=? AND user_high=?').bind(lo,hi).first();
+          if(!row)throw e;
+        }
+        if(!row)row={conversation_id:conversationId};
+      }
+      return json({ok:true,conversation:{id:row.conversation_id}});
+    }
+    const membership=await env.DB.prepare('SELECT 1 AS allowed FROM conversation_members WHERE conversation_id=? AND user_id=?').bind(id,user.id).first();
+    if(!membership)return err('المحادثة غير موجودة',404);
+    if(suffix==='messages'&&req.method==='GET'){
+      const other=await env.DB.prepare('SELECT u.id,u.username,u.full_name FROM conversation_members m JOIN users u ON u.id=m.user_id WHERE m.conversation_id=? AND m.user_id<>?').bind(id,user.id).first();
+      const before=String(new URL(req.url).searchParams.get('before')||'');
+      if(before&&!/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/.test(before))return err('مؤشر الصفحة غير صالح',400);
+      const q="SELECT id,sender_id,text,created_at FROM messages WHERE conversation_id=?"+(before?" AND created_at<?":"")+" ORDER BY created_at DESC,id DESC LIMIT 51";
+      const rows=await (before?env.DB.prepare(q).bind(id,before):env.DB.prepare(q).bind(id)).all();
+      const result=rows.results.slice(0,50),more=rows.results.length>50;
+      return json({ok:true,conversation:{id,otherUser:other?{id:other.id,username:other.username,fullName:other.full_name}:null},messages:result.reverse().map(m=>({id:m.id,senderId:m.sender_id,text:m.text,type:'text',mine:m.sender_id===user.id,createdAt:m.created_at})),nextCursor:more?result[0]?.created_at:null});
+    }
+    if(suffix==='messages'&&req.method==='POST'){
+      if(!(req.headers.get('Content-Type')||'').includes('application/json'))return err('المرفقات الصوتية والمرئية غير مفعلة بعد؛ الرسائل النصية فقط',415);
+      const b=await bodyJSON(req),message=String(b.text||'').trim();
+      if(b.type!=='text'||!message||message.length>5000)return err('الرسالة النصية غير صالحة',400);
+      const idMessage=crypto.randomUUID();
+      await env.DB.prepare('INSERT INTO messages(id,conversation_id,sender_id,text) VALUES(?,?,?,?)').bind(idMessage,id,user.id,message).run();
+      return json({ok:true,message:{id:idMessage,text:message,senderId:user.id,createdAt:new Date().toISOString()}},201);
+    }
+    if(suffix==='read'&&req.method==='PATCH'){
+      await env.DB.prepare("INSERT INTO conversation_read_receipts(conversation_id,user_id,last_read_at) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(conversation_id,user_id) DO UPDATE SET last_read_at=CURRENT_TIMESTAMP").bind(id,user.id).run();
+      return json({ok:true});
+    }
+    return err('عملية المحادثة غير مدعومة',405);
+  }
   if(req.method==='GET'&&path==='/api/social/notifications'){
     const rows=await env.DB.prepare('SELECT id,kind,body,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(user.id).all();
     return json({ok:true,notifications:rows.results.map(n=>({id:n.id,type:n.kind,message:n.body,read:!!n.read_at,createdAt:n.created_at}))});
