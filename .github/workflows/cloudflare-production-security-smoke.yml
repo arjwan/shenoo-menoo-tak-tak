@@ -25,6 +25,9 @@ jobs:
           set -euo pipefail
           node --check cloudflare/worker.js
           node --check private-messages.js
+          node --check friends.js
+          grep -q "friend_requests" cloudflare/worker.js
+          grep -q 'conversation_read_receipts' cloudflare/worker.js
           grep -q 'conversation_pairs' cloudflare/worker.js
           grep -q "'/api/conversations'" cloudflare/worker.js
           grep -q 'auth_rate_limits' cloudflare/worker.js
@@ -51,7 +54,7 @@ jobs:
           health="$(curl -fsS --retry 4 --retry-delay 2 --max-time 25 "$host/api/health")"
           echo "$health"
           echo "$health" | grep -q '"storage":"d1+r2"'
-          for path in /api/auth/session /api/users/me/drafts /api/phone-contacts /api/uploads /api/conversations; do
+          for path in /api/auth/session /api/users/me/drafts /api/phone-contacts /api/uploads /api/conversations /api/friends /api/friends/requests; do
             status="$(curl -sS -o /tmp/probe.json -w '%{http_code}' --max-time 25 "$host$path")"
             echo "GET $path -> $status"
             test "$status" = "401"
@@ -72,7 +75,7 @@ jobs:
           status="$(curl -sS -o /tmp/csrf.json -w '%{http_code}' --max-time 25 -H 'Origin: https://not-the-site.invalid' -X POST "$host/api/auth/logout")"
           echo "Cross-site logout -> $status"
           test "$status" = "403"
-          for page in /signin.html /taktak.html /stories.html /reels.html /messages.html /cloudflare-upload.js; do
+          for page in /signin.html /taktak.html /stories.html /reels.html /messages.html /friends.html /cloudflare-upload.js; do
             code="$(curl -sSL -o /tmp/page.html -w '%{http_code}' --max-time 25 "$host$page")"
             echo "GET $page -> $code"
             test "$code" = "200"
