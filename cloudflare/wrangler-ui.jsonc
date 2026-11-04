@@ -1,0 +1,12 @@
+{
+  "name": "shenoo-cloudflare-ui-preview",
+  "main": "ui-worker.js",
+  "compatibility_date": "2026-11-04",
+  "workers_dev": true,
+  "services": [
+    {
+      "binding": "API",
+      "service": "shenoo-cloudflare-clean"
+    }
+  ]
+}
