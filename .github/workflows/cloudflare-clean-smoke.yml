@@ -45,6 +45,15 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://shinomino.com"
+          echo "DNS addresses (root and www):"
+          getent ahosts shinomino.com || true
+          getent ahosts www.shinomino.com || true
+          echo "DNS public resolver checks"
+          dig +short NS shinomino.com @1.1.1.1 || true
+          dig +short A shinomino.com @1.1.1.1 || true
+          dig +short AAAA shinomino.com @1.1.1.1 || true
+          echo "HTTP response headers and remote address"
+          curl -sS -I --max-time 15 -w 'address=%{remote_ip} http=%{http_code}\\n' "$BASE/api/health" || true
           curl --fail-with-body --retry 4 --retry-delay 4 --max-time 30 -sS "$BASE/api/health" -o /tmp/custom-health.json
           python3 -c 'import json; x=json.load(open("/tmp/custom-health.json")); assert x["ok"] and x["service"]=="shenoo-cloudflare-clean-api"'
           curl --fail-with-body --retry 4 --retry-delay 4 --max-time 30 -sS "$BASE/signin.html" -o /tmp/custom-login.html
