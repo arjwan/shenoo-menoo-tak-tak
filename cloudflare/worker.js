@@ -202,6 +202,50 @@ async function main(req,env){
     if(!session||!session.completed||session.consumed||session.purpose!==purpose)return null;
     return session;
   }
+  // Private, per-account Cloudflare D1 draft and opted-in contact storage.
+  if(path==='/api/users/me/drafts'&&req.method==='GET'){
+    const rows=await env.DB.prepare('SELECT id,content,updated_at FROM user_post_drafts WHERE user_id=? ORDER BY updated_at DESC LIMIT 12').bind(user.id).all();
+    return json({ok:true,drafts:rows.results.map(d=>({id:d.id,text:d.content,savedAt:d.updated_at}))});
+  }
+  if(path==='/api/users/me/drafts'&&req.method==='POST'){
+    const b=await bodyJSON(req),content=String(b.text||'').trim();
+    if(!content||content.length>5000)return err('النص غير صالح');
+    const id=crypto.randomUUID();
+    await env.DB.prepare('INSERT INTO user_post_drafts(user_id,id,content) VALUES(?,?,?)').bind(user.id,id,content).run();
+    await env.DB.prepare('DELETE FROM user_post_drafts WHERE user_id=? AND id NOT IN (SELECT id FROM user_post_drafts WHERE user_id=? ORDER BY updated_at DESC LIMIT 12)').bind(user.id,user.id).run();
+    return json({ok:true,draft:{id,text:content}},201);
+  }
+  const draftDelete=path.match(/^\/api\/users\/me\/drafts\/([a-f0-9-]{36})$/i);
+  if(draftDelete&&req.method==='DELETE'){
+    await env.DB.prepare('DELETE FROM user_post_drafts WHERE id=? AND user_id=?').bind(draftDelete[1],user.id).run();
+    return json({ok:true});
+  }
+  if(path==='/api/phone-contacts'&&req.method==='GET'){
+    const rows=await env.DB.prepare('SELECT phone,name FROM user_phone_contacts WHERE user_id=? ORDER BY name LIMIT 200').bind(user.id).all();
+    return json({ok:true,contacts:rows.results.map(x=>({id:x.phone,phone:x.phone,name:x.name}))});
+  }
+  if(path==='/api/phone-contacts'&&req.method==='PUT'){
+    const b=await bodyJSON(req),raw=b.contacts;
+    if(!Array.isArray(raw)||raw.length>200)return err('عدد جهات الاتصال غير صالح');
+    const seen=new Set(),contacts=[];
+    for(const x of raw){
+      const p=String(x?.phone||'').replace(/[^\d+]/g,''),phone=p.startsWith('+964')?'0'+p.slice(4):p.startsWith('00964')?'0'+p.slice(5):p;
+      const name=String(x?.name||'').trim().slice(0,120);
+      if(!/^07\d{9}$/.test(phone)||name.length<1)return err('رقم الهاتف أو الاسم غير صالح');
+      if(!seen.has(phone)){seen.add(phone);contacts.push({phone,name});}
+    }
+    // The caller explicitly chose to synchronize this contact list. Never replace with fake entries.
+    const stmt=env.DB.prepare('INSERT INTO user_phone_contacts(user_id,phone,name) VALUES(?,?,?) ON CONFLICT(user_id,phone) DO UPDATE SET name=excluded.name,updated_at=CURRENT_TIMESTAMP');
+    await env.DB.batch(contacts.map(x=>stmt.bind(user.id,x.phone,x.name)));
+    if(contacts.length){
+      await env.DB.prepare('DELETE FROM user_phone_contacts WHERE user_id=? AND phone NOT IN ('+contacts.map(()=>'?').join(',')+')').bind(user.id,...contacts.map(x=>x.phone)).run();
+    }else await env.DB.prepare('DELETE FROM user_phone_contacts WHERE user_id=?').bind(user.id).run();
+    return json({ok:true,contacts:contacts.map(x=>({id:x.phone,...x}))});
+  }
+  if(path==='/api/phone-contacts'&&req.method==='DELETE'){
+    await env.DB.prepare('DELETE FROM user_phone_contacts WHERE user_id=?').bind(user.id).run();
+    return json({ok:true,contacts:[]});
+  }
   if(req.method==='GET'&&path==='/api/users/me')return json({ok:true,user:safeUser(user)});
   if(req.method==='GET'&&path==='/api/posts'){
     const rows=await env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at,u.id as author_id,u.username,u.full_name FROM posts p JOIN users u ON u.id=p.author_id WHERE p.visibility=? OR p.author_id=? ORDER BY p.created_at DESC LIMIT 30').bind('everyone',user.id).all();
