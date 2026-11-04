@@ -5,7 +5,7 @@ const json = (data, status=200) => new Response(JSON.stringify(data), {status, h
 const err = (message,status=400) => json({ok:false,message},status);
 const b64 = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const unb64 = str => Uint8Array.from(atob(str.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4-str.length%4)%4)), c=>c.charCodeAt(0));
-const hash = async (password,salt) => b64(pbkdf2Sync(password, unb64(salt), 120000, 32, 'sha256'));
+const hash = async (password,salt) => b64(pbkdf2Sync(password, unb64(salt), 100000, 32, 'sha256'));
 
 const key = async secret => crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);
 async function tokenFor(user,secret) {
