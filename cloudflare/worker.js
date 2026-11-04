@@ -146,6 +146,62 @@ async function main(req,env){
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
+  // Resumable 8 MiB chunks; no large file is buffered inside the Worker.
+  const UPLOAD_LIMIT=100*1024*1024,PART_BYTES=8*1024*1024;
+  const uploadRoute=path.match(/^\/api\/uploads\/([a-f0-9-]{36})(?:\/(part\/(\d+)|complete|abort))?$/i);
+  async function ownedUpload(id){
+    const x=await env.DB.prepare('SELECT * FROM media_upload_sessions WHERE id=? AND owner_id=?').bind(id,user.id).first();
+    if(!x)return null;
+    return x;
+  }
+  if(req.method==='POST'&&path==='/api/uploads'){
+    const b=await bodyJSON(req),name=String(b.name||''),mime=String(b.mime||''),purpose=String(b.purpose||'posts'),size=Number(b.size);
+    const kind=mediaType(mime,name);
+    if(!['posts','stories','story-music'].includes(purpose)||!kind||(purpose==='story-music'&&kind!=='audio')||(purpose==='stories'&&kind==='audio')||!Number.isSafeInteger(size)||size<1||size>UPLOAD_LIMIT)return err('الملف غير مدعوم أو أكبر من 100 ميغابايت',413);
+    const session=crypto.randomUUID(),extension=name.split('.').pop().toLowerCase(),objectKey='uploads/'+purpose+'/'+user.id+'/'+session+'.'+extension;
+    const upload=await env.MEDIA.createMultipartUpload(objectKey,{httpMetadata:{contentType:mime}});
+    try{
+      await env.DB.prepare('INSERT INTO media_upload_sessions(id,owner_id,purpose,r2_key,r2_upload_id,mime_type,kind,file_size,part_size) VALUES(?,?,?,?,?,?,?,?,?)').bind(session,user.id,purpose,objectKey,upload.uploadId,mime,kind,size,PART_BYTES).run();
+    }catch(e){await upload.abort().catch(()=>{});throw e;}
+    return json({ok:true,uploadId:session,partSize:PART_BYTES,parts:Math.ceil(size/PART_BYTES)});
+  }
+  if(uploadRoute){
+    const session=await ownedUpload(uploadRoute[1]);
+    if(!session)return err('جلسة الرفع غير موجودة',404);
+    if(session.consumed)return err('تم استخدام الملف مسبقاً',409);
+    if(req.method==='PUT'&&uploadRoute[2]?.startsWith('part/')&&!session.completed){
+      const n=Number(uploadRoute[3]),total=Math.ceil(session.file_size/session.part_size),expected=n===total?session.file_size-(total-1)*session.part_size:session.part_size;
+      if(!Number.isSafeInteger(n)||n<1||n>total||Number(req.headers.get('Content-Length'))!==expected||!req.body)return err('حجم الجزء أو رقمه غير صحيح',400);
+      const part=await env.MEDIA.resumeMultipartUpload(session.r2_key,session.r2_upload_id).uploadPart(n,req.body);
+      await env.DB.prepare('INSERT INTO media_upload_parts(session_id,part_number,etag) VALUES(?,?,?) ON CONFLICT(session_id,part_number) DO UPDATE SET etag=excluded.etag').bind(session.id,n,part.etag).run();
+      return json({ok:true,part:n});
+    }
+    if(req.method==='POST'&&uploadRoute[2]==='complete'){
+      if(session.completed)return json({ok:true,uploadId:session.id,completed:true});
+      const rows=await env.DB.prepare('SELECT part_number AS partNumber,etag FROM media_upload_parts WHERE session_id=? ORDER BY part_number').bind(session.id).all();
+      const parts=rows.results,total=Math.ceil(session.file_size/session.part_size);
+      if(parts.length!==total||parts.some((p,i)=>p.partNumber!==i+1))return err('لم تكتمل أجزاء الرفع',409);
+      const object=await env.MEDIA.resumeMultipartUpload(session.r2_key,session.r2_upload_id).complete(parts);
+      if(object.size!==session.file_size){await env.MEDIA.delete(session.r2_key);return err('حجم الملف بعد التجميع غير صحيح',400);}
+      const first=await env.MEDIA.get(session.r2_key,{range:{offset:0,length:16}});
+      if(!first||!hasSignature(new Uint8Array(await first.arrayBuffer()),session.mime_type)){await env.MEDIA.delete(session.r2_key);return err('نوع الملف لا يطابق المحتوى',400);}
+      await env.DB.prepare('UPDATE media_upload_sessions SET completed=1 WHERE id=? AND owner_id=?').bind(session.id,user.id).run();
+      return json({ok:true,uploadId:session.id,completed:true});
+    }
+    if(req.method==='DELETE'&&uploadRoute[2]==='abort'){
+      if(session.completed)await env.MEDIA.delete(session.r2_key);
+      else await env.MEDIA.resumeMultipartUpload(session.r2_key,session.r2_upload_id).abort().catch(()=>{});
+      await env.DB.prepare('DELETE FROM media_upload_parts WHERE session_id=?').bind(session.id).run();
+      await env.DB.prepare('DELETE FROM media_upload_sessions WHERE id=? AND owner_id=?').bind(session.id,user.id).run();
+      return json({ok:true});
+    }
+    return err('عملية الرفع غير متاحة',405);
+  }
+  async function uploadedMedia(id,purpose){
+    const session=await ownedUpload(id);
+    if(!session||!session.completed||session.consumed||session.purpose!==purpose)return null;
+    return session;
+  }
   if(req.method==='GET'&&path==='/api/users/me')return json({ok:true,user:safeUser(user)});
   if(req.method==='GET'&&path==='/api/posts'){
     const rows=await env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at,u.id as author_id,u.username,u.full_name FROM posts p JOIN users u ON u.id=p.author_id WHERE p.visibility=? OR p.author_id=? ORDER BY p.created_at DESC LIMIT 30').bind('everyone',user.id).all();
@@ -156,24 +212,37 @@ async function main(req,env){
     return json({ok:true,posts:rows.results.map(p=>({id:p.id,text:p.text,visibility:p.visibility,author:{id:p.author_id,username:p.username,fullName:p.full_name},media:media.filter(m=>m.post_id===p.id).map(m=>({url:'/media/'+m.id,type:m.kind,mimeType:m.mime_type,size:m.size})),likesCount:reactions.filter(v=>v.post_id===p.id).length,liked:reactions.some(v=>v.post_id===p.id&&v.user_id===user.id),commentsCount:comments.find(c=>c.post_id===p.id)?.n||0,sharesCount:0,createdAt:p.created_at,canEdit:p.author_id===user.id,canDelete:p.author_id===user.id}))});
   }
   if(req.method==='POST'&&path==='/api/posts'){
-    const form=await req.formData(),text=String(form.get('text')||'').trim(),visibility=String(form.get('visibility')||'everyone');
-    const file=form.get('media'),exists=file instanceof File&&file.size>0;
-    if(text.length>5000||!['everyone','friends','followers','friends_followers'].includes(visibility)||(!text&&!exists))return err('محتوى المنشور غير صالح');
-    let kind=null,buf=null,mediaId=null,objectKey=null;
-    if(exists){
+    const isJson=(req.headers.get('Content-Type')||'').includes('application/json');
+    const form=isJson?await bodyJSON(req):await req.formData();
+    const read=k=>isJson?form[k]:form.get(k);
+    const text=String(read('text')||'').trim(),visibility=String(read('visibility')||'everyone');
+    const uploadId=String(read('uploadId')||'');
+    const file=isJson?null:form.get('media'),exists=file instanceof File&&file.size>0;
+    if(text.length>5000||!['everyone','friends','followers','friends_followers'].includes(visibility)||(!text&&!exists&&!uploadId))return err('محتوى المنشور غير صالح');
+    let kind=null,mediaId=null,objectKey=null,mime=null,fileSize=null,session=null;
+    if(uploadId){
+      session=await uploadedMedia(uploadId,'posts');
+      if(!session)return err('الملف المرفوع غير مكتمل',400);
+      kind=session.kind;mime=session.mime_type;fileSize=session.file_size;mediaId=crypto.randomUUID();objectKey=session.r2_key;
+    }else if(exists){
       kind=mediaType(file.type,file.name);
-      if(!kind||file.size>15*1024*1024)return err('الملف غير مدعوم أو أكبر من 15 ميغابايت',413);
-      buf=await file.arrayBuffer();
+      if(!kind||file.size>15*1024*1024)return err('استخدم الرفع المجزأ للملفات الأكبر من 15 ميغابايت',413);
+      const buf=await file.arrayBuffer();
       if(!hasSignature(new Uint8Array(buf.slice(0,16)),file.type))return err('نوع الملف لا يطابق محتواه',400);
       mediaId=crypto.randomUUID();objectKey='posts/'+user.id+'/'+mediaId+'.'+file.name.split('.').pop().toLowerCase();
-      await env.MEDIA.put(objectKey,buf,{httpMetadata:{contentType:file.type}});
+      mime=file.type;fileSize=file.size;await env.MEDIA.put(objectKey,buf,{httpMetadata:{contentType:file.type}});
     }
     const postId=crypto.randomUUID();
-    try {
+    try{
       await env.DB.prepare('INSERT INTO posts(id,author_id,text,visibility) VALUES(?,?,?,?)').bind(postId,user.id,text,visibility).run();
-      if(exists)await env.DB.prepare('INSERT INTO media(id,post_id,owner_id,r2_key,kind,mime_type,size) VALUES(?,?,?,?,?,?,?)').bind(mediaId,postId,user.id,objectKey,kind,file.type,file.size).run();
-    }catch(e){if(objectKey)await env.MEDIA.delete(objectKey).catch(()=>{});await env.DB.prepare('DELETE FROM posts WHERE id=?').bind(postId).run().catch(()=>{});throw e;}
-    return json({ok:true,message:'تم النشر',post:{id:postId,text,visibility,author:safeUser(user),media:exists?[{url:'/media/'+mediaId,type:kind,mimeType:file.type,size:file.size}]:[],likesCount:0,commentsCount:0,sharesCount:0,canEdit:true,canDelete:true,createdAt:new Date().toISOString()}},201);
+      if(objectKey)await env.DB.prepare('INSERT INTO media(id,post_id,owner_id,r2_key,kind,mime_type,size) VALUES(?,?,?,?,?,?,?)').bind(mediaId,postId,user.id,objectKey,kind,mime,fileSize).run();
+      if(session)await env.DB.prepare('UPDATE media_upload_sessions SET consumed=1 WHERE id=? AND owner_id=? AND consumed=0').bind(session.id,user.id).run();
+    }catch(e){
+      await env.DB.prepare('DELETE FROM posts WHERE id=?').bind(postId).run().catch(()=>{});
+      if(objectKey&&!session)await env.MEDIA.delete(objectKey).catch(()=>{});
+      throw e;
+    }
+    return json({ok:true,message:'تم النشر',post:{id:postId,text,visibility,author:safeUser(user),media:objectKey?[{url:'/media/'+mediaId,type:kind,mimeType:mime,size:fileSize}]:[],likesCount:0,commentsCount:0,sharesCount:0,canEdit:true,canDelete:true,createdAt:new Date().toISOString()}},201);
   }
 
   // Cloudflare-native social functions. Every write is authorized server-side.
@@ -266,7 +335,13 @@ async function main(req,env){
     let overlays;try{overlays=JSON.parse(String(read('overlays')||'[]'));}catch{return err('تنسيق النصوص والإيموجي غير صالح');}
     if(!Array.isArray(overlays)||overlays.length>25||overlays.some(o=>!o||!['text','emoji'].includes(o.kind)||typeof o.value!=='string'||o.value.length>140||![o.x,o.y,o.size].every(Number.isFinite)))return err('نصوص القصة غير صالحة');
     const files=[{file:multipart?read('media'):null,role:'main'},{file:multipart?read('music'):null,role:'music'}].filter(x=>x.file instanceof File&&x.file.size>0);
-    if(!storyText&&!files.length&&!overlays.length)return err('أضف نصاً أو صورة أو فيديو');
+    const uploadIds=read('uploads')||{},sessions=[];
+    if(uploadIds&&typeof uploadIds==='object'){
+      for(const [role,purpose] of [['main','stories'],['music','story-music']]){
+        if(uploadIds[role]){const session=await uploadedMedia(String(uploadIds[role]),purpose);if(!session)return err('ملف القصة المرفوع غير مكتمل');sessions.push({session,role});}
+      }
+    }
+    if(!storyText&&!files.length&&!sessions.length&&!overlays.length)return err('أضف نصاً أو صورة أو فيديو');
     let prepared=[];
     for(const x of files){
       const type=mediaType(x.file.type,x.file.name);
@@ -277,11 +352,13 @@ async function main(req,env){
       prepared.push({id:mediaId,role:x.role,kind:type,mime:x.file.type,size:x.file.size,key:'stories/'+user.id+'/'+mediaId+'.'+ext,bytes});
     }
     const id=crypto.randomUUID(),uploaded=[];
+    for(const {session,role} of sessions)prepared.push({id:crypto.randomUUID(),role,kind:session.kind,mime:session.mime_type,size:session.file_size,key:session.r2_key,session});
     try{
-      for(const f of prepared){await env.MEDIA.put(f.key,f.bytes,{httpMetadata:{contentType:f.mime}});uploaded.push(f.key);}
+      for(const f of prepared){if(!f.session){await env.MEDIA.put(f.key,f.bytes,{httpMetadata:{contentType:f.mime}});uploaded.push(f.key);}}
       await env.DB.prepare("INSERT INTO stories(id,author_id,text,expires_at) VALUES(?,?,?,datetime('now','+24 hours'))").bind(id,user.id,storyText).run();
       await env.DB.prepare('INSERT INTO story_extras(story_id,visibility,overlays) VALUES(?,?,?)').bind(id,visibility,JSON.stringify(overlays)).run();
       for(const f of prepared)await env.DB.prepare('INSERT INTO story_media(id,story_id,r2_key,kind,mime_type,size,role) VALUES(?,?,?,?,?,?,?)').bind(f.id,id,f.key,f.kind,f.mime,f.size,f.role).run();
+      for(const {session} of sessions)await env.DB.prepare('UPDATE media_upload_sessions SET consumed=1 WHERE id=? AND owner_id=? AND consumed=0').bind(session.id,user.id).run();
       return json({ok:true,story:{id,text:storyText,visibility,author:safeUser(user)}},201);
     }catch(e){
       await env.DB.prepare('DELETE FROM story_media WHERE story_id=?').bind(id).run().catch(()=>{});
