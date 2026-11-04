@@ -1,0 +1,26 @@
+name: Cloudflare main domain smoke
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/cloudflare-main-domain-smoke.yml]
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve DNS and compare origins
+        run: |
+          set -u
+          echo '=== DNS ==='
+          dig +short NS shinomino.com @1.1.1.1 || true
+          dig +short A shinomino.com @1.1.1.1 || true
+          dig +short CNAME shinomino.com @1.1.1.1 || true
+          for host in https://shinomino.com https://www.shinomino.com https://shenoo-main-cloudflare.pages.dev; do
+            echo "=== $host ==="
+            for path in /api/health /signup.html; do
+              out=$(mktemp)
+              curl -sSL --max-time 25 -D - -o "$out" -w '\nHTTP=%{http_code} IP=%{remote_ip} URL=%{url_effective}\n' "$host$path" | head -45 || true
+              echo "BODY: $(head -c 180 "$out")"
+              rm -f "$out"
+            done
+          done
