@@ -1,19 +1,18 @@
 /* Developer-only MongoDB bridge. Stage until MongoDB credentials are configured
    and authentication + integration tests pass. All social/user routes remain on D1. */
 import d1Worker from './worker.js';
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 const DB_NAME = 'shino_mino_tak_tak';
-let cachedClient;
 const response = (data, status=200) => Response.json(data, {
   status, headers: {'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'}
 });
-function database(env) {
+function createClient(env) {
   if (!env.MONGODB_URI) throw Error('MongoDB connection is not configured');
-  if (!cachedClient) cachedClient = new MongoClient(env.MONGODB_URI, {
-    maxPoolSize: 2, minPoolSize: 0, maxIdleTimeMS: 20000, serverSelectionTimeoutMS: 5000
+  // Ordinary Workers cannot safely reuse I/O objects across requests.
+  return new MongoClient(env.MONGODB_URI, {
+    maxPoolSize: 2, minPoolSize: 0, serverSelectionTimeoutMS: 5000
   });
-  return cachedClient.db(DB_NAME);
 }
 async function authorizedDeveloper(req,env) {
   const session = await d1Worker.fetch(new Request(new URL('/api/auth/session',req.url),{
@@ -34,7 +33,10 @@ function normalizeUser(u) {
 async function handleDeveloper(req,env,pathname) {
   const developer=await authorizedDeveloper(req,env);
   if (!developer) return response({ok:false,message:'هذه الخدمة تتطلب تسجيل دخول المطور المصرّح له'},403);
-  const db=database(env);
+  const client=createClient(env);
+  await client.connect();
+  try {
+  const db=client.db(DB_NAME);
   if (req.method==='GET' && pathname==='/api/developer/mongo-status') {
     await db.command({ping:1});
     return response({ok:true,source:'mongodb',database:DB_NAME,connected:true});
@@ -87,6 +89,7 @@ async function handleDeveloper(req,env,pathname) {
   }
   // No arbitrary collection access or unreviewed cross-database writes.
   return response({ok:false,message:'الخدمة المطلوبة غير مفعلة على قاعدة المطور بعد'},501);
+  } finally { await client.close(); }
 }
 export default {
   async fetch(req,env,ctx) {
