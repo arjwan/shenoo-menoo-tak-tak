@@ -1,0 +1,23 @@
+name: Cloudflare clean Worker smoke
+on:
+  pull_request:
+    paths:
+      - 'cloudflare/**'
+      - '.github/workflows/cloudflare-clean-smoke.yml'
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read-only Worker API checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://shenoo-cloudflare-clean.arjwan307.workers.dev"
+          curl --fail-with-body --retry 3 --retry-delay 2 --max-time 25 -sS "$BASE/api/health" | tee /tmp/health.json
+          python3 -c 'import json; x=json.load(open("/tmp/health.json")); assert x["ok"] and x["service"]=="shenoo-cloudflare-clean-api" and x["storage"]=="d1+r2"'
+          curl --fail-with-body --retry 3 --retry-delay 2 --max-time 25 -sS "$BASE/api/auth/registration-config" | tee /tmp/config.json
+          python3 -c 'import json; x=json.load(open("/tmp/config.json")); assert x["ok"]'
+          CODE=$(curl -sS -o /tmp/unauthorized.json -w "%{http_code}" "$BASE/api/users/me")
+          test "$CODE" = "401"
+          echo "Health, configuration and unauthorized access contract passed"
