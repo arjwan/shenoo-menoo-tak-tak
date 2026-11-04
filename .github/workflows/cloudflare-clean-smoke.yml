@@ -39,3 +39,16 @@ jobs:
           curl --fail-with-body --retry 3 --retry-delay 2 --max-time 25 -sS "$BASE/api/health" -o /tmp/ui-health.json
           python3 -c 'import json; x=json.load(open("/tmp/ui-health.json")); assert x["ok"] and x["service"]=="shenoo-cloudflare-clean-api"'
           echo "UI pages and API Service Binding passed"
+
+      - name: Live custom domain HTTP and API routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://shinomino.com"
+          curl --fail-with-body --retry 4 --retry-delay 4 --max-time 30 -sS "$BASE/api/health" -o /tmp/custom-health.json
+          python3 -c 'import json; x=json.load(open("/tmp/custom-health.json")); assert x["ok"] and x["service"]=="shenoo-cloudflare-clean-api"'
+          curl --fail-with-body --retry 4 --retry-delay 4 --max-time 30 -sS "$BASE/signin.html" -o /tmp/custom-login.html
+          grep -q "تسجيل الدخول" /tmp/custom-login.html
+          curl --fail-with-body --retry 4 --retry-delay 4 --max-time 30 -sS "https://www.shinomino.com/signup.html" -o /tmp/custom-register.html
+          grep -q "إنشاء حساب" /tmp/custom-register.html
+          echo "Live domain Cloudflare routing passed"
