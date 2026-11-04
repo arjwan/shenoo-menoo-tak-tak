@@ -31,7 +31,13 @@
     var contact = document.querySelector('[data-form="contact"]');
     if (user.contactType === "email") setField(contact, "email", user.contact); else setField(contact, "phone", user.contact);
     var privacy = user.privacy || {};
-    document.querySelector("[data-privacy-grid]").innerHTML = Object.keys(privacyKeys).map(function (key) { return '<label class="privacy-setting"><span>' + privacyKeys[key] + '</span><select name="' + key + '" data-privacy-key><option value="everyone"' + (privacy[key] === "everyone" ? " selected" : "") + '>الجميع</option><option value="friends"' + (privacy[key] === "friends" ? " selected" : "") + '>الأصدقاء</option><option value="nobody"' + (privacy[key] === "nobody" ? " selected" : "") + '>لا أحد</option></select></label>'; }).join("");
+    // No server-side privacy enforcement endpoint is deployed yet. Do not
+    // show decorative privacy controls that appear to save real restrictions.
+    var grid=document.querySelector("[data-privacy-grid]");
+    if(grid)grid.innerHTML='<p class="settings-message error">إعدادات خصوصية الملف والرسائل غير مفعلة على الخادم بعد. لن تظهر على أنها محفوظة أو مطبقة حتى يُنجز نظام الصلاحيات.</p>';
+    var privacyForm=document.querySelector('[data-form="privacy"]');
+    if(privacyForm){var save=privacyForm.querySelector('button[type="submit"]');if(save){save.disabled=true;save.title='غير متاح حتى تفعيل الخصوصية على الخادم';}}
+
   }
   async function load() {
     try { var data = await SocialAPI.request("/api/users/me"); render(data.user || data.data || {}); } catch (error) {
