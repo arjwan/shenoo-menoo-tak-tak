@@ -1,39 +1,16 @@
-var CACHE_NAME="shenoo-offline-v7";
-var CORE=[
- "index.html","signin.html","signup.html","taktak.html","messages.html","friends.html",
- "game-room.html","kahwa-games.css","kahwa-tawla-v2.js","kahwa-domino-ui.js",
- "tv.html","tv.css","tv.js","tv-current-channel.js","tv-room-mode.js","tv-chat-popup.js",
- "broadcast-ticker-client.js","tv-controls-autohide.js","social-api.js","social.css","mall.css"
-];
-self.addEventListener("install",function(event){
- event.waitUntil(caches.open(CACHE_NAME).then(function(cache){
-  return Promise.allSettled(CORE.map(function(file){return cache.add(new Request(file,{cache:"reload"}));}));
- }));
- self.skipWaiting();
+// Commercial release service worker: network-only until an audited offline
+// data synchronization strategy is approved. Never cache authenticated pages,
+// account information, or API responses in the browser.
+self.addEventListener('install',event=>{self.skipWaiting();});
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(k=>k.startsWith('shenoo-')).map(k=>caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
-self.addEventListener("activate",function(event){
- event.waitUntil(caches.keys().then(function(keys){
-  return Promise.all(keys.filter(function(key){return key!==CACHE_NAME;}).map(function(key){return caches.delete(key);}));
- }).then(function(){return self.clients.claim();}));
+self.addEventListener('message',event=>{
+  if(event.data==='SKIP_WAITING')self.skipWaiting();
 });
-self.addEventListener("message",function(event){if(event.data==="SKIP_WAITING")self.skipWaiting();});
-self.addEventListener("fetch",function(event){
- if(event.request.method!=="GET")return;
- var url=new URL(event.request.url);
- if(url.origin!==self.location.origin)return;
- if(url.pathname.indexOf("/api/")===0||url.pathname.indexOf("/socket.io/")===0)return;
- event.respondWith(fetch(event.request,{cache:"no-store"}).then(function(response){
-  var cacheCopy=response&&response.ok?response.clone():null;
-  if(cacheCopy){event.waitUntil(caches.open(CACHE_NAME).then(function(cache){return cache.put(event.request,cacheCopy);}).catch(function(){}));}
-  return response;
- }).catch(function(){
-  return caches.match(event.request).then(function(exact){
-   if(exact)return exact;
-   return caches.match(event.request,{ignoreSearch:true}).then(function(cached){
-    if(cached)return cached;
-    if(event.request.mode==="navigate")return caches.match("taktak.html").then(function(home){return home||caches.match("index.html");});
-    return new Response("",{status:503,statusText:"Offline"});
-   });
-  });
- }));
-});
+// Intentionally no fetch interception. Requests use the network, and offline
+// operation fails visibly rather than displaying obsolete/fake data.
