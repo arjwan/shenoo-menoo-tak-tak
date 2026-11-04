@@ -167,8 +167,12 @@ async function main(req,env){
   }
   if(req.method==='GET'&&path.startsWith('/media/')){
     const id=path.slice('/media/'.length);
-    const m=await env.DB.prepare('SELECT m.r2_key,m.mime_type,m.size FROM media m JOIN posts p ON p.id=m.post_id WHERE m.id=? AND p.visibility=?').bind(id,'everyone').first();
+    const m=await env.DB.prepare("SELECT m.r2_key,m.mime_type,m.size,p.author_id,a.status AS ad_status FROM media m JOIN posts p ON p.id=m.post_id LEFT JOIN ad_records a ON a.post_id=p.id WHERE m.id=? AND p.visibility='everyone'").bind(id).first();
     if(!m)return err('الملف غير موجود',404);
+    if(m.ad_status&&m.ad_status!=='approved'){
+      const viewer=await authenticate(req,env).catch(()=>null);
+      if(!viewer||(viewer.id!==m.author_id&&!['admin','developer'].includes(viewer.role)))return err('الملف غير موجود',404);
+    }
     const object=await env.MEDIA.head(m.r2_key);
     if(!object)return err('الملف غير موجود',404);
     const size=object.size;
@@ -388,7 +392,7 @@ async function main(req,env){
   }
 
   if(req.method==='GET'&&path==='/api/posts'){
-    const rows=await env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at,u.id as author_id,u.username,u.full_name FROM posts p JOIN users u ON u.id=p.author_id WHERE p.visibility=? OR p.author_id=? ORDER BY p.created_at DESC LIMIT 30').bind('everyone',user.id).all();
+    const rows=await env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at,u.id as author_id,u.username,u.full_name FROM posts p JOIN users u ON u.id=p.author_id WHERE (p.visibility=? OR p.author_id=?) AND NOT EXISTS (SELECT 1 FROM ad_records a WHERE a.post_id=p.id) ORDER BY p.created_at DESC LIMIT 30').bind('everyone',user.id).all();
     const ids=rows.results.map(p=>p.id);
     let media=[];
     if(ids.length){media=(await env.DB.prepare('SELECT * FROM media WHERE post_id IN ('+ids.map(()=>'?').join(',')+')').bind(...ids).all()).results;}
@@ -400,6 +404,8 @@ async function main(req,env){
     const form=isJson?await bodyJSON(req):await req.formData();
     const read=k=>isJson?form[k]:form.get(k);
     const text=String(read('text')||'').trim(),visibility=String(read('visibility')||'everyone');
+    const isAd=read('type')==='ad',adTitle=String(read('adTitle')||'').trim(),adCategory=String(read('adCategory')||'عام').trim(),adContact=String(read('adContact')||'').trim();
+    if(isAd&&(!adTitle||adTitle.length>120||adCategory.length>80||adContact.length>160||!text))return err('عنوان الإعلان أو وصفه غير صالح',400);
     const uploadId=String(read('uploadId')||'');
     const file=isJson?null:form.get('media'),exists=file instanceof File&&file.size>0;
     if(text.length>5000||!['everyone','friends','followers','friends_followers'].includes(visibility)||(!text&&!exists&&!uploadId))return err('محتوى المنشور غير صالح');
@@ -407,10 +413,10 @@ async function main(req,env){
     if(uploadId){
       session=await uploadedMedia(uploadId,'posts');
       if(!session)return err('الملف المرفوع غير مكتمل',400);
-      kind=session.kind;mime=session.mime_type;fileSize=session.file_size;mediaId=crypto.randomUUID();objectKey=session.r2_key;
+      kind=session.kind;if(isAd&&kind==='audio')return err('الإعلان لا يقبل الملفات الصوتية',400);mime=session.mime_type;fileSize=session.file_size;mediaId=crypto.randomUUID();objectKey=session.r2_key;
     }else if(exists){
       kind=mediaType(file.type,file.name);
-      if(!kind||file.size>15*1024*1024)return err('استخدم الرفع المجزأ للملفات الأكبر من 15 ميغابايت',413);
+      if(!kind||(isAd&&kind==='audio')||file.size>15*1024*1024)return err('نوع الوسائط غير مدعوم أو الحجم أكبر من 15 ميغابايت',413);
       const buf=await file.arrayBuffer();
       if(!hasSignature(new Uint8Array(buf.slice(0,16)),file.type))return err('نوع الملف لا يطابق محتواه',400);
       mediaId=crypto.randomUUID();objectKey='posts/'+user.id+'/'+mediaId+'.'+file.name.split('.').pop().toLowerCase();
@@ -418,7 +424,8 @@ async function main(req,env){
     }
     const postId=crypto.randomUUID();
     try{
-      await env.DB.prepare('INSERT INTO posts(id,author_id,text,visibility) VALUES(?,?,?,?)').bind(postId,user.id,text,visibility).run();
+      await env.DB.prepare('INSERT INTO posts(id,author_id,text,visibility) VALUES(?,?,?,?)').bind(postId,user.id,text,isAd?'everyone':visibility).run();
+      if(isAd)await env.DB.prepare("INSERT INTO ad_records(post_id,title,category,contact,status) VALUES(?,?,?,?,'pending')").bind(postId,adTitle,adCategory,adContact).run();
       if(objectKey)await env.DB.prepare('INSERT INTO media(id,post_id,owner_id,r2_key,kind,mime_type,size) VALUES(?,?,?,?,?,?,?)').bind(mediaId,postId,user.id,objectKey,kind,mime,fileSize).run();
       if(session)await env.DB.prepare('UPDATE media_upload_sessions SET consumed=1 WHERE id=? AND owner_id=? AND consumed=0').bind(session.id,user.id).run();
     }catch(e){
@@ -426,7 +433,7 @@ async function main(req,env){
       if(objectKey&&!session)await env.MEDIA.delete(objectKey).catch(()=>{});
       throw e;
     }
-    return json({ok:true,message:'تم النشر',post:{id:postId,text,visibility,author:safeUser(user),media:objectKey?[{url:'/media/'+mediaId,type:kind,mimeType:mime,size:fileSize}]:[],likesCount:0,commentsCount:0,sharesCount:0,canEdit:true,canDelete:true,createdAt:new Date().toISOString()}},201);
+    return json({ok:true,message:isAd?'تم إرسال الإعلان للمراجعة قبل النشر':'تم النشر',post:{id:postId,text,visibility:isAd?'everyone':visibility,type:isAd?'ad':'post',adStatus:isAd?'pending':'not_ad',adTitle:isAd?adTitle:'',adCategory:isAd?adCategory:'',adContact:isAd?adContact:'',author:safeUser(user),media:objectKey?[{url:'/media/'+mediaId,type:kind,mimeType:mime,size:fileSize}]:[],likesCount:0,commentsCount:0,sharesCount:0,canEdit:true,canDelete:true,createdAt:new Date().toISOString()}},201);
   }
 
   // Cloudflare-native social functions. Every write is authorized server-side.
@@ -720,11 +727,45 @@ async function main(req,env){
     const p=await env.DB.prepare('SELECT id,slot,name,gender,age,personality,conversation_style,interests_json FROM smart_friend_personas WHERE user_id=? AND slot=?').bind(user.id,slot).first();
     return json({ok:true,friend:personaRow(p)});
   }
-  if(req.method==='GET'&&path==='/api/posts/ads'){
-    // No approved advertising records exist in the current D1 schema.
-    // Never substitute invented approved ads or claim a campaign is live.
-    return json({ok:true,ads:[]});
+
+  // D1-backed advertisements: all new ads require manual moderator approval.
+  const adView=(a,media)=>({
+    id:a.id,type:'ad',text:a.text,visibility:'everyone',createdAt:a.created_at,
+    adTitle:a.ad_title,adCategory:a.ad_category,adContact:a.ad_contact,
+    adStatus:a.ad_status,adReviewNote:a.review_note||'',
+    author:{id:a.author_id,username:a.username,fullName:a.full_name},
+    media:media.filter(m=>m.post_id===a.id).map(m=>({url:'/media/'+m.id,type:m.kind,mimeType:m.mime_type,size:m.size}))
+  });
+  async function getAds(condition,params,limit=50){
+    const rows=(await env.DB.prepare(`SELECT p.id,p.text,p.created_at,u.id AS author_id,u.username,u.full_name,
+      a.title AS ad_title,a.category AS ad_category,a.contact AS ad_contact,
+      a.status AS ad_status,a.review_note
+      FROM ad_records a JOIN posts p ON p.id=a.post_id JOIN users u ON u.id=p.author_id
+      WHERE ${condition} ORDER BY p.created_at DESC LIMIT ${limit}`).bind(...params).all()).results;
+    const ids=rows.map(a=>a.id);
+    const media=ids.length?(await env.DB.prepare('SELECT id,post_id,kind,mime_type,size FROM media WHERE post_id IN ('+ids.map(()=>'?').join(',')+')').bind(...ids).all()).results:[];
+    return rows.map(a=>adView(a,media));
   }
+  if(req.method==='GET'&&path==='/api/posts/ads'){
+    return json({ok:true,ads:await getAds("a.status='approved'",[],50)});
+  }
+  if(req.method==='GET'&&path==='/api/posts/ads/mine'){
+    return json({ok:true,ads:await getAds('p.author_id=?',[user.id],50)});
+  }
+  if(req.method==='GET'&&path==='/api/posts/ads/pending'){
+    if(!['admin','developer'].includes(user.role))return err('هذه الصفحة للمطور والإدارة فقط',403);
+    return json({ok:true,ads:await getAds("a.status='pending'",[],50)});
+  }
+  const reviewAd=path.match(/^\/api\/posts\/ads\/([a-f0-9-]{36})\/review$/i);
+  if(reviewAd&&req.method==='PATCH'){
+    if(!['admin','developer'].includes(user.role))return err('هذه العملية للمطور والإدارة فقط',403);
+    const body=await bodyJSON(req),decision=String(body.decision||''),note=String(body.note||'').trim().slice(0,500);
+    if(!['approved','rejected'].includes(decision))return err('قرار المراجعة غير صالح',400);
+    const updated=await env.DB.prepare("UPDATE ad_records SET status=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,review_note=? WHERE post_id=? AND status='pending'").bind(decision,user.id,note,reviewAd[1]).run();
+    if(!updated.meta.changes)return err('الإعلان غير موجود أو تمت مراجعته سابقاً',409);
+    return json({ok:true,message:decision==='approved'?'تمت الموافقة على الإعلان ونشره':'تم رفض الإعلان'});
+  }
+
   return err('هذه الوظيفة لم تُحوّل إلى Cloudflare بعد',501);
 }
 export default {async fetch(req,env){
