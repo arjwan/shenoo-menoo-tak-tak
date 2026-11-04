@@ -80,9 +80,33 @@ async function main(req,env){
     const id=path.slice('/media/'.length);
     const m=await env.DB.prepare('SELECT m.r2_key,m.mime_type,m.size FROM media m JOIN posts p ON p.id=m.post_id WHERE m.id=? AND p.visibility=?').bind(id,'everyone').first();
     if(!m)return err('الملف غير موجود',404);
-    const data=await env.MEDIA.get(m.r2_key);
-    if(!data)return err('الملف غير موجود',404);
-    return new Response(data.body,{headers:{'Content-Type':m.mime_type,'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff','Content-Disposition':'inline'}});
+    const object=await env.MEDIA.head(m.r2_key);
+    if(!object)return err('الملف غير موجود',404);
+    const size=object.size;
+    const rangeHeader=req.headers.get('Range');
+    const headers=new Headers({'Content-Type':m.mime_type,'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff','Content-Disposition':'inline','Accept-Ranges':'bytes','Content-Encoding':'identity'});
+    if(object.httpEtag)headers.set('ETag',object.httpEtag);
+    let range;
+    if(rangeHeader){
+      const match=/^bytes=(\\d*)-(\\d*)$/.exec(rangeHeader.trim());
+      if(!match||(match[1]===''&&match[2]===''))return new Response(null,{status:416,headers:{...Object.fromEntries(headers),'Content-Range':'bytes */'+size}});
+      let start,end;
+      if(match[1]===''){
+        const suffix=Number(match[2]);
+        if(!Number.isSafeInteger(suffix)||suffix<=0)return new Response(null,{status:416,headers:{...Object.fromEntries(headers),'Content-Range':'bytes */'+size}});
+        start=Math.max(0,size-suffix);end=size-1;
+      }else{
+        start=Number(match[1]);end=match[2]!==''?Number(match[2]):size-1;
+        if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>=size||end<start)return new Response(null,{status:416,headers:{...Object.fromEntries(headers),'Content-Range':'bytes */'+size}});
+        end=Math.min(end,size-1);
+      }
+      range={offset:start,length:end-start+1};
+      headers.set('Content-Range','bytes '+start+'-'+end+'/'+size);
+      headers.set('Content-Length',String(range.length));
+    }else headers.set('Content-Length',String(size));
+    const data=await env.MEDIA.get(m.r2_key,range?{range}:undefined);
+    if(!data||!data.body)return err('الملف غير موجود',404);
+    return new Response(data.body,{status:range?206:200,headers});
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
