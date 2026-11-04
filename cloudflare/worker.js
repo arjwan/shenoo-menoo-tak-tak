@@ -177,6 +177,10 @@ async function main(req,env){
   }
 
   // Cloudflare-native social functions. Every write is authorized server-side.
+  if(req.method==='GET'&&path==='/api/users/discover'){
+    const rows=await env.DB.prepare("SELECT id,username,full_name FROM users WHERE status='active' AND id<>? ORDER BY created_at DESC LIMIT 24").bind(user.id).all();
+    return json({ok:true,users:rows.results.map(safeUser)});
+  }
   if(req.method==='GET'&&path==='/api/users/search'){
     const q=String(new URL(req.url).searchParams.get('q')||'').trim().slice(0,60);
     if(q.length<2)return json({ok:true,users:[]});
