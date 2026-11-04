@@ -1,62 +1,101 @@
-/* Hybrid D1 + MongoDB routing.
- * This entrypoint is staged, NOT deployed until MONGODB_URI is configured in
- * Cloudflare as a secret and the deployed bundle has been tested.
- * D1 remains the default for existing endpoints. MongoDB is allowlisted per
- * service, never selected by trying a failed D1 query.
- */
+/* Developer-only MongoDB bridge. Stage until MongoDB credentials are configured
+   and authentication + integration tests pass. All social/user routes remain on D1. */
 import d1Worker from './worker.js';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
-const MONGO_DATABASE='shino_mino_tak_tak';
-const mongoOptions={maxPoolSize:2,minPoolSize:0,maxIdleTimeMS:20000,serverSelectionTimeoutMS:5000};
-let client;
-function getMongo(env){
-  if(!env.MONGODB_URI)throw new Error('MONGODB_URI secret not configured');
-  if(!client)client=new MongoClient(env.MONGODB_URI,mongoOptions);
-  return client.db(MONGO_DATABASE);
+const DB_NAME = 'shino_mino_tak_tak';
+let cachedClient;
+const response = (data, status=200) => Response.json(data, {
+  status, headers: {'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'}
+});
+function database(env) {
+  if (!env.MONGODB_URI) throw Error('MongoDB connection is not configured');
+  if (!cachedClient) cachedClient = new MongoClient(env.MONGODB_URI, {
+    maxPoolSize: 2, minPoolSize: 0, maxIdleTimeMS: 20000, serverSelectionTimeoutMS: 5000
+  });
+  return cachedClient.db(DB_NAME);
 }
-const response=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-function corsNotNeeded(req){return new URL(req.url).origin;}
-async function requireD1Session(req,env){
-  // Authenticate through the currently deployed, revocable D1 cookie session.
-  const url=new URL('/api/auth/session',req.url);
-  const session=await d1Worker.fetch(new Request(url,{method:'GET',headers:{Cookie:req.headers.get('Cookie')||''}}),env);
-  if(!session.ok)return null;
-  const data=await session.json();
-  return data.user||null;
+async function authorizedDeveloper(req,env) {
+  const session = await d1Worker.fetch(new Request(new URL('/api/auth/session',req.url),{
+    headers: {Cookie:req.headers.get('Cookie')||''}
+  }),env);
+  if (!session.ok) return null;
+  const {user} = await session.json();
+  return ['developer','admin'].includes(user?.role) ? user : null;
 }
-async function findMongo(req,env,path){
-  const viewer=await requireD1Session(req,env);
-  if(!viewer)return response({ok:false,message:'يرجى تسجيل الدخول'},401);
-  if(req.method!=='GET')return response({ok:false,message:'الخدمة غير مهيأة للتعديل بعد'},405);
-  // Expose only approved stores, never arbitrary collection reads.
-  if(path==='/api/stores'){
-    const stores=await getMongo(env).collection('stores')
-      .find({status:'approved'},{projection:{name:1,description:1,status:1,createdAt:1},limit:60}).toArray();
-    return response({ok:true,stores:stores.map(x=>({
-      id:String(x._id),name:x.name||'',description:x.description||'',status:x.status
-    }))});
+function normalizeUser(u) {
+  return {
+    id: String(u._id), fullName:u.fullName||'', username:u.username||'',
+    phone:u.phone||'', email:u.email||'', gender:u.gender||'other',
+    birthDate:u.birthDate||null,role:u.role,status:u.status,
+    approvalSource:u.approvalSource||'pending',createdAt:u.createdAt||null
+  };
+}
+async function handleDeveloper(req,env,pathname) {
+  const developer=await authorizedDeveloper(req,env);
+  if (!developer) return response({ok:false,message:'هذه الخدمة تتطلب تسجيل دخول المطور المصرّح له'},403);
+  const db=database(env);
+  if (req.method==='GET' && pathname==='/api/developer/mongo-status') {
+    await db.command({ping:1});
+    return response({ok:true,source:'mongodb',database:DB_NAME,connected:true});
   }
-  // Developer totals are real MongoDB counts, with D1 role enforcement.
-  if(path==='/api/developer/mongo-summary'){
-    if(!['admin','developer'].includes(viewer.role))return response({ok:false,message:'هذه الصفحة للمطور فقط'},403);
-    const db=getMongo(env);
-    const [users,stores,teachers]=await Promise.all([
+  if (req.method==='GET' && pathname==='/api/developer/mongo-summary') {
+    const [users,stores,teachers,schools,requests,rooms,conversations,groupReports]=await Promise.all([
       db.collection('users').countDocuments(),
       db.collection('stores').countDocuments(),
-      db.collection('schoolteachers').countDocuments()
+      db.collection('schoolteachers').countDocuments(),
+      db.collection('schoolstudents').countDocuments(),
+      db.collection('schoolteacherapplications').countDocuments({status:'pending'}),
+      db.collection('gamerooms').countDocuments({'gameState.status':{$in:['waiting','active']}}),
+      db.collection('conversations').countDocuments(),
+      db.collection('groupreports').countDocuments({status:{$in:['open','reviewing']}})
     ]);
-    return response({ok:true,source:'mongodb',counts:{users,stores,teachers}});
+    return response({ok:true,source:'mongodb',counts:{users,stores,teachers,schools,requests,rooms,conversations,groupReports}});
   }
-  return null;
+  if (req.method==='GET' && pathname==='/api/developer/mongo-users') {
+    const url=new URL(req.url),q=String(url.searchParams.get('q')||'').trim().slice(0,70);
+    const status=String(url.searchParams.get('status')||'').trim();
+    if (status && !['pending','active','blocked','rejected','all'].includes(status))
+      return response({ok:false,message:'حالة غير صالحة'},400);
+    const filter={role:'user'};
+    if (status && status!=='all') filter.status=status;
+    if (q) {
+      // Escape user-supplied search string before constructing regex.
+      const safe=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      filter.$or=[{username:{$regex:safe,$options:'i'}},{fullName:{$regex:safe,$options:'i'}}];
+    }
+    const users=await db.collection('users').find(filter,{
+      projection:{fullName:1,username:1,phone:1,email:1,gender:1,birthDate:1,role:1,status:1,approvalSource:1,createdAt:1},
+      sort:{createdAt:-1},limit:100,maxTimeMS:4000
+    }).toArray();
+    return response({ok:true,users:users.map(normalizeUser),source:'mongodb'});
+  }
+  if (req.method==='GET' && pathname==='/api/developer/mongo-admins') {
+    const admins=await db.collection('users').find({role:{$in:['developer','admin']}},{
+      projection:{fullName:1,username:1,role:1,status:1,createdAt:1},limit:100,maxTimeMS:4000
+    }).toArray();
+    return response({ok:true,admins:admins.map(normalizeUser),source:'mongodb'});
+  }
+  if (req.method==='GET' && pathname==='/api/developer/mongo-teacher-applications') {
+    const url=new URL(req.url),status=String(url.searchParams.get('status')||'pending');
+    if (!['pending','approved','rejected','all'].includes(status))
+      return response({ok:false,message:'حالة غير صالحة'},400);
+    const filter=status==='all'?{}:{status};
+    const applications=await db.collection('schoolteacherapplications')
+      .find(filter,{projection:{applicant:1,fullName:1,phone:1,email:1,subjects:1,stages:1,grades:1,qualifications:1,experienceYears:1,bio:1,notes:1,createdAt:1,status:1},sort:{createdAt:-1},limit:100,maxTimeMS:4000}).toArray();
+    return response({ok:true,applications:applications.map(a=>({...a,_id:String(a._id),applicant:a.applicant&&typeof a.applicant==='object'?{...a.applicant,_id:a.applicant._id?String(a.applicant._id):undefined}:undefined})),source:'mongodb'});
+  }
+  // No arbitrary collection access or unreviewed cross-database writes.
+  return response({ok:false,message:'الخدمة المطلوبة غير مفعلة على قاعدة المطور بعد'},501);
 }
 export default {
- async fetch(req,env,ctx){
-   const path=new URL(req.url).pathname;
-   if(path==='/api/stores'||path==='/api/developer/mongo-summary'){
-     try{return await findMongo(req,env,path)}
-     catch(e){console.error('MongoDB service unavailable',String(e));return response({ok:false,message:'الخدمة غير متاحة مؤقتاً في قاعدة البيانات المساعدة'},503);}
-   }
-   return d1Worker.fetch(req,env,ctx);
- }
+  async fetch(req,env,ctx) {
+    const pathname=new URL(req.url).pathname;
+    if (pathname.startsWith('/api/developer/mongo-')) {
+      if(req.method!=='GET')return response({ok:false,message:'القراءة فقط لحين اختبار نظام مراجعة الصلاحيات'},405);
+      try{return await handleDeveloper(req,env,pathname);}
+      catch(e){console.error('MongoDB developer bridge:',String(e?.message||e));return response({ok:false,message:'تعذر الاتصال ببيانات المطور المساعدة'},503);}
+    }
+    return d1Worker.fetch(req,env,ctx);
+  }
 };
