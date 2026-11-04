@@ -35,6 +35,19 @@ jobs:
           curl -fsSL --max-time 25 "$root/reels-v2.js" | grep -q "api('/api/posts'"
           curl -fsSL --max-time 25 "$root/taktak-colors.css" > /dev/null
           echo 'PASS: Cloudflare home, original stories, reels, and authenticated API routing.'
+      - name: Diagnose exact signup POST and resolver routing
+        shell: bash
+        run: |
+          set -eu
+          for host in https://shinomino.com https://www.shinomino.com https://shenoo-main-cloudflare.pages.dev; do
+            echo "=== $host ==="
+            curl -sSL --max-time 25 -D /tmp/shenoo-headers -o /tmp/shenoo-body -w 'GET health http=%{http_code} server_ip=%{remote_ip} final=%{url_effective}\n' "$host/api/health"
+            grep -Ei '^(server|cf-ray|content-type|location):' /tmp/shenoo-headers || true
+            head -c 180 /tmp/shenoo-body; echo
+            curl -sSL --max-time 25 -D /tmp/shenoo-headers -o /tmp/shenoo-body -w 'POST signup http=%{http_code} server_ip=%{remote_ip} final=%{url_effective}\n' -H 'Content-Type: application/json' --data '{}' "$host/api/auth/signup"
+            grep -Ei '^(server|cf-ray|content-type|location):' /tmp/shenoo-headers || true
+            head -c 350 /tmp/shenoo-body; echo
+          done
       - name: Inspect public-domain DNS
         if: always()
         run: |
