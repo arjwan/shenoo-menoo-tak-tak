@@ -466,6 +466,7 @@
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
         method: 'POST',
+        credentials: 'same-origin',
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json'
@@ -477,21 +478,18 @@
       });
 
       const data = await response.json().catch(() => ({}));
-      const succeeded = response.ok && data.ok === true && data.token;
+      const succeeded = response.ok && data.ok === true && !!data.user;
 
       message.className = 'message info';
       message.textContent = data.message || 'تعذر تسجيل الدخول.';
 
       if (succeeded) {
-        const storage = document.getElementById('remember').checked
-          ? localStorage
-          : sessionStorage;
-        const otherStorage = storage === localStorage ? sessionStorage : localStorage;
-
-        otherStorage.removeItem('token');
-        otherStorage.removeItem('user');
-        storage.setItem('token', data.token);
-        storage.setItem('user', JSON.stringify(data.user));
+        // Auth is an HttpOnly, Secure, server-side revocable D1 session.
+        // No credentials or user profile are persisted by frontend JavaScript.
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         message.textContent = 'تم تسجيل الدخول باسم ' + (data.user.displayName || data.user.fullName || data.user.username || 'المستخدم') + '، جارٍ فتح المنصة...';
         setTimeout(() => { window.location.href = 'taktak.html'; }, 500);
       }
