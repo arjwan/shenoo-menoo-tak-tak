@@ -50,6 +50,8 @@ async function authenticate(req,env) {
   if(!p.id||!Number.isFinite(p.exp)||p.exp<Math.floor(Date.now()/1000))throw {status:401,message:'جلسة الدخول غير صالحة'};
   const user=await env.DB.prepare('SELECT id,username,full_name,role,status FROM users WHERE id=?').bind(p.id).first();
   if(!user||user.status!=='active')throw {status:401,message:'الحساب غير متاح'};
+  const legacyRevoked=await env.DB.prepare('SELECT user_id FROM legacy_auth_revocations WHERE user_id=?').bind(user.id).first();
+  if(legacyRevoked)throw {status:401,message:'انتهت صلاحية جلسة الدخول القديمة'};
   return user;
 }
 const safeUser = u => ({id:u.id,username:u.username,fullName:u.full_name,displayName:u.full_name,role:u.role});
@@ -291,6 +293,32 @@ async function main(req,env){
   if(path==='/api/phone-contacts'&&req.method==='DELETE'){
     await env.DB.prepare('DELETE FROM user_phone_contacts WHERE user_id=?').bind(user.id).run();
     return json({ok:true,contacts:[]});
+  }
+  if(req.method==='POST'&&path==='/api/auth/logout-others'){
+    const secret=cookieValue(req);
+    if(!secret)return err('سجّل الدخول بالجلسة الآمنة أولاً',401);
+    const sha=await digestSession(secret);
+    const r=await env.DB.prepare("UPDATE auth_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND secret_hash<>? AND revoked_at IS NULL").bind(user.id,sha).run();
+    await env.DB.prepare('INSERT OR IGNORE INTO legacy_auth_revocations(user_id) VALUES(?)').bind(user.id).run();
+    return json({ok:true,message:'تم إنهاء الجلسات الأخرى',revoked:r.meta?.changes||0});
+  }
+  if(req.method==='PATCH'&&path==='/api/users/me/password'){
+    const secret=cookieValue(req);
+    if(!secret)return err('سجّل الدخول بالجلسة الآمنة أولاً',401);
+    const b=await bodyJSON(req),oldPassword=String(b.currentPassword||''),newPassword=String(b.newPassword||'');
+    if(newPassword.length<10||newPassword.length>128||newPassword!==b.confirmPassword)return err('كلمة المرور الجديدة غير صالحة أو غير متطابقة',400);
+    if(oldPassword===newPassword)return err('استخدم كلمة مرور مختلفة عن الحالية',400);
+    const credentials=await env.DB.prepare('SELECT password_salt,password_hash FROM users WHERE id=?').bind(user.id).first();
+    if(!credentials)return err('الحساب غير متاح',404);
+    const attempt=await hash(oldPassword,credentials.password_salt);
+    const previous=unb64(credentials.password_hash),entered=unb64(attempt);
+    if(previous.length!==entered.length||!timingSafeEqual(previous,entered))return err('كلمة المرور الحالية غير صحيحة',403);
+    const salt=b64(crypto.getRandomValues(new Uint8Array(16))),newHash=await hash(newPassword,salt);
+    await env.DB.prepare('UPDATE users SET password_salt=?,password_hash=? WHERE id=?').bind(salt,newHash,user.id).run();
+    await env.DB.prepare('INSERT OR IGNORE INTO legacy_auth_revocations(user_id) VALUES(?)').bind(user.id).run();
+    const sha=await digestSession(secret);
+    await env.DB.prepare('UPDATE auth_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND secret_hash<>? AND revoked_at IS NULL').bind(user.id,sha).run();
+    return json({ok:true,message:'تم تغيير كلمة المرور وإغلاق جميع الجلسات الأخرى'});
   }
   if(req.method==='GET'&&path==='/api/users/me')return json({ok:true,user:safeUser(user)});
   if(req.method==='GET'&&path==='/api/posts'){
