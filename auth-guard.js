@@ -62,14 +62,26 @@
   // Server-issued HttpOnly session is authoritative. Existing bearer tokens are
   // exchanged for a server-side session and deleted from browser storage.
   window.shnoSessionReady=(async function(){
-    var response=await fetch('/api/auth/session',{credentials:'same-origin',cache:'no-store'}).catch(function(){return null;});
+    var response=null;
+    try {
+      response=await fetch('/api/auth/session',{credentials:'same-origin',cache:'no-store'});
+    } catch (_) {}
     if(response&&response.ok)return true;
-    var legacy=localStorage.getItem('token')||sessionStorage.getItem('token');
+    // A network failure or a 5xx response is not an expired session.
+    // Do not send a signed-in user back to the login page on a server outage.
+    if(!response||response.status>=500){
+      document.dispatchEvent(new CustomEvent('shno:session-error',{detail:{status:response?response.status:0}}));
+      return false;
+    }
+    var legacy='';
+    try {legacy=localStorage.getItem('token')||sessionStorage.getItem('token')||'';}catch(_){}
     if(legacy){
       var upgrade=await fetch('/api/auth/upgrade',{method:'POST',credentials:'same-origin',headers:{Authorization:'Bearer '+legacy}}).catch(function(){return null;});
       if(upgrade&&upgrade.ok){
-        localStorage.removeItem('token');sessionStorage.removeItem('token');
-        localStorage.removeItem('user');sessionStorage.removeItem('user');
+        try{
+          localStorage.removeItem('token');sessionStorage.removeItem('token');
+          localStorage.removeItem('user');sessionStorage.removeItem('user');
+        }catch(_){}
         return true;
       }
     }
