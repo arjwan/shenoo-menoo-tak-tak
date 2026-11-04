@@ -57,10 +57,10 @@ jobs:
           echo "Cross-site logout -> $status"
           test "$status" = "403"
           for page in /signin.html /taktak.html /stories.html /reels.html /cloudflare-upload.js; do
-            code="$(curl -sS -o /tmp/page.html -w '%{http_code}' --max-time 25 "$host$page")"
+            code="$(curl -sSL -o /tmp/page.html -w '%{http_code}' --max-time 25 "$host$page")"
             echo "GET $page -> $code"
             test "$code" = "200"
           done
-          curl -fsS "$host/stories.html" | grep -q "cloudflare-upload.js"
-          curl -fsS "$host/reels.html" | grep -q "cloudflare-upload.js"
+          curl -fsSL "$host/stories.html" | grep -q "cloudflare-upload.js"
+          curl -fsSL "$host/reels.html" | grep -q "cloudflare-upload.js"
           echo 'PASS: primary domain API auth boundaries, CSRF rejection and production pages'
