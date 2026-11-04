@@ -40,6 +40,15 @@ dialog{width:min(680px,calc(100% - 24px));border:1px solid var(--line);border-ra
     <div class="stat">🏪<strong id="storesCount">—</strong><span>المتاجر</span></div>
     <div class="stat">🚩<strong id="reportsCount">—</strong><span>البلاغات</span></div>
   </section>
+  <section class="panel" id="legacyMongoPanel"><h2>بيانات لوحة المطور الأصلية — MongoDB Atlas</h2>
+    <p id="mongoBridgeStatus" role="status">جارٍ التحقق من اتصال بيانات المطور…</p>
+    <div class="stats">
+      <div class="stat">👥<strong id="mongoUsersCount">—</strong><span>مستخدمو MongoDB</span></div>
+      <div class="stat">🏪<strong id="mongoStoresCount">—</strong><span>المتاجر الأصلية</span></div>
+      <div class="stat">👩‍🏫<strong id="mongoTeachersCount">—</strong><span>المعلمون</span></div>
+      <div class="stat">🏫<strong id="mongoSchoolsCount">—</strong><span>الطلاب</span></div>
+    </div>
+  </section>
   <section class="panel"><h2>حساب المطور</h2><form id="developerAccountForm" class="form-grid"><label>الاسم الكامل<input name="fullName" required></label><label>اسم المستخدم<input name="username" readonly></label><label>رقم الهاتف<input name="phone" required></label><label>البريد الإلكتروني<input name="email" type="email" required></label><label>كلمة مرور جديدة — اختياري<input name="password" type="password" minlength="8"></label><div><span class="pill" id="phoneSecurity">الهاتف: —</span> <span class="pill" id="fidoSecurity">FIDO: —</span></div><div class="full" id="developerAccountMessage"></div><button class="btn primary full" type="submit">حفظ معلومات حساب المطور</button></form></section>
   <div class="grid">
     <section class="panel"><h2>الوصول السريع</h2><div class="quick"><a href="admin-approvals.html"><strong>✅ مركز الموافقات</strong><span>قبول ورفض طلبات التسجيل والخدمات.</span></a><a href="developer-rooms.html"><strong>🛡 إدارة الغرف والبلاغات</strong><span>تعطيل الغرف وقفلها واعتماد الرسمية ومراجعة البلاغات.</span></a><a href="admin-chat.html"><strong>💬 مراقبة الشات</strong><span>متابعة البلاغات والغرف والمحادثات.</span></a><a href="mall.html"><strong>🏪 مول العراق</strong><span>متابعة المتاجر والمساحات التجارية.</span></a><a href="taktak.html"><strong>🌐 المنصة</strong><span>فتح الواجهة العامة للمستخدمين.</span></a></div></section>
@@ -79,7 +88,16 @@ async function toggleBlock(id){const u=appUsers.find(x=>String(x.id)===id),statu
 async function deleteUser(id){const u=appUsers.find(x=>String(x.id)===id);if(!confirm('سيُحذف حساب '+(u?.fullName||'المستخدم')+' ومحادثاته نهائياً. هل أنت متأكد؟'))return;try{await api('/api/developer/users/'+id,{method:'DELETE'});showToast('تم حذف المستخدم');await loadUsers();await loadDashboard()}catch(e){showToast(e.message)}}
 async function loadDashboard(){const d=await api('/api/developer/dashboard');document.getElementById('usersCount').textContent=d.stats.users??'—';document.getElementById('pendingCount').textContent=d.stats.pending??'—';document.getElementById('storesCount').textContent=d.stats.stores??'غير منقول';document.getElementById('reportsCount').textContent=d.stats.reports??'غير منقول';[['apiStatus',d.services.api],['dbStatus',d.services.database],['socketStatus',d.services.socket]].forEach(([id,v])=>{const e=document.getElementById(id);e.textContent=v==='online'?'متصل':'غير متاح';e.className='pill '+(v==='online'?'ok':'bad')});await Promise.all([loadAdmins(),loadUsers()])}
 async function loadDeveloperAccount(){const d=await api('/api/developer/me'),f=document.getElementById('developerAccountForm');['fullName','username','phone','email'].forEach(k=>f.elements[k].value=d.user[k]||'');document.getElementById('phoneSecurity').textContent=d.security.phonePaired?'الهاتف: مقترن':'الهاتف: غير مقترن';document.getElementById('fidoSecurity').textContent='مفاتيح FIDO: '+d.security.fidoKeys}
-async function showDashboard(){setAuthenticated(true);try{await Promise.all([loadDashboard(),loadDeveloperAccount()])}catch(e){showToast(e.message)}}
+async function loadLegacyMongoSummary(){
+  const status=document.getElementById('mongoBridgeStatus');
+  try{
+    const d=await api('/api/developer/mongo-summary');
+    const c=d.counts||{};
+    [['mongoUsersCount','users'],['mongoStoresCount','stores'],['mongoTeachersCount','teachers'],['mongoSchoolsCount','schools']].forEach(([id,key])=>document.getElementById(id).textContent=Number.isFinite(c[key])?String(c[key]):'—');
+    status.textContent='متصل بقاعدة MongoDB الأصلية — بيانات حقيقية، دون نقلها إلى D1';
+  }catch(e){status.textContent='اتصال بيانات المطور الأصلية غير مفعّل بعد: '+e.message}
+}
+async function showDashboard(){setAuthenticated(true);await Promise.allSettled([loadDashboard(),loadDeveloperAccount(),loadLegacyMongoSummary()])}
 loginForm.addEventListener('submit',async e=>{e.preventDefault();authError.textContent='';const btn=loginForm.querySelector('button'),identifier=document.getElementById('developerIdentifier').value.trim(),password=document.getElementById('developerPassword').value;btn.disabled=true;try{const d=await api('/api/auth/signin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier,password})});document.getElementById('developerPassword').value='';if(!['developer','admin'].includes(d.user?.role)){await api('/api/auth/logout',{method:'POST'}).catch(()=>{});throw new Error('هذا الحساب لا يمتلك صلاحية المطور على Cloudflare D1')}completeDeveloperLogin(d)}catch(err){authError.textContent=err.message}finally{btn.disabled=false}});
 document.getElementById('logoutButton').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'})}catch(e){showToast(e.message);return}clearDeveloperSession();setAuthenticated(false);loginForm.reset();document.getElementById('developerPassword').value=''};
 document.getElementById('adminForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget,m=document.getElementById('adminMessage'),b=f.querySelector('button');b.disabled=true;m.textContent='';try{await api('/api/developer/admins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(f)))});f.reset();m.textContent='تم إنشاء المسؤول بنجاح.';await loadAdmins()}catch(err){m.textContent=err.message}finally{b.disabled=false}});
