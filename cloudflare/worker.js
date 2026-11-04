@@ -13,9 +13,35 @@ async function tokenFor(user,secret) {
   const sig=b64(await crypto.subtle.sign('HMAC',await key(secret),encoder.encode(payload)));
   return payload+'.'+sig;
 }
+const SESSION_COOKIE='__Host-shino_session';
+const cookieValue=req=>{const raw=req.headers.get('Cookie')||'';const part=raw.split(';').map(x=>x.trim()).find(x=>x.startsWith(SESSION_COOKIE+'='));return part?part.slice(SESSION_COOKIE.length+1):'';};
+const digestSession=async value=>b64(await crypto.subtle.digest('SHA-256',encoder.encode(value)));
+const sessionCookie=value=>SESSION_COOKIE+'='+value+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
+const clearSessionCookie=()=>SESSION_COOKIE+'=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+async function createSession(env,user){
+  const secret=b64(crypto.getRandomValues(new Uint8Array(32))),id=crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO auth_sessions(id,user_id,secret_hash,expires_at) VALUES(?,?,?,datetime('now','+7 days'))").bind(id,user.id,await digestSession(secret)).run();
+  await env.DB.prepare("DELETE FROM auth_sessions WHERE user_id=? AND (expires_at<=datetime('now') OR revoked_at IS NOT NULL)").bind(user.id).run();
+  return sessionCookie(secret);
+}
+const verifyOrigin=req=>{
+  const origin=req.headers.get('Origin');
+  if(origin&&origin!==new URL(req.url).origin)throw {status:403,message:'طلب من مصدر غير موثوق'};
+  if(!origin&&req.headers.get('Sec-Fetch-Site')==='cross-site')throw {status:403,message:'طلب من مصدر غير موثوق'};
+};
 async function authenticate(req,env) {
+  const cookie=cookieValue(req);
+  if(cookie){
+    const sha=await digestSession(cookie);
+    const session=await env.DB.prepare("SELECT u.id,u.username,u.full_name,u.role,u.status FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.secret_hash=? AND s.revoked_at IS NULL AND s.expires_at>datetime('now')").bind(sha).first();
+    if(session&&session.status==='active'){
+      if(!['GET','HEAD','OPTIONS'].includes(req.method))verifyOrigin(req);
+      return session;
+    }
+  }
+  // Temporary legacy-token compatibility: consumed by /api/auth/upgrade and old clients.
   const value=req.headers.get('Authorization')||'';
-  if(!value.startsWith('Bearer '))throw {status:401,message:'غير مصرح'};
+  if(!value.startsWith('Bearer ')||value.length<20)throw {status:401,message:'يرجى تسجيل الدخول'};
   const parts=value.slice(7).split('.');
   if(parts.length!==2)throw {status:401,message:'جلسة الدخول غير صالحة'};
   const verified=await crypto.subtle.verify('HMAC',await key(env.AUTH_SECRET),unb64(parts[1]),encoder.encode(parts[0])).catch(()=>false);
@@ -110,7 +136,8 @@ async function main(req,env){
     const attempt=await hash(password,user.password_salt);
     const a=unb64(attempt),c=unb64(user.password_hash);
     if(a.length!==c.length||!timingSafeEqual(a,c))return err('بيانات تسجيل الدخول غير صحيحة',401);
-    return json({ok:true,token:await tokenFor(user,env.AUTH_SECRET),user:safeUser(user),message:'تم تسجيل الدخول'});
+    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Set-Cookie':await createSession(env,user)});
+    return new Response(JSON.stringify({ok:true,user:safeUser(user),message:'تم تسجيل الدخول'}),{status:200,headers});
   }
   if(req.method==='GET'&&path.startsWith('/media/')){
     const id=path.slice('/media/'.length);
@@ -143,6 +170,25 @@ async function main(req,env){
     const data=await env.MEDIA.get(m.r2_key,range?{range}:undefined);
     if(!data||!data.body)return err('الملف غير موجود',404);
     return new Response(data.body,{status:range?206:200,headers});
+  }
+  if(req.method==='POST'&&path==='/api/auth/upgrade'){
+    verifyOrigin(req);
+    // Only signed legacy bearer tokens may be exchanged. Never send a token back to JavaScript.
+    const value=req.headers.get('Authorization')||'';
+    if(!value.startsWith('Bearer '))return err('لا توجد جلسة قديمة',401);
+    const user=await authenticate(new Request(req.url,{headers:{Authorization:value}}),env);
+    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Set-Cookie':await createSession(env,user)});
+    return new Response(JSON.stringify({ok:true,user:safeUser(user)}),{headers});
+  }
+  if(req.method==='POST'&&path==='/api/auth/logout'){
+    verifyOrigin(req);
+    const secret=cookieValue(req);
+    if(secret)await env.DB.prepare("UPDATE auth_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE secret_hash=?").bind(await digestSession(secret)).run();
+    return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json','Cache-Control':'no-store','Set-Cookie':clearSessionCookie()}});
+  }
+  if(req.method==='GET'&&path==='/api/auth/session'){
+    const user=await authenticate(req,env);
+    return json({ok:true,user:safeUser(user),authenticated:true});
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
