@@ -24,6 +24,9 @@ jobs:
         run: |
           set -euo pipefail
           node --check cloudflare/worker.js
+          node --check private-messages.js
+          grep -q 'conversation_pairs' cloudflare/worker.js
+          grep -q "'/api/conversations'" cloudflare/worker.js
           grep -q 'auth_rate_limits' cloudflare/worker.js
           grep -q "'/api/users/me/profile'" cloudflare/worker.js
           grep -q "'/api/auth/upgrade'" cloudflare/worker.js
@@ -48,7 +51,7 @@ jobs:
           health="$(curl -fsS --retry 4 --retry-delay 2 --max-time 25 "$host/api/health")"
           echo "$health"
           echo "$health" | grep -q '"storage":"d1+r2"'
-          for path in /api/auth/session /api/users/me/drafts /api/phone-contacts /api/uploads; do
+          for path in /api/auth/session /api/users/me/drafts /api/phone-contacts /api/uploads /api/conversations; do
             status="$(curl -sS -o /tmp/probe.json -w '%{http_code}' --max-time 25 "$host$path")"
             echo "GET $path -> $status"
             test "$status" = "401"
@@ -61,7 +64,7 @@ jobs:
             echo "Cross-site $endpoint -> $bad"
             test "$bad" = "403"
           done
-          for path in /api/users/me /api/users/me/profile; do
+          for path in /api/users/me /api/users/me/profile /api/conversations/00000000-0000-0000-0000-000000000000/read; do
             status="$(curl -sS -o /tmp/account.json -w '%{http_code}' --max-time 25 -H 'Content-Type: application/json' -X PATCH -d '{}' "$host$path")"
             echo "Anonymous PATCH $path -> $status"
             test "$status" = "401"
@@ -69,7 +72,7 @@ jobs:
           status="$(curl -sS -o /tmp/csrf.json -w '%{http_code}' --max-time 25 -H 'Origin: https://not-the-site.invalid' -X POST "$host/api/auth/logout")"
           echo "Cross-site logout -> $status"
           test "$status" = "403"
-          for page in /signin.html /taktak.html /stories.html /reels.html /cloudflare-upload.js; do
+          for page in /signin.html /taktak.html /stories.html /reels.html /messages.html /cloudflare-upload.js; do
             code="$(curl -sSL -o /tmp/page.html -w '%{http_code}' --max-time 25 "$host$page")"
             echo "GET $page -> $code"
             test "$code" = "200"
