@@ -92,7 +92,8 @@ async function main(req,env){
     const ids=rows.results.map(p=>p.id);
     let media=[];
     if(ids.length){media=(await env.DB.prepare('SELECT * FROM media WHERE post_id IN ('+ids.map(()=>'?').join(',')+')').bind(...ids).all()).results;}
-    return json({ok:true,posts:rows.results.map(p=>({id:p.id,text:p.text,visibility:p.visibility,author:{id:p.author_id,username:p.username,fullName:p.full_name},media:media.filter(m=>m.post_id===p.id).map(m=>({url:'/media/'+m.id,type:m.kind,mimeType:m.mime_type,size:m.size})),likesCount:0,commentsCount:0,sharesCount:0,createdAt:p.created_at,canEdit:p.author_id===user.id,canDelete:p.author_id===user.id}))});
+    const likeIds=rows.results.map(p=>p.id); let reactions=[]; let comments=[]; if(likeIds.length){const qs=likeIds.map(()=>'?').join(',');reactions=(await env.DB.prepare('SELECT post_id,user_id FROM post_likes WHERE post_id IN ('+qs+')').bind(...likeIds).all()).results;comments=(await env.DB.prepare('SELECT post_id,COUNT(*) AS n FROM post_comments WHERE post_id IN ('+qs+') GROUP BY post_id').bind(...likeIds).all()).results;}
+    return json({ok:true,posts:rows.results.map(p=>({id:p.id,text:p.text,visibility:p.visibility,author:{id:p.author_id,username:p.username,fullName:p.full_name},media:media.filter(m=>m.post_id===p.id).map(m=>({url:'/media/'+m.id,type:m.kind,mimeType:m.mime_type,size:m.size})),likesCount:reactions.filter(v=>v.post_id===p.id).length,liked:reactions.some(v=>v.post_id===p.id&&v.user_id===user.id),commentsCount:comments.find(c=>c.post_id===p.id)?.n||0,sharesCount:0,createdAt:p.created_at,canEdit:p.author_id===user.id,canDelete:p.author_id===user.id}))});
   }
   if(req.method==='POST'&&path==='/api/posts'){
     const form=await req.formData(),text=String(form.get('text')||'').trim(),visibility=String(form.get('visibility')||'everyone');
@@ -114,7 +115,90 @@ async function main(req,env){
     }catch(e){if(objectKey)await env.MEDIA.delete(objectKey).catch(()=>{});await env.DB.prepare('DELETE FROM posts WHERE id=?').bind(postId).run().catch(()=>{});throw e;}
     return json({ok:true,message:'تم النشر',post:{id:postId,text,visibility,author:safeUser(user),media:exists?[{url:'/media/'+mediaId,type:kind,mimeType:file.type,size:file.size}]:[],likesCount:0,commentsCount:0,sharesCount:0,canEdit:true,canDelete:true,createdAt:new Date().toISOString()}},201);
   }
-  if(req.method==='GET'&&['/api/stories','/api/reels','/api/friends','/api/social/notifications'].includes(path))return json({ok:true,stories:[],reels:[],friends:[],users:[],notifications:[]});
+
+  // Cloudflare-native social functions. Every write is authorized server-side.
+  if(req.method==='GET'&&path==='/api/users/search'){
+    const q=String(new URL(req.url).searchParams.get('q')||'').trim().slice(0,60);
+    if(q.length<2)return json({ok:true,users:[]});
+    const rows=await env.DB.prepare("SELECT id,username,full_name FROM users WHERE status='active' AND (username LIKE ? OR full_name LIKE ?) ORDER BY username LIMIT 25").bind('%'+q+'%','%'+q+'%').all();
+    return json({ok:true,users:rows.results.map(safeUser)});
+  }
+  const profileRoute=path.match(/^\/api\/users\/([a-f0-9-]{36})$/i);
+  if(req.method==='GET'&&profileRoute){
+    const target=await env.DB.prepare("SELECT id,username,full_name,role,status,created_at FROM users WHERE id=?").bind(profileRoute[1]).first();
+    if(!target||target.status!=='active')return err('المستخدم غير موجود',404);
+    const following=await env.DB.prepare('SELECT COUNT(*) AS n FROM follows WHERE follower_id=?').bind(target.id).first();
+    const followers=await env.DB.prepare('SELECT COUNT(*) AS n FROM follows WHERE followed_id=?').bind(target.id).first();
+    const ownFollow=await env.DB.prepare('SELECT 1 AS found FROM follows WHERE follower_id=? AND followed_id=?').bind(user.id,target.id).first();
+    return json({ok:true,user:{...safeUser(target),createdAt:target.created_at,followersCount:followers.n,followingCount:following.n,isFollowing:!!ownFollow}});
+  }
+  const followRoute=path.match(/^\/api\/users\/([a-f0-9-]{36})\/follow$/i);
+  if(followRoute&&['POST','DELETE'].includes(req.method)){
+    const target=followRoute[1];
+    if(target===user.id)return err('لا يمكنك متابعة نفسك');
+    const exists=await env.DB.prepare("SELECT 1 AS found FROM users WHERE id=? AND status='active'").bind(target).first();
+    if(!exists)return err('المستخدم غير موجود',404);
+    if(req.method==='POST')await env.DB.prepare('INSERT OR IGNORE INTO follows(follower_id,followed_id) VALUES(?,?)').bind(user.id,target).run();
+    else await env.DB.prepare('DELETE FROM follows WHERE follower_id=? AND followed_id=?').bind(user.id,target).run();
+    return json({ok:true,following:req.method==='POST'});
+  }
+  if(req.method==='GET'&&path==='/api/friends'){
+    const rows=await env.DB.prepare("SELECT u.id,u.username,u.full_name FROM follows f JOIN users u ON u.id=f.followed_id WHERE f.follower_id=? AND u.status='active' ORDER BY u.username LIMIT 100").bind(user.id).all();
+    return json({ok:true,friends:rows.results.map(safeUser),users:rows.results.map(safeUser),mode:'following'});
+  }
+  const postRoute=path.match(/^\/api\/posts\/([a-f0-9-]{36})$/i);
+  if(postRoute&&req.method==='DELETE'){
+    const post=await env.DB.prepare('SELECT author_id FROM posts WHERE id=?').bind(postRoute[1]).first();
+    if(!post)return err('المنشور غير موجود',404);
+    if(post.author_id!==user.id)return err('غير مصرح',403);
+    const media=await env.DB.prepare('SELECT r2_key FROM media WHERE post_id=?').bind(postRoute[1]).all();
+    await env.DB.prepare('DELETE FROM posts WHERE id=? AND author_id=?').bind(postRoute[1],user.id).run();
+    for(const m of media.results)await env.MEDIA.delete(m.r2_key).catch(e=>console.error('R2 delete',e));
+    return json({ok:true,message:'تم حذف المنشور'});
+  }
+  const postLike=path.match(/^\/api\/posts\/([a-f0-9-]{36})\/like$/i);
+  if(postLike&&['POST','DELETE'].includes(req.method)){
+    const post=await env.DB.prepare('SELECT author_id,visibility FROM posts WHERE id=?').bind(postLike[1]).first();
+    if(!post||!(post.visibility==='everyone'||post.author_id===user.id))return err('المنشور غير متاح',404);
+    if(req.method==='POST')await env.DB.prepare('INSERT OR IGNORE INTO post_likes(post_id,user_id) VALUES(?,?)').bind(postLike[1],user.id).run();
+    else await env.DB.prepare('DELETE FROM post_likes WHERE post_id=? AND user_id=?').bind(postLike[1],user.id).run();
+    const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM post_likes WHERE post_id=?').bind(postLike[1]).first();
+    return json({ok:true,liked:req.method==='POST',likesCount:count.n});
+  }
+  const postComments=path.match(/^\/api\/posts\/([a-f0-9-]{36})\/comments$/i);
+  if(postComments&&['GET','POST'].includes(req.method)){
+    const post=await env.DB.prepare('SELECT author_id,visibility FROM posts WHERE id=?').bind(postComments[1]).first();
+    if(!post||!(post.visibility==='everyone'||post.author_id===user.id))return err('المنشور غير متاح',404);
+    if(req.method==='POST'){
+      const b=await bodyJSON(req),message=String(b.text||'').trim();
+      if(!message||message.length>2000)return err('نص التعليق غير صالح');
+      const id=crypto.randomUUID();
+      await env.DB.prepare('INSERT INTO post_comments(id,post_id,author_id,text) VALUES(?,?,?,?)').bind(id,postComments[1],user.id,message).run();
+      return json({ok:true,comment:{id,text:message,author:safeUser(user),createdAt:new Date().toISOString()}},201);
+    }
+    const rows=await env.DB.prepare('SELECT c.id,c.text,c.created_at,u.id AS user_id,u.username,u.full_name FROM post_comments c JOIN users u ON u.id=c.author_id WHERE c.post_id=? ORDER BY c.created_at DESC LIMIT 100').bind(postComments[1]).all();
+    return json({ok:true,comments:rows.results.map(c=>({id:c.id,text:c.text,createdAt:c.created_at,author:{id:c.user_id,username:c.username,fullName:c.full_name}}))});
+  }
+  if(req.method==='GET'&&path==='/api/stories'){
+    const rows=await env.DB.prepare("SELECT s.id,s.text,s.created_at,s.expires_at,u.id AS author_id,u.username,u.full_name FROM stories s JOIN users u ON u.id=s.author_id WHERE s.expires_at > datetime('now') ORDER BY s.created_at DESC LIMIT 50").all();
+    return json({ok:true,stories:rows.results.map(s=>({id:s.id,text:s.text,createdAt:s.created_at,expiresAt:s.expires_at,author:{id:s.author_id,username:s.username,fullName:s.full_name}}))});
+  }
+  if(req.method==='POST'&&path==='/api/stories'){
+    const b=await bodyJSON(req),storyText=String(b.text||'').trim();
+    if(storyText.length<1||storyText.length>1000)return err('نص القصة غير صالح');
+    const id=crypto.randomUUID();
+    await env.DB.prepare("INSERT INTO stories(id,author_id,text,expires_at) VALUES(?,?,?,datetime('now','+24 hours'))").bind(id,user.id,storyText).run();
+    return json({ok:true,story:{id,text:storyText,author:safeUser(user)}},201);
+  }
+  if(req.method==='GET'&&path==='/api/reels'){
+    const rows=await env.DB.prepare("SELECT m.id AS media_id,p.id,p.text,p.created_at,u.id AS author_id,u.username,u.full_name FROM media m JOIN posts p ON p.id=m.post_id JOIN users u ON u.id=p.author_id WHERE m.kind='video' AND p.visibility='everyone' ORDER BY p.created_at DESC LIMIT 50").all();
+    return json({ok:true,reels:rows.results.map(v=>({id:v.id,postId:v.id,text:v.text,url:'/media/'+v.media_id,createdAt:v.created_at,author:{id:v.author_id,username:v.username,fullName:v.full_name}}))});
+  }
+  if(req.method==='GET'&&path==='/api/social/notifications'){
+    const rows=await env.DB.prepare('SELECT id,kind,body,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(user.id).all();
+    return json({ok:true,notifications:rows.results.map(n=>({id:n.id,type:n.kind,message:n.body,read:!!n.read_at,createdAt:n.created_at}))});
+  }
+
   return err('هذه الوظيفة لم تُحوّل إلى Cloudflare بعد',501);
 }
 export default {async fetch(req,env){
