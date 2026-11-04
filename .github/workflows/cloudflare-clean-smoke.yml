@@ -26,3 +26,16 @@ jobs:
       - name: Full account and post roundtrip (staging only)
         shell: bash
         run: node cloudflare/tests/live-core-smoke.mjs
+
+      - name: Cloudflare preview UI HTML pages and internal API binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://shenoo-cloudflare-ui-preview.arjwan307.workers.dev"
+          for PAGE in signin.html signup.html taktak.html; do
+            curl --fail-with-body --retry 3 --retry-delay 2 --max-time 25 -sS "$BASE/$PAGE" -o /tmp/"$PAGE"
+            grep -q "شنو منو تك تك" /tmp/"$PAGE"
+          done
+          curl --fail-with-body --retry 3 --retry-delay 2 --max-time 25 -sS "$BASE/api/health" -o /tmp/ui-health.json
+          python3 -c 'import json; x=json.load(open("/tmp/ui-health.json")); assert x["ok"] and x["service"]=="shenoo-cloudflare-clean-api"'
+          echo "UI pages and API Service Binding passed"
