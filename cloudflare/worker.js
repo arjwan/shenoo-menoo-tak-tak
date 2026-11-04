@@ -222,6 +222,78 @@ async function main(req,env){
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
+
+  // Developer control plane on Cloudflare D1; all endpoints require an authenticated
+  // privileged session. No legacy bearer tokens, MariaDB or MongoDB.
+  if(path.startsWith('/api/developer/')){
+    if(!['developer','admin'].includes(user.role))return err('هذا الحساب لا يمتلك صلاحية المطور',403);
+    const audit=async(action,metadata)=>env.DB.prepare('INSERT INTO developer_audit(id,actor_id,action,metadata) VALUES(?,?,?,?)').bind(crypto.randomUUID(),user.id,action,JSON.stringify(metadata)).run();
+    const userView=u=>({id:u.id,fullName:u.full_name,username:u.username,email:u.email||'',phone:'',role:u.role,status:u.status,createdAt:u.created_at});
+    if(req.method==='GET'&&path==='/api/developer/dashboard'){
+      const counts=await env.DB.prepare("SELECT (SELECT COUNT(*) FROM users) AS users,(SELECT COUNT(*) FROM ad_records WHERE status='pending') AS pending,(SELECT COUNT(*) FROM posts) AS posts").first();
+      return json({ok:true,stats:{users:counts.users,pending:counts.pending,stores:null,reports:null,posts:counts.posts},services:{api:'online',database:'online',socket:'unavailable'},unavailable:['stores','reports','socket']});
+    }
+    if(req.method==='GET'&&path==='/api/developer/me'){
+      const account=await env.DB.prepare('SELECT id,full_name,username,email,role,status FROM users WHERE id=?').bind(user.id).first();
+      return json({ok:true,user:userView(account),security:{phonePaired:false,fidoKeys:0,legacyMfaNotMigrated:true}});
+    }
+    if(req.method==='PATCH'&&path==='/api/developer/me'){
+      const b=await bodyJSON(req);
+      if(b.password||b.phone)return err('تغيير كلمة المرور والهاتف يتطلب التحقق من الحساب في إعدادات الأمان',400);
+      const fullName=String(b.fullName||'').trim(),email=String(b.email||'').trim().toLowerCase(),username=String(b.username||'').trim().toLowerCase();
+      if(fullName.length<2||fullName.length>100||!/^[\\p{L}\\p{M}0-9_.]{3,30}$/u.test(username)||!email.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/))return err('البيانات غير صالحة',400);
+      const current=await env.DB.prepare('SELECT username,email FROM users WHERE id=?').bind(user.id).first();
+      if(current.username!==username||String(current.email||'')!==email)return err('تغيير هوية الدخول يتطلب التحقق من كلمة المرور في إعدادات الحساب',400);
+      await env.DB.prepare('UPDATE users SET full_name=? WHERE id=?').bind(fullName,user.id).run();
+      await audit('developer.profile.update',{userId:user.id});
+      return json({ok:true,message:'تم تحديث الاسم'});
+    }
+    if(req.method==='GET'&&path==='/api/developer/admins'){
+      const rows=await env.DB.prepare("SELECT id,full_name,username,email,role,status,created_at FROM users WHERE role IN ('developer','admin') ORDER BY created_at DESC LIMIT 100").all();
+      return json({ok:true,admins:rows.results.map(userView)});
+    }
+    const adminStatus=path.match(/^\/api\/developer\/admins\/([a-f0-9-]{36})$/i);
+    if(req.method==='PATCH'&&adminStatus){
+      if(user.role!=='developer')return err('هذا الإجراء للمطور فقط',403);
+      const b=await bodyJSON(req),status=String(b.status||'');
+      if(!['active','blocked'].includes(status))return err('حالة غير صالحة',400);
+      const target=await env.DB.prepare('SELECT id,role FROM users WHERE id=?').bind(adminStatus[1]).first();
+      if(!target||target.role!=='admin')return err('لا يمكن تعديل حساب المطور أو حساب غير مسؤول',403);
+      await env.DB.prepare('UPDATE users SET status=? WHERE id=? AND role=?').bind(status,target.id,'admin').run();
+      await audit('developer.admin.status',{id:target.id,status});
+      return json({ok:true});
+    }
+    if(req.method==='GET'&&path==='/api/developer/users'){
+      const url=new URL(req.url),q=String(url.searchParams.get('q')||'').trim().slice(0,80),status=url.searchParams.get('status')||'';
+      if(status&&!['active','blocked','all','pending'].includes(status))return err('الحالة غير صالحة',400);
+      if(status==='pending')return json({ok:true,users:[]}); // D1 registration creates active accounts; no pending applications.
+      const rows=await env.DB.prepare("SELECT id,full_name,username,email,role,status,created_at FROM users WHERE (?='' OR username LIKE ? OR full_name LIKE ?) AND (?='' OR ?='all' OR status=?) ORDER BY created_at DESC LIMIT 100").bind(q,'%'+q+'%','%'+q+'%',status,status,status).all();
+      return json({ok:true,users:rows.results.map(userView)});
+    }
+    const userPath=path.match(/^\/api\/developer\/users\/([a-f0-9-]{36})$/i);
+    if(req.method==='PATCH'&&userPath){
+      const current=await env.DB.prepare('SELECT id,role,status FROM users WHERE id=?').bind(userPath[1]).first();
+      if(!current)return err('الحساب غير موجود',404);
+      if(current.role==='developer'||current.id===user.id)return err('لا يمكن تعديل حساب المطور أو حسابك بهذه العملية',403);
+      if(current.role==='admin'&&user.role!=='developer')return err('هذه العملية للمطور فقط',403);
+      const b=await bodyJSON(req);
+      const keys=Object.keys(b);
+      if(keys.some(k=>!['status','fullName'].includes(k)))return err('تعديل هذه الحقول غير مدعوم بعد على Cloudflare',400);
+      if(b.status!==undefined){
+        if(!['active','blocked'].includes(b.status))return err('حالة غير صالحة',400);
+        await env.DB.prepare('UPDATE users SET status=? WHERE id=?').bind(b.status,current.id).run();
+      }
+      if(b.fullName!==undefined){
+        const name=String(b.fullName).trim();
+        if(name.length<2||name.length>100)return err('الاسم غير صالح',400);
+        await env.DB.prepare('UPDATE users SET full_name=? WHERE id=?').bind(name,current.id).run();
+      }
+      await audit('developer.user.update',{id:current.id,fields:keys});
+      return json({ok:true,message:'تم حفظ التغييرات'});
+    }
+    return err('هذه الخدمة لم تُنقل إلى D1 بعد؛ لم تُحذف بياناتها القديمة',501);
+  }
+
   // Resumable 8 MiB chunks; no large file is buffered inside the Worker.
   const UPLOAD_LIMIT=100*1024*1024,PART_BYTES=8*1024*1024;
   const uploadRoute=path.match(/^\/api\/uploads\/([a-f0-9-]{36})(?:\/(part\/(\d+)|complete|abort))?$/i);
