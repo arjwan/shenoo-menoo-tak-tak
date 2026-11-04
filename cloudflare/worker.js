@@ -236,7 +236,7 @@ async function main(req,env){
     }
     // The caller explicitly chose to synchronize this contact list. Never replace with fake entries.
     const stmt=env.DB.prepare('INSERT INTO user_phone_contacts(user_id,phone,name) VALUES(?,?,?) ON CONFLICT(user_id,phone) DO UPDATE SET name=excluded.name,updated_at=CURRENT_TIMESTAMP');
-    await env.DB.batch(contacts.map(x=>stmt.bind(user.id,x.phone,x.name)));
+    if(contacts.length)await env.DB.batch(contacts.map(x=>stmt.bind(user.id,x.phone,x.name)));
     if(contacts.length){
       await env.DB.prepare('DELETE FROM user_phone_contacts WHERE user_id=? AND phone NOT IN ('+contacts.map(()=>'?').join(',')+')').bind(user.id,...contacts.map(x=>x.phone)).run();
     }else await env.DB.prepare('DELETE FROM user_phone_contacts WHERE user_id=?').bind(user.id).run();
