@@ -299,9 +299,18 @@ async function main(req,env){
     for(const f of assets.results)await env.MEDIA.delete(f.r2_key).catch(e=>console.error('Story R2 cleanup',e));
     return json({ok:true,message:'تم حذف القصة'});
   }
+  const reelSave=path.match(/^\/api\/reels\/([a-f0-9-]{36})\/save$/i);
+  if(reelSave&&req.method==='POST'){
+    const post=await env.DB.prepare("SELECT p.id,p.visibility,p.author_id FROM posts p JOIN media m ON m.post_id=p.id WHERE p.id=? AND m.kind IN ('video','audio') LIMIT 1").bind(reelSave[1]).first();
+    if(!post||!(post.visibility==='everyone'||post.author_id===user.id))return err('الريل غير متاح',404);
+    const saved=await env.DB.prepare('SELECT 1 AS found FROM reel_saves WHERE post_id=? AND user_id=?').bind(post.id,user.id).first();
+    if(saved)await env.DB.prepare('DELETE FROM reel_saves WHERE post_id=? AND user_id=?').bind(post.id,user.id).run();
+    else await env.DB.prepare('INSERT INTO reel_saves(post_id,user_id) VALUES(?,?)').bind(post.id,user.id).run();
+    return json({ok:true,saved:!saved});
+  }
   if(req.method==='GET'&&path==='/api/reels'){
-    const rows=await env.DB.prepare("SELECT m.id AS media_id,m.kind,m.mime_type,m.size,p.id,p.text,p.created_at,u.id AS author_id,u.username,u.full_name,(SELECT COUNT(*) FROM post_likes l WHERE l.post_id=p.id) AS likes,(SELECT COUNT(*) FROM post_comments c WHERE c.post_id=p.id) AS comments_count,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=p.id AND l.user_id=?) AS liked FROM media m JOIN posts p ON p.id=m.post_id JOIN users u ON u.id=p.author_id WHERE m.kind IN ('video','audio') AND p.visibility='everyone' ORDER BY p.created_at DESC LIMIT 50").bind(user.id).all();
-    return json({ok:true,reels:rows.results.map(v=>({id:v.id,postId:v.id,text:v.text,createdAt:v.created_at,author:{id:v.author_id,username:v.username,fullName:v.full_name},media:[{url:'/media/'+v.media_id,type:v.kind,mimeType:v.mime_type,size:v.size}],likes:v.likes,commentsCount:v.comments_count,liked:!!v.liked,canDelete:v.author_id===user.id}))});
+    const rows=await env.DB.prepare("SELECT m.id AS media_id,m.kind,m.mime_type,m.size,p.id,p.text,p.created_at,u.id AS author_id,u.username,u.full_name,(SELECT COUNT(*) FROM post_likes l WHERE l.post_id=p.id) AS likes,(SELECT COUNT(*) FROM post_comments c WHERE c.post_id=p.id) AS comments_count,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=p.id AND l.user_id=?) AS liked,EXISTS(SELECT 1 FROM reel_saves q WHERE q.post_id=p.id AND q.user_id=?) AS saved FROM media m JOIN posts p ON p.id=m.post_id JOIN users u ON u.id=p.author_id WHERE m.kind IN ('video','audio') AND p.visibility='everyone' ORDER BY p.created_at DESC LIMIT 50").bind(user.id,user.id).all();
+    return json({ok:true,reels:rows.results.map(v=>({id:v.id,postId:v.id,text:v.text,createdAt:v.created_at,author:{id:v.author_id,username:v.username,fullName:v.full_name},media:[{url:'/media/'+v.media_id,type:v.kind,mimeType:v.mime_type,size:v.size}],likes:v.likes,commentsCount:v.comments_count,liked:!!v.liked,saved:!!v.saved,canDelete:v.author_id===user.id}))});
   }
   if(req.method==='GET'&&path==='/api/social/notifications'){
     const rows=await env.DB.prepare('SELECT id,kind,body,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(user.id).all();
