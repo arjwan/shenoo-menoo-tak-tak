@@ -3,7 +3,6 @@
   var privacyKeys = { profile: "رؤية الملف الشخصي", posts: "رؤية منشوراتي", photo: "رؤية الصورة الشخصية", cover: "رؤية صورة الغلاف", lastSeen: "رؤية آخر ظهور", online: "رؤية حالة online", birthDate: "رؤية تاريخ الميلاد", about: "رؤية معلومات عني", friendsList: "رؤية قائمة أصدقائي", phone: "رؤية رقم الهاتف", email: "رؤية البريد الإلكتروني", friendRequests: "إرسال طلب صداقة", messaging: "مراسلتي", audioCalls: "الاتصال بي صوتياً", videoCalls: "الاتصال بي فيديو", gameSpectating: "مشاهدة مبارياتي", gameVoice: "الانضمام لصوت مبارياتي", comments: "التعليق على منشوراتي", mentions: "الإشارة إليّ" };
   var offlineBanner = document.querySelector("[data-settings-offline]");
   var toast = document.querySelector("[data-settings-toast]");
-  var cachedKey = "shenoo-settings-cache";
   var toastTimer = null;
   function isOffline() { return !navigator.onLine; }
   function showToast(text, type) {
@@ -33,11 +32,11 @@
     if (user.contactType === "email") setField(contact, "email", user.contact); else setField(contact, "phone", user.contact);
     var privacy = user.privacy || {};
     document.querySelector("[data-privacy-grid]").innerHTML = Object.keys(privacyKeys).map(function (key) { return '<label class="privacy-setting"><span>' + privacyKeys[key] + '</span><select name="' + key + '" data-privacy-key><option value="everyone"' + (privacy[key] === "everyone" ? " selected" : "") + '>الجميع</option><option value="friends"' + (privacy[key] === "friends" ? " selected" : "") + '>الأصدقاء</option><option value="nobody"' + (privacy[key] === "nobody" ? " selected" : "") + '>لا أحد</option></select></label>'; }).join("");
-    localStorage.setItem(cachedKey, JSON.stringify(user));
   }
   async function load() {
     try { var data = await SocialAPI.request("/api/users/me"); render(data.user || data.data || {}); } catch (error) {
-      try { var cached = JSON.parse(localStorage.getItem(cachedKey) || "null"); if (cached) render(cached); else throw error; } catch (cacheError) { document.querySelector("[data-security-message]").textContent = cacheError.message; }
+      var message = document.querySelector("[data-security-message]");
+      if(message){message.textContent = 'تعذر تحميل البيانات الحقيقية من Cloudflare: ' + error.message;message.className = 'settings-message error';}
     }
   }
   async function submit(form) {
@@ -82,7 +81,15 @@
   document.querySelectorAll("[data-form]").forEach(function (form) { form.addEventListener("submit", function (event) { event.preventDefault(); submit(form); }); });
   document.querySelectorAll(".password-toggle").forEach(function (button) { button.addEventListener("click", function () { var input = button.parentElement.querySelector("input"); input.type = input.type === "password" ? "text" : "password"; }); });
   var password = document.querySelector("[data-password]"); if (password) password.addEventListener("input", function () { var score = Number(password.value.length >= 8) + Number(/[A-Z]/i.test(password.value)) + Number(/\d/.test(password.value)) + Number(/[^A-Za-z0-9]/.test(password.value)); document.querySelectorAll(".strength i").forEach(function (bar, index) { bar.classList.toggle("on", index < score); }); });
-  document.querySelector("[data-logout-other]").addEventListener("click", function () { var target = document.querySelector("[data-security-message]"); target.textContent = isOffline() ? "يجب الاتصال بالإنترنت لحفظ هذا التغيير" : "هذا الإجراء يحتاج endpoint جلسات من الخادم."; target.className = "settings-message " + (isOffline() ? "error" : ""); });
+  document.querySelector("[data-logout-other]").addEventListener("click", async function () {
+    var target=document.querySelector("[data-security-message]"),button=this;
+    if(isOffline()){target.textContent='اتصل بالإنترنت لإغلاق الجلسات الأخرى';target.className='settings-message error';return;}
+    button.disabled=true;
+    try {var data=await SocialAPI.request('/api/auth/logout-others',{method:'POST'});
+      target.textContent=data.message||'تم إنهاء الجلسات الأخرى على Cloudflare';target.className='settings-message success';
+    }catch(error){target.textContent=error.message;target.className='settings-message error';}
+    finally{button.disabled=false;}
+  });
   async function blocked() { var list = document.querySelector("[data-blocked-list]"); try { var data = await SocialAPI.request("/api/users/me/blocked"); var users = data.users || []; list.innerHTML = users.length ? users.map(function (user) { return '<div class="blocked-row"><div><strong>' + user.fullName + '</strong><small>@' + user.username + '</small></div><button class="small-button" data-unblock="' + user._id + '" type="button">فك الحظر</button></div>'; }).join("") : '<div class="table-empty">لا يوجد مستخدمون محظورون.</div>'; } catch (error) { list.innerHTML = '<div class="table-empty">' + error.message + "</div>"; } }
   document.querySelector("[data-blocked-list]").addEventListener("click", async function (event) { var button = event.target.closest("[data-unblock]"); if (!button || isOffline()) return; try { await SocialAPI.request("/api/users/" + button.dataset.unblock + "/block", { method: "DELETE" }); showToast("تم فك الحظر", "success"); blocked(); } catch (error) { button.textContent = error.message; } });
   function updateOffline() { offlineBanner.classList.toggle("is-visible", isOffline()); }
