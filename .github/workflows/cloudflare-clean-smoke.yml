@@ -9,6 +9,7 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Read-only Worker API checks
         shell: bash
         run: |
@@ -21,3 +22,7 @@ jobs:
           CODE=$(curl -sS -o /tmp/unauthorized.json -w "%{http_code}" "$BASE/api/users/me")
           test "$CODE" = "401"
           echo "Health, configuration and unauthorized access contract passed"
+
+      - name: Full account and post roundtrip (staging only)
+        shell: bash
+        run: node cloudflare/tests/live-core-smoke.mjs
