@@ -7,4 +7,4 @@ deployment:
     - /bin/cp -R "$DEPLOYPATH/server/src" "$DEPLOYPATH/.deploy-backups/server-src-pre-local-media" 2>/dev/null || true
     - /bin/cp package.json "$DEPLOYPATH/package.json"
     - /bin/cp -R server/src "$DEPLOYPATH/server/"
-    - /bin/cp taktak-feed.js taktak-direct-upload.js taktak-calls-dock.js reels-v2.js profile-posts.js profile.js communication-dock.js developer-services.js developer-rooms.js developer-school-requests.js developer.html social-api.js presence-client.js my-service-requests.js school-live.html home-notifications.js "$DEPLOYPATH/"
+    - /bin/cp taktak.html auth-guard.js taktak-feed.js taktak-direct-upload.js taktak-calls-dock.js reels-v2.js profile-posts.js profile.js communication-dock.js developer-services.js developer-rooms.js developer-school-requests.js developer.html social-api.js presence-client.js my-service-requests.js school-live.html home-notifications.js "$DEPLOYPATH/"
