@@ -61,6 +61,8 @@ jobs:
             echo "GET $page -> $code"
             test "$code" = "200"
           done
-          curl -fsSL "$host/stories.html" | grep -q "cloudflare-upload.js"
-          curl -fsSL "$host/reels.html" | grep -q "cloudflare-upload.js"
+          curl -fsSL "$host/stories.html" -o /tmp/stories.page
+          grep -q 'cloudflare-upload.js' /tmp/stories.page
+          curl -fsSL "$host/reels.html" -o /tmp/reels.page
+          grep -q 'cloudflare-upload.js' /tmp/reels.page
           echo 'PASS: primary domain API auth boundaries, CSRF rejection and production pages'
