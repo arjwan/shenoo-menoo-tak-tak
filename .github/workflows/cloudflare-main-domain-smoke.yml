@@ -47,6 +47,12 @@ jobs:
             curl -sSL --max-time 25 -D /tmp/shenoo-headers -o /tmp/shenoo-body -w 'POST signup http=%{http_code} server_ip=%{remote_ip} final=%{url_effective}\n' -H 'Content-Type: application/json' --data '{}' "$host/api/auth/signup"
             grep -Ei '^(server|cf-ray|content-type|location):' /tmp/shenoo-headers || true
             head -c 350 /tmp/shenoo-body; echo
+            if [ "$host" = 'https://shinomino.com' ] || [ "$host" = 'https://www.shinomino.com' ]; then
+              code="$(curl -sS --max-time 25 -o /tmp/shenoo-assert-body -w '%{http_code}' -H 'Content-Type: application/json' --data '{}' "$host/api/auth/signup")"
+              echo "assert signup endpoint exists: $host -> $code"
+              test "$code" = "400"
+              grep -q '"ok":false' /tmp/shenoo-assert-body
+            fi
           done
       - name: Inspect public-domain DNS
         if: always()
