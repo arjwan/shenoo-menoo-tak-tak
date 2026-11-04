@@ -1,0 +1,53 @@
+name: Commercial release gate
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/commercial-release-gate.yml'
+      - 'signin.html'
+      - 'auth-guard.js'
+      - 'cloudflare/worker.js'
+      - 'taktak-feed.js'
+      - 'cloudflare-upload.js'
+      - 'smart-friend-dock.js'
+      - 'taktak-calls-dock.js'
+      - 'reels-v2.js'
+      - 'stories.html'
+  workflow_dispatch:
+jobs:
+  commercial-go-no-go:
+    name: Production readiness / strict gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Non-negotiable launch blockers (no false green)
+        shell: bash
+        run: |
+          set -u
+          failures=0
+          fail() { echo "::error::$1"; failures=$((failures+1)); }
+          grep -q 'localStorage' signin.html && fail 'Sign-in persists session tokens in browser storage; secure server sessions required.'
+          grep -q "getItem('token')" auth-guard.js && fail 'Authentication guard still reads bearer token from browser storage.'
+          grep -q 'localStorage.getItem' taktak-feed.js && fail 'Main client still reads credentials from localStorage.'
+          grep -q 'duckdns.org' smart-friend-dock.js && fail 'Smart friend still points to an obsolete non-Cloudflare backend.'
+          grep -q 'localStorage.setItem(draftKey' smart-friend-dock.js && fail 'Business/user drafts still stored only in localStorage.'
+          grep -q 'localStorage.setItem.*shnoPhoneContacts' taktak-calls-dock.js && fail 'Phone contacts still persisted only in browser storage.'
+          grep -q 'استعادة كلمة المرور لم يتم ربطها' signin.html && fail 'Password recovery is not implemented.'
+          grep -q "'هذه الوظيفة لم تُحوّل إلى Cloudflare بعد',501" cloudflare/worker.js && fail 'Cloudflare Worker still explicitly returns 501 for unconverted features.'
+          grep -q 'otpRequired:false' cloudflare/worker.js && fail 'Account registration verification is disabled.'
+          if ! grep -q 'cloudflare-upload.js' reels.html; then fail '100 MiB upload helper not wired into reels page.'; fi
+          if ! grep -q 'cloudflare-upload.js' stories.html; then fail '100 MiB upload helper not wired into stories page.'; fi
+          echo "Total verified blockers: $failures"
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::Commercial release is NOT approved. See issue #69."
+            exit 1
+          fi
+      - name: Verify main domain (only once static release blockers pass)
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin=https://shinomino.com
+          curl -fsS --max-time 25 "$origin/api/health" | grep -q '"storage":"d1+r2"'
+          curl -fsS --max-time 25 "$origin/taktak.html" | grep -q 'home-colors-scope'
+          curl -fsS --max-time 25 "$origin/stories.html" | grep -q 'storyForm'
+          curl -fsS --max-time 25 "$origin/reels.html" | grep -q 'id="feed"'
