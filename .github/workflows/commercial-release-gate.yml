@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/commercial-release-gate.yml'
       - 'signin.html'
+      - 'social-api.js'
       - 'auth-guard.js'
       - 'cloudflare/worker.js'
       - 'taktak-feed.js'
@@ -26,9 +27,14 @@ jobs:
           set -u
           failures=0
           fail() { echo "::error::$1"; failures=$((failures+1)); }
-          grep -q 'localStorage' signin.html && fail 'Sign-in persists session tokens in browser storage; secure server sessions required.'
-          grep -q "getItem('token')" auth-guard.js && fail 'Authentication guard still reads bearer token from browser storage.'
-          grep -q 'localStorage.getItem' taktak-feed.js && fail 'Main client still reads credentials from localStorage.'
+          grep -Eq "setItem\(['\\\"]token['\\\"]" signin.html && fail 'Sign-in persists session tokens in browser storage.'
+          if grep -q "getItem('token')" auth-guard.js; then
+            if ! grep -q '/api/auth/upgrade' auth-guard.js; then fail 'Auth guard reads tokens without server migration.'; fi
+          fi
+          grep -Eq "(localStorage|sessionStorage)\\.getItem\\(['\\\"]token['\\\"]" taktak-feed.js && fail 'Main feed still uses browser access tokens.'
+          grep -Eq "(localStorage|sessionStorage)\\.getItem\\(['\\\"]token['\\\"]" reels-v2.js && fail 'Reels still use browser access tokens.'
+          if ! grep -q '__Host-shino_session' cloudflare/worker.js; then fail 'Server-managed HttpOnly sessions missing.'; fi
+          if ! grep -q 'shnoSessionReady' social-api.js; then fail 'Social requests can race before D1 authentication is ready.'; fi
           grep -q 'duckdns.org' smart-friend-dock.js && fail 'Smart friend still points to an obsolete non-Cloudflare backend.'
           grep -q 'localStorage.setItem(draftKey' smart-friend-dock.js && fail 'Business/user drafts still stored only in localStorage.'
           grep -q 'localStorage.setItem.*shnoPhoneContacts' taktak-calls-dock.js && fail 'Phone contacts still persisted only in browser storage.'
