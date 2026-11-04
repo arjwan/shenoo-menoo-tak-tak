@@ -16,13 +16,13 @@ async function tokenFor(user,secret) {
 const SESSION_COOKIE='__Host-shino_session';
 const cookieValue=req=>{const raw=req.headers.get('Cookie')||'';const part=raw.split(';').map(x=>x.trim()).find(x=>x.startsWith(SESSION_COOKIE+'='));return part?part.slice(SESSION_COOKIE.length+1):'';};
 const digestSession=async value=>b64(await crypto.subtle.digest('SHA-256',encoder.encode(value)));
-const sessionCookie=value=>SESSION_COOKIE+'='+value+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
+const sessionCookie=(value,age)=>SESSION_COOKIE+'='+value+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age='+age;
 const clearSessionCookie=()=>SESSION_COOKIE+'=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
-async function createSession(env,user){
-  const secret=b64(crypto.getRandomValues(new Uint8Array(32))),id=crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO auth_sessions(id,user_id,secret_hash,expires_at) VALUES(?,?,?,datetime('now','+7 days'))").bind(id,user.id,await digestSession(secret)).run();
+async function createSession(env,user,remember=true){
+  const secret=b64(crypto.getRandomValues(new Uint8Array(32))),id=crypto.randomUUID(),age=remember?604800:43200;
+  await env.DB.prepare("INSERT INTO auth_sessions(id,user_id,secret_hash,expires_at) VALUES(?,?,?,datetime('now',?))").bind(id,user.id,await digestSession(secret),remember?'+7 days':'+12 hours').run();
   await env.DB.prepare("DELETE FROM auth_sessions WHERE user_id=? AND (expires_at<=datetime('now') OR revoked_at IS NOT NULL)").bind(user.id).run();
-  return sessionCookie(secret);
+  return sessionCookie(secret,age);
 }
 const verifyOrigin=req=>{
   const origin=req.headers.get('Origin');
@@ -136,7 +136,7 @@ async function main(req,env){
     const attempt=await hash(password,user.password_salt);
     const a=unb64(attempt),c=unb64(user.password_hash);
     if(a.length!==c.length||!timingSafeEqual(a,c))return err('بيانات تسجيل الدخول غير صحيحة',401);
-    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Set-Cookie':await createSession(env,user)});
+    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Set-Cookie':await createSession(env,user,!!b.remember)});
     return new Response(JSON.stringify({ok:true,user:safeUser(user),message:'تم تسجيل الدخول'}),{status:200,headers});
   }
   if(req.method==='GET'&&path.startsWith('/media/')){
