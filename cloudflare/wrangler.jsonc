@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shenoo-cloudflare-clean",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-04",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "shno-mano-production",
+      "database_id": "aa182968-11f9-4b9a-b82c-feea0db75a2a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "shno-mano-media"
+    }
+  ]
+}
