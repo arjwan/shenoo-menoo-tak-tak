@@ -5,27 +5,14 @@
     ? "https://shinomino.com"
     : window.location.origin;
 
-  function tokenTime(token) {
-    try {
-      var part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-      var data = JSON.parse(decodeURIComponent(atob(part).split("").map(function(c){return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);}).join("")));
-      return Number(data.iat || 0);
-    } catch (_e) { return 0; }
-  }
-  function getToken() {
-    var sessionToken = sessionStorage.getItem("token") || "";
-    var rememberedToken = localStorage.getItem("token") || "";
-    if (!sessionToken) return rememberedToken;
-    if (!rememberedToken) return sessionToken;
-    return tokenTime(sessionToken) >= tokenTime(rememberedToken) ? sessionToken : rememberedToken;
-  }
+  // Auth uses HttpOnly cookies; browser tokens are not accepted here.
+  function getToken(){return '';}
 
   async function request(path, options) {
     var config = Object.assign({ cache: "no-store" }, options || {});
     config.headers = Object.assign({ Accept: "application/json" }, config.headers || {});
 
-    var token = getToken();
-    if (token) config.headers.Authorization = "Bearer " + token;
+    config.credentials = 'same-origin';
 
     var controller = new AbortController();
     var timer = setTimeout(function () { controller.abort(); }, 20000);
