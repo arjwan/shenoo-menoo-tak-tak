@@ -88,7 +88,7 @@ async function main(req,env){
     if(object.httpEtag)headers.set('ETag',object.httpEtag);
     let range;
     if(rangeHeader){
-      const match=/^bytes=(\\d*)-(\\d*)$/.exec(rangeHeader.trim());
+      const match=/^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
       if(!match||(match[1]===''&&match[2]===''))return new Response(null,{status:416,headers:{...Object.fromEntries(headers),'Content-Range':'bytes */'+size}});
       let start,end;
       if(match[1]===''){
