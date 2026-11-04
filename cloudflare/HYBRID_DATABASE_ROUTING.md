@@ -1,53 +1,41 @@
-# Hybrid Cloudflare D1 + MongoDB plan (staged)
+# Developer-only MongoDB bridge — production rollout gate
 
-## Current status
-- Production: `cloudflare/worker.js` remains the live Worker and D1/R2 continue unchanged.
-- Staged gateway: `cloudflare/mongo-gateway.js` is NOT deployed.
-- Atlas project `Project 0`, cluster `Cluster0`, DB `shino_mino_tak_tak`, 58 collections.
-- MongoDB access credentials are NOT included in source control or provided by the Atlas connector.
-- There is no production `MONGODB_URI` Worker secret yet. Never write credentials to GitHub or a frontend file.
+## Source of truth
 
-## Deterministic per-service routing
-| API | Authoritative system | Status |
-| --- | --- | --- |
-| /api/auth/* | D1 | Running; no silent account migration |
-| /api/posts, /api/posts/ads* | D1 + R2 | Running |
-| /api/conversations*, /api/social* | D1 | Running for D1 accounts |
-| /api/stores (approved, read-only) | MongoDB | Staged in gateway |
-| /api/developer/mongo-summary | MongoDB (D1 developer role required) | Staged |
-| /api/school*, /api/consultations*, /api/groups*, /api/support* | MongoDB (legacy) | NOT implemented in gateway |
-| Other /api/* | D1 first, explicitly unsupported if absent | Existing behavior |
+- `main` is the authoritative GitHub branch.
+- Live: `cloudflare/worker.js` backed by Cloudflare D1 (`DB`) and R2 (`MEDIA`).
+- Auxiliary: MongoDB Atlas `Cluster0`, database `shino_mino_tak_tak` (58 collections).
+- `cloudflare/mongo-gateway.js` is a STAGED gateway, **not** the production Worker entrypoint.
+- MongoDB is used **only** by authenticated developer APIs: `/api/developer/mongo-*`.
+- Public application endpoints, including `/api/stores`, `/api/auth/*`, posts, stories, chat, ads, remain 100% D1/R2.
+- No MongoDB data is copied to D1, and no MariaDB/Oracle dependency is added.
 
-The dispatcher never falls back to MongoDB just because a D1 lookup failed;
-that would break authorization and create split-brain writes.
+## Staged protected API methods
 
-## Required safe steps before production deployment
-1. Create a dedicated least-privilege MongoDB database user with read-only access
-   to `shino_mino_tak_tak` for initial rollout. Don't use the existing Atlas-admin user.
-2. Securely configure Cloudflare Worker secret `MONGODB_URI`, without exposing it
-   in the repository or chat.
-3. Build a bundled ES module using Wrangler with the `mongodb` Node driver
-   (>=6.15.0) and Cloudflare node compatibility. See Cloudflare's current official
-   MongoDB connection tutorial.
-4. Test the bundled gateway in an isolated Worker, with authentication,
-   error handling, store visibility, and failure injection. Never expose direct
-   arbitrary collection-query endpoints.
-5. Map each remaining legacy route to a defined schema, reconcile identities,
-   migrate required features and Socket.IO separately, then switch routes
-   incrementally after acceptance tests.
-6. The current Atlas network access list allows `0.0.0.0/0`. Restrict it
-   when a viable network access design is chosen, without locking out the
-   existing application.
-7. Preserve MongoDB source records and all D1/R2 data; do not remove MariaDB
-   or legacy backups as a side effect of enabling the gateway.
+| Method | API | MongoDB collections |
+|---|---|---|
+| GET | `/api/developer/mongo-status` | db ping |
+| GET | `/api/developer/mongo-summary` | users, stores, schoolteachers, schoolstudents, schoolteacherapplications, gamerooms, conversations, groupreports |
+| GET | `/api/developer/mongo-users?q=&status=` | users, safe allowlisted projection only |
+| GET | `/api/developer/mongo-admins` | users, admin/developer only |
+| GET | `/api/developer/mongo-teacher-applications?status=pending` | schoolteacherapplications |
 
-## Identity boundary
-MongoDB `users` and D1 `users` are different sets. D1 session IDs must not
-be treated as MongoDB ObjectIds or as proof of ownership of legacy records.
-Require verified account linking before exposing private user data or writing
-MongoDB records. In particular, never elevate a user merely by username.
+All requests require a valid, active D1 cookie session with `developer` or `admin` role, and MongoDB data is inaccessible to ordinary users. There is deliberately no automatic authority transfer based on equal usernames, and no arbitrary collection names or raw queries are accepted. The gateway is read-only until identity and per-service update flows are verified.
 
-## Deployment gate
-Do not change the production Worker main module from `worker.js` to
-`mongo-gateway.js` until secret setup, bundling, tests and verified account
-mapping are complete. Simply committing the gateway does not connect MongoDB.
+## Required to activate
+
+1. Create a dedicated least-privilege MongoDB Atlas user that can read only the `shino_mino_tak_tak` database. Avoid the existing `atlasAdmin` application account.
+2. Set Cloudflare Worker secret `MONGODB_URI` **in the Cloudflare dashboard**, never send credentials in chat and never place them in GitHub. Use the Atlas connection string with an encoded password.
+3. Bundle `cloudflare/mongo-gateway.js` and `cloudflare/worker.js` with the existing `mongodb` dependency; use Cloudflare Workers compatibility date `2026-11-04` (Node compatibility enabled by default) and test with a non-production Worker and D1 test sessions.
+4. Compare `mongo-summary` count with MongoDB Atlas count, confirm ordinary users get 403, confirm D1 routes unchanged, verify all Worker bindings are preserved, and test Atlas downtime.
+5. Once authorized developer login and services pass tests, promote the gateway entrypoint on production without altering the Pages hostnames, DNS, MariaDB, or Render.
+6. For mutable developer services (teacher approval, account edits, account deletion, MFA) port the original MongoDB business rules and audit logs, test each independently. These are **not implemented in the gateway** and should never be reported as working.
+
+## Current blockers
+
+- The production Worker has **no `MONGODB_URI` binding** (only `AUTH_SECRET`, `DB`, `MEDIA`).
+- There are currently no D1 users with a privileged `developer`/`admin` role. A legacy MongoDB role does not grant a D1 session.
+- The original legacy developer password is stored as a bcrypt hash in MongoDB and is not equivalent to the D1 password hashing scheme. A secure identity-linking or legacy developer login flow is needed; never grant privileges based on a username alone.
+- The original MongoDB Atlas network allowlist currently permits `0.0.0.0/0`; narrow access when a compatible approach has been tested, without disconnecting the legacy deployment.
+
+Until those gates are satisfied, the existing D1/R2 Worker stays live.
