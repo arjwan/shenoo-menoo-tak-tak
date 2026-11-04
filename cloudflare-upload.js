@@ -3,13 +3,10 @@
 window.uploadMediaToCloudflare=async function(file,purpose,onProgress){
   if(!(file instanceof File)||!file.size)throw Error('اختر ملفاً أولاً');
   if(file.size>100*1024*1024)throw Error('الحد الأقصى لحجم الملف 100 ميغابايت');
-  const token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';
-  if(!token)throw Error('سجّل دخولك أولاً');
   const base=location.origin;
   const request=async(path,options={})=>{
     const headers=new Headers(options.headers||{});
-    headers.set('Authorization','Bearer '+token);
-    const response=await fetch(base+path,{...options,headers});
+    const response=await fetch(base+path,{...options,headers,credentials:'same-origin'});
     const result=await response.json().catch(()=>({}));
     if(!response.ok||result.ok===false)throw Error(result.message||'تعذر رفع الملف: '+response.status);
     return result;
