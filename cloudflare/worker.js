@@ -53,7 +53,9 @@ async function authenticate(req,env) {
       return session;
     }
   }
-  // Temporary legacy-token compatibility: consumed by /api/auth/upgrade and old clients.
+  // Legacy bearer authorization is accepted ONLY during the one-time authenticated
+  // upgrade to a revocable D1 session, never for application API requests.
+  if(new URL(req.url).pathname!=='/api/auth/upgrade')throw {status:401,message:'الجلسة القديمة تحتاج تحديثاً'};
   const value=req.headers.get('Authorization')||'';
   if(!value.startsWith('Bearer ')||value.length<20)throw {status:401,message:'يرجى تسجيل الدخول'};
   const parts=value.slice(7).split('.');
