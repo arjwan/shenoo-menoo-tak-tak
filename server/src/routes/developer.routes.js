@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({
       role: 'developer',
       status: 'active',
-      $or: [{ username: identifier }, { contact: identifier }]
+      $or: [{ username: identifier }, { contact: identifier }, { email: identifier }]
     });
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       recordLoginFailure(ip);
