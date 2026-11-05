@@ -28,6 +28,9 @@ async function requireAuth(req, res, next) {
       });
     }
 
+    if (Number(payload.cv || 0) !== Number(user.credentialVersion || 0)) {
+      return res.status(401).json({ ok: false, message: 'تغيرت كلمة المرور. أعد تسجيل الدخول' });
+    }
     req.user = user;
     next();
   } catch {

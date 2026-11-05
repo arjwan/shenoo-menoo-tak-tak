@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   birthDate: { type: Date, default: null },
   gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
   passwordHash: { type: String, required: true },
+  credentialVersion: { type: Number, default: 0 },
   termsAccepted: { type: Boolean, required: true },
   privacyAccepted: { type: Boolean, default: false },
   privacyAcceptedAt: { type: Date, default: null },

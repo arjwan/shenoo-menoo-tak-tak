@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
 
     loginAttempts.delete(ip);
     const security=await DeveloperMfa.findOne({user:user._id});
-    const preAuthToken=jwt.sign({userId:user._id,role:user.role,scope:'developer-mfa'},process.env.JWT_SECRET,{expiresIn:'5m'});
+    const preAuthToken=jwt.sign({userId:user._id,role:user.role,cv:Number(user.credentialVersion||0),scope:'developer-mfa'},process.env.JWT_SECRET,{expiresIn:'5m'});
     return res.json({ok:true,message:'تم قبول كلمة المرور. أكمل التحقق بالهاتف أو مفتاح FIDO',preAuthToken,mfa:{phone:Boolean(security?.phoneSecretHash),fido:Boolean(security?.credentials?.length),setupRequired:!security?.phoneSecretHash&&!security?.credentials?.length},user:safeUser(user)});
   } catch (error) {
     console.error('Developer login failed:', error.message);
