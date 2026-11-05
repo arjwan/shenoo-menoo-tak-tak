@@ -1,9 +1,3 @@
-/**
- * Cloudflare Pages API Router: functions/api/[[path]].js
- * Project: shenoo-main-cloudflare
- * Target Domain: shinomino.com
- */
-
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -33,7 +27,7 @@ export async function onRequest(context) {
     } catch (err) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'تعذر الاتصال بخادم MongoDB المساعد: ' + err.message
+        error: 'تعذر الاتصال بخادم MongoDB: ' + err.message
       }), {
         status: 502,
         headers: { 'Content-Type': 'application/json; charset=utf-8' }
@@ -41,7 +35,7 @@ export async function onRequest(context) {
     }
   }
 
-  // بقية خدمات التطبيق تستمر بالعمل على D1 و R2 دون أي مساس بها
+  // بقية خدمات التطبيق تستمر بالعمل على D1 و R2 دون تغيير
   if (env.API && typeof env.API.fetch === 'function') {
     return env.API.fetch(request);
   }
