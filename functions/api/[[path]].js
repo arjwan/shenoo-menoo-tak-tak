@@ -9,7 +9,7 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  // 1. توجيه طلبات لوحة المطوّر ومدرسة سومر حصراً إلى خادم MongoDB Atlas على IQ Hosting
+  // 1. Route Developer Panel and Sumer School requests to external MongoDB Atlas backend.
   if (
     pathname === '/developer.html' ||
     pathname.startsWith('/api/developer') ||
@@ -21,27 +21,38 @@ export async function onRequest(context) {
     proxyHeaders.set('X-Forwarded-Host', url.host);
     proxyHeaders.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
 
-    const proxyRequest = new Request(targetUrl, {
-      method: request.method,
-      headers: proxyHeaders,
-      body: request.body,
-      redirect: 'follow'
-    });
-
     try {
-      return await fetch(proxyRequest);
-    } catch (err) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'تعذر الاتصال بخادم MongoDB المساعد: ' + err.message
-      }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      const proxyRequest = new Request(targetUrl, {
+        method: request.method,
+        headers: proxyHeaders,
+        body: request.body,
+        redirect: 'follow'
       });
+      const response = await fetch(proxyRequest);
+      if (!response.ok) {
+        await response.body?.cancel();
+        return Response.json({
+          success: false,
+          error: 'Auxiliary backend returned an error',
+          upstreamStatus: response.status
+        }, { status: 502 });
+      }
+      return response;
+    } catch (err) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to connect to auxiliary backend: ' + err.message
+        }),
+        {
+          status: 502,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }
+      );
     }
   }
 
-  // 2. تمرير مسارات التطبيق الأساسية (مثل /api/auth/signup وبقية خدمات D1 و R2) إلى Worker الإنتاج
+  // 2. Delegate all other routes (including /api/auth/signup, D1, and R2) to Cloudflare Worker.
   if (env.API && typeof env.API.fetch === 'function') {
     return env.API.fetch(request);
   }
