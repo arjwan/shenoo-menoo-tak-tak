@@ -11,7 +11,7 @@ export async function proxyLegacy({ request, env }, upstreamFetch = fetch) {
   const headers = new Headers(request.headers);
   headers.delete('host');
   headers.set('X-Forwarded-Host', incoming.host);
-  headers.set('X-Forwarded-Proto', 'https');
+  headers.set('X-Forwarded-Proto', incoming.protocol.replace(':', ''));
   try {
     // Manual redirects avoid forwarding credentials to another host or HTTP.
     const result = await upstreamFetch(new Request(target, {
@@ -19,7 +19,7 @@ export async function proxyLegacy({ request, env }, upstreamFetch = fetch) {
       body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
       redirect: 'manual', duplex: 'half'
     }));
-    if (result.status >= 300 && result.status < 400) {
+    if (result.status >= 500 || (result.status >= 300 && result.status < 400)) {
       await result.body?.cancel();
       return Response.json({ ok: false, message: 'خادم المدرسة واللوحة أعاد توجيهاً غير متوقع' }, { status: 502 });
     }

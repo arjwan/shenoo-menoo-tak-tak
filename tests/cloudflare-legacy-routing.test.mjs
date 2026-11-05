@@ -21,7 +21,7 @@ test('protected routes preserve authentication, query and denial without D1 fall
  } finally {globalThis.fetch=original;}
 });
 test('D1 routes and lookalike namespaces stay on D1', async()=>{
- for(const path of ['/api/auth/signin','/api/stores','/api/schoolish','/api/developer-other']){
+ for(const path of ['/api/auth/signup','/api/auth/signin','/api/stores','/api/schoolish','/api/developer-other']){
   const c=context(path);c.env.API={fetch:async()=>new Response('D1')};
   assert.equal(await (await onRequest(c)).text(),'D1');
  }
@@ -51,4 +51,17 @@ test('original developer login uses MongoDB endpoint and MFA preauth',async()=>{
  const html=await readFile(new URL('../developer.html',import.meta.url),'utf8');
  assert.match(html,/\/api\/developer\/login/);assert.match(html,/preAuthToken=d.preAuthToken/);
  assert.doesNotMatch(html,/\/api\/auth\/signin/);
+});
+
+test('auxiliary server failure is structured 502',async()=>{
+ const r=await proxyLegacy(context('/api/developer/login'),async()=>new Response('private diagnostic',{status:503}));
+ assert.equal(r.status,502);assert.match(r.headers.get('Content-Type'),/application\/json/);
+ assert.doesNotMatch(await r.text(),/private diagnostic/);
+});
+test('root developer page uses auxiliary server',async()=>{
+ const {onRequest: page}=await import('../functions/developer.html.js');
+ const original=globalThis.fetch;
+ try{globalThis.fetch=async req=>{assert.equal(req.url,'https://api.shinomino.com/developer.html');return new Response('original panel')};
+ assert.equal(await (await page(context('/developer.html'))).text(),'original panel');
+ }finally{globalThis.fetch=original;}
 });
