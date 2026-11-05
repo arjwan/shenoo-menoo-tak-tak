@@ -20,7 +20,7 @@ if(require.main===module){
  mongoose.connect(uri,{dbName:'shino_mino_tak_tak',autoIndex:false,serverSelectionTimeoutMS:8000})
  .then(()=>resetDeveloper(mongoose.connection.db,password))
  .then(result=>console.log(JSON.stringify(result)))
- .catch(error=>{console.error('Developer recovery failed:',error.code||error.name);process.exitCode=1;})
+ .catch(error=>{const known=['NEW_PASSWORD_MUST_BE_12_TO_128_CHARACTERS','ACTIVE_DEVELOPER_NOT_FOUND','ACCOUNT_CHANGED_RETRY_REQUIRED'];const reason=known.includes(error.message)?error.message:(error.code||error.name);console.error('Developer recovery failed:',reason);process.exitCode=1;})
  .finally(()=>mongoose.disconnect());
 }
 module.exports={resetDeveloper};
