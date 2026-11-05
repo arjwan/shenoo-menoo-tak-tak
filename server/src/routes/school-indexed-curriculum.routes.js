@@ -4,13 +4,14 @@ const router = require('express').Router();
 const { requireAuth } = require('../middleware/auth');
 const linked = require('../services/iraqi-curriculum-linked');
 
-router.use(requireAuth);
-
 router.get('/curriculum/catalog', (req, res) => {
   const filters = ['stage', 'grade', 'subject'];
   const items = linked.catalogItems.filter((item) => filters.every((key) => !req.query[key] || item[key] === req.query[key]));
   res.json({ ok: true, version: linked.catalog.version, items, total: items.length });
 });
+
+// Match main: catalog metadata is public; files and indexed text require login.
+router.use(requireAuth);
 
 router.get('/curriculum/files', (_req, res) => {
   res.json({ ...linked.manifest, files: linked.files, indexedTextCount: linked.files.filter((file) => file.textAvailable).length });
