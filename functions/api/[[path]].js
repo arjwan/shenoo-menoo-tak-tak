@@ -9,7 +9,7 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  // 1. Route Developer Panel and Sumer School requests to external MongoDB Atlas backend.
+  // 1. Route Developer Panel and Sumer School requests to external MongoDB Atlas backend
   if (
     pathname === '/developer.html' ||
     pathname.startsWith('/api/developer') ||
@@ -21,23 +21,15 @@ export async function onRequest(context) {
     proxyHeaders.set('X-Forwarded-Host', url.host);
     proxyHeaders.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
 
+    const proxyRequest = new Request(targetUrl, {
+      method: request.method,
+      headers: proxyHeaders,
+      body: request.body,
+      redirect: 'follow'
+    });
+
     try {
-      const proxyRequest = new Request(targetUrl, {
-        method: request.method,
-        headers: proxyHeaders,
-        body: request.body,
-        redirect: 'follow'
-      });
-      const response = await fetch(proxyRequest);
-      if (!response.ok) {
-        await response.body?.cancel();
-        return Response.json({
-          success: false,
-          error: 'Auxiliary backend returned an error',
-          upstreamStatus: response.status
-        }, { status: 502 });
-      }
-      return response;
+      return await fetch(proxyRequest);
     } catch (err) {
       return new Response(
         JSON.stringify({
@@ -52,7 +44,7 @@ export async function onRequest(context) {
     }
   }
 
-  // 2. Delegate all other routes (including /api/auth/signup, D1, and R2) to Cloudflare Worker.
+  // 2. Delegate all other routes (including /api/auth/signup, D1, and R2) to Cloudflare Worker
   if (env.API && typeof env.API.fetch === 'function') {
     return env.API.fetch(request);
   }
