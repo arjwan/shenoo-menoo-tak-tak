@@ -2,6 +2,7 @@ import { proxyLegacy } from '../../cloudflare/pages/legacy-origin.js';
 import { handleDeveloper } from '../../cloudflare/developer-api.js';
 import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
 import { submitTeacher, listTeacherApplications, teacherApplicationDetail } from '../../cloudflare/pages/school-teachers.js';
+import { schoolManagementMe } from '../../cloudflare/pages/school-session.js';
 
 export async function onRequest(context) {
   const pathname = new URL(context.request.url).pathname;
@@ -13,6 +14,7 @@ export async function onRequest(context) {
     }
     return handleDeveloper(context.request, context.env, developerHelpers);
   }
+  if (pathname === '/api/school/management/me') return schoolManagementMe(context);
   // Keep D1 teacher management out of the legacy school proxy. This explicit
   // dispatch also handles catch-all resolution on Pages when a more-specific
   // dynamic school route is not selected.
