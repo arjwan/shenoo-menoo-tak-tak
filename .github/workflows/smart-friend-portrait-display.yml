@@ -8,6 +8,7 @@ on:
       - 'smart-friend-chat.js'
       - 'smart-friend-chat.css'
       - 'tests/cloudflare-smart-friend-portrait-display.test.mjs'
+      - 'tests/cloudflare-smart-friend-button-layout.test.mjs'
       - 'tests/cloudflare-smart-friend-ai.test.mjs'
 jobs:
   portrait:
@@ -21,4 +22,5 @@ jobs:
           node-version: '22'
       - run: node --check smart-friend-chat.js
       - run: node --test tests/cloudflare-smart-friend-portrait-display.test.mjs
+      - run: node --test tests/cloudflare-smart-friend-button-layout.test.mjs
       - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
