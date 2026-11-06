@@ -9,6 +9,8 @@ on:
       - 'tests/cloudflare-smart-friend-reminders.test.mjs'
       - 'tests/cloudflare-smart-friend-avatar-save.test.mjs'
       - 'smart-friend-chat.js'
+      - 'school.html'
+      - 'tests/cloudflare-school-navigation-isolation.test.mjs'
       - 'cloudflare/migrations/0012_smart_friend_reminders.sql'
       - '.github/workflows/smart-friend-text-tools.yml'
 jobs:
@@ -25,4 +27,5 @@ jobs:
       - run: node --test tests/cloudflare-smart-friend-text-tools.test.mjs
       - run: node --test tests/cloudflare-smart-friend-reminders.test.mjs
       - run: node --test tests/cloudflare-smart-friend-avatar-save.test.mjs
+      - run: node --test tests/cloudflare-school-navigation-isolation.test.mjs
       - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
