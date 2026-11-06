@@ -25,6 +25,7 @@
       </a>
       <nav class="desktop-nav" aria-label="القائمة الرئيسية">
         <a href="/" aria-current="page">الرئيسية</a>
+        <a href="#social">المنشورات والريلز</a>
         <a href="/calls.html">الاتصال</a>
         <a href="/services.html">الخدمات</a>
         <a href="/school/">مدرسة سومر</a>
@@ -42,7 +43,10 @@
         <div class="hero-copy">
           <span class="eyebrow">منصة عراقية تجمع كل ما تحتاجه 🇮🇶</span>
           <h1 id="hero-title">كل عالمك <span>بمكان واحد</span></h1>
-          <p>تواصل، تعلّم، واكتشف خدماتك</p>
+          <p>انشر منشوراتك وقصصك والريلز، شارك بالبث المباشر، وتواصل مع مجتمعك العراقي بكل بساطة.</p>
+          <div class="social-highlights" aria-label="المحتوى الاجتماعي">
+            <span>✎ منشورات</span><span>◌ قصص</span><span>▷ ريلز</span><span>● بث مباشر</span>
+          </div>
           <div class="hero-actions">
             <a class="button button-primary button-large" href="/signup.html">إنشاء حساب</a>
             <a class="button button-outline button-large" href="/signin.html">تسجيل الدخول</a>
@@ -66,14 +70,45 @@
         </svg>
       </section>
 
+      <section class="social-section" id="social" aria-labelledby="social-title">
+        <div class="section-title"><div><span class="section-kicker">مساحتك للتعبير والمشاركة</span><h2 id="social-title">انشر لحظتك وخلّ العالم يشوفها</h2><p>من المنشور اليومي إلى البث المباشر، كل أشكال المشاركة بمكان واحد</p></div><a class="section-link" href="/taktak.html">دخول المجتمع <span aria-hidden="true">←</span></a></div>
+        <div class="social-grid">
+          <a class="social-card" href="/taktak.html" data-search="منشورات منشور نشر صور كتابة تعليقات إعجابات بوستات">
+            <span class="social-icon post-icon" aria-hidden="true">✎</span>
+            <strong>المنشورات</strong>
+            <small>شارك أفكارك وصورك وتفاعل ويا الأصدقاء</small>
+            <span class="social-action">اكتشف المنشورات <span aria-hidden="true">←</span></span>
+          </a>
+          <a class="social-card" href="/stories.html" data-search="قصص ستوري ستوريات لحظات يوميات">
+            <span class="social-icon story-icon" aria-hidden="true">◎</span>
+            <strong>القصص</strong>
+            <small>وثّق لحظات يومك بقصص سريعة ومميزة</small>
+            <span class="social-action">شوف القصص <span aria-hidden="true">←</span></span>
+          </a>
+          <a class="social-card" href="/reels.html" data-search="ريلز مقاطع قصيرة فيديوهات فيديو">
+            <span class="social-icon reels-icon" aria-hidden="true">▶</span>
+            <strong>الريلز</strong>
+            <small>اكتشف المقاطع القصيرة وشارك إبداعك</small>
+            <span class="social-action">شوف الريلز <span aria-hidden="true">←</span></span>
+          </a>
+          <a class="social-card" href="/taktak.html" data-search="بث مباشر لايف فيديو حي مباشر تفاعل">
+            <span class="live-label">● مباشر</span>
+            <span class="social-icon live-icon" aria-hidden="true">◉</span>
+            <strong>البث المباشر</strong>
+            <small>تابع اللحظات الحيّة وتفاعل مع مجتمعك</small>
+            <span class="social-action">دخول البث <span aria-hidden="true">←</span></span>
+          </a>
+        </div>
+      </section>
+
       <section class="search-wrap" aria-label="البحث عن خدمة">
         <form id="homeSearch" class="search-form" role="search">
           <label class="sr-only" for="serviceSearch">شنو تبحث عنه؟</label>
           <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="7.1"/><path d="M16.2 16.2 21 21"/></svg>
-          <input id="serviceSearch" type="search" placeholder="شنو تبحث عنه؟" autocomplete="off" aria-describedby="searchHelp">
+          <input id="serviceSearch" type="search" placeholder="ابحث عن محتوى أو خدمة..." autocomplete="off" aria-describedby="searchHelp">
           <button type="submit">بحث</button>
         </form>
-        <p class="search-hint" id="searchHelp">ابحث ضمن أقسام شنو منو أدناه</p>
+        <p class="search-hint" id="searchHelp">ابحث عن المنشورات والقصص والريلز والبث أو الخدمات</p>
         <p class="search-feedback" id="searchFeedback" role="status" aria-live="polite" hidden></p>
       </section>
 
