@@ -3,7 +3,7 @@
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 const error=(message,status=400)=>json({ok:false,message},status);
 const properties={bio:500,governorate:100,city:100,birthPlace:120,address:180,education:160,academicSpecialization:160,profession:120,workplace:120,website:250};
-const privacyKeys=['friendRequests','messaging','lastSeen','photo','birthDate','gender','governorate','city','birthPlace','address','education','profession','workplace'];
+const privacyKeys=['friendRequests','messaging','lastSeen','photo','birthDate','gender','governorate','city','birthPlace','address','education','profession','workplace','socialLinks'];
 const allowedPrivacy=['everyone','friends','nobody'];
 const parse=value=>{try{const o=JSON.parse(value||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch{return {}}};
 const safe=(value,max)=>typeof value==='string'?value.trim().slice(0,max+1):'';
@@ -40,7 +40,7 @@ async function profileView(req,env,actor,targetId){
   for(const k of ['governorate','city','education','profession','workplace','gender','photo','lastSeen']){
    if((visibility[k]||'everyone')!=='everyone'){if(k==='photo'){delete p.avatarUrl;delete p.coverUrl;}else delete p[k];}
   }
-  delete p.socialLinks;
+  if((visibility.socialLinks||'everyone')!=='everyone')delete p.socialLinks;
  }
  const mediaAllowed=isSelf||(profile.privacy?.photo||'everyone')==='everyone';
  return json({ok:true,user:{id:user.id,username:user.username,fullName:user.full_name,createdAt:user.created_at,
