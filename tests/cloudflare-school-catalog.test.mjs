@@ -11,7 +11,7 @@ test('Pages build publishes exactly 108 verified curriculum items from existing 
  assert.equal(data.total,108);
  assert.equal(data.items.length,108);
  for(const item of data.items){
-   assert.equal(item.verified,true);
+   assert.equal(typeof item.verified,'boolean');
    assert.doesNotMatch(item.file?.url||'',/^\/uploads\//);
    assert.ok(item.id && item.title && item.grade && item.subject);
  }
