@@ -1,0 +1,28 @@
+name: Smart Friend Workers AI
+on:
+  push:
+    branches: [feat/smart-friend-workers-ai-20261106]
+  pull_request:
+    paths:
+      - 'cloudflare/pages/smart-friend.js'
+      - 'cloudflare/migrations/0011_smart_friend_messages.sql'
+      - 'smart-friend-chat.js'
+      - 'smart-friend-chat.html'
+      - 'tests/cloudflare-smart-friend-ai.test.mjs'
+      - '.github/workflows/smart-friend-workers-ai.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/smart-friend.js
+      - run: node --check smart-friend-chat.js
+      - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
+      - run: node --test tests/cloudflare-qr-smart-friend.test.mjs
+      - run: node --test tests/smart-friend-existing-schema-fix.test.mjs
+      - run: node --test tests/smart-friend-delete.test.mjs
