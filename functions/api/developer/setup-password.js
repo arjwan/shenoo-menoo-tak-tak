@@ -21,8 +21,8 @@ export async function onRequest(context){
  const salt=b64(crypto.getRandomValues(new Uint8Array(16)));
  const passwordHash=await developerHelpers.hash(password,salt);
  const batches=await env.DB.batch([
+  env.DB.prepare("UPDATE users SET password_salt=?,password_hash=? WHERE id=? AND EXISTS (SELECT 1 FROM developer_setup_tokens WHERE user_id=? AND token_hash=? AND consumed_at IS NULL AND expires_at>datetime('now'))").bind(salt,passwordHash,row.user_id,row.user_id,h),
   env.DB.prepare("UPDATE developer_setup_tokens SET consumed_at=CURRENT_TIMESTAMP WHERE user_id=? AND token_hash=? AND consumed_at IS NULL AND expires_at>datetime('now')").bind(row.user_id,h),
-  env.DB.prepare('UPDATE users SET password_salt=?,password_hash=? WHERE id=?').bind(salt,passwordHash,row.user_id),
   env.DB.prepare('UPDATE auth_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL').bind(row.user_id),
   env.DB.prepare('UPDATE developer_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL').bind(row.user_id)
  ]);
