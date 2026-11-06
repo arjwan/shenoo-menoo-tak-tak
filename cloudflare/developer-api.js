@@ -38,7 +38,9 @@ export async function handleDeveloper(req,env,h){
    for(let i=0;i<Math.max(actual.length,expected.length);i++)mismatch|=(actual[i]||0)^(expected[i]||0);
    if(!u||mismatch)return fail('بيانات الدخول غير صحيحة',401);
    const pre=rand();
-   await env.DB.prepare("INSERT INTO developer_challenges(id,user_id,token_hash,expires_at) VALUES(?,?,?,datetime('now','+5 minutes'))").bind(crypto.randomUUID(),u.id,await sha(pre)).run();
+   // Enrollment requires moving between the browser and an authenticator app.
+   // A 15-minute pre-auth token is still one-time and never grants admin access.
+   await env.DB.prepare("INSERT INTO developer_challenges(id,user_id,token_hash,expires_at) VALUES(?,?,?,datetime('now','+15 minutes'))").bind(crypto.randomUUID(),u.id,await sha(pre)).run();
    const mfa=await env.DB.prepare('SELECT user_id FROM developer_mfa WHERE user_id=?').bind(u.id).first();
    return j({ok:true,preAuthToken:pre,mfa:{totp:!!mfa,enroll:!mfa}});
   }
@@ -47,7 +49,14 @@ export async function handleDeveloper(req,env,h){
    const existing=await env.DB.prepare('SELECT user_id FROM developer_mfa WHERE user_id=?').bind(ch.user_id).first();
    if(existing)return fail('التحقق الثنائي مسجل مسبقاً',409);
    let secret=ch.enrollment_secret;
-   if(!secret){secret=base32(crypto.getRandomValues(new Uint8Array(20)));await env.DB.prepare('UPDATE developer_challenges SET enrollment_secret=? WHERE id=? AND enrollment_secret IS NULL').bind(secret,ch.id).run();}
+   if(!secret){
+    // Reuse the very first recent pending enrollment secret for this verified
+    // account. Otherwise a fresh password login silently invalidates the key
+    // already installed in the owner's authenticator app.
+    const pending=await env.DB.prepare("SELECT enrollment_secret FROM developer_challenges WHERE user_id=? AND enrollment_secret IS NOT NULL AND consumed_at IS NULL AND created_at>datetime('now','-24 hours') ORDER BY created_at ASC LIMIT 1").bind(ch.user_id).first();
+    secret=pending?.enrollment_secret||base32(crypto.getRandomValues(new Uint8Array(20)));
+    await env.DB.prepare('UPDATE developer_challenges SET enrollment_secret=? WHERE id=? AND enrollment_secret IS NULL').bind(secret,ch.id).run();
+   }
    const uri='otpauth://totp/'+encodeURIComponent('ShinoMino:'+ch.username)+'?secret='+encodeURIComponent(secret)+'&issuer=ShinoMino&algorithm=SHA1&digits=6&period=30';
    return j({ok:true,secret,otpauth:uri});
   }

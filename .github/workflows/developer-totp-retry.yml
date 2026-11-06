@@ -1,0 +1,23 @@
+name: Developer TOTP enrollment retry
+on:
+  push:
+    branches:
+      - fix/developer-totp-enrollment-reuse-20261106
+  pull_request:
+    paths:
+      - 'cloudflare/developer-api.js'
+      - 'tests/developer-totp-retry.test.mjs'
+      - '.github/workflows/developer-totp-retry.yml'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/developer-api.js
+      - run: node --test tests/developer-totp-retry.test.mjs tests/developer-console.test.mjs tests/developer-d1-contract.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
