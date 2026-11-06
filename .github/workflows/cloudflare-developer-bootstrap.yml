@@ -1,0 +1,24 @@
+name: Cloudflare secure developer bootstrap
+on:
+  push:
+    branches: [fix/developer-verified-bootstrap-20261106]
+  pull_request:
+    paths:
+      - 'functions/api/developer/setup-password.js'
+      - 'developer-setup.html'
+      - 'cloudflare/migrations/0005_developer_setup.sql'
+      - 'tests/cloudflare-developer-bootstrap.test.mjs'
+      - '.github/workflows/cloudflare-developer-bootstrap.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check functions/api/developer/setup-password.js
+      - run: node --test tests/cloudflare-developer-bootstrap.test.mjs tests/developer-console.test.mjs tests/developer-d1-contract.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
