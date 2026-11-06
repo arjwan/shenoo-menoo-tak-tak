@@ -147,7 +147,7 @@
         // Preserve the requested admin section in the hash for school-admin.js.
         if (routeKey.indexOf('#admin/') === 0) {
           var adminSection = routeKey.slice('#admin/'.length) || 'overview';
-          window.location.replace('/developer/#school');
+          window.location.replace('/school-admin.html#' + encodeURIComponent(adminSection));
           return;
         }
 
@@ -173,7 +173,7 @@
       function defaultRouteForVerifiedUser() {
         var state = store.getState();
         var ctx = state.schoolContext || {};
-        if (ctx.isDeveloper || ctx.isManager) return '#admin/overview';
+        if (ctx.isDeveloper || ctx.isManager) return '#welcome';
         if (ctx.isTeacher) return '#teacher/overview';
         if (ctx.isStudent) return '#student/overview';
         if (ctx.isGuardian) return '#guardian/overview';
