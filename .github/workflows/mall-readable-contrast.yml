@@ -1,0 +1,22 @@
+name: Mall Iraq contrast and readability
+on:
+  push:
+    branches: [fix/mall-readable-colors-20261106]
+  pull_request:
+    paths:
+      - 'mall.html'
+      - 'mall-readability.css'
+      - 'tests/mall-readable-contrast.test.mjs'
+      - '.github/workflows/mall-readable-contrast.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/mall-readable-contrast.test.mjs
+      - run: node --test tests/shinomino-home-ui.test.mjs
