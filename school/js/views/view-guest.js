@@ -1020,7 +1020,7 @@
                 if (meRes.ok && meRes.data) {
                   SumerStore.setSchoolContext(meRes.data.schoolContext, meRes.data.user);
                   SumerStore.setAuth({
-                    token: res.token,
+                    token: null,
                     user: meRes.data.user,
                     isAuthenticated: true,
                     error: null
