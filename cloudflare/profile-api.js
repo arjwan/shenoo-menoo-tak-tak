@@ -24,6 +24,7 @@ function checkOrigin(req){
 }
 async function profileView(req,env,actor,targetId){
  const user=await env.DB.prepare("SELECT id,username,full_name,created_at,status FROM users WHERE id=?").bind(targetId).first();
+ const extra=await env.DB.prepare("SELECT birth_date,gender FROM user_profiles WHERE user_id=?").bind(targetId).first();
  if(!user||user.status!=='active')return error('الملف الشخصي غير موجود',404);
  const isSelf=actor.id===targetId,profile=await getProfile(env,targetId);
  const [posts,friends]=await Promise.all([
@@ -43,7 +44,9 @@ async function profileView(req,env,actor,targetId){
  }
  const mediaAllowed=isSelf||(profile.privacy?.photo||'everyone')==='everyone';
  return json({ok:true,user:{id:user.id,username:user.username,fullName:user.full_name,createdAt:user.created_at,
-  ...p,isSelf,avatarUrl:mediaAllowed&&profile.avatarKey?imageUrl(targetId,'avatar'):null,
+  ...p,isSelf,birthDate:isSelf||((profile.privacy?.birthDate||'nobody')==='everyone')?extra?.birth_date||null:null,
+  gender:isSelf||((profile.privacy?.gender||'nobody')==='everyone')?extra?.gender||'other':null,
+  avatarUrl:mediaAllowed&&profile.avatarKey?imageUrl(targetId,'avatar'):null,
   coverUrl:mediaAllowed&&profile.coverKey?imageUrl(targetId,'cover'):null,
   postsCount:posts?.n||0,friendsCount:friends?.n||0}});
 }
@@ -57,7 +60,7 @@ export async function handleProfile(req,env,actor){
   if(!stored)return error('الصورة غير موجودة',404);
   const object=await env.MEDIA.get(stored);
   if(!object)return error('الصورة غير موجودة',404);
-  const headers=new Headers({'Content-Type':object.httpMetadata?.contentType||'image/jpeg','Cache-Control':'private, max-age=120','X-Content-Type-Options':'nosniff'});
+  const headers=new Headers({'Content-Type':object.httpMetadata?.contentType||'image/jpeg','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'});
   return new Response(object.body,{headers});
  }
  if(path==='/api/users/me/profile'&&method==='GET')return profileView(req,env,actor,actor.id);
