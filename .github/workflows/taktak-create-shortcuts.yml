@@ -1,0 +1,23 @@
+name: Social homepage create shortcuts
+on:
+  push:
+    branches: [feat/social-header-create-actions-20261106]
+  pull_request:
+    paths:
+      - 'taktak.html'
+      - 'taktak-create-shortcuts.css'
+      - 'taktak-create-shortcuts.js'
+      - 'tests/taktak-create-shortcuts.test.mjs'
+      - '.github/workflows/taktak-create-shortcuts.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check taktak-create-shortcuts.js
+      - run: node --test tests/taktak-create-shortcuts.test.mjs tests/shinomino-shared-visual.test.mjs
