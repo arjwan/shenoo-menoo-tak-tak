@@ -1,0 +1,105 @@
+/* Mall Iraq legibility patch. Separate from the shared Shinomino theme.
+   A dark surface must always have light type; a light surface must have dark type. */
+html.shinomino-ui.mall-readable{--mall-ink:#281c42;--mall-sub:#5c526e;--mall-line:#e5dcf1;--mall-purple:#7540c9}
+html.shinomino-ui.mall-readable .site-header{background:#fff!important;border-bottom:1px solid var(--mall-line)!important;box-shadow:0 5px 20px #4c33870a}
+html.shinomino-ui.mall-readable .brand,html.shinomino-ui.mall-readable .brand strong{color:#33234c!important}
+html.shinomino-ui.mall-readable .brand small{color:#655c75!important}
+html.shinomino-ui.mall-readable .nav-link{color:#41354f!important;font-weight:800}
+html.shinomino-ui.mall-readable .nav-link:hover{color:#7440c9!important}
+html.shinomino-ui.mall-readable .brand-mark{color:#fff!important}
+html.shinomino-ui.mall-readable .menu-toggle{color:#33234c!important}
+html.shinomino-ui.mall-readable .menu-toggle span{background:#33234c!important}
+html.shinomino-ui.mall-readable .mobile-menu{background:#fff!important}
+html.shinomino-ui.mall-readable .mobile-menu a:not(.button){color:#392d4a!important}
+html.shinomino-ui.mall-readable .button-primary{color:#fff!important}
+html.shinomino-ui.mall-readable .section-heading h2{color:#2d2043!important}
+html.shinomino-ui.mall-readable .section-kicker{color:#6540a5!important}
+html.shinomino-ui.mall-readable .section-count{color:#5f526f!important}
+html.shinomino-ui.mall-readable .category-card{
+ background:#fff!important;border:1px solid #dfd6ec!important;color:var(--mall-ink)!important;
+ box-shadow:0 8px 25px #4c377b10!important;min-height:168px;gap:8px;
+}
+html.shinomino-ui.mall-readable .category-card:hover{
+ transform:translateY(-3px);border-color:#a987dd!important;box-shadow:0 13px 30px #6349a521!important;
+}
+html.shinomino-ui.mall-readable .category-card strong{
+ color:#291d42!important;font-size:clamp(.9rem,1.25vw,1.02rem)!important;
+ line-height:1.5;font-weight:900;position:relative;z-index:1;
+}
+html.shinomino-ui.mall-readable .category-card small{
+ color:#5f526f!important;font-size:.77rem!important;line-height:1.65;
+ white-space:normal!important;position:relative;z-index:1;
+}
+html.shinomino-ui.mall-readable .category-card b{color:#7146b5!important;font-weight:900;z-index:1}
+html.shinomino-ui.mall-readable .category-card:after{opacity:.13!important}
+html.shinomino-ui.mall-readable .category-icon{color:#8052c9!important;font-size:1.8rem}
+html.shinomino-ui.mall-readable .category-teal .category-icon{color:#07887b!important}
+html.shinomino-ui.mall-readable .category-pink .category-icon{color:#b33578!important}
+html.shinomino-ui.mall-readable .category-gold .category-icon{color:#9e6c18!important}
+html.shinomino-ui.mall-readable .category-blue .category-icon{color:#315cbe!important}
+html.shinomino-ui.mall-readable .category-orange .category-icon{color:#b55e1c!important}
+/* Explicit contrast protection for the dark ad campaigns. The global light
+   theme sets h2 color; without this exception the hero text becomes invisible. */
+html.shinomino-ui.mall-readable .ad-large,
+html.shinomino-ui.mall-readable .ad-medium,
+html.shinomino-ui.mall-readable .ad-small{
+ background-color:#22203e!important;border-color:#514579!important;color:#fff!important;
+}
+html.shinomino-ui.mall-readable .ad-large{background:linear-gradient(112deg,#32275d,#1c2942 78%)!important}
+html.shinomino-ui.mall-readable .ad-medium{background:linear-gradient(120deg,#43285b,#272642)!important}
+html.shinomino-ui.mall-readable .ad-small{background:linear-gradient(120deg,#48375c,#28243d)!important}
+html.shinomino-ui.mall-readable .ad-green{background:linear-gradient(125deg,#174c4d,#182f3c)!important}
+html.shinomino-ui.mall-readable .ad h2,
+html.shinomino-ui.mall-readable .ad h3,
+html.shinomino-ui.mall-readable .ad h2 span,
+html.shinomino-ui.mall-readable .ad-copy h2{color:#fff!important;text-shadow:none}
+html.shinomino-ui.mall-readable .ad-copy h2 em{color:#56efda!important}
+html.shinomino-ui.mall-readable .ad-label{color:#e1d6ff!important;font-size:.78rem;font-weight:900}
+html.shinomino-ui.mall-readable .ad-copy p{color:#edf0fa!important;font-size:.94rem}
+html.shinomino-ui.mall-readable .ad .button-light{background:#fff!important;color:#33204f!important;border-color:#fff!important}
+html.shinomino-ui.mall-readable .ad .button-primary{color:#fff!important}
+html.shinomino-ui.mall-readable .ad-visual{pointer-events:none;opacity:.48}
+html.shinomino-ui.mall-readable .ad-copy{position:relative;z-index:2}
+html.shinomino-ui.mall-readable .empty-panel,html.shinomino-ui.mall-readable .empty-mini{
+ background:#fff!important;color:#302448!important;border:1px solid #e6ddec!important;
+ box-shadow:0 8px 26px #46326b0b!important
+}
+html.shinomino-ui.mall-readable .empty-panel h3,html.shinomino-ui.mall-readable .empty-mini strong{color:#302448!important}
+html.shinomino-ui.mall-readable .empty-panel p,html.shinomino-ui.mall-readable .empty-mini p{color:#5e536e!important}
+html.shinomino-ui.mall-readable .text-link{color:#6637ae!important}
+html.shinomino-ui.mall-readable .join-banner{
+ background:linear-gradient(135deg,#f4edff,#edf9f7)!important;color:#302448!important;border-color:#dfd0f0!important
+}
+html.shinomino-ui.mall-readable .join-banner h2{color:#302448!important}
+html.shinomino-ui.mall-readable .join-banner p{color:#5c526b!important}
+html.shinomino-ui.mall-readable .footer{color:#655c73!important;border-top-color:#e6deef!important}
+html.shinomino-ui.mall-readable .template-preview{background:#fff!important;border-color:#e7def2!important}
+html.shinomino-ui.mall-readable .template-preview>p{color:#5d526d!important}
+html.shinomino-ui.mall-readable .template-window{color:#fff!important}
+html.shinomino-ui.mall-readable .template-window strong{color:#fff!important}
+html.shinomino-ui.mall-readable .demo-offers article{color:#fff!important}
+html.shinomino-ui.mall-readable .demo-offers article strong{color:#fff!important}
+html.shinomino-ui.mall-readable .demo-offers p{color:#e2daed!important}
+html.shinomino-ui.mall-readable .template-choice span,
+html.shinomino-ui.mall-readable .space-size-picker span{
+ background:#fff!important;color:#302448!important;border-color:#e0d5ed!important
+}
+html.shinomino-ui.mall-readable .template-choice input:checked+span,
+html.shinomino-ui.mall-readable .space-size-picker input:checked+span{
+ background:#f2eaff!important;color:#3b2756!important;border-color:#8352c6!important
+}
+html.shinomino-ui.mall-readable .hero-copy>p{color:#5c526c!important}
+html.shinomino-ui.mall-readable .hero-copy h1{color:#2c2240!important}
+html.shinomino-ui.mall-readable .hero-search{background:#fff!important;border-color:#e0d5ee!important;box-shadow:0 8px 24px #47318a12}
+html.shinomino-ui.mall-readable .hero-search input{color:#2c2240!important}
+html.shinomino-ui.mall-readable .hero-search input::placeholder{color:#6c627a!important}
+html.shinomino-ui.mall-readable .hero-note{color:#574d66!important}
+html.shinomino-ui.mall-readable .search-feedback{color:#7040a7!important}
+@media(max-width:520px){
+ html.shinomino-ui.mall-readable .category-card{min-height:154px;padding:14px 12px}
+ html.shinomino-ui.mall-readable .category-card strong{font-size:.9rem!important}
+ html.shinomino-ui.mall-readable .category-card small{font-size:.69rem!important}
+ html.shinomino-ui.mall-readable .ad-copy h2{font-size:clamp(2.2rem,9vw,2.8rem)}
+ html.shinomino-ui.mall-readable .ad-large{padding:26px}
+}
+@media(prefers-reduced-motion:reduce){html.shinomino-ui.mall-readable .category-card{transition:none!important}}
