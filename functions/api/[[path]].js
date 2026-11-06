@@ -30,8 +30,8 @@ export async function onRequest(context) {
     return smartFriendRoute(context.request,context.env,actor);
   }
   // Posts and private media for the profile page are served from D1/R2 with access control.
-  if (/^\\/api\\/posts\\/user\\/(?:me|[a-f0-9-]{36})$/i.test(pathname) ||
-      /^\\/api\\/profile-post-media\\/[a-f0-9-]{36}$/i.test(pathname)) {
+  if (/^\/api\/posts\/user\/(?:me|[a-f0-9-]{36})$/i.test(pathname) ||
+      /^\/api\/profile-post-media\/[a-f0-9-]{36}$/i.test(pathname)) {
     const actor = context.env.DB ? await getAuthenticatedAppUser(context.request, context.env) : null;
     return profilePostsRequest(context.request, context.env, actor);
   }
