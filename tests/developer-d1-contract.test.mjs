@@ -5,7 +5,7 @@ const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('D1 developer APIs require a developer role and an independent MFA session',async()=>{
  const src=await read('cloudflare/developer-api.js');
- assert.match(src,/role='developer'/);
+ assert.match(src,/developer_grants/);
  assert.match(src,/developer_sessions/);
  assert.match(src,/developer_mfa/);
  assert.match(src,/developer_challenges/);
@@ -51,4 +51,14 @@ test('original developer sections are retained while school stays on existing or
   assert.match(ui,new RegExp(section+':'));
  }
  assert.match(ui,/totp\/verify/);
+});
+
+test('developer grants never change public D1 user roles and protect grant-holders',async()=>{
+ const control=await read('cloudflare/developer-api.js');
+ const sql=await read('cloudflare/migrations/0003_developer_grants.sql');
+ assert.match(sql,/CREATE TABLE IF NOT EXISTS developer_grants/);
+ assert.match(control,/JOIN developer_grants g ON g.user_id=u.id AND g.revoked_at IS NULL/);
+ assert.match(control,/NOT EXISTS \(SELECT 1 FROM developer_grants/);
+ assert.match(control,/حساب المطور محمي/);
+ assert.doesNotMatch(control,/UPDATE users SET role/);
 });

@@ -48,7 +48,7 @@ test('D1 Worker routes developer requests through its MFA-gated management modul
  const control=await readFile(new URL('../cloudflare/developer-api.js',import.meta.url),'utf8');
  assert.match(control,/developer_sessions/);
  assert.match(control,/developer_mfa/);
- assert.match(control,/role='developer'/);
+ assert.match(control,/developer_grants/);
  assert.doesNotMatch(control,/DEVELOPER_PASSWORD|password123|allow-new-developer/);
 });
 test('Cloudflare Pages forwards developer APIs to D1 but preserves original school',async()=>{

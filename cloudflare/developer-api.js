@@ -9,14 +9,14 @@ const rand=()=>b64(crypto.getRandomValues(new Uint8Array(32)));
 const devCookie=(value,age)=>'__Host-shenoo_developer='+value+'; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age='+age;
 const cookie=req=>(req.headers.get('Cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('__Host-shenoo_developer='))?.split('=').slice(1).join('=')||'';
 const authHeader=req=>(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'');
-const safe=u=>({id:u.id,fullName:u.full_name,displayName:u.full_name,username:u.username,email:u.email||'',phone:'',role:u.role,status:u.status,createdAt:u.created_at});
+const safe=u=>({id:u.id,fullName:u.full_name,displayName:u.full_name,username:u.username,email:u.email||'',phone:'',role:'developer',status:u.status,createdAt:u.created_at});
 const jsonBody=async req=>{const v=await req.json().catch(()=>null);if(!v||Array.isArray(v)||typeof v!=='object')throw {status:400,message:'الطلب غير صالح'};return v;};
 const base32=bytes=>{const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';let acc=0,bits=0,out='';for(const byte of bytes){acc=(acc<<8)|byte;bits+=8;while(bits>=5){bits-=5;out+=alphabet[(acc>>>bits)&31];}}if(bits)out+=alphabet[(acc<<(5-bits))&31];return out;};
 const from32=value=>{const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';let acc=0,bits=0,output=[];for(const c of value.toUpperCase().replace(/=+$/,'')){const idx=alphabet.indexOf(c);if(idx<0)throw Error('Invalid TOTP secret');acc=(acc<<5)|idx;bits+=5;if(bits>=8){bits-=8;output.push((acc>>>bits)&255);}}return new Uint8Array(output);};
 async function totp(secret,counter){const bytes=new Uint8Array(8);let n=counter;for(let i=7;i>=0;i--){bytes[i]=n&255;n=Math.floor(n/256);}const key=await crypto.subtle.importKey('raw',from32(secret),{name:'HMAC',hash:'SHA-1'},false,['sign']);const sig=new Uint8Array(await crypto.subtle.sign('HMAC',key,bytes));const off=sig[sig.length-1]&15;const val=(((sig[off]&127)<<24)|(sig[off+1]<<16)|(sig[off+2]<<8)|sig[off+3])%1000000;return String(val).padStart(6,'0');}
 async function matchedCounter(secret,code,minimum=-1){if(!/^\d{6}$/.test(String(code||'')))return null;const current=Math.floor(Date.now()/30000);for(const n of [current-1,current,current+1])if(n>minimum&&await totp(secret,n)===code)return n;return null;}
-async function preAuth(req,env){const value=authHeader(req);if(!value||value.length>200)return null;return env.DB.prepare("SELECT c.*,u.username,u.full_name,u.email,u.role,u.status FROM developer_challenges c JOIN users u ON u.id=c.user_id WHERE c.token_hash=? AND c.expires_at>datetime('now') AND c.consumed_at IS NULL AND u.role='developer' AND u.status='active'").bind(await sha(value)).first();}
-async function developer(req,env){const value=cookie(req);if(!value||value.length>200)return null;const row=await env.DB.prepare("SELECT u.id,u.username,u.full_name,u.email,u.role,u.status,u.created_at FROM developer_sessions s JOIN users u ON u.id=s.user_id WHERE s.secret_hash=? AND s.revoked_at IS NULL AND s.expires_at>datetime('now') AND u.role='developer' AND u.status='active'").bind(await sha(value)).first();return row||null;}
+async function preAuth(req,env){const value=authHeader(req);if(!value||value.length>200)return null;return env.DB.prepare("SELECT c.*,u.username,u.full_name,u.email,u.role,u.status FROM developer_challenges c JOIN users u ON u.id=c.user_id JOIN developer_grants g ON g.user_id=u.id AND g.revoked_at IS NULL WHERE c.token_hash=? AND c.expires_at>datetime('now') AND c.consumed_at IS NULL AND u.status='active'").bind(await sha(value)).first();}
+async function developer(req,env){const value=cookie(req);if(!value||value.length>200)return null;const row=await env.DB.prepare("SELECT u.id,u.username,u.full_name,u.email,u.role,u.status,u.created_at FROM developer_sessions s JOIN users u ON u.id=s.user_id JOIN developer_grants g ON g.user_id=u.id AND g.revoked_at IS NULL WHERE s.secret_hash=? AND s.revoked_at IS NULL AND s.expires_at>datetime('now') AND u.status='active'").bind(await sha(value)).first();return row||null;}
 async function audit(env,actor,action,metadata=''){await env.DB.prepare("INSERT INTO developer_audit(id,actor_id,action,metadata) VALUES(?,?,?,?)").bind(crypto.randomUUID(),actor,action,String(metadata).slice(0,1200)).run();}
 function columns(u){return {id:u.id,fullName:u.full_name,displayName:u.full_name,username:u.username,email:u.email||'',phone:'',contact:u.email||'',role:u.role,status:u.status,createdAt:u.created_at};}
 export async function handleDeveloper(req,env,h){
@@ -28,7 +28,7 @@ export async function handleDeveloper(req,env,h){
    const throttle=await h.enforceAuthRateLimit(req,env,'developer-login',identifier,5,900);
    if(throttle)return throttle;
    if(!identifier||!password||password.length>128)return fail('بيانات الدخول غير صحيحة',401);
-   const u=await env.DB.prepare("SELECT * FROM users WHERE (username=? OR email=?) AND role='developer' AND status='active'").bind(identifier,identifier).first();
+   const u=await env.DB.prepare("SELECT u.* FROM users u JOIN developer_grants g ON g.user_id=u.id AND g.revoked_at IS NULL WHERE (u.username=? OR u.email=?) AND u.status='active'").bind(identifier,identifier).first();
    // Derive a real PBKDF2 hash even when the account is absent, to limit timing leaks.
    const salt=u?.password_salt||'AAAAAAAAAAAAAAAAAAAAAA';
    const hash=await h.hash(password,salt);
@@ -79,13 +79,13 @@ export async function handleDeveloper(req,env,h){
   }
   if(method==='GET'&&path==='/api/developer/users'){
    const url=new URL(req.url),search=String(url.searchParams.get('q')||'').trim().toLowerCase().slice(0,80),status=String(url.searchParams.get('status')||'');
-   const params=[],where=["role='user'"];if(['active','blocked'].includes(status)){where.push('status=?');params.push(status);}
+   const params=[],where=["role='user'","NOT EXISTS (SELECT 1 FROM developer_grants g WHERE g.user_id=users.id AND g.revoked_at IS NULL)"];if(['active','blocked'].includes(status)){where.push('status=?');params.push(status);}
    if(search){where.push("(lower(username) LIKE ? OR lower(full_name) LIKE ? OR lower(COALESCE(email,'')) LIKE ?)");const v='%'+search.replace(/[%_]/g,'')+'%';params.push(v,v,v);}
    const rows=await env.DB.prepare('SELECT id,username,full_name,email,role,status,created_at FROM users WHERE '+where.join(' AND ')+' ORDER BY created_at DESC LIMIT 500').bind(...params).all();
    return j({ok:true,users:(rows.results||[]).map(columns)});
   }
   if(method==='GET'&&path==='/api/developer/admins'){
-   const rows=await env.DB.prepare("SELECT id,username,full_name,email,role,status,created_at FROM users WHERE role IN ('admin','developer') ORDER BY created_at DESC LIMIT 200").all();
+   const rows=await env.DB.prepare("SELECT u.id,u.username,u.full_name,u.email,CASE WHEN g.user_id IS NOT NULL THEN 'developer' ELSE u.role END AS role,u.status,u.created_at FROM users u LEFT JOIN developer_grants g ON g.user_id=u.id AND g.revoked_at IS NULL WHERE (u.role IN ('admin','developer') OR g.user_id IS NOT NULL) ORDER BY u.created_at DESC LIMIT 200").all();
    return j({ok:true,admins:(rows.results||[]).map(columns)});
   }
   if(method==='GET'&&path==='/api/developer/approvals'){
@@ -117,6 +117,7 @@ export async function handleDeveloper(req,env,h){
   if(uPath&&method==='PATCH'){
    const b=await jsonBody(req),target=await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(uPath[2]).first();
    if(!target||target.role!==(uPath[1]==='users'?'user':'admin'))return fail('الحساب غير موجود أو محمي',404);
+   if(await env.DB.prepare('SELECT user_id FROM developer_grants WHERE user_id=? AND revoked_at IS NULL').bind(target.id).first())return fail('حساب المطور محمي',403);
    const updates=[],values=[];
    if(b.status!==undefined){if(!['active','blocked'].includes(b.status))return fail('الحالة غير صالحة');updates.push('status=?');values.push(b.status);}
    if(b.fullName!==undefined){const v=String(b.fullName).trim();if(v.length<2||v.length>100)return fail('الاسم غير صالح');updates.push('full_name=?');values.push(v);}
@@ -135,6 +136,7 @@ export async function handleDeveloper(req,env,h){
   }
   if(method==='DELETE'&&uPath?.[1]==='users'){
    const target=await env.DB.prepare("SELECT role FROM users WHERE id=?").bind(uPath[2]).first();if(target?.role!=='user')return fail('الحساب غير موجود أو محمي',404);
+   if(await env.DB.prepare('SELECT user_id FROM developer_grants WHERE user_id=? AND revoked_at IS NULL').bind(uPath[2]).first())return fail('حساب المطور محمي',403);
    await env.DB.prepare("DELETE FROM users WHERE id=? AND role='user'").bind(uPath[2]).run();await audit(env,actor.id,'user.deleted',uPath[2]);return j({ok:true});
   }
   const review=path.match(/^\/api\/developer\/approvals\/([a-f0-9-]{36})\/(approve|reject)$/i);
