@@ -1,0 +1,22 @@
+name: Cloudflare School Pages asset checks
+on:
+  push:
+    branches: [fix/sumer-school-pages-entry-assets-20261106]
+  pull_request:
+    paths:
+      - school/**
+      - school.html
+      - scripts/build-cloudflare-pages.sh
+      - tests/cloudflare-school-pages-entry.test.mjs
+      - .github/workflows/cloudflare-school-pages-assets.yml
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/cloudflare-school-pages-entry.test.mjs tests/cloudflare-school-teacher-routing.test.mjs tests/cloudflare-school-teachers.test.mjs
