@@ -1,3 +1,4 @@
+import { handleDeveloperManagement } from './developer-management.js';
 // Cloudflare D1 developer control plane. No MariaDB/MongoDB connection and no password-only admin session.
 // The calling Worker supplies its existing password hashing, rate-limiting, Origin and session helpers.
 const j=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
@@ -83,8 +84,8 @@ export async function handleDeveloper(req,env,h){
    return j({ok:true,user:safe(actor),security:{phonePaired:false,fidoKeys:0,totpEnabled:!!rec}});
   }
   if(method==='GET'&&(path==='/api/developer/dashboard'||path==='/api/developer/stats')){
-   const x=await env.DB.prepare("SELECT (SELECT count(*) FROM users) AS users,(SELECT count(*) FROM users WHERE status='blocked') AS blocked,(SELECT count(*) FROM ad_records WHERE status='pending') AS pending,(SELECT count(*) FROM ad_records) AS ads,(SELECT count(*) FROM posts) AS posts").first();
-   return j({ok:true,stats:{...x,pendingUsers:0,pendingStores:0,stores:0,reports:0,rooms:0,conversations:0,online:0,subscriptions:0,activeChats:0},services:{api:'online',database:'online'},recentRequests:[]});
+   const x=await env.DB.prepare("SELECT (SELECT count(*) FROM users) AS users,(SELECT count(*) FROM users WHERE status='blocked') AS blocked,(SELECT count(*) FROM ad_records WHERE status='pending') AS pending,(SELECT count(*) FROM ad_records) AS ads,(SELECT count(*) FROM posts) AS posts,(SELECT count(*) FROM developer_rooms) AS rooms,(SELECT count(*) FROM developer_room_reports) AS reports,(SELECT count(*) FROM developer_service_providers) AS stores,(SELECT count(*) FROM conversations) AS conversations,(SELECT count(*) FROM developer_service_requests WHERE status='pending') AS pendingStores").first();
+   return j({ok:true,stats:{...x,pendingUsers:0,online:null,subscriptions:null,activeChats:null},services:{api:'online',database:'online'},recentRequests:[]});
   }
   if(method==='GET'&&path==='/api/developer/users'){
    const url=new URL(req.url),search=String(url.searchParams.get('q')||'').trim().toLowerCase().slice(0,80),status=String(url.searchParams.get('status')||'');
@@ -105,8 +106,16 @@ export async function handleDeveloper(req,env,h){
    const rows=await env.DB.prepare('SELECT a.id,a.action,a.metadata AS details,a.created_at AS createdAt,u.full_name AS actorName,u.username AS actorUsername FROM developer_audit a LEFT JOIN users u ON u.id=a.actor_id ORDER BY a.created_at DESC LIMIT 200').all();
    return j({ok:true,audit:(rows.results||[]).map(x=>({...x,actor:{fullName:x.actorName,username:x.actorUsername}}))});
   }
-  if(method==='GET'&&path==='/api/developer/rooms')return fail('إدارة الغرف قيد النقل إلى D1',501);
-  if(method==='GET'&&path==='/api/developer/room-reports')return fail('البلاغات قيد النقل إلى D1',501);
+  if(path==='/api/developer/me'&&method==='PATCH'){
+   const b=await jsonBody(req),updates=[],args=[];
+   if(b.fullName!==undefined){const v=String(b.fullName).trim();if(v.length<2||v.length>100)return fail('الاسم غير صالح');updates.push('full_name=?');args.push(v);}
+   if(b.email!==undefined){const v=String(b.email).trim().toLowerCase();if(v&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v))return fail('البريد غير صالح');updates.push('email=?');args.push(v||null);}
+   if(b.phone!==undefined&&String(b.phone||'').trim())return fail('رقم الهاتف لم يُربط بملف حساب المطور بعد',422);
+   if(!updates.length)return fail('لا توجد حقول قابلة للتعديل');
+   try{await env.DB.prepare('UPDATE users SET '+updates.join(',')+' WHERE id=?').bind(...args,actor.id).run();}catch{return fail('البريد مستخدم أو غير صالح',409);}
+   await audit(env,actor.id,'developer.profile.updated',actor.id);return j({ok:true});
+  }
+  const management=await handleDeveloperManagement(req,env,actor);if(management)return management;
   if(path==='/api/developer/modules/ticker/manage'&&method==='GET'){
    const rows=await env.DB.prepare('SELECT id,text,type,priority,enabled,created_at AS createdAt FROM developer_ticker ORDER BY priority DESC,created_at DESC LIMIT 200').all();return j({ok:true,items:(rows.results||[]).map(x=>({...x,enabled:!!x.enabled}))});
   }
