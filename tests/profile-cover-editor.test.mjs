@@ -35,7 +35,7 @@ test('cover editor has touch/mouse dragging, arrow-key access, zoom and reset',a
  for(const item of ['data-cover-crop','data-cover-zoom','data-cover-zoom-in','data-cover-zoom-out','data-cover-reset','data-cover-preview','data-cover-placeholder'])assert.ok(page.includes(item),'missing '+item);
  assert.ok(page.indexOf('profile-cover-editor.js')<page.indexOf('profile.js'), 'Editor must initialize before profile');
  for(const name of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture','ArrowRight','ArrowLeft','ArrowUp','ArrowDown','setPointerCapture','getBoundingClientRect','objectPosition','transformOrigin'])assert.ok(editor.includes(name),'missing '+name);
- assert.match(editor,/coverZoom.*??100/);
+ assert.ok(editor.includes('coverZoom??100'));
  assert.match(editor,/state\.zoom=clamp/);
  assert.match(profile,/ProfileCoverEditor\?\.open\(currentUser\|\|\{\}\)/);
  assert.match(profile,/ProfileCoverEditor\?\.getState\(\)/);
