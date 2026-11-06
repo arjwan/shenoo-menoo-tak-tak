@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {onRequest} from '../functions/api/[[path]].js';
+import {onRequest as onTeacherOptionalPath} from '../functions/api/school/management/teacher-applications/[[path]].js';
 const base='https://shenoo-main-cloudflare.pages.dev';
 const context=(path,method='GET')=>({
  request:new Request(base+path,{method}),
@@ -24,4 +25,11 @@ test('D1 teacher details and decisions must not fall through to legacy origin',a
 test('teacher submission still requires an authenticated user and never falls back to legacy',async()=>{
  const res=await onRequest(context('/api/school/management/teachers/apply','POST'));
  assert.equal(res.status,401);
+});
+
+test('Pages optional teacher catch-all resolves the collection root to the list handler',async()=>{
+ const result=await onTeacherOptionalPath(context('/api/school/management/teacher-applications?status=pending'));
+ assert.equal(result.status,401);
+ const body=await result.json();
+ assert.equal(body.message,'هذه العملية مخصصة للمطور بعد التحقق الثنائي');
 });
