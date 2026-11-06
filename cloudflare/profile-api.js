@@ -3,7 +3,7 @@
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 const error=(message,status=400)=>json({ok:false,message},status);
 const properties={bio:500,governorate:100,city:100,birthPlace:120,address:180,education:160,academicSpecialization:160,profession:120,workplace:120,website:250};
-const privacyKeys=['friendRequests','messaging','lastSeen','photo','birthDate','gender','governorate','city','birthPlace','address','education','profession','workplace','socialLinks'];
+const privacyKeys=['friendRequests','messaging','lastSeen','photo','birthDate','gender','governorate','city','birthPlace','address','education','profession','workplace','phone','email','socialLinks'];
 const allowedPrivacy=['everyone','friends','nobody'];
 const parse=value=>{try{const o=JSON.parse(value||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch{return {}}};
 const safe=(value,max)=>typeof value==='string'?value.trim().slice(0,max+1):'';
@@ -22,11 +22,20 @@ function checkOrigin(req){
  if(origin&&origin!==new URL(req.url).origin)return false;
  return !(!origin&&req.headers.get('Sec-Fetch-Site')==='cross-site');
 }
+async function acceptedFriend(env,viewer,owner){
+ if(viewer===owner)return true;
+ const row=await env.DB.prepare("SELECT id FROM friend_requests WHERE status='accepted' AND ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) LIMIT 1").bind(viewer,owner,owner,viewer).first();
+ return !!row;
+}
+function allowed(value,isSelf,isFriend){
+ return isSelf||value==='everyone'||(value==='friends'&&isFriend);
+}
 async function profileView(req,env,actor,targetId){
  const user=await env.DB.prepare("SELECT id,username,full_name,created_at,status FROM users WHERE id=?").bind(targetId).first();
  const extra=await env.DB.prepare("SELECT birth_date,gender FROM user_profiles WHERE user_id=?").bind(targetId).first();
  if(!user||user.status!=='active')return error('الملف الشخصي غير موجود',404);
  const isSelf=actor.id===targetId,profile=await getProfile(env,targetId);
+ const isFriend=!isSelf?await acceptedFriend(env,actor.id,targetId):true;
  const [posts,friends]=await Promise.all([
   env.DB.prepare('SELECT COUNT(*) AS n FROM posts WHERE author_id=?').bind(targetId).first(),
   env.DB.prepare('SELECT COUNT(*) AS n FROM follows WHERE follower_id=?').bind(targetId).first()
@@ -38,11 +47,11 @@ async function profileView(req,env,actor,targetId){
   delete p.address;delete p.birthPlace;delete p.birthDate;delete p.email;delete p.phone;
   const visibility=profile.privacy||{};
   for(const k of ['governorate','city','education','profession','workplace','gender','photo','lastSeen']){
-   if((visibility[k]||'everyone')!=='everyone'){if(k==='photo'){delete p.avatarUrl;delete p.coverUrl;}else delete p[k];}
+   if(!allowed(visibility[k]||'everyone',isSelf,isFriend)){if(k==='photo'){delete p.avatarUrl;delete p.coverUrl;}else delete p[k];}
   }
-  if((visibility.socialLinks||'everyone')!=='everyone')delete p.socialLinks;
+  if(!allowed(visibility.socialLinks||'everyone',isSelf,isFriend))delete p.socialLinks;
  }
- const mediaAllowed=isSelf||(profile.privacy?.photo||'everyone')==='everyone';
+ const mediaAllowed=allowed(profile.privacy?.photo||'everyone',isSelf,isFriend);
  return json({ok:true,user:{id:user.id,username:user.username,fullName:user.full_name,createdAt:user.created_at,
   ...p,isSelf,birthDate:isSelf||((profile.privacy?.birthDate||'nobody')==='everyone')?extra?.birth_date||null:null,
   gender:isSelf||((profile.privacy?.gender||'nobody')==='everyone')?extra?.gender||'other':null,
@@ -55,7 +64,8 @@ export async function handleProfile(req,env,actor){
  const media=path.match(/^\/api\/profile-media\/([a-f0-9-]{36})\/(avatar|cover)$/i);
  if(media&&method==='GET'){
   const profile=await getProfile(env,media[1]);
-  if(media[1]!==actor.id&&(profile.privacy?.photo||'everyone')!=='everyone')return error('الصورة غير متاحة',403);
+  const friend=media[1]===actor.id?true:await acceptedFriend(env,actor.id,media[1]);
+  if(!allowed(profile.privacy?.photo||'everyone',media[1]===actor.id,friend))return error('الصورة غير متاحة',403);
   const stored=profile[media[2]+'Key'];
   if(!stored)return error('الصورة غير موجودة',404);
   const object=await env.MEDIA.get(stored);
