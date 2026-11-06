@@ -102,7 +102,7 @@ test('smart friend can create and edit D1 persona but does not claim AI provider
  assert.equal((await res.json()).friend.name,'شخصيتي الجديدة');
  res=await smartFriendRoute(req('/api/smart-friend/messages?friend='+id),state,owner);
  assert.equal(res.status,200);assert.deepEqual((await res.json()).messages,[]);
- res=await smartFriendRoute(req('/api/smart-friend/messages','POST',{}),state,owner);
+ res=await smartFriendRoute(req('/api/smart-friend/messages','POST',{friendId:id,text:'أهلاً'}),state,owner);
  assert.equal(res.status,503);
 });
 test('different users cannot edit each others smart friend persona',async()=>{
