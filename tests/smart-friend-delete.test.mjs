@@ -77,7 +77,7 @@ test('client requires irreversible-delete confirmation and refreshes the selecte
  assert.match(js,/friends=friends\.filter/);
  assert.match(js,/active=null/);
  assert.match(html,/data-delete-persona/);
- assert.match(html,/20261106-persona-delete-1/);
+ assert.match(html,/20261106-workers-ai-chat-1/);
  assert.match(css,/\.sf-delete-persona:focus-visible/);
 });
 test('Cloudflare Pages build contains delete button and server still uses D1',async()=>{
