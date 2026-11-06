@@ -77,13 +77,22 @@ export async function listTeacherApplications(context){
 export async function teacherApplicationDetail(context){
  const match=new URL(context.request.url).pathname.match(/^\/api\/school\/management\/teacher-applications\/([a-f0-9-]{36})(?:\/(approve|reject))?$/i);
  if(!match)return failure('المسار غير موجود',404);
- const auth=await requireDeveloper(context);if(auth.error)return auth.error;
  const id=match[1],decision=match[2],method=context.request.method;
  if(!decision&&method!=='GET')return failure('الطريقة غير مدعومة',405);
  if(decision&&method!=='POST')return failure('الطريقة غير مدعومة',405);
+ const auth=await requireDeveloper(context);
+ let applicantAuth=null;
+ if(auth.error){
+  if(decision)return auth.error; // Review is never available to an ordinary D1 session.
+  applicantAuth=await schoolUser(context);
+  if(applicantAuth.error)return applicantAuth.error;
+ }
  const row=await context.env.DB.prepare('SELECT * FROM school_teacher_applications WHERE id=?').bind(id).first();
  if(!row)return failure('طلب التدريس غير موجود',404);
- if(method==='GET')return reply({ok:true,application:appRow(row)});
+ if(method==='GET'){
+  if(applicantAuth&&row.applicant_id!==applicantAuth.user.id)return failure('لا تملك صلاحية الاطلاع على هذا الطلب',403);
+  return reply({ok:true,application:appRow(row)});
+ }
  developerHelpers.verifyOrigin(context.request);
  if(row.applicant_id===auth.user.id)return failure('لا يمكن اعتماد أو رفض طلبك بنفسك',403);
  if(row.status!=='pending')return failure('هذا الطلب تمت مراجعته مسبقاً',409);
