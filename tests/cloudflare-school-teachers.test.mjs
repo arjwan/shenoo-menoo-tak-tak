@@ -37,9 +37,16 @@ test('teacher applications require D1 account; review requires verified develope
 
 test('school management listing denies unauthenticated reads without accessing private data',async()=>{
  const { listTeacherApplications,teacherApplicationDetail }=await import('../cloudflare/pages/school-teachers.js');
- const env={DB:{prepare:()=>{throw Error('Unauthorized access reached private D1 data')}}};
+ const env={DB:{prepare:()=>{throw Error('Unauthorized access reached private D1 data')}},API:{fetch:async()=>Response.json({ok:false},{status:401})}};
  const listed=await listTeacherApplications({request:new Request('https://example.com/api/school/management/teacher-applications'),env});
  assert.equal(listed.status,401);
  const detail=await teacherApplicationDetail({request:new Request('https://example.com/api/school/management/teacher-applications/12345678-1234-1234-1234-123456789abc'),env});
  assert.equal(detail.status,401);
+});
+test('authenticated applicants cannot read another applicant record or approve themselves',async()=>{
+ const {teacherApplicationDetail}=await import('../cloudflare/pages/school-teachers.js');
+ const env={API:{fetch:async()=>Response.json({ok:true,user:{id:'applicant-a',role:'user'}})},DB:{prepare:()=>({bind:()=>({first:async()=>({id:'request',applicant_id:'applicant-b'})})})}};
+ const url='https://example.com/api/school/management/teacher-applications/12345678-1234-1234-1234-123456789abc';
+ assert.equal((await teacherApplicationDetail({request:new Request(url),env})).status,403);
+ assert.equal((await teacherApplicationDetail({request:new Request(url+'/approve',{method:'POST'}),env})).status,401);
 });
