@@ -39,6 +39,7 @@ export async function guardianStudentEnrollment(context){
  const name=String(b.studentName||'').trim(),studentUsername=String(b.studentUsername||'').trim().toLowerCase(),relationship=String(b.relationship||'ولي أمر'),stage=String(b.stage||''),grade=String(b.grade||'').trim(),section=String(b.section||'أ').trim();
  const subjects=Array.isArray(b.subjects)?b.subjects.map(v=>String(v||'').trim()).filter(Boolean).slice(0,30):[];
  if(name.length<2||name.length>120||!username.test(studentUsername)||!['أب','أم','ولي أمر','أخرى'].includes(relationship)||!['ابتدائي','متوسط','إعدادي'].includes(stage)||grade.length<2||grade.length>80||section.length>20||subjects.some(x=>x.length>80))return deny('بيانات الطالب غير مكتملة أو غير صالحة');
+ if(b.guardianDeclaration!==true)return deny('يجب تأكيد مسؤولية ولي الأمر عن تقديم الطلب',400);
  const permissions=b.consents;
  if(!permissions||typeof permissions!=='object'||Array.isArray(permissions)||consents.some(k=>typeof permissions[k]!=='boolean'))return deny('يجب تسجيل اختيارات ولي الأمر لكل موافقة على حدة');
  if(await context.env.DB.prepare('SELECT id FROM users WHERE username=?').bind(studentUsername).first())return deny('اسم المستخدم محجوز لحساب موجود',409);
