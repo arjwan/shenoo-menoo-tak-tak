@@ -20,10 +20,9 @@
  else if(school)mode='school';
  else {
   const directMain=Array.from(body.children).find(el=>el.tagName==='MAIN');
-  const header=Array.from(body.children).find(el=>el.tagName==='HEADER');
   // Authentication, kiosk-like experiences and the landing page preserve
   // their original layout. Pages with a direct header/main get a fixed shell.
-  if(directMain&&header&&!/^(?:\/|\/index\.html|\/signin\.html|\/signup\.html)$/.test(path)){
+  if(directMain&&!/^(?:\/|\/index\.html|\/signin\.html|\/signup\.html)$/.test(path)){
    mode='main';
    directMain.dataset.shScrollRegion='';
   } else if(!/^(?:\/|\/index\.html|\/signin\.html|\/signup\.html)$/.test(path)){
