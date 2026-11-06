@@ -174,7 +174,7 @@ export async function smartFriendRoute(request,env,user){
   if(Number(request.headers.get('Content-Length')||0)>4000)return fail('حجم الطلب كبير',413);
   const b=await request.json().catch(()=>null);
   const title=typeof b?.title==='string'?b.title.trim():'';
-  const date=typeof b?.dueAt==='string'&&/^\\d{4}-\\d\\d-\\d\\dT/.test(b.dueAt)?new Date(b.dueAt):new Date(NaN);
+  const date=typeof b?.dueAt==='string'&&/^\d{4}-\d\d-\d\dT/.test(b.dueAt)?new Date(b.dueAt):new Date(NaN);
   const repeat=b?.repeat;
   if(!title||title.length>160||!Number.isFinite(date.getTime())||!['none','daily','weekly'].includes(repeat)||typeof b.voice!=='boolean')return fail('بيانات التذكير غير صالحة',400);
   if(date.getTime()<Date.now()+5000||date.getTime()>Date.now()+366*86400000)return fail('اختر موعدًا مستقبليًا خلال سنة',400);
