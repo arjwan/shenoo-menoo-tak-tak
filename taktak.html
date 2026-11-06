@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="taktak-colors.css?v=20261103-1" />
     <link rel="stylesheet" href="taktak-layout.css?v=20261103-2" />
     <link rel="stylesheet" href="/shinomino-shared-visual.css?v=20261106-1">
+    <link rel="stylesheet" href="/taktak-create-shortcuts.css?v=20261106-1">
 </head>
   <body>
     <script src="auth-guard.js?v=20261104-d1-personas-1"></script>
@@ -53,6 +54,12 @@
           placeholder="ابحث عن أشخاص..."
           aria-label="البحث"
         />
+        <nav class="create-shortcuts" aria-label="إنشاء محتوى جديد">
+          <button class="create-shortcut create-post" type="button" data-create-post aria-label="كتابة منشور جديد"><span aria-hidden="true">✎</span><span>منشور</span></button>
+          <a class="create-shortcut create-story" href="stories.html?create=1" aria-label="إنشاء قصة"><span aria-hidden="true">◉</span><span>قصة</span></a>
+          <a class="create-shortcut create-reel" href="reels.html?create=1" aria-label="إنشاء ريلز"><span aria-hidden="true">▶</span><span>ريلز</span></a>
+          <a class="create-shortcut create-live" href="live-create.html" aria-label="إنشاء بث مباشر"><span class="live-dot" aria-hidden="true"></span><span>بث مباشر</span></a>
+        </nav>
         <div class="top-actions" aria-label="خيارات الحساب"><button id="theme-toggle" class="action-theme" type="button" aria-label="تغيير المظهر" title="تغيير المظهر">
             🌗</button
           ><button id="logout" class="action-logout" type="button" aria-label="تسجيل الخروج" title="تسجيل الخروج">↪</button></div>
@@ -357,6 +364,7 @@
         <div data-live-popup-body></div>
       </section>
     </div>
+    <script defer src="taktak-create-shortcuts.js?v=20261106-1"></script>
     <script defer src="taktak-layout.js?v=20261103-1"></script>
     <script defer src="taktak-feed.js?v=20261104-live-ads-1"></script>
     <script defer src="taktak-home-visual.js?v=20260910-1"></script>
