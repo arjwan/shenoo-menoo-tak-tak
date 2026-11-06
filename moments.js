@@ -44,16 +44,16 @@ function switchMode(mode,updateUrl=true){
 }
 function showCreate(mode){
  switchMode(mode);
- dialog.close();
+ if(dialog.open)dialog.close();
  const frame=ensureFrame(mode);
  const focus=()=>{decorate(frame);const doc=frameDocument(frame);if(!doc)return;
   if(mode==='reels'){const form=doc.getElementById('upload');if(form&&!form.classList.contains('open'))doc.getElementById('create')?.click();doc.getElementById('clip')?.focus({preventScroll:true})}
   else {doc.getElementById('storyText')?.focus({preventScroll:true})}
   frame.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
  };
- if(frame.contentDocument?.readyState==='complete')focus();else frame.addEventListener('load',focus,{once:true});
+ if(frame.dataset.loaded==='1')focus();else frame.addEventListener('load',focus,{once:true});
 }
-for(const [mode,frame] of Object.entries(frames)){frame.addEventListener('load',()=>decorate(frame))}
+for(const [mode,frame] of Object.entries(frames)){frame.addEventListener('load',()=>{frame.dataset.loaded='1';decorate(frame)})}
 tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>switchMode(tab.dataset.mode));tab.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowLeft'?1:-1)+tabs.length)%tabs.length;switchMode(tabs[next].dataset.mode);tabs[next].focus()})});
 document.getElementById('createMedia').addEventListener('click',()=>{if(dialog.showModal)dialog.showModal();else dialog.setAttribute('open','')});
 document.querySelectorAll('[data-create-mode]').forEach(btn=>btn.addEventListener('click',()=>showCreate(btn.dataset.createMode)));
