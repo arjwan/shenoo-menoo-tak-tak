@@ -166,6 +166,43 @@ export async function smartFriendRoute(request,env,user){
   return json({ok:true,emotion:'talking',message:{id:answerId,role:'assistant',text:generated.response},saved:true,providerConfigured:true});
  }
 
+ // Reminders are stored in D1 and returned only once per scheduled occurrence.
+ // Alerts run only while the website is open: this endpoint does not promise push delivery.
+ if(pathname==='/api/smart-friend/tools/reminders'&&method==='POST'){
+  if(!originOk(request))return fail('مصدر الطلب غير موثوق',403);
+  if(!(request.headers.get('Content-Type')||'').includes('application/json'))return fail('يجب إرسال بيانات JSON',415);
+  if(Number(request.headers.get('Content-Length')||0)>4000)return fail('حجم الطلب كبير',413);
+  const b=await request.json().catch(()=>null);
+  const title=typeof b?.title==='string'?b.title.trim():'';
+  const date=typeof b?.dueAt==='string'&&/^\\d{4}-\\d\\d-\\d\\dT/.test(b.dueAt)?new Date(b.dueAt):new Date(NaN);
+  const repeat=b?.repeat;
+  if(!title||title.length>160||!Number.isFinite(date.getTime())||!['none','daily','weekly'].includes(repeat)||typeof b.voice!=='boolean')return fail('بيانات التذكير غير صالحة',400);
+  if(date.getTime()<Date.now()+5000||date.getTime()>Date.now()+366*86400000)return fail('اختر موعدًا مستقبليًا خلال سنة',400);
+  const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM smart_friend_reminders WHERE user_id=? AND active=1').bind(user.id).first();
+  if(Number(count?.n||0)>=50)return fail('وصلت إلى الحد الأقصى من التذكيرات النشطة (50)',409);
+  const id=crypto.randomUUID(),dueAt=date.toISOString();
+  await env.DB.prepare('INSERT INTO smart_friend_reminders(id,user_id,title,due_at,repeat,voice) VALUES(?,?,?,?,?,?)').bind(id,user.id,title,dueAt,repeat,b.voice?1:0).run();
+  return json({ok:true,reminder:{id,title,dueAt,repeat,voice:b.voice}},201);
+ }
+ if(pathname==='/api/smart-friend/tools/reminders/due'&&method==='GET'){
+  const now=new Date(),iso=now.toISOString();
+  const found=await env.DB.prepare('SELECT id,title,due_at,repeat,voice FROM smart_friend_reminders WHERE user_id=? AND active=1 AND due_at<=? ORDER BY due_at ASC LIMIT 30').bind(user.id,iso).all();
+  const due=[];
+  for(const r of found.results||[]){
+   const original=new Date(r.due_at);
+   if(!Number.isFinite(original.getTime()))continue;
+   let next=null;
+   if(r.repeat!=='none'){
+    const interval=r.repeat==='daily'?86400000:604800000;
+    next=new Date(original.getTime()+(Math.floor((now.getTime()-original.getTime())/interval)+1)*interval).toISOString();
+   }
+   const changed=next
+    ?await env.DB.prepare('UPDATE smart_friend_reminders SET due_at=? WHERE id=? AND user_id=? AND due_at=? AND active=1').bind(next,r.id,user.id,r.due_at).run()
+    :await env.DB.prepare('UPDATE smart_friend_reminders SET active=0 WHERE id=? AND user_id=? AND due_at=? AND active=1').bind(r.id,user.id,r.due_at).run();
+   if(changed.meta?.changes===1)due.push({id:r.id,title:r.title,repeat:r.repeat,voice:!!r.voice});
+  }
+  return json({ok:true,reminders:due});
+ }
  // The compact homepage dock uses these text-only helpers. Do not proxy them to the
  // deprecated Worker: require the existing authenticated Pages route and Workers AI.
  if((pathname==='/api/smart-friend/tools/review'||pathname==='/api/smart-friend/tools/compose')&&method==='POST'){
