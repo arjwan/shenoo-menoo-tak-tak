@@ -103,11 +103,11 @@ test('HTML only displays messages as saved after API response and keeps unsent d
  assert.ok(js.indexOf("append('user',text,'أنت')")>js.indexOf("const d=await api('/api/smart-friend/messages'"));
  assert.match(js,/submit\.disabled=true/);
  assert.match(js,/field\('name'\)/); // incidental form test not required
- assert.match(html,/20261106-workers-ai-chat-1/);
+ assert.match(html,/20261107-portrait-1/);
  assert.match(migration,/REFERENCES smart_friend_personas\(id\) ON DELETE CASCADE/);
 });
 test('Pages build contains latest AI chat scripts without affecting school',async()=>{
  execFileSync('bash',['scripts/build-cloudflare-pages.sh'],{cwd:new URL('..',import.meta.url),stdio:'pipe',timeout:45000});
- assert.match(await read('dist/smart-friend-chat.html'),/20261106-workers-ai-chat-1/);
+ assert.match(await read('dist/smart-friend-chat.html'),/20261107-portrait-1/);
  assert.doesNotMatch(await read('dist/school/index.html'),/workers-ai-chat-1/);
 });
