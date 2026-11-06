@@ -1,0 +1,19 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><title>تهيئة حساب مطور شنو منو</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:#eef2fb;color:#10213e}main{width:min(94vw,520px);padding:32px;border:1px solid #d8def0;background:white;border-radius:20px;box-shadow:0 12px 40px #182c5316}h1{margin-top:0}p{line-height:1.8;color:#495878}label{display:block;font-weight:700;margin:18px 0 8px}input{width:100%;font-size:1rem;padding:14px;border:1px solid #bcc9e4;border-radius:10px}button{background:#304dce;color:white;border:0;border-radius:10px;width:100%;font-size:1rem;font-weight:700;padding:15px;margin-top:20px;cursor:pointer}button:disabled{opacity:.55}#status{min-height:30px;color:#a61e35}a{color:#304dce}</style></head>
+<body><main><h1>تهيئة حساب المطور</h1><p>هذه الصفحة مخصصة لدعوة مالك Cloudflare فقط. حدّد كلمة مرور جديدة لحساب <b dir="ltr">shinomino_app</b>، ثم سجّل الدخول إلى لوحة المطور وأكمل إعداد تطبيق المصادقة.</p>
+<form id="form"><label for="password">كلمة مرور جديدة (16 حرفًا على الأقل)</label><input id="password" type="password" autocomplete="new-password" minlength="16" maxlength="128" required>
+<label for="confirm">تأكيد كلمة المرور</label><input id="confirm" type="password" autocomplete="new-password" minlength="16" maxlength="128" required><button type="submit">تعيين كلمة المرور</button></form>
+<p id="status" role="status" aria-live="polite"></p><p><a href="/developer/">لوحة المطور</a></p></main>
+<script type="module">
+const status=document.querySelector('#status'),form=document.querySelector('#form');
+const token=location.hash.match(/^#invite=([A-Za-z0-9_-]{40,100})$/)?.[1]||'';
+history.replaceState(null,'',location.pathname);
+if(!token){form.hidden=true;status.textContent='رابط الدعوة غير صالح أو غير مكتمل. افتح الرابط الأصلي من البريد الإلكتروني.';}
+form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;status.textContent='';
+ const password=document.querySelector('#password').value,confirmPassword=document.querySelector('#confirm').value;
+ try{const response=await fetch('/api/developer/setup-password',{method:'POST',credentials:'omit',cache:'no-store',redirect:'error',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({token,password,confirmPassword})});
+ const data=await response.json().catch(()=>null);status.textContent=data?.message||'تعذر إعداد الحساب';if(response.ok)form.hidden=true;
+ }catch{status.textContent='تعذر الاتصال بالخدمة. حاول فتح رابط الدعوة من البريد مجددًا.';}
+ finally{document.querySelector('#password').value='';document.querySelector('#confirm').value='';button.disabled=false;}
+});
+</script></body></html>
