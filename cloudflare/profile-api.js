@@ -51,11 +51,8 @@ export async function handleProfile(req,env,actor){
  const path=new URL(req.url).pathname,method=req.method;
  const media=path.match(/^\/api\/profile-media\/([a-f0-9-]{36})\/(avatar|cover)$/i);
  if(media&&method==='GET'){
-  const [targetId,type]=media;
   const profile=await getProfile(env,media[1]);
   if(media[1]!==actor.id&&(profile.privacy?.photo||'everyone')!=='everyone')return error('الصورة غير متاحة',403);
-  const key=type==='avatar'?profile.avatarKey:profile.coverKey;
-  // destructured RegExp match position 0 is the path; use capture position 2.
   const stored=profile[media[2]+'Key'];
   if(!stored)return error('الصورة غير موجودة',404);
   const object=await env.MEDIA.get(stored);
