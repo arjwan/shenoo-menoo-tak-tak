@@ -1,4 +1,4 @@
-/* Four purposeful create actions for Shinomino social home.
+/* Three purposeful create actions for Shinomino social home.
    Kept outside .top-actions so account/logout controls stay intact. */
 html.home-colors-scope .create-shortcuts{
   display:flex;align-items:center;justify-content:center;gap:7px;
@@ -50,7 +50,7 @@ html.home-colors-scope[data-theme="dark"] .create-live{
   html.home-colors-scope .home-nav{min-height:0!important}
   html.home-colors-scope .create-shortcuts{
     order:2;flex:0 0 100%;width:100%;display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
+    grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
   }
   html.home-colors-scope .create-shortcut{
     min-height:46px;min-width:0;padding:7px 3px;gap:4px;

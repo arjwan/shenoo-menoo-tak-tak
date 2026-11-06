@@ -1,0 +1,30 @@
+name: Unified Stories and Reels hub
+on:
+  pull_request:
+    paths:
+      - 'moments.html'
+      - 'moments.css'
+      - 'moments.js'
+      - 'taktak.html'
+      - 'taktak-feed.js'
+      - 'taktak-create-shortcuts.css'
+      - 'index.html'
+      - 'tests/unified-stories-reels-hub.test.mjs'
+      - '.github/workflows/unified-stories-reels-hub.yml'
+  push:
+    branches: [feat/unified-stories-reels-hub-20261107]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check moments.js
+      - run: node --check taktak-feed.js
+      - run: node --test tests/unified-stories-reels-hub.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
+      - run: test -s dist/moments.html && test -s dist/moments.js && test -s dist/moments.css
