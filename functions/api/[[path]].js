@@ -3,6 +3,7 @@ import { handleDeveloper } from '../../cloudflare/developer-api.js';
 import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
 import { submitTeacher, listTeacherApplications, teacherApplicationDetail } from '../../cloudflare/pages/school-teachers.js';
 import { schoolManagementMe } from '../../cloudflare/pages/school-session.js';
+import { profileSession } from '../../cloudflare/pages/profile-session.js';
 import { guardianStudentEnrollment, reviewStudentEnrollments } from '../../cloudflare/pages/school-enrollments.js';
 
 export async function onRequest(context) {
@@ -14,6 +15,13 @@ export async function onRequest(context) {
         { status: 503, headers: { 'Cache-Control': 'no-store' } });
     }
     return handleDeveloper(context.request, context.env, developerHelpers);
+  }
+  // Profile editing, photo/cover media and privacy now run natively on D1/R2.
+  if (pathname === '/api/users/me/profile' || pathname === '/api/users/me/privacy' ||
+      /^\/api\/users\/me\/profile\/(?:avatar|cover)$/.test(pathname) ||
+      /^\/api\/users\/[a-f0-9-]{36}\/profile$/i.test(pathname) ||
+      /^\/api\/profile-media\/[a-f0-9-]{36}\/(?:avatar|cover)$/i.test(pathname)) {
+    return profileSession(context);
   }
   if (pathname === '/api/school/management/me') return schoolManagementMe(context);
   if (pathname === '/api/school/portal/guardian/student-enrollment') return guardianStudentEnrollment(context);
