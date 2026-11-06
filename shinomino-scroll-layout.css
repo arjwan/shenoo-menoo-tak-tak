@@ -152,3 +152,22 @@ html[data-sh-scroll="developer"]:has(#workspace[hidden]) body{
 html[data-sh-scroll] :is(dialog[open],.comments-sheet,.mobile-bar,.sumer-mobile-bar){
  overscroll-behavior:contain;
 }
+
+/* Generic grid pages with an immediate side navigation and central content. */
+@media(min-width:901px){
+ html[data-sh-scroll="main"] main[data-sh-scroll-columns]{
+  overflow:hidden;min-height:0;
+ }
+ html[data-sh-scroll="main"] main[data-sh-scroll-columns] > [data-sh-scroll-region]{
+  min-height:0;max-height:100%;height:100%;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior-y:contain;scrollbar-gutter:stable;
+ }
+}
+@media(max-width:900px){
+ html[data-sh-scroll="main"] main[data-sh-scroll-columns]{
+  overflow-y:auto;overflow-x:hidden;
+ }
+ html[data-sh-scroll="main"] main[data-sh-scroll-columns] > [data-sh-scroll-region]{
+  height:auto;max-height:none;overflow:visible;
+ }
+}
