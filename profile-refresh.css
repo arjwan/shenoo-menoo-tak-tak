@@ -1,0 +1,43 @@
+/* Profile visual refresh, scoped to this page only. Sumer School unchanged. */
+html.shinomino-ui.profile-refresh{color-scheme:light;--profile-ink:#2c2247;--profile-purple:#7841ca;--profile-line:#e9e0f3;--profile-muted:#766c86}
+html.shinomino-ui.profile-refresh body{background:#faf9fe!important;color:var(--profile-ink)!important}
+html.profile-refresh .site-header{background:#fff!important;border-bottom:1px solid var(--profile-line)!important}
+html.profile-refresh .social-page{padding-top:24px}
+html.profile-refresh [data-profile-root]{overflow:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
+html.profile-refresh .profile-cover{position:relative;isolation:isolate;min-height:270px;background:linear-gradient(120deg,#9256d8 0%,#7d57cd 47%,#b2a0e8 100%);border-radius:25px;overflow:hidden;box-shadow:0 15px 40px #53309e21}
+html.profile-refresh .profile-cover:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 15% 30%,#ffffff29,transparent 48%);z-index:0;pointer-events:none}
+html.profile-refresh .profile-cover img{height:100%;width:100%;object-fit:cover;display:block;position:absolute;inset:0}
+html.profile-refresh .profile-head{position:relative;display:flex;align-items:center;gap:17px;flex-wrap:wrap;padding:18px 22px;margin:-41px 16px 25px;background:#fff;border:1px solid #ede4f7;border-radius:20px;box-shadow:0 13px 35px #4a329418}
+html.profile-refresh .profile-avatar{position:relative;flex:0 0 88px;width:88px;height:88px;border-radius:50%;border:5px solid white;box-shadow:0 5px 20px #432c8d18;background:#f1e6fe;color:#7444bc;display:grid;place-items:center;overflow:hidden;font-size:35px;font-weight:900}
+html.profile-refresh .profile-avatar img{width:100%;height:100%;object-fit:cover}
+html.profile-refresh .profile-summary{flex:1;min-width:160px}
+html.profile-refresh .profile-summary h1{font-size:clamp(21px,3vw,27px);margin:0 0 3px;color:var(--profile-ink)}
+html.profile-refresh .profile-summary p{color:var(--profile-muted);margin:0 0 8px}
+html.profile-refresh .profile-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+html.profile-refresh .profile-actions .icon-button,html.profile-refresh .section-mini-action{min-height:42px;border:1px solid #dccbea;border-radius:12px;padding:9px 14px;font-weight:800;color:#7040be;background:#f6f0ff;cursor:pointer}
+html.profile-refresh .profile-actions .icon-button.primary,html.profile-refresh .privacy-actions .icon-button.primary,html.profile-refresh .editor-actions .save,html.profile-refresh [data-save-privacy]{background:linear-gradient(115deg,#7841cc,#9564dd)!important;border-color:transparent!important;color:#fff!important}
+html.profile-refresh .cover-quick-edit{position:absolute;z-index:4;bottom:16px;left:16px;min-height:40px;background:#fffffff0;border:1px solid #e9daf9;border-radius:12px;color:#6536ab;font-weight:800;padding:8px 15px;cursor:pointer;box-shadow:0 4px 13px #432b7030}
+html.profile-refresh .profile-avatar-quick{position:absolute;z-index:4;margin-right:-63px;margin-top:56px;align-self:flex-start;border-radius:50%;width:35px;height:35px;border:3px solid #fff;background:#8051cb;color:#fff;cursor:pointer;box-shadow:0 4px 13px #6548a639;font-size:15px;display:grid;place-items:center}
+html.profile-refresh .profile-grid{display:grid;gap:16px}
+html.profile-refresh .profile-section{background:#fff!important;border:1px solid #eae2f1!important;border-radius:20px!important;box-shadow:0 9px 25px #4931810d!important;padding:22px!important}
+html.profile-refresh .profile-section h2{font-size:18px;color:#35254d;margin:0 0 9px}
+html.profile-refresh .profile-info-item,html.profile-refresh .social-link-item,html.profile-refresh .privacy-row{background:#fcfbff;border-color:#eee7f5}
+html.profile-refresh .privacy-modal:not([hidden]){position:fixed;z-index:4000;inset:0;background:rgba(26,20,43,.65);display:grid;place-items:center;overflow-y:auto;padding:20px}
+html.profile-refresh .privacy-modal[hidden]{display:none!important}
+html.profile-refresh .privacy-card{width:min(730px,100%);max-height:calc(100dvh - 40px);overflow:auto;background:#fff!important;color:#302449!important;border:1px solid #ebe2f4;border-radius:23px!important;box-shadow:0 22px 70px #2318413b!important;padding:24px}
+html.profile-refresh .privacy-card h2{font-size:23px;margin:0 0 20px}
+html.profile-refresh .privacy-card label{color:#3d3155!important;font-size:14px}
+html.profile-refresh :is(.privacy-card input,.privacy-card select,.privacy-card textarea,.social-editor input,.social-editor select,.bio-editor textarea){background:#fefcff!important;color:#302449!important;border:1px solid #e4d8f0!important;border-radius:11px;min-height:44px}
+html.profile-refresh .privacy-card input[type=file]{padding:11px;cursor:pointer;width:100%}
+html.profile-refresh .privacy-card input[type=file]::file-selector-button{background:#f0e5fd;border:0;border-radius:8px;color:#6636ad;padding:7px 12px;margin-left:9px;cursor:pointer;font-weight:800}
+html.profile-refresh .privacy-card .privacy-actions{position:sticky;bottom:-24px;margin:16px -24px -24px;padding:14px 24px;background:#fff!important;border-top:1px solid #eee6f4;display:flex;flex-wrap:wrap;gap:8px}
+html.profile-refresh .privacy-card .privacy-actions button,html.profile-refresh .editor-actions button{min-height:42px;border-radius:11px;cursor:pointer}
+html.profile-refresh .form-message:not(:empty){display:block;padding:10px 13px;margin:12px 0;background:#f4effb;color:#683daa;border:1px solid #e5d8f4;border-radius:12px}
+html.profile-refresh .form-message.is-error{background:#fff0f3;color:#a93650;border-color:#f5d0d9}
+html.profile-refresh .form-message.is-success{background:#effaf6;color:#226e5d;border-color:#d1efe4}
+html.profile-refresh .profile-help{font-size:12px;color:#766c86;margin-top:8px;line-height:1.7}
+html.profile-refresh .profile-top-message{margin-bottom:16px}
+html.profile-refresh .profile-photo-preview{width:min(100%,190px);height:110px;display:none;object-fit:cover;border-radius:11px;border:1px solid #e6dff0;margin-top:8px}
+html.profile-refresh .profile-photo-preview.is-visible{display:block}
+@media(max-width:740px){html.profile-refresh .social-page{padding-top:10px}html.profile-refresh .profile-cover{min-height:175px;border-radius:18px}html.profile-refresh .profile-head{gap:11px;margin:-24px 8px 16px;padding:14px}html.profile-refresh .profile-avatar{width:70px;height:70px;flex-basis:70px;font-size:28px}html.profile-refresh .profile-avatar-quick{margin-right:-51px;margin-top:43px}html.profile-refresh .profile-actions{flex-basis:100%}html.profile-refresh .profile-actions .icon-button{flex:1}html.profile-refresh .profile-section{padding:16px!important}html.profile-refresh .privacy-modal:not([hidden]){padding:10px}html.profile-refresh .privacy-card{max-height:calc(100dvh - 20px);padding:18px;border-radius:16px!important}html.profile-refresh .privacy-card .privacy-actions{margin:14px -18px -18px;bottom:-18px;padding:12px 18px}html.profile-refresh .cover-quick-edit{bottom:10px;left:10px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){html.profile-refresh *{transition-duration:0.01ms!important;animation-duration:0.01ms!important}}
