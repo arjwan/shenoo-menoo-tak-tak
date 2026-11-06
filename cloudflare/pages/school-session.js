@@ -35,11 +35,26 @@ export async function schoolManagementMe(context){
  const auth=await schoolUser(context);
  if(auth.error)return auth.error;
  const user=auth.user;
- const row=await context.env.DB.prepare("SELECT id,user_id,full_name,subjects_json,grades_json,status FROM school_teachers WHERE user_id=? AND status='active' LIMIT 1").bind(user.id).first();
+ const [row,children,student]=await Promise.all([
+  context.env.DB.prepare("SELECT id,user_id,full_name,subjects_json,grades_json,status FROM school_teachers WHERE user_id=? AND status='active' LIMIT 1").bind(user.id).first(),
+  context.env.DB.prepare("SELECT id,student_name,grade,stage,section,status FROM school_students WHERE guardian_user_id=? AND status IN ('pending_account','active') ORDER BY created_at DESC LIMIT 100").bind(user.id).all(),
+  context.env.DB.prepare("SELECT id,student_name,grade,stage,section,status FROM school_students WHERE student_user_id=? AND status='active' LIMIT 1").bind(user.id).first()
+ ]);
  let teacher=null;
  if(row){
   const parse=value=>{try{const v=JSON.parse(value||'[]');return Array.isArray(v)?v:[]}catch{return []}};
   teacher={id:row.id,userId:row.user_id,fullName:row.full_name,subjects:parse(row.subjects_json),grades:parse(row.grades_json)};
  }
- return json(contextFor(user,user.role,teacher,false));
+ const school=contextFor(user,user.role,teacher,false);
+ if(student){
+  school.schoolContext.role='student';
+  school.schoolContext.isStudent=true;
+  school.schoolContext.studentProfile={id:student.id,name:student.student_name,grade:student.grade,stage:student.stage,section:student.section};
+ }else if(!teacher&&(children.results||[]).length){
+  school.schoolContext.role='guardian';
+  school.schoolContext.isGuardian=true;
+  school.schoolContext.guardian={userId:user.id};
+  school.schoolContext.students=(children.results||[]).map(r=>({id:r.id,name:r.student_name,grade:r.grade,stage:r.stage,section:r.section,status:r.status}));
+ }
+ return json(school);
 }

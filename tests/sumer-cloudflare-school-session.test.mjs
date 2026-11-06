@@ -6,7 +6,7 @@ import {onRequest} from '../functions/api/[[path]].js';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 const url='https://shenoo-main-cloudflare.pages.dev/api/school/management/me';
 const ordinarySession=user=>({
- DB:{prepare(sql){assert.match(sql,/school_teachers/);return {bind(){return this},async first(){return null}}}},
+ DB:{prepare(sql){assert.match(sql,/school_teachers|school_students/);return {bind(){return this},async first(){return null},async all(){return {results:[]}}}}},
  API:{fetch:async()=>Response.json({ok:true,user})}
 });
 test('school management rejects anonymous visitors without a developer or application cookie',async()=>{
@@ -30,7 +30,7 @@ test('ordinary app role admin never becomes developer or school manager automati
  const v=await r.json();assert.equal(v.schoolContext.isDeveloper,false);assert.equal(v.schoolContext.isManager,false);
 });
 test('active D1 school teacher is recognized only from server-side teacher enrollment',async()=>{
- const env={DB:{prepare(sql){assert.match(sql,/status='active'/);return {bind(){return this},first:async()=>({id:'t1',user_id:'u1',full_name:'Teacher',subjects_json:'["رياضيات"]',grades_json:'["الأول ابتدائي"]',status:'active'})}}},API:{fetch:async()=>Response.json({ok:true,user:{id:'u1',username:'teacher',role:'user'}})}};
+ const env={DB:{prepare(sql){return {bind(){return this},first:async()=>sql.includes('school_teachers')?({id:'t1',user_id:'u1',full_name:'Teacher',subjects_json:'["رياضيات"]',grades_json:'["الأول ابتدائي"]',status:'active'}):null,all:async()=>({results:[]})}}},API:{fetch:async()=>Response.json({ok:true,user:{id:'u1',username:'teacher',role:'user'}})}};
  const r=await schoolManagementMe({env,request:new Request(url)});
  const v=await r.json();assert.equal(v.schoolContext.isTeacher,true);assert.equal(v.schoolContext.role,'teacher');assert.equal(v.schoolContext.isDeveloper,false);
 });

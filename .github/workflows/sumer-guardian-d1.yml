@@ -1,0 +1,30 @@
+name: Sumer Guardian D1 migration
+on:
+  push:
+    branches:
+      - feat/sumer-guardian-enrollment-d1-20261106
+  pull_request:
+    paths:
+      - 'cloudflare/migrations/0007_school_guardian_enrollments.sql'
+      - 'cloudflare/pages/school-enrollments.js'
+      - 'cloudflare/pages/school-session.js'
+      - 'functions/api/**'
+      - 'developer/app.js'
+      - 'tests/sumer-guardian-enrollment-d1.test.mjs'
+      - '.github/workflows/sumer-guardian-d1.yml'
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/school-enrollments.js
+      - run: node --check cloudflare/pages/school-session.js
+      - run: node --check developer/app.js
+      - run: node --check 'functions/api/[[path]].js'
+      - run: node --test tests/sumer-guardian-enrollment-d1.test.mjs tests/sumer-cloudflare-school-session.test.mjs tests/cloudflare-school-teacher-routing.test.mjs tests/cloudflare-school-teachers.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
