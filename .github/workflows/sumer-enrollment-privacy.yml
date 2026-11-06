@@ -1,0 +1,24 @@
+name: Sumer child enrollment UI privacy
+on:
+  push:
+    branches: [fix/sumer-enrollment-consent-username-20261106]
+  pull_request:
+    paths:
+      - 'school/js/views/view-guest.js'
+      - 'cloudflare/pages/school-enrollments.js'
+      - 'tests/sumer-guardian-enrollment-d1.test.mjs'
+      - '.github/workflows/sumer-enrollment-privacy.yml'
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check school/js/views/view-guest.js
+      - run: node --check cloudflare/pages/school-enrollments.js
+      - run: node --test tests/sumer-guardian-enrollment-d1.test.mjs tests/sumer-cloudflare-school-session.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh

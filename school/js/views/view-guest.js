@@ -529,10 +529,11 @@
       html += '      <div id="guardian-child-account-fields">';
       html += '        <div class="sumer-form-group"><label for="student-username" class="sumer-label">اسم مستخدم الطالب <span class="sumer-required">*</span></label><input type="text" id="student-username" class="sumer-input" autocomplete="off" placeholder="مثال: ali.ahmed" minlength="3" maxlength="30"></div>';
       html += '        <div class="sumer-form-group"><label for="guardian-relationship" class="sumer-label">صلة ولي الأمر</label><select id="guardian-relationship" class="sumer-select"><option value="أب">أب</option><option value="أم">أم</option><option value="ولي أمر" selected>ولي أمر</option><option value="أخرى">أخرى</option></select></div>';
-      html += '        <div class="sumer-form-group"><label class="sumer-label">موافقات ولي الأمر السبعة <span class="sumer-required">*</span></label><div class="sumer-checkbox-group">';
+      html += '        <div class="sumer-form-group"><label class="sumer-label">اختيارات ولي الأمر للخصوصية (اختيارية وقابلة للتغيير)</label><div class="sumer-checkbox-group">';
       var enrollmentConsents = [['microphone','استخدام الميكروفون'],['camera','استخدام الكاميرا'],['live_classroom_participation','المشاركة في الصف المباشر'],['virtual_teacher_participation','المشاركة مع المعلم الافتراضي'],['ai_voice_usage','استخدام الصوت والذكاء الاصطناعي'],['save_learning_qa','حفظ الأسئلة والأجوبة التعليمية'],['school_notifications','استلام تنبيهات المدرسة']];
-      for (var ec = 0; ec < enrollmentConsents.length; ec++) html += '<label class="sumer-checkbox-label"><input type="checkbox" name="enrollment-consent" value="' + enrollmentConsents[ec][0] + '" required> ' + enrollmentConsents[ec][1] + '</label>';
-      html += '        </div><p class="sumer-form-help">يمكن تعديل الموافقات لاحقاً من صفحة ولي الأمر.</p></div>';
+      for (var ec = 0; ec < enrollmentConsents.length; ec++) html += '<label class="sumer-checkbox-label"><input type="checkbox" name="enrollment-consent" value="' + enrollmentConsents[ec][0] + '"> ' + enrollmentConsents[ec][1] + '</label>';
+      html += '        </div><p class="sumer-form-help">يُحفظ قبول أو رفض كل إذن على حدة، ولا يلزم تشغيل الكاميرا أو الميكروفون لتقديم الطلب.</p></div>';
+      html += '<label class="sumer-checkbox-label"><input type="checkbox" id="guardian-declaration" required> أقر بأنني ولي أمر الطالب أو مخول قانوناً بتقديم طلب تسجيله، وأفهم أن الطلب ينتظر مراجعة الإدارة ولا ينشئ حساباً تلقائياً.</label>';
       html += '      </div>';
 
       // المرحلة الدراسية
@@ -1179,16 +1180,17 @@
             var relationshipEl = mountEl.querySelector('#guardian-relationship');
             var studentUsername = (usernameEl ? usernameEl.value : '').trim().toLowerCase();
             var consentBoxes = mountEl.querySelectorAll('input[name="enrollment-consent"]');
-            var consents = {}, allConsented = consentBoxes.length === 7;
-            for (var ci = 0; ci < consentBoxes.length; ci++) { consents[consentBoxes[ci].value] = consentBoxes[ci].checked; if (!consentBoxes[ci].checked) allConsented = false; }
-            if (!/^[\\p{L}\\p{M}0-9_.]{3,30}$/u.test(studentUsername) || !allConsented) {
+            var consents = {};
+            for (var ci = 0; ci < consentBoxes.length; ci++) { consents[consentBoxes[ci].value] = consentBoxes[ci].checked; }
+            var guardianDeclaration = !!(mountEl.querySelector('#guardian-declaration') || {}).checked;
+            if (!/^[\p{L}\p{M}0-9_.]{3,30}$/u.test(studentUsername) || !guardianDeclaration) {
               if (regSubmitBtn) { regSubmitBtn.disabled = false; regSubmitBtn.innerHTML = '<span>إرسال طلب الطالب إلى الإدارة</span>'; }
-              if (regErrAlert && regErrText) { regErrText.textContent = !studentUsername ? 'أدخل اسم مستخدم مستقل للطالب.' : 'يجب تحديد الموافقات السبعة قبل إرسال الطلب.'; regErrAlert.style.display = 'flex'; }
+              if (regErrAlert && regErrText) { regErrText.textContent = !guardianDeclaration ? 'يجب تأكيد أنك ولي الأمر أو المخول بالتسجيل.' : 'اسم مستخدم الطالب غير صالح.'; regErrAlert.style.display = 'flex'; }
               return;
             }
             SumerAPI.request('/api/school/portal/guardian/student-enrollment', { method: 'POST', body: {
               studentName: name, studentUsername: studentUsername, relationship: relationshipEl ? relationshipEl.value : 'ولي أمر',
-              stage: stage, grade: grade, section: section, subjects: checkedSubjects, consents: consents
+              stage: stage, grade: grade, section: section, subjects: checkedSubjects, consents: consents, guardianDeclaration: guardianDeclaration
             }}).then(function (res) {
               if (regSubmitBtn) regSubmitBtn.disabled = false;
 

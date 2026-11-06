@@ -12,7 +12,7 @@ const envFor=(overrides={})=>({
  API:{fetch:async()=>Response.json({ok:true,user:parent})},...overrides
 });
 const consents=Object.fromEntries(['microphone','camera','live_classroom_participation','virtual_teacher_participation','ai_voice_usage','save_learning_qa','school_notifications'].map(k=>[k,false]));
-const data={studentName:'طالب تجريبي',studentUsername:'student.test',relationship:'ولي أمر',stage:'ابتدائي',grade:'الأول ابتدائي',section:'أ',subjects:['القراءة'],consents};
+const data={studentName:'طالب تجريبي',studentUsername:'student.test',relationship:'ولي أمر',stage:'ابتدائي',grade:'الأول ابتدائي',section:'أ',subjects:['القراءة'],consents,guardianDeclaration:true};
 const req=(path,method='GET',body)=>new Request(origin+path,{method,headers:method==='GET'?{}:{Origin:origin,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
 test('new school enrollment DDL is additive, consent audited and tied to D1 users',async()=>{
  const sql=await read('cloudflare/migrations/0007_school_guardian_enrollments.sql');
@@ -65,4 +65,23 @@ test('developer console can review student enrollment, but not auto issue studen
  assert.match(api,/studentAccountCreated:false,trialStarted:false/);
  assert.match(api,/developer\.id|auth\.user\.id/);
  assert.doesNotMatch(api,/password_hash|password_salt|token=|session_token/);
+});
+
+test('guardian must explicitly attest responsibility but may refuse camera and microphone consents',async()=>{
+ let writes=0;
+ const env=envFor({DB:{prepare(){return {bind(){return this},first:async()=>null,run:async()=>{writes++;return {meta:{changes:1}}}}}}});
+ const rejected=await guardianStudentEnrollment({env,request:req('/api/school/portal/guardian/student-enrollment','POST',{...data,guardianDeclaration:false})});
+ assert.equal(rejected.status,400);assert.equal(writes,0);
+ const accepted=await guardianStudentEnrollment({env,request:req('/api/school/portal/guardian/student-enrollment','POST',data)});
+ assert.equal(accepted.status,201);assert.ok(writes>0);
+});
+test('student form accepts Arabic and Latin usernames and does not force media consent',async()=>{
+ const guest=await read('school/js/views/view-guest.js');
+ assert.match(guest,/guardian-declaration/);
+ assert.match(guest,/guardianDeclaration: guardianDeclaration/);
+ assert.doesNotMatch(guest,/allConsented/);
+ assert.doesNotMatch(guest,/name="enrollment-consent" value="[^"]*" required/);
+ const regex=guest.match(/if \(!\/\^\[([^\]]+)\]\{3,30\}\$\/u\.test\(studentUsername\)/);
+ assert.ok(regex,'client uses Unicode username validator');
+ assert.match(regex[1],/\\p\{L\}/);
 });
