@@ -1,0 +1,30 @@
+name: Sumer Cloudflare identity and role checks
+on:
+  push:
+    branches:
+      - feat/sumer-cloudflare-school-session-20261106
+  pull_request:
+    paths:
+      - 'cloudflare/pages/school-session.js'
+      - 'functions/api/school/management/me.js'
+      - 'functions/api/**'
+      - 'school.html'
+      - 'school/js/**'
+      - 'tests/sumer-cloudflare-school-session.test.mjs'
+      - '.github/workflows/sumer-cloudflare-session.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/school-session.js
+      - run: node --check school/js/sumer-api.js
+      - run: node --check school/js/sumer-ui.js
+      - run: node --check school/js/views/view-guest.js
+      - run: node --test tests/sumer-cloudflare-school-session.test.mjs tests/cloudflare-school-teacher-routing.test.mjs tests/cloudflare-school-teachers.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
