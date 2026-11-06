@@ -44,6 +44,25 @@
    :mode==='main'
    ?body.querySelectorAll('main[data-sh-scroll-region]')
    :[];
+ // Other multi-column pages: if their main area is a real grid/flex layout
+ // with an immediate sidebar, scroll the sidebar and adjacent workspace separately.
+ if(mode==='main'){
+  const parent=body.querySelector('main[data-sh-scroll-region]');
+  const children=parent?[...parent.children].filter(el=>!el.hidden):[];
+  const side=children.find(el=>el.matches('aside,nav[aria-label]'));
+  const center=children.find(el=>el!==side&&el.matches('section,article,main,div'));
+  if(side&&center&&children.length<=4){
+   const styles=getComputedStyle(parent);
+   const horizontal=styles.display==='grid'||(styles.display==='flex'&&styles.flexDirection.startsWith('row'));
+   if(horizontal){
+    parent.dataset.shScrollColumns='';
+    for(const panel of [side,center]){
+     panel.dataset.shScrollRegion='';
+     if(!panel.hasAttribute('tabindex'))panel.tabIndex=0;
+    }
+   }
+  }
+ }
  for(const region of regions){
   region.dataset.shScrollRegion='';
   // Keyboard users can choose a pane then scroll it with PageDown/arrow keys.
