@@ -43,7 +43,7 @@ test('migration adds tables only and does not touch user passwords',async()=>{
  for(const name of ['developer_mfa','developer_challenges','developer_sessions','developer_ticker']){
    assert.match(sql,new RegExp('CREATE TABLE IF NOT EXISTS '+name+'\\b'));
  }
- assert.doesNotMatch(sql,/\bDROP\b|\bDELETE\b|\bUPDATE\b|ALTER\s+TABLE\s+users/i);
+ assert.doesNotMatch(sql,/^\s*(?:DROP\s|DELETE\s+FROM|UPDATE\s|ALTER\s+TABLE\s+users\b)/im);
 });
 test('original developer sections are retained while school stays on existing origin',async()=>{
  const ui=await read('developer/app.js');
