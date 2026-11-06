@@ -9,7 +9,7 @@ test('production existing D1 personas are migrated additively to support R2 avat
  const delta=await read('cloudflare/migrations/0010_smart_friend_existing_avatar_column.sql');
  assert.match(old,/CREATE TABLE IF NOT EXISTS smart_friend_personas/);
  assert.match(delta,/ALTER TABLE smart_friend_personas ADD COLUMN avatar_key TEXT/);
- assert.doesNotMatch(delta,/DROP|DELETE|CREATE TABLE/);
+ assert.doesNotMatch(delta.split('\n').filter(line=>!line.trim().startsWith('--')).join('\n'),/DROP|DELETE|CREATE TABLE/);
 });
 test('smart friend editor uses safe named-item form elements for creation and editing',async()=>{
  const js=await read('smart-friend-chat.js');
