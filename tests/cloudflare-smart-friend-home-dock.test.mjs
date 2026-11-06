@@ -20,7 +20,7 @@ test('with verified session, the compact dock can receive an AI message on the d
  const db={prepare(sql){return{args:[],sql,bind(...args){this.args=args;return this},
   async first(){if(sql.includes('FROM auth_sessions')){assert.equal(this.args[0],hash);return{id:uid,username:'tester',full_name:'Tester'};}
    if(sql.includes('FROM smart_friend_personas'))return this.args[0]===id&&this.args[1]===uid?{id,name:'حسناء',personality:'friendly',conversation_style:'balanced',interests_json:'[]'}:null;return null},
-  async all(){return {results:[]}};
+  async all(){return {results:[]}}
  }},
  async batch(statements){saved=statements;return statements.map(()=>({success:true}))}
  };
