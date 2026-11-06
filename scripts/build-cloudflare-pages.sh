@@ -9,6 +9,28 @@ for directory in assets images img css js fonts icons uploads developer school; 
 done
 if [ -f _headers ]; then cp _headers dist/; fi
 
+# Apply the common native-scroll shell to every exported site page.
+# This changes only generated HTML; original page behavior remains testable and
+# the runtime activates its rules only for recognized layout structures.
+node <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const pages = fs.readdirSync('dist').filter(name => name.endsWith('.html')).map(name => path.join('dist',name));
+for (const folder of ['developer','school']) {
+ const index = path.join('dist', folder, 'index.html');
+ if (fs.existsSync(index)) pages.push(index);
+}
+const css = '<link rel="stylesheet" href="/shinomino-scroll-layout.css?v=20261107-1">';
+const js = '<script defer src="/shinomino-scroll-layout.js?v=20261107-1"></script>';
+for (const file of pages) {
+ let html = fs.readFileSync(file,'utf8');
+ if (!/<\/head>/i.test(html) || !/<\/body>/i.test(html)) continue;
+ if (!html.includes('shinomino-scroll-layout.css')) html = html.replace(/<\/head>/i, css + '\n</head>');
+ if (!html.includes('shinomino-scroll-layout.js')) html = html.replace(/<\/body>/i, js + '\n</body>');
+ fs.writeFileSync(file, html);
+}
+NODE
+
 # Publish the verified public Iraqi curriculum metadata as a Pages asset.
 # Source is the existing 108-book catalog; do not advertise absent local PDFs.
 node <<'NODE'
