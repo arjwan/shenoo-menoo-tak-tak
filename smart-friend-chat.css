@@ -9,3 +9,13 @@
 .sf-delete-persona:hover{background:#fbe3e9!important;border-color:#c95f78!important}
 .sf-delete-persona:focus-visible{outline:3px solid #cf7892;outline-offset:3px}
 .sf-delete-persona:disabled{opacity:.65;cursor:wait}
+
+
+/* Selected persona portrait belongs to the conversation UI, not only its editor. */
+.sf-portrait-stage{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;min-height:190px;padding:15px 12px 8px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at center,rgba(124,92,255,.10),transparent 70%)}
+.sf-portrait-stage[hidden]{display:none}
+.sf-portrait-frame{width:158px;height:158px;border-radius:24px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#27d8c4);box-shadow:0 8px 25px rgba(60,45,120,.14)}
+.sf-portrait-frame img{display:block;width:100%;height:100%;object-fit:cover}
+.sf-portrait-fallback{font-size:64px;line-height:1}
+.sf-portrait-status{margin:0;text-align:center;font-size:12px;color:var(--muted)}
+@media(max-width:560px){.sf-portrait-stage{min-height:152px;padding:10px}.sf-portrait-frame{width:124px;height:124px}}
