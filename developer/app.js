@@ -3,8 +3,8 @@ const $ = id => document.getElementById(id);
 const sections = { overview:'نظرة عامة',users:'المستخدمون',admins:'المسؤولون',approvals:'الموافقات',rooms:'الغرف',reports:'البلاغات',school:'مدرسة سومر',services:'الخدمات والإعلانات',ticker:'الشريط الإعلاني',audit:'سجل التدقيق',account:'حسابي' };
 const labels = {active:'نشط',blocked:'محظور',pending:'بانتظار المراجعة',rejected:'مرفوض',approved:'معتمد',reviewing:'قيد المراجعة',resolved:'تم الحل',dismissed:'مستبعد',developer:'مطوّر',admin:'مسؤول',user:'مستخدم'};
 clearLegacySessions(localStorage); clearLegacySessions(sessionStorage);
-let token = sessionStorage.getItem(TOKEN_KEY) || '', preAuth = '', pollTimer, page = '', version = 0, records = {}, currentUser;
-const api = createClient({token:()=>token,expired:()=>signOut('انتهت الجلسة. يرجى تسجيل الدخول مجدداً.')});
+let preAuth = '', page = '', version = 0, records = {}, currentUser;
+const api = createClient({expired:()=>signOut('انتهت الجلسة. يرجى تسجيل الدخول مجدداً.')});
 const send = (path,method,body,extra={}) => api(path,{method,body:JSON.stringify(body),...extra});
 const dev = '/api/developer';
 const formatDate = v => v ? new Date(v).toLocaleString('ar-IQ') : '—';
@@ -16,20 +16,32 @@ const empty = text => `<div class="empty">${esc(text)}</div>`;
 const table = (head,rows) => rows.length ? `<div class="table-wrap"><table><thead><tr>${head.map(x=>`<th scope="col">${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` : empty('لا توجد نتائج.');
 const row = cells => `<tr>${cells.map(x=>`<td>${x}</td>`).join('')}</tr>`;
 function notify(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(notify.timer);notify.timer=setTimeout(()=>$('toast').hidden=true,4500);}
-function stopMfa(){clearTimeout(pollTimer);preAuth='';$('mfa-qr').replaceChildren();$('mfa').hidden=true;}
-function signOut(message=''){version++;token='';currentUser=null;sessionStorage.removeItem(TOKEN_KEY);stopMfa();$('workspace').hidden=true;$('auth').hidden=false;$('login-form').hidden=false;$('password').value='';$('login-message').textContent=message;}
-function acceptSession(data){if(!data.token)throw Error('لم يكتمل التحقق من الهوية');token=data.token;sessionStorage.setItem(TOKEN_KEY,token);stopMfa();return openWorkspace();}
+function stopMfa(){preAuth='';$('mfa').hidden=true;$('mfa-code').value='';$('mfa-secret').textContent='';$('mfa-enroll').hidden=true;}
+function signOut(message=''){version++;currentUser=null;sessionStorage.removeItem(TOKEN_KEY);stopMfa();$('workspace').hidden=true;$('auth').hidden=false;$('login-form').hidden=false;$('password').value='';$('login-message').textContent=message;}
+function acceptSession(data){if(!data.verified)throw Error('لم يكتمل التحقق من الهوية');stopMfa();return openWorkspace();}
 async function openWorkspace(){const d=await api(dev+'/me');if(d.user?.role!=='developer')throw Error('هذه اللوحة مخصصة لحساب المطوّر');currentUser=d.user;$('operator').textContent=d.user.fullName||d.user.username;$('auth').hidden=true;$('workspace').hidden=false;await navigate();}
 $('show-password').onchange=e=>{$('password').type=e.target.checked?'text':'password'};
-$('login-form').onsubmit=async event=>{event.preventDefault();const b=event.currentTarget.querySelector('button[type=submit]');b.disabled=true;$('login-message').textContent='';try{const identifier=$('identifier').value.trim();const password=$('password').value;const d=await send(dev+'/login','POST',{identifier,password},{auth:false});const challenge=requireMfaChallenge(d);preAuth=challenge.token;$('login-form').hidden=true;$('mfa').hidden=false;$('mfa-phone').disabled=!challenge.phone;$('mfa-fido').disabled=!challenge.fido;$('mfa-message').textContent=challenge.phone||challenge.fido?'اختر وسيلة التحقق المسجّلة.':'لا توجد وسيلة مسجّلة؛ يلزم إكمال إعداد أمان الحساب بإجراء موثّق.';}catch(e){$('login-message').textContent=e.status===401?'لم يُقبل اسم المستخدم أو كلمة المرور. تحقق من الحساب وكلمة المرور الحالية.':e.message;}finally{$('password').value='';$('password').type='password';$('show-password').checked=false;b.disabled=false;}};
+$('login-form').onsubmit=async event=>{event.preventDefault();const btn=event.currentTarget.querySelector('button[type=submit]');btn.disabled=true;$('login-message').textContent='';try{
+ const identifier=$('identifier').value.trim(),password=$('password').value;
+ const response=await send(dev+'/login','POST',{identifier,password},{auth:false});
+ const challenge=requireMfaChallenge(response);preAuth=challenge.token;
+ $('login-form').hidden=true;$('mfa').hidden=false;$('mfa-message').textContent='أدخل رمز تطبيق المصادقة.';
+ if(challenge.enroll){
+   const enrollment=await send('/api/developer-mfa/totp/enroll','POST',{}, {auth:preAuth});
+   $('mfa-enroll').hidden=false;$('mfa-secret').textContent=enrollment.secret;
+   $('mfa-message').textContent='أضف المفتاح إلى تطبيق المصادقة ثم أدخل الرمز الحالي.';
+ }
+ $('mfa-code').focus();
+}catch(e){$('login-message').textContent=e.status===401?'اسم المستخدم أو كلمة المرور غير صحيحين، أو لم يفعّل حساب المطور على Cloudflare بعد.':e.message;stopMfa();$('login-form').hidden=false;}finally{$('password').value='';$('password').type='password';$('show-password').checked=false;btn.disabled=false;}};
+$('mfa-form').onsubmit=async event=>{event.preventDefault();const btn=event.currentTarget.querySelector('button[type=submit]');btn.disabled=true;$('mfa-message').textContent='جارٍ التحقق…';try{
+ const response=await send('/api/developer-mfa/totp/verify','POST',{code:$('mfa-code').value.trim()},{auth:preAuth});
+ await acceptSession(response);
+}catch(error){$('mfa-message').textContent=error.message;}finally{btn.disabled=false;}};
 $('mfa-cancel').onclick=()=>signOut();
-$('mfa-phone').onclick=async()=>{clearTimeout(pollTimer);$('mfa-message').textContent='جارٍ تجهيز طلب الموافقة…';try{const d=await send('/api/developer-mfa/phone/challenge','POST',{}, {auth:preAuth});if(!/^data:image\/png;base64,/.test(d.qr||''))throw Error('تعذر عرض رمز الموافقة');const img=document.createElement('img');img.src=d.qr;img.alt='رمز موافقة الهاتف المقترن';$('mfa-qr').replaceChildren(img);$('mfa-message').textContent='امسح الرمز بالهاتف المقترن ووافق على الطلب. تنتهي المهلة خلال دقيقتين.';const deadline=Date.now()+Number(d.expiresIn||120)*1000;const poll=async()=>{if(!preAuth)return;try{if(Date.now()>deadline)throw Error('انتهت المهلة. أنشئ طلب موافقة جديداً.');const r=await send('/api/developer-mfa/phone/poll','POST',{challengeId:d.challengeId},{auth:preAuth});if(r.approved){await acceptSession(r);return;}pollTimer=setTimeout(poll,2000);}catch(e){$('mfa-message').textContent=e.message;}};pollTimer=setTimeout(poll,2000);}catch(e){$('mfa-message').textContent=e.message;}};
-const decode = s => Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),x=>x.charCodeAt(0));
-const encode = b => {let s='';for(const c of new Uint8Array(b))s+=String.fromCharCode(c);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
-$('mfa-fido').onclick=async()=>{const b=$('mfa-fido');b.disabled=true;try{if(!navigator.credentials)throw Error('هذا المتصفح لا يدعم مفاتيح الأمان');const d=await send('/api/developer-mfa/fido/auth-options','POST',{}, {auth:preAuth});const options=d.options;options.challenge=decode(options.challenge);for(const c of options.allowCredentials||[])c.id=decode(c.id);const credential=await navigator.credentials.get({publicKey:options});if(!credential)throw Error('لم يكتمل التحقق');const response={id:credential.id,rawId:encode(credential.rawId),type:credential.type,response:{authenticatorData:encode(credential.response.authenticatorData),clientDataJSON:encode(credential.response.clientDataJSON),signature:encode(credential.response.signature),userHandle:credential.response.userHandle?encode(credential.response.userHandle):null},clientExtensionResults:credential.getClientExtensionResults()};await acceptSession(await send('/api/developer-mfa/fido/auth-verify','POST',{response},{auth:preAuth}));}catch(e){$('mfa-message').textContent=e.name==='SecurityError'?'المفتاح مسجّل لنطاق آخر. استخدم الهاتف المقترن أو إجراء استرداد أمان موثّق.':e.name==='NotAllowedError'?'أُلغي طلب مفتاح الأمان أو انتهت مهلته.':e.message;}finally{b.disabled=false;}};
-$('logout').onclick=()=>signOut();$('refresh').onclick=()=>navigate();
+$('logout').onclick=async()=>{try{await send(dev+'/logout','POST',{}, {auth:false});}finally{signOut();}};
+$('refresh').onclick=()=>navigate();
 $('navigation').innerHTML=Object.entries(sections).map(([key,title])=>`<a href="#${key}" data-section="${key}">${title}</a>`).join('');
-window.addEventListener('hashchange',()=>{if(token)navigate()});
+window.addEventListener('hashchange',()=>{if(currentUser)navigate()});
 function toolbar(search=false,create=''){return `<div class="toolbar">${search?'<input id="filter" aria-label="بحث في المستخدمين" placeholder="بحث بالاسم أو اسم المستخدم"><select id="status-filter" aria-label="حالة الحساب"><option value="">جميع الحالات</option><option value="active">نشط</option><option value="pending">بانتظار الموافقة</option><option value="blocked">محظور</option><option value="rejected">مرفوض</option></select><button type="button" data-intent="search">بحث</button>':''}${create?button(create,'','إضافة حساب'):''}</div>`;}
 async function navigate(){page=location.hash.slice(1);if(!Object.hasOwn(sections,page))page='overview';const selected=page,requestVersion=++version;$('page-title').textContent=sections[page];$('page-message').textContent='';$('load-state').textContent='جارٍ التحميل…';$('view').innerHTML=empty('جارٍ تحميل البيانات…');for(const a of $('navigation').querySelectorAll('a')){if(a.dataset.section===page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}try{const result=await loadPage(selected);if(requestVersion!==version)return;$('view').innerHTML=result;$('load-state').textContent='آخر تحديث '+new Date().toLocaleTimeString('ar-IQ');}catch(e){if(requestVersion!==version)return;$('view').innerHTML=empty('تعذر عرض هذا القسم. استخدم زر تحديث للمحاولة مجدداً.');$('page-message').textContent=e.message;$('load-state').textContent='لم يكتمل التحديث';}}
 async function loadPage(section){
@@ -70,4 +82,4 @@ $('view').onclick=async event=>{const b=event.target.closest('[data-intent]');if
  else return;
  notify('تم تنفيذ الإجراء');await navigate();
  }catch(e){$('page-message').textContent=e.message;}finally{if(b.isConnected)b.disabled=false;}};
-if(token)openWorkspace().catch(e=>signOut(e.message));else signOut();
+openWorkspace().catch(()=>signOut());
