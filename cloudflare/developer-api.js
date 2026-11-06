@@ -32,7 +32,11 @@ export async function handleDeveloper(req,env,h){
    // Derive a real PBKDF2 hash even when the account is absent, to limit timing leaks.
    const salt=u?.password_salt||'AAAAAAAAAAAAAAAAAAAAAA';
    const hash=await h.hash(password,salt);
-   if(!u||hash!==u.password_hash)return fail('بيانات الدخول غير صحيحة',401);
+   // Compare derived keys without an early-exit string comparison.
+   const actual=decode(hash),expected=decode(u?.password_hash||'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+   let mismatch=actual.length^expected.length;
+   for(let i=0;i<Math.max(actual.length,expected.length);i++)mismatch|=(actual[i]||0)^(expected[i]||0);
+   if(!u||mismatch)return fail('بيانات الدخول غير صحيحة',401);
    const pre=rand();
    await env.DB.prepare("INSERT INTO developer_challenges(id,user_id,token_hash,expires_at) VALUES(?,?,?,datetime('now','+5 minutes'))").bind(crypto.randomUUID(),u.id,await sha(pre)).run();
    const mfa=await env.DB.prepare('SELECT user_id FROM developer_mfa WHERE user_id=?').bind(u.id).first();
