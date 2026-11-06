@@ -38,13 +38,8 @@
       "game-room.html"
     ],
     "developer": [
-      "developer.html",
-      "developer-phone.html",
-      "developer-rooms.html",
-      "developer-services.html",
-      "developer-ads.html",
-      "developer-ticker.html",
-      "admin-approvals.html"
+      "developer/index.html",
+      "developer/confirm.html"
     ]
   },
   "sumerSchool": {

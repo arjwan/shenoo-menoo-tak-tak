@@ -18,10 +18,9 @@ const publicEntrypoints = [
   'profile-posts.js',
   'profile.js',
   'communication-dock.js',
-  'developer-services.js',
-  'developer-rooms.js',
-  'developer-school-requests.js',
-  'developer.html',
+  'developer/api.js',
+  'developer/app.js',
+  'developer/confirm.js',
   'server/src/socket.js'
 ];
 

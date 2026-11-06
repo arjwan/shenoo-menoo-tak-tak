@@ -15,10 +15,9 @@ Disallow: /friends.html
 Disallow: /notifications.html
 Disallow: /settings.html
 Disallow: /pending.html
-Disallow: /developer.html
-Disallow: /developer-rooms.html
 Disallow: /group-room.html
 Disallow: /room-admin.html
 Disallow: /phone-privacy.html
 
 Sitemap: https://shino-mino-tak-tak.duckdns.org/sitemap.xml
+Disallow: /developer/
