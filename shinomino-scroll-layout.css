@@ -143,3 +143,12 @@ html[data-sh-scroll] :is(dialog[open],[role="dialog"],.comments-card,.mobile-ser
   height:auto!important;max-height:none!important;overflow:visible!important;
  }
 }
+
+/* Developer sign-in stays vertically scrollable until authentication unlocks workspace. */
+html[data-sh-scroll="developer"]:has(#workspace[hidden]) body{
+ overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;
+}
+/* Preserve existing fixed overlays and horizontal tab navigation on small screens. */
+html[data-sh-scroll] :is(dialog[open],.comments-sheet,.mobile-bar,.sumer-mobile-bar){
+ overscroll-behavior:contain;
+}
