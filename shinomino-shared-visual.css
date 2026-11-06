@@ -1,0 +1,40 @@
+/* Shared visual language; imported only in the main platform, never in school pages. */
+html.shinomino-ui:not([data-theme="dark"]){color-scheme:light;--bg:#fbfaff!important;--bg-soft:#f6f0fc!important;--paper:#fbfaff!important;--panel:#fff!important;--panel2:#f7f3fc!important;--surface:#fff!important;--surface-solid:#fff!important;--card:#fff!important;--card2:#f8f4fd!important;--text:#29223f!important;--ink:#29223f!important;--muted:#766e86!important;--line:#e9e1f1!important;--purple:#7540ce!important;--primary:#7540ce!important;--blue:#7540ce!important;--violet:#7540ce!important;--accent:#7540ce!important;--social-card:#fff!important;--social-line:#e9e1f1!important;--social-muted:#766e86!important;--green:#1bbba9;--teal:#1bbba9;--primary2:#1bbba9;--shadow:0 12px 34px rgba(53,33,107,.07)!important}
+html.shinomino-ui:not([data-theme="dark"]) body{background:radial-gradient(circle at 90% 2%,#f3ebff,transparent 34%),#fbfaff!important;color:#29223f!important;font-family:Tahoma,"Segoe UI",Arial,sans-serif}
+html.shinomino-ui:not([data-theme="dark"]) :is(h1,h2,h3,h4,h5,h6){color:#302449}
+html.shinomino-ui:not([data-theme="dark"]) :is(.site-header,.home-top,.topbar){border-color:#eae1f3}
+html.shinomino-ui:not([data-theme="dark"]) :is(.social-card,.card,.side-card,.compact-panel,.composer,.post-card,.provider-card,.ad-card,.empty,.call-contact){background-color:#fff;color:#302449;border-color:#eae2f2;box-shadow:0 10px 28px rgba(57,37,109,.06)}
+html.shinomino-ui:not([data-theme="dark"]) :is(.social-search,.home-search,.toolbar input,.toolbar select,.provider-form input,.provider-form select,.provider-form textarea){background:#fbfaff!important;color:#29223f!important;border-color:#e5daef!important}
+html.shinomino-ui:not([data-theme="dark"]) :is(input,textarea,select):focus-visible{outline:3px solid #b79be8;outline-offset:2px}
+html.shinomino-ui :is(a,button,input,summary,[role="button"]):focus-visible{outline:3px solid #ae8ae7;outline-offset:3px}
+html.shinomino-ui:not([data-theme="dark"]) :is(.primary,.btn-primary,.chip.active){background:linear-gradient(110deg,#7540ce,#9862df);border-color:transparent;color:#fff}
+html.shinomino-ui:not([data-theme="dark"]) :is(.nav-link,.social-tab,.chip,.back){border-radius:12px}
+html.shinomino-ui:not([data-theme="dark"]) :is(.brand,.footer-name){color:#35244e}
+html.shinomino-ui:not([data-theme="dark"]) :is(.call-contact-copy,.social-list-item,.social-title,.ad-title){color:#302449!important}
+html.shinomino-ui:not([data-theme="dark"]) :is(.call-contact-copy small,.call-action span,.ad-head small){color:#766e86!important}
+html.shinomino-ui:not([data-theme="dark"]) :is(.social-search input,.calls-search input){color:#302449!important}
+html.shinomino-ui:not([data-theme="dark"]) .call-action{background:#fff!important;color:#6740a5!important}
+html.shinomino-ui:not([data-theme="dark"]) .ambient{opacity:.11}
+html.shinomino-ui:not([data-theme="dark"]) :is(.ad-media video,.reel-card video){background:#080812}
+
+/* Signup: full white/lavender form surface, retains existing form and its logic. */
+html.shinomino-ui.shinomino-signup{--bg:#fbfaff;--card:#fff;--line:#e9e1f1;--text:#29223f;--muted:#756c84;--primary:#7540ce;--primary2:#1bbba9;--pink:#a273dc;color-scheme:light}
+html.shinomino-ui.shinomino-signup body{background:radial-gradient(circle at 15% 10%,#f2eaff,transparent 33%),#fbfaff!important;color:#29223f!important}
+html.shinomino-ui.shinomino-signup .brand{color:#302449}
+html.shinomino-ui.shinomino-signup .back{color:#7540ce;background:#fff;border-color:#e2d5f1}
+html.shinomino-ui.shinomino-signup .badge{color:#7540ce;background:#f7f0ff;border-color:#e9dcf8}
+html.shinomino-ui.shinomino-signup .gradient{background:linear-gradient(100deg,#7540ce,#a16adc);background-clip:text;-webkit-background-clip:text;color:transparent}
+html.shinomino-ui.shinomino-signup .card{background:#fff!important;color:#29223f;border-color:#e9e1f1!important;box-shadow:0 18px 55px #47317116!important}
+html.shinomino-ui.shinomino-signup label{color:#34294d}
+html.shinomino-ui.shinomino-signup :is(input,select,textarea){background:#fefcff!important;color:#29223f!important;border-color:#e3d7ed!important}
+html.shinomino-ui.shinomino-signup input::placeholder{color:#988eaa}
+html.shinomino-ui.shinomino-signup select option{background:#fff;color:#29223f}
+html.shinomino-ui.shinomino-signup .security{background:#f0faf7;color:#37685e;border-color:#cfece5}
+html.shinomino-ui.shinomino-signup .checkline{color:#625a70}
+html.shinomino-ui.shinomino-signup .btn{background:linear-gradient(110deg,#7540ce,#9663dc);box-shadow:0 12px 27px #7540ce20}
+html.shinomino-ui.shinomino-signup .password-eye{background:#f2eafd;color:#7540ce}
+html.shinomino-ui.shinomino-signup .message.info{background:#eefaf6;color:#276d61}
+html.shinomino-ui.shinomino-signup .message.error{background:#fff0f4;color:#a33554}
+html.shinomino-ui.shinomino-signup .error-text{color:#aa3455}
+@media(max-width:760px){html.shinomino-ui:not([data-theme="dark"]) :is(.social-card,.card,.provider-card){border-radius:18px}}
+@media(prefers-reduced-motion:reduce){html.shinomino-ui *,html.shinomino-ui *::before,html.shinomino-ui *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

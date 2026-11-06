@@ -1,0 +1,21 @@
+name: Shinomino shared visual except school
+on:
+  push:
+    branches: [feat/shinomino-shared-visual-except-school-20261106]
+  pull_request:
+    paths:
+      - '**/*.html'
+      - 'shinomino-shared-visual.css'
+      - 'tests/shinomino-shared-visual.test.mjs'
+      - '.github/workflows/shinomino-shared-visual.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/shinomino-shared-visual.test.mjs tests/shinomino-home-ui.test.mjs tests/shinomino-login-ui.test.mjs tests/sumer-cloudflare-school-session.test.mjs

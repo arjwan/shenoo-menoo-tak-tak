@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" class="shinomino-ui">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -10,6 +10,7 @@
 <style>
 .invite-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.invite-card{padding:24px}.invite-card h2{margin-top:0}.invite-actions{display:flex;gap:10px;flex-wrap:wrap}.privacy-note{color:#aeb3c8;line-height:1.9}.contact-list{display:grid;gap:10px;margin-top:16px}.contact-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:15px}.contact-row small{display:block;color:#9da3b8}.small-button{cursor:pointer}.qr-card{grid-column:1/-1;text-align:center}.qr-image{width:min(260px,80vw);background:#fff;border-radius:18px;padding:12px;min-height:180px}.qr-actions{justify-content:center;margin-top:14px}.scanner-video{display:none;width:min(520px,100%);margin:14px auto;border-radius:18px;background:#000}.scanner-video.active{display:block}.file-label{position:relative;overflow:hidden}.file-label input{position:absolute;inset:0;opacity:0;cursor:pointer}.qr-actions .icon-button{background:#182238!important;color:#fff!important;border:2px solid #8190ad!important;font-weight:900}.qr-actions #scanQr{background:#6842e8!important;border-color:#9f8cff!important;color:#fff!important;min-height:54px;font-size:1rem}.qr-status{display:none;margin:14px auto 0;padding:12px 16px;border-radius:13px;font-weight:900;line-height:1.7;max-width:620px}.qr-status.show{display:block}.qr-status.success{color:#063c32;background:#9cf4dc;border:1px solid #1a9b7c}.qr-status.error{color:#6c0c1a;background:#ffd5db;border:1px solid #d94157}.qr-status.info{color:#14275d;background:#dce7ff;border:1px solid #6485dc}@media(prefers-color-scheme:light){.qr-card,.invite-card{color:#111827}.privacy-note{color:#4b5563}.qr-actions .icon-button{box-shadow:0 3px 10px rgba(0,0,0,.18)}}@media(max-width:760px){.invite-grid{grid-template-columns:1fr}.qr-card{grid-column:auto}}
 </style>
+<link rel="stylesheet" href="/shinomino-shared-visual.css?v=20261106-1">
 </head>
 <body>
 <script src="auth-guard.js"></script>
