@@ -21,7 +21,7 @@ test('smart friend editor uses safe named-item form elements for creation and ed
  assert.match(js,/field\('slot'\)\.value/);
  assert.match(js,/credentials='same-origin'/);
  assert.match(js,/HTTP '\+r\.status/);
- assert.match(html,/smart-friend-chat\.js\?v=20261106-persona-fix-2/);
+ assert.match(html,/smart-friend-chat\.js\?v=20261106-workers-ai-chat-1/);
 });
 test('server supports saved existing personas while correctly rejecting unsupported fields',async()=>{
  const body={name:'علي',gender:'male',age:25,personality:'friendly',conversationStyle:'balanced',interests:['الرياضة']};
@@ -36,7 +36,7 @@ test('server supports saved existing personas while correctly rejecting unsuppor
 });
 test('build includes fixed persona script without modifying Sumer School',async()=>{
  execFileSync('bash',['scripts/build-cloudflare-pages.sh'],{cwd:new URL('..',import.meta.url),stdio:'pipe',timeout:45000});
- assert.match(await read('dist/smart-friend-chat.html'),/20261106-persona-fix-2/);
+ assert.match(await read('dist/smart-friend-chat.html'),/20261106-workers-ai-chat-1/);
  assert.match(await read('dist/smart-friend-chat.js'),/elements\.namedItem/);
  assert.doesNotMatch(await read('dist/school/index.html'),/persona-fix-2/);
 });
