@@ -8,10 +8,10 @@ export function createClient({ fetcher = fetch, token = () => '', expired = () =
     const headers = new Headers(options.headers);
     headers.set('Accept', 'application/json');
     if (options.body) headers.set('Content-Type', 'application/json');
-    const credential = auth === false ? '' : typeof auth === 'string' ? auth : token();
+    // Session authorization is an HttpOnly cookie. Only the short-lived MFA challenge uses Bearer.\n    const credential = typeof auth === 'string' ? auth : '';
     if (credential) headers.set('Authorization', 'Bearer ' + credential);
     let response;
-    try { response = await fetcher(path, { ...options, headers, credentials: 'omit', redirect: 'error', cache: 'no-store' }); }
+    try { response = await fetcher(path, { ...options, headers, credentials: 'same-origin', redirect: 'error', cache: 'no-store' }); }
     catch { throw Error('تعذر الاتصال بالخادم. تحقق من اتصالك وحاول مجدداً.'); }
     const data = await response.json().catch(() => null);
     if (!response.ok) {
@@ -27,5 +27,5 @@ export function createClient({ fetcher = fetch, token = () => '', expired = () =
 export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function requireMfaChallenge(data) {
   if (!data?.preAuthToken || data.token) throw Error('لم تكتمل خطوة تأكيد الهوية');
-  return { token: data.preAuthToken, phone: Boolean(data.mfa?.phone), fido: Boolean(data.mfa?.fido) };
+  return { token: data.preAuthToken, totp: Boolean(data.mfa?.totp), enroll: Boolean(data.mfa?.enroll) };
 }
