@@ -1,0 +1,35 @@
+name: Google canonical URL and developer indexing
+on:
+  push:
+    branches: [fix/google-search-canonical-domain-20261107]
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - '_headers'
+      - 'developer/index.html'
+      - 'developer/confirm.html'
+      - 'download.html'
+      - 'privacy.html'
+      - 'community-guidelines.html'
+      - 'school.html'
+      - 'tests/google-canonical-search-indexing.test.mjs'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/google-canonical-search-indexing.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
+      - name: Check published search assets
+        run: |
+          grep -q 'Sitemap: https://shinomino.com/sitemap.xml' dist/robots.txt
+          grep -q 'X-Robots-Tag: noindex, nofollow, noarchive' dist/_headers
+          grep -q 'meta name="robots" content="noindex,nofollow,noarchive"' dist/developer/index.html
+          ! grep -q 'duckdns.org' dist/sitemap.xml
