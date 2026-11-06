@@ -43,6 +43,25 @@ export async function smartFriendRoute(request,env,user){
   return json({ok:true,friend:{id,slot,...parsed,avatarUrl:null}},201);
  }
  const item=pathname.match(/^\/api\/smart-friend\/friends\/(10|[1-9])$/);
+ if(item&&method==='DELETE'){
+  if(!originOk(request))return fail('مصدر الطلب غير موثوق',403);
+  const slot=Number(item[1]);
+  const existing=await bySlot(env,user.id,slot);
+  if(!existing)return fail('الشخصية غير موجودة أو حُذفت سابقًا',404);
+  // Scope deletion to both the authenticated owner and the selected slot.
+  const result=await env.DB.prepare('DELETE FROM smart_friend_personas WHERE id=? AND user_id=? AND slot=?')
+   .bind(existing.id,user.id,slot).run();
+  if(result.meta?.changes!==1)return fail('الشخصية غير موجودة أو حُذفت سابقًا',404);
+  let avatarRemoved=!existing.avatar_key;
+  if(existing.avatar_key&&env.MEDIA){
+   try{
+    await env.MEDIA.delete(existing.avatar_key);
+    avatarRemoved=true;
+   }catch(err){console.error('Smart friend avatar cleanup failed',String(err?.message||err))}
+  }
+  return json({ok:true,deleted:true,slot,friendId:existing.id,avatarRemoved,
+   message:'تم حذف الشخصية من حسابك'});
+ }
  if(item&&method==='PUT'){
   if(!originOk(request))return fail('مصدر الطلب غير موثوق',403);
   const existing=await bySlot(env,user.id,Number(item[1]));

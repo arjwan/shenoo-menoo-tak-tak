@@ -1,0 +1,26 @@
+name: Smart friend delete character
+on:
+  push:
+    branches: [feat/smart-friend-delete-persona-20261106]
+  pull_request:
+    paths:
+      - 'smart-friend-chat.html'
+      - 'smart-friend-chat.js'
+      - 'smart-friend-chat.css'
+      - 'cloudflare/pages/smart-friend.js'
+      - 'tests/smart-friend-delete.test.mjs'
+      - '.github/workflows/smart-friend-delete.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check smart-friend-chat.js
+      - run: node --check cloudflare/pages/smart-friend.js
+      - run: node --test tests/smart-friend-delete.test.mjs
+      - run: node --test tests/cloudflare-qr-smart-friend.test.mjs
