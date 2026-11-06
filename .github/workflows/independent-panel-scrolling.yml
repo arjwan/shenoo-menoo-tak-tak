@@ -1,0 +1,36 @@
+name: Independent panel scrolling
+on:
+  push:
+    branches: [feat/independent-panel-scrolling-20261107]
+  pull_request:
+    paths:
+      - 'shinomino-scroll-layout.css'
+      - 'shinomino-scroll-layout.js'
+      - 'scripts/build-cloudflare-pages.sh'
+      - 'tests/independent-panel-scrolling.test.mjs'
+      - '.github/workflows/independent-panel-scrolling.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check shinomino-scroll-layout.js
+      - run: bash -n scripts/build-cloudflare-pages.sh
+      - run: node --test tests/independent-panel-scrolling.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
+      - name: Check published pages received independent scrolling
+        run: |
+          test -s dist/shinomino-scroll-layout.js
+          test -s dist/shinomino-scroll-layout.css
+          for page in taktak.html smart-friend-chat.html messages.html profile.html reels.html school.html; do
+            grep -q 'shinomino-scroll-layout.css' "dist/$page"
+            grep -q 'shinomino-scroll-layout.js' "dist/$page"
+          done
+          grep -q 'shinomino-scroll-layout.css' dist/developer/index.html
+          grep -q 'shinomino-scroll-layout.js' dist/developer/index.html
+          grep -q 'shinomino-scroll-layout.css' dist/school/index.html
