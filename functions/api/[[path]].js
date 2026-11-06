@@ -3,7 +3,9 @@ import { handleDeveloper } from '../../cloudflare/developer-api.js';
 import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
 import { submitTeacher, listTeacherApplications, teacherApplicationDetail } from '../../cloudflare/pages/school-teachers.js';
 import { schoolManagementMe } from '../../cloudflare/pages/school-session.js';
-import { profileSession } from '../../cloudflare/pages/profile-session.js';
+import { profileSession, getAuthenticatedAppUser } from '../../cloudflare/pages/profile-session.js';
+import { friendQrRequest } from '../../cloudflare/pages/friend-qr.js';
+import { smartFriendRoute } from '../../cloudflare/pages/smart-friend.js';
 import { guardianStudentEnrollment, reviewStudentEnrollments } from '../../cloudflare/pages/school-enrollments.js';
 
 export async function onRequest(context) {
@@ -15,6 +17,16 @@ export async function onRequest(context) {
         { status: 503, headers: { 'Cache-Control': 'no-store' } });
     }
     return handleDeveloper(context.request, context.env, developerHelpers);
+  }
+  if (pathname === '/api/friends/qr' || pathname === '/api/friends/qr/request' ||
+      pathname === '/api/smart-friend/friends' || pathname.startsWith('/api/smart-friend/friends/') ||
+      pathname === '/api/smart-friend/messages' || pathname === '/api/smart-friend/group' ||
+      /^\\/api\\/smart-friend\\/avatar\\/[a-f0-9-]{36}$/i.test(pathname)) {
+    if (!context.env.DB) return Response.json({ok:false,message:'قاعدة البيانات غير مهيأة'},{status:503});
+    const actor = await getAuthenticatedAppUser(context.request,context.env);
+    if (!actor) return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401,headers:{'Cache-Control':'no-store'}});
+    if (pathname.startsWith('/api/friends/qr')) return friendQrRequest(context.request,context.env,actor);
+    return smartFriendRoute(context.request,context.env,actor);
   }
   // Profile editing, photo/cover media and privacy now run natively on D1/R2.
   if (pathname === '/api/users/me/profile' || pathname === '/api/users/me/privacy' ||
