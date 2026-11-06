@@ -109,7 +109,7 @@ export async function handleDeveloper(req,env,h){
   if(path==='/api/developer/me'&&method==='PATCH'){
    const b=await jsonBody(req),updates=[],args=[];
    if(b.fullName!==undefined){const v=String(b.fullName).trim();if(v.length<2||v.length>100)return fail('الاسم غير صالح');updates.push('full_name=?');args.push(v);}
-   if(b.email!==undefined){const v=String(b.email).trim().toLowerCase();if(v&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v))return fail('البريد غير صالح');updates.push('email=?');args.push(v||null);}
+   if(b.email!==undefined){const v=String(b.email).trim().toLowerCase();if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return fail('البريد غير صالح');updates.push('email=?');args.push(v||null);}
    if(b.phone!==undefined&&String(b.phone||'').trim())return fail('رقم الهاتف لم يُربط بملف حساب المطور بعد',422);
    if(!updates.length)return fail('لا توجد حقول قابلة للتعديل');
    try{await env.DB.prepare('UPDATE users SET '+updates.join(',')+' WHERE id=?').bind(...args,actor.id).run();}catch{return fail('البريد مستخدم أو غير صالح',409);}
