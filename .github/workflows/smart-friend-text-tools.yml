@@ -1,0 +1,22 @@
+name: Smart Friend text tools
+on:
+  push:
+    branches: [fix/smart-friend-text-tools-20261106]
+  pull_request:
+    paths:
+      - 'cloudflare/pages/smart-friend.js'
+      - 'tests/cloudflare-smart-friend-text-tools.test.mjs'
+      - '.github/workflows/smart-friend-text-tools.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/smart-friend.js
+      - run: node --test tests/cloudflare-smart-friend-text-tools.test.mjs
+      - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
