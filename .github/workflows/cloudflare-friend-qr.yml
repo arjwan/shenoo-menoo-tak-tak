@@ -1,0 +1,34 @@
+name: Cloudflare friend QR and smart personas
+on:
+  push:
+    branches: [fix/friend-qr-cloudflare-20261106]
+  pull_request:
+    paths:
+      - 'friend-qr.html'
+      - 'qr-code-vendor.min.js'
+      - 'jsqr-vendor.js'
+      - 'smart-friend-chat.js'
+      - 'cloudflare/pages/friend-qr.js'
+      - 'cloudflare/pages/smart-friend.js'
+      - 'cloudflare/pages/profile-session.js'
+      - 'functions/api/**'
+      - 'cloudflare/migrations/0008_friend_qr_tokens.sql'
+      - 'cloudflare/migrations/0009_smart_friend_personas.sql'
+      - 'tests/cloudflare-qr-smart-friend.test.mjs'
+      - '.github/workflows/cloudflare-friend-qr.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/friend-qr.js
+      - run: node --check cloudflare/pages/smart-friend.js
+      - run: node --check 'functions/api/[[path]].js'
+      - run: node --check smart-friend-chat.js
+      - run: node --test tests/cloudflare-qr-smart-friend.test.mjs
+      - run: node --test tests/cloudflare-profile-d1-r2.test.mjs
