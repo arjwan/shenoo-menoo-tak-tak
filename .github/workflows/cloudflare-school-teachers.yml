@@ -1,0 +1,25 @@
+name: Cloudflare School Teacher D1 Checks
+on:
+  push:
+    branches:
+      - feat/cloudflare-school-teacher-workflow-20261106
+  pull_request:
+    paths:
+      - 'cloudflare/pages/school-teachers.js'
+      - 'cloudflare/migrations/0004_school_teacher_workflow.sql'
+      - 'functions/api/school/management/**'
+      - 'tests/cloudflare-school-teachers.test.mjs'
+      - '.github/workflows/cloudflare-school-teachers.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/cloudflare-school-teachers.test.mjs tests/cloudflare-school-catalog.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
