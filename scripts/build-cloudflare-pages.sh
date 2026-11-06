@@ -24,9 +24,9 @@ const css = '<link rel="stylesheet" href="/shinomino-scroll-layout.css?v=2026110
 const js = '<script defer src="/shinomino-scroll-layout.js?v=20261107-1"></script>';
 for (const file of pages) {
  let html = fs.readFileSync(file,'utf8');
- if (!/<\\/head>/i.test(html) || !/<\\/body>/i.test(html)) continue;
- if (!html.includes('shinomino-scroll-layout.css')) html = html.replace(/<\\/head>/i, css + '\\n</head>');
- if (!html.includes('shinomino-scroll-layout.js')) html = html.replace(/<\\/body>/i, js + '\\n</body>');
+ if (!/<\/head>/i.test(html) || !/<\/body>/i.test(html)) continue;
+ if (!html.includes('shinomino-scroll-layout.css')) html = html.replace(/<\/head>/i, css + '\n</head>');
+ if (!html.includes('shinomino-scroll-layout.js')) html = html.replace(/<\/body>/i, js + '\n</body>');
  fs.writeFileSync(file, html);
 }
 NODE
