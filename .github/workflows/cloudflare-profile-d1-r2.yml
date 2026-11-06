@@ -25,4 +25,6 @@ jobs:
       - run: node --check profile.js
       - run: node --check cloudflare/profile-api.js
       - run: node --check cloudflare/pages/profile-session.js
-      - run: node --test tests/cloudflare-profile-d1-r2.test.mjs tests/shinomino-shared-visual.test.mjs tests/sumer-cloudflare-school-session.test.mjs
+      - run: node --test tests/cloudflare-profile-d1-r2.test.mjs
+      - run: node --test tests/shinomino-shared-visual.test.mjs
+      - run: node --test tests/sumer-cloudflare-school-session.test.mjs
