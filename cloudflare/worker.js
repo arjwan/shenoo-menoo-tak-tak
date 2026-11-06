@@ -1,3 +1,4 @@
+import { handleDeveloper } from './developer-api.js';
 import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
@@ -220,8 +221,10 @@ async function main(req,env){
     const user=await authenticate(req,env);
     return json({ok:true,user:safeUser(user),authenticated:true});
   }
-  // The retired D1 developer UI has no authentication or management fallback.
-  if (/^\/api\/developer(?:-mfa)?(?:\/|$)/.test(path)) return err('خدمات الإدارة متاحة عبر بوابة الموقع فقط', 410);
+  // D1 developer control plane is separate from the ordinary-user session.
+  if (/^\/api\/developer(?:-mfa)?(?:\/|$)/.test(path)) {
+    return handleDeveloper(req, env, { hash, verifyOrigin, enforceAuthRateLimit });
+  }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
 
