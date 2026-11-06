@@ -101,7 +101,9 @@
       headers['Accept'] = 'application/json';
     }
 
-    var token = options.token || this.getToken();
+    // School Cloudflare calls authenticate with HttpOnly same-origin cookies.
+    // Never send a stale legacy JWT stored in the browser to these endpoints.
+    var token = options.token || '';
     if (token && !headers['Authorization']) {
       headers['Authorization'] = 'Bearer ' + token;
     }
@@ -119,6 +121,7 @@
     return fetch(url, {
       method: method,
       headers: headers,
+      credentials: 'same-origin',
       body: body
     }).then(function (res) {
       return res.text().then(function (text) {
@@ -188,15 +191,9 @@
       });
     }
 
-    var self = this;
     return this.request('/api/auth/signin', {
       method: 'POST',
       body: { identifier: identifier, password: password }
-    }).then(function (res) {
-      if (res.ok && res.data && res.data.token) {
-        self.setToken(res.data.token);
-      }
-      return res;
     });
   };
 
