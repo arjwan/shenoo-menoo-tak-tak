@@ -1,0 +1,23 @@
+name: Profile social URL autofill
+on:
+  push:
+    branches: [fix/profile-social-links-auto-https-20261106]
+  pull_request:
+    paths:
+      - 'profile.html'
+      - 'profile.js'
+      - 'tests/profile-social-link-auto-https.test.mjs'
+      - '.github/workflows/profile-social-url.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check profile.js
+      - run: node --test tests/profile-social-link-auto-https.test.mjs
+      - run: node --test tests/cloudflare-profile-d1-r2.test.mjs
