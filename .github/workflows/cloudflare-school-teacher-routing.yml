@@ -4,7 +4,7 @@ on:
     branches: [fix/cloudflare-school-teacher-routing-20261106]
   pull_request:
     paths:
-      - functions/api/[[path]].js
+      - 'functions/api/[[path]].js'
       - cloudflare/pages/school-teachers.js
       - tests/cloudflare-school-teacher-routing.test.mjs
       - .github/workflows/cloudflare-school-teacher-routing.yml
