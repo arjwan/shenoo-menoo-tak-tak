@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#070910">
+  <meta name="theme-color" content="#faf9fe">
+  <meta name="description" content="سجّل دخولك إلى شنو منو تك تك، مجتمعك العراقي للتواصل والخدمات والتعليم.">
   <title>تسجيل الدخول | شنو منو تك تك</title>
 
   <style>
@@ -313,6 +314,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/signin-clean.css?v=20261106-1">
 </head>
 
 <body>
@@ -333,18 +335,31 @@
       <div class="badge">🇮🇶 تك تك بس عراقي</div>
 
       <h1>
-        رجعت؟<br>
-        <span class="gradient">نورت المكان</span>
+        كل عالمك<br>
+        <span class="gradient">بمكان واحد</span>
       </h1>
 
       <p>
-        سجّل دخولك وارجع للدردشة والغرف والأسواق والخدمات وكل عالم شنو منو تك تك.
+        تواصل مع أصحابك، اكتشف الخدمات، وتابع مجتمعك ومدرسة سومر بكل بساطة.
       </p>
+      <svg class="heritage-art" viewBox="0 0 390 205" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M9 175Q96 163 179 174Q277 161 381 174" stroke="#9C7ED5" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20 170V99H57V79H100V100H141V170" fill="#E6D8FC" stroke="#8965CA" stroke-width="2.5"/>
+        <path d="M41 96V73H69V52H92V75H116V97M58 67V46H79V32H89V47" stroke="#8965CA" stroke-width="2.5"/>
+        <path d="M35 106H123V169H35V106Z" fill="#F4ECFE" stroke="#8965CA" stroke-width="2"/>
+        <path d="M61 168V139C61 121 92 121 92 139V168" fill="#D3BDF7" stroke="#8965CA" stroke-width="2.5"/>
+        <path d="M49 118V128M107 118V128M26 119V130" stroke="#9872DA" stroke-width="3" stroke-linecap="round"/>
+        <path d="M175 170V60H192V42H210V22H228V43H246V62H264V171" fill="#E6D8FC" stroke="#8965CA" stroke-width="2.5"/>
+        <path d="M187 82H250M187 106H250M187 130H250M187 154H250" stroke="#AD91E4" stroke-width="2"/>
+        <path d="M290 170V126H318V109H341V170" fill="#DED0FA" stroke="#8965CA" stroke-width="2"/>
+        <path d="M309 126V85M309 112C298 96 288 98 280 99M309 112C321 97 331 97 339 98M309 106C307 93 312 81 319 74" stroke="#20BAA8" stroke-width="3" stroke-linecap="round"/>
+        <path d="M333 174L333 120" stroke="#8965CA" stroke-width="2"/>
+      </svg>
     </section>
 
     <section class="form-side">
       <h2>تسجيل الدخول</h2>
-      <p class="sub">أدخل بيانات حسابك للمتابعة.</p>
+      <p class="sub">أهلًا بعودتك! أدخل بيانات حسابك للمتابعة.</p>
 
       <form id="signinForm" novalidate>
 
@@ -353,6 +368,9 @@
           <input
             id="identity"
             autocomplete="username"
+            inputmode="text"
+            autocapitalize="none"
+            spellcheck="false"
             maxlength="100"
             placeholder="أدخل بيانات تسجيل الدخول"
           >
@@ -393,15 +411,15 @@
           >نسيت كلمة المرور؟</a>
         </div>
 
-        <div id="formMessage" class="message"></div>
+        <div id="formMessage" class="message" role="status" aria-live="polite"></div>
 
-        <button class="btn" type="submit">دخول</button>
+        <button class="btn" type="submit">تسجيل الدخول</button>
 
         <div class="new">
           ما عندك حساب؟
           <a href="signup.html">أنشئ حسابًا جديدًا</a>
         </div>
-
+        <p class="signin-footer">تسجيل دخول آمن · شنو منو تك تك</p>
       </form>
     </section>
 
