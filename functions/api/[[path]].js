@@ -21,7 +21,7 @@ export async function onRequest(context) {
   if (pathname === '/api/friends/qr' || pathname === '/api/friends/qr/request' ||
       pathname === '/api/smart-friend/friends' || pathname.startsWith('/api/smart-friend/friends/') ||
       pathname === '/api/smart-friend/messages' || pathname === '/api/smart-friend/group' ||
-      /^\\/api\\/smart-friend\\/avatar\\/[a-f0-9-]{36}$/i.test(pathname)) {
+      pathname.startsWith('/api/smart-friend/avatar/')) {
     if (!context.env.DB) return Response.json({ok:false,message:'قاعدة البيانات غير مهيأة'},{status:503});
     const actor = await getAuthenticatedAppUser(context.request,context.env);
     if (!actor) return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401,headers:{'Cache-Control':'no-store'}});
