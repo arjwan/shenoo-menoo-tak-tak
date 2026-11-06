@@ -1,0 +1,25 @@
+name: Cloudflare Smart Friend homepage dock
+on:
+  push:
+    branches: [fix/smart-friend-home-dock-route-20261106]
+  pull_request:
+    paths:
+      - 'functions/api/smart-friend/**'
+      - 'smart-friend-dock.js'
+      - 'taktak.html'
+      - 'tests/cloudflare-smart-friend-home-dock.test.mjs'
+      - '.github/workflows/smart-friend-home-dock.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check 'functions/api/smart-friend/[[path]].js'
+      - run: node --check smart-friend-dock.js
+      - run: node --test tests/cloudflare-smart-friend-home-dock.test.mjs
+      - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
