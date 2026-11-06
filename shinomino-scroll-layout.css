@@ -1,0 +1,145 @@
+/* Independent scrolling for Shinomino's page shells.
+ * Never change the scrolling of dialogs, drawers, popovers, or nested inputs.
+ * Desktop column layouts scroll independently without moving the document. */
+html[data-sh-scroll]{height:100%;overflow:hidden}
+html[data-sh-scroll] body{height:100dvh;max-height:100dvh;overflow:hidden;overscroll-behavior:none}
+html[data-sh-scroll] :is([data-sh-scroll-region],.sf-messages,.chat-messages){
+  min-height:0;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+}
+html[data-sh-scroll] :is([data-sh-scroll-region],.sf-messages,.chat-messages):focus-visible{
+  outline:2px solid var(--accent,#7c5cff);outline-offset:-3px;
+}
+/* Simple pages: header stays visible; only the direct main content scrolls. */
+html[data-sh-scroll="main"] body{display:flex;flex-direction:column}
+html[data-sh-scroll="main"] body > :is(header,.site-header,.home-top,.topbar){flex-shrink:0}
+html[data-sh-scroll="main"] body > main[data-sh-scroll-region]{
+  flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;
+  margin-block-start:0;margin-block-end:0;scrollbar-gutter:stable;
+}
+/* Alternate single-content pages with nonstandard wrappers:
+ * scroll the body, not html, leaving sticky headers operational. */
+html[data-sh-scroll="body"] body{overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain}
+
+/* Already independently-scrolling three-column social home. */
+@media(min-width:761px){
+ html[data-sh-scroll="home"] .home-grid{min-height:0;overflow:hidden}
+ html[data-sh-scroll="home"] :is(.feed,.left-side,.right-side){
+  min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-gutter:stable;
+ }
+ html[data-sh-scroll="home"] .left-side{max-height:100%;height:100%;position:static}
+}
+@media(max-width:760px){
+ html[data-sh-scroll="home"] .home-grid{overflow-y:auto;overscroll-behavior-y:contain}
+ html[data-sh-scroll="home"] .left-side{max-height:100%;overflow-y:auto}
+}
+
+/* Smart Friend: left personas, conversation middle, and right settings. */
+html[data-sh-scroll="smart-friend"] body{display:flex;flex-direction:column}
+html[data-sh-scroll="smart-friend"] body > .home-top{flex:0 0 auto}
+html[data-sh-scroll="smart-friend"] .sf-studio{
+ flex:1 1 auto;min-height:0;height:auto;margin-block:0;overflow:hidden;
+ grid-template-rows:minmax(0,1fr);
+}
+html[data-sh-scroll="smart-friend"] :is(.sf-personas,.sf-settings){
+ min-height:0;height:100%;overflow-y:auto;overflow-x:hidden;
+ overscroll-behavior-y:contain;scrollbar-gutter:stable;
+}
+html[data-sh-scroll="smart-friend"] .sf-chat{
+ min-height:0;height:100%;max-height:100%;overflow:hidden;
+}
+html[data-sh-scroll="smart-friend"] .sf-messages{
+ min-height:0;flex:1 1 auto;overflow-y:auto;
+}
+/* On narrow screens, columns stack but each pane remains scrollable,
+ * and the studio is allowed to scroll to reach the next pane. */
+@media(max-width:900px){
+ html[data-sh-scroll="smart-friend"] .sf-studio{
+  display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+  gap:12px;padding-block:10px 24px;
+ }
+ html[data-sh-scroll="smart-friend"] .sf-chat{
+  flex:0 0 auto;height:min(72dvh,750px);min-height:440px;order:1;
+ }
+ html[data-sh-scroll="smart-friend"] :is(.sf-personas,.sf-settings){
+  flex:0 0 auto;height:auto;max-height:42dvh;min-height:150px;order:2;
+ }
+ html[data-sh-scroll="smart-friend"] .sf-settings{order:3;max-height:65dvh}
+}
+
+/* Messages: conversation selector and message history are independent. */
+html[data-sh-scroll="messages"] body{display:flex;flex-direction:column}
+html[data-sh-scroll="messages"] body > .site-header{flex:0 0 auto}
+html[data-sh-scroll="messages"] body > main.social-page{
+ flex:1 1 auto;min-height:0;width:100%;margin-block:0;overflow:hidden;
+ display:flex;flex-direction:column;
+}
+html[data-sh-scroll="messages"] .chat-shell{
+ flex:1 1 auto;min-height:0;max-height:100%;height:100%;
+}
+html[data-sh-scroll="messages"] .conversation-list{
+ min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior-y:contain;
+}
+html[data-sh-scroll="messages"] .chat-window{
+ min-height:0;max-height:100%;overflow:hidden;
+}
+html[data-sh-scroll="messages"] .chat-messages{
+ flex:1 1 auto;min-height:0;overflow-y:auto;
+}
+@media(max-width:700px){
+ html[data-sh-scroll="messages"] .chat-shell{min-height:0}
+ html[data-sh-scroll="messages"] .conversation-list{max-height:40dvh}
+}
+
+/* Developer: navigation and current workspace scroll independently. */
+html[data-sh-scroll="developer"] #workspace:not([hidden]){
+ display:flex;flex-direction:column;height:100dvh;min-height:0;overflow:hidden;
+}
+html[data-sh-scroll="developer"] #workspace > header{flex:0 0 auto}
+html[data-sh-scroll="developer"] #workspace > .layout{
+ flex:1 1 auto;min-height:0;min-width:0;height:auto;overflow:hidden;
+}
+html[data-sh-scroll="developer"] #navigation{
+ min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;
+}
+html[data-sh-scroll="developer"] .layout > .content{
+ min-height:0;max-height:100%;overflow-y:auto;overflow-x:hidden;
+ overscroll-behavior-y:contain;scrollbar-gutter:stable;
+}
+@media(max-width:700px){
+ html[data-sh-scroll="developer"] #navigation{
+  flex:0 0 auto;max-height:100px;overflow-x:auto;overflow-y:hidden;
+ }
+ html[data-sh-scroll="developer"] #workspace > .layout{
+  display:flex;flex-direction:column;
+ }
+ html[data-sh-scroll="developer"] .layout > .content{flex:1 1 auto}
+}
+
+/* Sumer School: keep header and mobile controls fixed, independent sidebar/main. */
+html[data-sh-scroll="school"] #sumer-app{
+ display:flex;flex-direction:column;height:100dvh;min-height:0;overflow:hidden;
+}
+html[data-sh-scroll="school"] #sumer-header-mount{flex:0 0 auto}
+html[data-sh-scroll="school"] #sumer-app > .sumer-layout{
+ flex:1 1 auto;min-height:0;overflow:hidden;
+}
+html[data-sh-scroll="school"] .sumer-sidebar{
+ position:static;top:auto;height:100%;max-height:100%;overflow-y:auto;
+ overscroll-behavior-y:contain;
+}
+html[data-sh-scroll="school"] .sumer-main{
+ height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;
+ overscroll-behavior-y:contain;scrollbar-gutter:stable;
+}
+
+/* Make sure mobile menus, dialogs and sheets stay independently usable. */
+html[data-sh-scroll] :is(dialog[open],[role="dialog"],.comments-card,.mobile-services-drawer){
+ max-height:100dvh;overscroll-behavior-y:contain;
+}
+@media print{
+ html[data-sh-scroll],html[data-sh-scroll] body{height:auto!important;max-height:none!important;overflow:visible!important}
+ html[data-sh-scroll] :is(main,.sf-studio,.sf-personas,.sf-settings,.sf-messages,.chat-shell,.chat-window,.chat-messages,.sumer-layout,.sumer-main,#workspace,.layout,.content){
+  height:auto!important;max-height:none!important;overflow:visible!important;
+ }
+}
