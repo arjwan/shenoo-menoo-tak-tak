@@ -1,0 +1,27 @@
+name: Cloudflare profile posts D1
+on:
+  pull_request:
+    paths:
+      - 'cloudflare/pages/profile-posts.js'
+      - 'functions/api/[[path]].js'
+      - 'profile-posts.js'
+      - 'profile.html'
+      - 'tests/cloudflare-profile-posts-d1.test.mjs'
+      - '.github/workflows/cloudflare-profile-posts-d1.yml'
+  push:
+    branches: [fix/profile-posts-d1-visibility-20261107]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/profile-posts.js
+      - run: node --check profile-posts.js
+      - run: node --test tests/cloudflare-profile-posts-d1.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
+      - run: test -s dist/profile-posts.js

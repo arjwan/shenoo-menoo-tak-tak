@@ -4,6 +4,7 @@ import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
 import { submitTeacher, listTeacherApplications, teacherApplicationDetail } from '../../cloudflare/pages/school-teachers.js';
 import { schoolManagementMe } from '../../cloudflare/pages/school-session.js';
 import { profileSession, getAuthenticatedAppUser } from '../../cloudflare/pages/profile-session.js';
+import { profilePostsRequest } from '../../cloudflare/pages/profile-posts.js';
 import { friendQrRequest } from '../../cloudflare/pages/friend-qr.js';
 import { smartFriendRoute } from '../../cloudflare/pages/smart-friend.js';
 import { guardianStudentEnrollment, reviewStudentEnrollments } from '../../cloudflare/pages/school-enrollments.js';
@@ -27,6 +28,12 @@ export async function onRequest(context) {
     if (!actor) return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401,headers:{'Cache-Control':'no-store'}});
     if (pathname.startsWith('/api/friends/qr')) return friendQrRequest(context.request,context.env,actor);
     return smartFriendRoute(context.request,context.env,actor);
+  }
+  // Posts and private media for the profile page are served from D1/R2 with access control.
+  if (/^\/api\/posts\/user\/(?:me|[a-f0-9-]{36})$/i.test(pathname) ||
+      /^\/api\/profile-post-media\/[a-f0-9-]{36}$/i.test(pathname)) {
+    const actor = context.env.DB ? await getAuthenticatedAppUser(context.request, context.env) : null;
+    return profilePostsRequest(context.request, context.env, actor);
   }
   // Profile editing, photo/cover media and privacy now run natively on D1/R2.
   if (pathname === '/api/users/me/profile' || pathname === '/api/users/me/privacy' ||

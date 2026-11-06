@@ -2,7 +2,6 @@
   'use strict';
 
   const API=window.location.origin;
-  const token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';
   const profileId=new URLSearchParams(location.search).get('id')||'me';
 
   function esc(v){return String(v||'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
@@ -13,7 +12,7 @@
     const m=p.media[0],src=esc(absolute(m.url)),mime=String(m.mimeType||''),type=String(m.type||'');
     if(type==='video'||mime.startsWith('video/'))return '<div class="profile-post-media"><video controls playsinline preload="metadata" src="'+src+'"></video></div>';
     if(type==='audio'||mime.startsWith('audio/'))return '<div class="profile-post-media"><audio controls preload="metadata" src="'+src+'"></audio></div>';
-    return '<div class="profile-post-media"><img loading="lazy" src="'+src+'" alt=""></div>';
+    return '<div class="profile-post-media"><img loading="lazy" decoding="async" src="'+src+'" alt=""></div>';
   }
   function card(p){
     return '<article class="profile-post-card">'+
@@ -24,7 +23,7 @@
     '</article>';
   }
   async function request(path){
-    const r=await fetch(API+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'}});
+    const r=await fetch(API+path,{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}});
     const d=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(d.message||'تعذر تحميل المنشورات');
     return d;
