@@ -136,6 +136,15 @@ export async function smartFriendRoute(request,env,user){
   const result=await env.DB.prepare("SELECT id,role,text,created_at FROM smart_friend_messages WHERE user_id=? AND persona_id=? ORDER BY created_at DESC,id DESC LIMIT 100").bind(user.id,persona.id).all();
   return json({ok:true,messages:(result.results||[]).reverse().map(r=>({id:r.id,role:r.role,text:r.text,createdAt:r.created_at})),providerConfigured:!!env.AI?.run});
  }
+ if(pathname==='/api/smart-friend/messages'&&method==='DELETE'){
+  if(!originOk(request))return fail('مصدر الطلب غير موثوق',403);
+  const friend=new URL(request.url).searchParams.get('friend');
+  if(!friend||!/^[a-f0-9-]{36}$/i.test(friend))return fail('معرف الشخصية غير صالح',400);
+  const persona=await env.DB.prepare('SELECT id FROM smart_friend_personas WHERE id=? AND user_id=?').bind(friend,user.id).first();
+  if(!persona)return fail('الشخصية غير موجودة',404);
+  await env.DB.prepare('DELETE FROM smart_friend_messages WHERE user_id=? AND persona_id=?').bind(user.id,persona.id).run();
+  return json({ok:true,deleted:true});
+ }
  if(pathname==='/api/smart-friend/messages'&&method==='POST'){
   if(!originOk(request))return fail('مصدر الطلب غير موثوق',403);
   const contentType=request.headers.get('Content-Type')||'';
