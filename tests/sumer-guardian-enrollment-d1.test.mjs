@@ -38,7 +38,7 @@ test('valid guardian submission saves only a pending request, no child login or 
 });
 test('reject enrollment with missing consent selections and do not change D1',async()=>{
  let writes=0;
- const env=envFor({DB:{prepare(){return {bind(){return this},run:async()=>{writes++;return {}}}}}}});
+ const env=envFor({DB:{prepare(){return {bind(){return this},run:async()=>{writes++;return {}}};}}});
  const response=await guardianStudentEnrollment({env,request:req('/api/school/portal/guardian/student-enrollment','POST',{...data,consents:{camera:true}})});
  assert.equal(response.status,400);assert.equal(writes,0);
 });
