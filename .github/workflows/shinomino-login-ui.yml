@@ -1,0 +1,22 @@
+name: Shinomino simple login UI
+on:
+  push:
+    branches: [feat/clean-simple-ui-20261106]
+  pull_request:
+    paths:
+      - 'signin.html'
+      - 'signin-clean.css'
+      - 'tests/shinomino-login-ui.test.mjs'
+      - '.github/workflows/shinomino-login-ui.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/shinomino-login-ui.test.mjs
+      - run: node --test tests/developer-console.test.mjs tests/developer-d1-contract.test.mjs

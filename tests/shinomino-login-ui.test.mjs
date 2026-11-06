@@ -1,0 +1,30 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+const file=async p=>readFile(new URL('../'+p,import.meta.url),'utf8');
+test('approved light purple sign-in UI keeps authentic Cloudflare session checks',async()=>{
+ const [html,css]=await Promise.all([file('signin.html'),file('signin-clean.css')]);
+ assert.match(html,/href="\/signin-clean\.css\?v=20261106-1"/);
+ assert.match(html,/id="signinForm"/);
+ assert.match(html,/id="identity"/);
+ assert.match(html,/id="password"/);
+ assert.match(html,/id="remember"/);
+ assert.match(html,/id="forgotPassword"/);
+ assert.match(html,/\/api\/auth\/signin/);
+ assert.match(html,/\/api\/auth\/session/);
+ assert.match(html,/credentials: 'same-origin'/);
+ assert.match(html,/window\.location\.replace\('\/taktak\.html'\)/);
+ assert.match(html,/role="status" aria-live="polite"/);
+ assert.match(html,/كل عالمك/);
+ assert.match(css,/--bg:#faf9fe/);
+ assert.match(css,/@media\(max-width:420px\)/);
+ assert.match(css, /prefers-reduced-motion/);
+ assert.doesNotMatch(css,/display:none[^}]*\.form-side/);
+});
+test('Pages distribution includes updated sign-in page and stylesheet',async()=>{
+ execFileSync('bash',['scripts/build-cloudflare-pages.sh'],{cwd:new URL('..',import.meta.url),stdio:'pipe',timeout:45000});
+ const [page,css]=await Promise.all([file('dist/signin.html'),file('dist/signin-clean.css')]);
+ assert.match(page,/signin-clean\.css/);
+ assert.match(css,/\.form-side/);
+});
