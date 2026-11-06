@@ -1,0 +1,46 @@
+/* Dedicated cover framing controls; same white-and-lavender profile design. */
+html.profile-refresh .profile-cover-crop{
+ position:relative;width:100%;height:210px;overflow:hidden;isolation:isolate;
+ border:2px dashed #cbb8e7;border-radius:17px;background:linear-gradient(120deg,#f5effe,#eae3f8);
+ cursor:grab;touch-action:none;user-select:none;outline-offset:3px;
+}
+html.profile-refresh .profile-cover-crop.has-image{border-style:solid;border-color:#dbcfec;background:#f5effc}
+html.profile-refresh .profile-cover-crop.is-dragging{cursor:grabbing;border-color:#8653d2}
+html.profile-refresh .profile-cover-crop:focus-visible{outline:3px solid #8451d5}
+html.profile-refresh .profile-cover-crop img{
+ display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%;
+ transform-origin:50% 50%;will-change:transform;pointer-events:none;
+}
+html.profile-refresh .profile-cover-crop img[hidden]{display:none!important}
+html.profile-refresh .cover-crop-placeholder{position:absolute;inset:0;display:grid;place-items:center;padding:15px;color:#785e9d;font-size:13px;text-align:center}
+html.profile-refresh .cover-crop-placeholder[hidden]{display:none!important}
+html.profile-refresh .cover-crop-hint{
+ position:absolute;bottom:11px;right:11px;background:#241a3cc9;color:#fff;
+ border-radius:100px;padding:7px 13px;font-size:12px;pointer-events:none;
+}
+html.profile-refresh .profile-cover-crop:not(.has-image) .cover-crop-hint{display:none}
+html.profile-refresh .profile-cover-zoom{margin-top:14px;display:grid;gap:8px}
+html.profile-refresh .profile-cover-zoom>label{font-weight:800;color:#38264f}
+html.profile-refresh .profile-cover-zoom-slider{display:flex;align-items:center;gap:8px;direction:ltr}
+html.profile-refresh .profile-cover-zoom-slider input[type="range"]{
+ width:100%;flex:1;min-width:0;accent-color:#7e46d1;cursor:pointer;
+ min-height:30px;background:transparent!important;border:0!important;padding:0;
+}
+html.profile-refresh .profile-cover-zoom-slider button,html.profile-refresh [data-cover-reset]{
+ min-height:38px;border:1px solid #e3d5f4;border-radius:11px;color:#6940ab;
+ background:#f5edfe;padding:6px 13px;font-weight:800;cursor:pointer;
+}
+html.profile-refresh .profile-cover-zoom-slider button{font-size:20px;min-width:40px}
+html.profile-refresh .profile-cover-zoom-slider output{min-width:53px;text-align:center;direction:ltr;color:#6d469e;font-weight:800;font-size:13px}
+html.profile-refresh .profile-cover-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:9px}
+html.profile-refresh .profile-cover-controls .profile-help{flex:1;min-width:210px;margin:0}
+html.profile-refresh .profile-cover img{
+ object-fit:cover;object-position:50% 50%;transform-origin:50% 50%;
+}
+@media(max-width:740px){
+ html.profile-refresh .profile-cover-crop{height:160px;border-radius:13px}
+ html.profile-refresh .profile-cover-zoom-slider{gap:5px}
+ html.profile-refresh .profile-cover-zoom-slider button{min-width:35px;padding:4px 10px}
+ html.profile-refresh .cover-crop-hint{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){html.profile-refresh .profile-cover-crop img{transition:none!important}}

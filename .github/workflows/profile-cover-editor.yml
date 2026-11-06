@@ -1,0 +1,28 @@
+name: Profile cover framing tests
+on:
+  push:
+    branches: [feat/cover-crop-pan-zoom-20261106]
+  pull_request:
+    paths:
+      - 'profile.html'
+      - 'profile.js'
+      - 'profile-cover-editor.js'
+      - 'profile-cover-editor.css'
+      - 'cloudflare/profile-api.js'
+      - 'tests/profile-cover-editor.test.mjs'
+      - '.github/workflows/profile-cover-editor.yml'
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check profile.js
+      - run: node --check profile-cover-editor.js
+      - run: node --check cloudflare/profile-api.js
+      - run: node --test tests/profile-cover-editor.test.mjs
+      - run: node --test tests/cloudflare-profile-d1-r2.test.mjs
