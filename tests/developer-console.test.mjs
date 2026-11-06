@@ -5,19 +5,19 @@ import {createClient,requireMfaChallenge,clearLegacySessions,escapeHtml} from '.
 test('password authentication cannot create a full developer session',()=>{
  assert.throws(()=>requireMfaChallenge({token:'full'}));
  assert.throws(()=>requireMfaChallenge({preAuthToken:'pre',token:'full'}));
- assert.deepEqual(requireMfaChallenge({preAuthToken:'pre',mfa:{phone:true,fido:true}}),{token:'pre',phone:true,fido:true});
+ assert.deepEqual(requireMfaChallenge({preAuthToken:'pre',mfa:{totp:true,enroll:false}}),{token:'pre',totp:true,enroll:false});
 });
 test('login sends no old developer or core app session',async()=>{
  let called=false;
  const api=createClient({token:()=> 'old-session',fetcher:async(path,opt)=>{
-  called=true;assert.equal(path,'/api/developer/login');assert.equal(opt.headers.has('Authorization'),false);assert.equal(opt.credentials,'omit');assert.equal(opt.redirect,'error');
+  called=true;assert.equal(path,'/api/developer/login');assert.equal(opt.headers.has('Authorization'),false);assert.equal(opt.credentials,'same-origin');assert.equal(opt.redirect,'error');
   return Response.json({ok:true,preAuthToken:'pre'});
  }});
  await api('/api/developer/login',{auth:false,method:'POST',body:JSON.stringify({identifier:'test',password:'test-only-value'})});assert.ok(called);
 });
 test('MFA request uses only its pre-auth credential',async()=>{
  const api=createClient({token:()=> 'full',fetcher:async(_,opt)=>{assert.equal(opt.headers.get('Authorization'),'Bearer pre');return Response.json({ok:true});}});
- await api('/api/developer-mfa/phone/challenge',{auth:'pre',method:'POST',body:'{}'});
+ await api('/api/developer-mfa/totp/verify',{auth:'pre',method:'POST',body:'{}'});
 });
 test('core D1 authentication and lookalike API namespaces cannot receive developer credentials',async()=>{
  const api=createClient({token:()=> 'secret',fetcher:()=>{throw Error('must not fetch')}});
@@ -41,8 +41,25 @@ test('retired developer documents and scripts are absent',async()=>{
  const manifest=JSON.parse(await readFile(new URL('../app-pages.manifest.json',import.meta.url),'utf8'));
  assert.deepEqual(manifest.shenooMenoo.developer,['developer/index.html','developer/confirm.html']);
 });
-test('D1 worker has no obsolete developer control plane and retains core signup',async()=>{
+test('D1 Worker routes developer requests through its MFA-gated management module',async()=>{
  const source=await readFile(new URL('../cloudflare/worker.js',import.meta.url),'utf8');
- assert.doesNotMatch(source,/developer\.profile\.update|developer\.user\.update|path==='\/api\/developer\/dashboard'/);
+ assert.match(source,/handleDeveloper\(req, env/);
  assert.match(source,/\/api\/auth\/signup/);
+ const control=await readFile(new URL('../cloudflare/developer-api.js',import.meta.url),'utf8');
+ assert.match(control,/developer_sessions/);
+ assert.match(control,/developer_mfa/);
+ assert.match(control,/role='developer'/);
+ assert.doesNotMatch(control,/DEVELOPER_PASSWORD|password123|allow-new-developer/);
+});
+test('Cloudflare Pages forwards developer APIs to D1 but preserves original school',async()=>{
+ const pages=await readFile(new URL('../functions/api/[[path]].js',import.meta.url),'utf8');
+ assert.match(pages,/pathname\.startsWith\('\/api\/school\/'\)/);
+ assert.match(pages,/context\.env\.API\.fetch/);
+ assert.doesNotMatch(pages,/prefix => pathname.*developer/);
+});
+test('developer console keeps all original navigation sections',async()=>{
+ const ui=await readFile(new URL('../developer/app.js',import.meta.url),'utf8');
+ for(const section of ['overview','users','admins','approvals','rooms','reports','school','services','ticker','audit','account'])assert.match(ui,new RegExp(section+':'));
+ assert.match(ui,/totp\/verify/);
+ assert.doesNotMatch(ui,/sessionStorage\.setItem\(TOKEN_KEY/);
 });
