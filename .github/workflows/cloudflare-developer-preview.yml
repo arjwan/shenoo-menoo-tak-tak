@@ -1,0 +1,32 @@
+name: Cloudflare developer D1 preview checks
+on:
+  push:
+    branches:
+      - feat/cloudflare-developer-d1-20261106
+  pull_request:
+    paths:
+      - 'developer/**'
+      - 'cloudflare/developer-api.js'
+      - 'cloudflare/pages/developer-helpers.js'
+      - 'cloudflare/migrations/0002_developer_d1.sql'
+      - 'functions/api/**'
+      - 'tests/developer-console.test.mjs'
+      - 'tests/developer-d1-contract.test.mjs'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Cloudflare modules and UI syntax
+        run: |
+          node --check cloudflare/worker.js
+          node --check cloudflare/developer-api.js
+          node --check cloudflare/pages/developer-helpers.js
+          node --check functions/api/[[path]].js
+          node --check developer/api.js
+          node --check developer/app.js
+      - name: Run developer console and D1 security contract tests
+        run: node --test tests/developer-console.test.mjs tests/developer-d1-contract.test.mjs
