@@ -61,6 +61,7 @@
       else if (state.schoolContext.isTeacher) { roleLabel = 'معلم'; roleBadgeClass = 'badge-gold'; }
       else if (state.schoolContext.isGuardian) { roleLabel = 'ولي أمر'; roleBadgeClass = 'badge-success'; }
       else if (state.auth && state.auth.isAuthenticated && state.schoolContext && (state.schoolContext.isManager === true || state.schoolContext.isDeveloper === true)) { roleLabel = 'إدارة المدرسة'; roleBadgeClass = 'badge-warning'; }
+      else if (state.auth && state.auth.isAuthenticated) { roleLabel = 'عضو'; roleBadgeClass = 'badge-teal'; }
 
       var html = '<header class="sumer-header" role="banner">';
       html += '  <div class="sumer-header-start">';

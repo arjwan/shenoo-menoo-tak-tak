@@ -147,7 +147,7 @@
         // Preserve the requested admin section in the hash for school-admin.js.
         if (routeKey.indexOf('#admin/') === 0) {
           var adminSection = routeKey.slice('#admin/'.length) || 'overview';
-          window.location.replace('school-admin.html#' + encodeURIComponent(adminSection));
+          window.location.replace('/developer/#school');
           return;
         }
 
@@ -194,22 +194,21 @@
           renderContent(routeKey, contract);
         });
       }
-      if (api && api.getToken()) {
+      // Restore school identity from Cloudflare's HttpOnly D1 or developer MFA
+      // cookie, never from the legacy browser-token heuristic. Visitors stay guests.
+      if (api && api.getMe) {
         api.getMe().then(function (res) {
-          if (res.ok && res.data) {
+          if (res.ok && res.data && res.data.authenticated && res.data.user) {
             store.setSchoolContext(res.data.schoolContext, res.data.user);
-            store.setAuth({ token: api.getToken(), user: res.data.user, isAuthenticated: true, error: null });
+            store.setAuth({ token: null, user: res.data.user, isAuthenticated: true, error: null });
           } else {
             api.clearToken();
-            store.logout();
+            store.setAuth({ token: null, user: null, isAuthenticated: false, error: null });
           }
         }).catch(function () {
-          api.clearToken();
-          store.logout();
+          store.setAuth({ token: null, user: null, isAuthenticated: false, error: null });
         }).then(startRouter);
-      } else {
-        startRouter();
-      }
+      } else startRouter();
     })();
   </script>
 </body>
