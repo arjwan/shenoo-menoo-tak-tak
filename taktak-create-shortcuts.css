@@ -1,0 +1,72 @@
+/* Four purposeful create actions for Shinomino social home.
+   Kept outside .top-actions so account/logout controls stay intact. */
+html.home-colors-scope .create-shortcuts{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  flex:0 0 auto;min-width:0;direction:rtl;
+}
+html.home-colors-scope .create-shortcut{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:42px;padding:8px 11px;border-radius:12px;
+  border:1px solid #e4d8f4;background:#f7f2fe;color:#693bbc;
+  text-decoration:none;font:700 12px/1.3 Tahoma,Arial,sans-serif;
+  white-space:nowrap;cursor:pointer;box-shadow:none;
+  transition:background .16s,border-color .16s,transform .16s;
+}
+html.home-colors-scope .create-shortcut:hover{
+  background:#eee4fd;border-color:#b795e7;transform:translateY(-1px);
+}
+html.home-colors-scope .create-shortcut:focus-visible{
+  outline:3px solid #aa84ea;outline-offset:2px;
+}
+html.home-colors-scope .create-shortcut>span:first-child:not(.live-dot){
+  font-size:18px;line-height:1;
+}
+html.home-colors-scope .create-live{
+  border-color:#f0ced7;background:#fff4f6;color:#b23b55;
+}
+html.home-colors-scope .create-live:hover{background:#ffebef;border-color:#e49aac}
+html.home-colors-scope .live-dot{
+  flex:0 0 9px;width:9px;height:9px;border-radius:50%;
+  background:#e44757;box-shadow:0 0 0 3px rgba(228,71,87,.13);
+}
+html.home-colors-scope[data-theme="dark"] .create-shortcut{
+  background:#30283f;color:#d5bdf9;border-color:#56416e;
+}
+html.home-colors-scope[data-theme="dark"] .create-live{
+  background:#412832;color:#ffc5cd;border-color:#75404d;
+}
+/* Desktop: search flexes before essential quick-actions get squeezed. */
+@media(min-width:761px){
+  html.home-colors-scope .home-nav{gap:10px}
+  html.home-colors-scope .home-search{max-width:460px;flex:1 1 180px;min-width:100px}
+  html.home-colors-scope .create-shortcuts{flex-shrink:0}
+}
+@media(min-width:761px) and (max-width:1100px){
+  html.home-colors-scope .create-shortcuts{gap:4px}
+  html.home-colors-scope .create-shortcut{padding:8px;gap:5px;font-size:11px}
+  html.home-colors-scope .home-brand{font-size:14px}
+}
+@media(max-width:760px){
+  html.home-colors-scope .home-nav{min-height:0!important}
+  html.home-colors-scope .create-shortcuts{
+    order:2;flex:0 0 100%;width:100%;display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
+  }
+  html.home-colors-scope .create-shortcut{
+    min-height:46px;min-width:0;padding:7px 3px;gap:4px;
+    border-radius:12px;font-size:11px;
+  }
+  html.home-colors-scope .create-shortcut>span:first-child:not(.live-dot){font-size:16px}
+  html.home-colors-scope .home-search{order:3}
+  /* Existing mobile layout sets a fixed top margin. Increase it for new action row. */
+  html.home-colors-scope .home-grid{
+    margin-top:188px!important;
+  }
+}
+@media(max-width:390px){
+  html.home-colors-scope .create-shortcut{font-size:10px;gap:3px}
+  html.home-colors-scope .create-shortcut>span:first-child:not(.live-dot){font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  html.home-colors-scope .create-shortcut{transition:none}
+}
