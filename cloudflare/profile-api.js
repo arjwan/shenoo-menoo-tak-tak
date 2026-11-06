@@ -3,6 +3,7 @@
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 const error=(message,status=400)=>json({ok:false,message},status);
 const properties={bio:500,governorate:100,city:100,birthPlace:120,address:180,education:160,academicSpecialization:160,profession:120,workplace:120,website:250};
+const coverCropBounds={coverPositionX:[0,100],coverPositionY:[0,100],coverZoom:[100,250]};
 const privacyKeys=['friendRequests','messaging','lastSeen','photo','birthDate','gender','governorate','city','birthPlace','address','education','profession','workplace','phone','email','socialLinks'];
 const allowedPrivacy=['everyone','friends','nobody'];
 const parse=value=>{try{const o=JSON.parse(value||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch{return {}}};
@@ -93,6 +94,10 @@ export async function handleProfile(req,env,actor){
    if(Object.hasOwn(properties,k)){
     if(typeof value!=='string'||value.length>properties[k])return error('قيمة الحقل غير صالحة: '+k);
     update[k]=value.trim();
+   }else if(Object.hasOwn(coverCropBounds,k)){
+    const [minimum,maximum]=coverCropBounds[k];
+    if(typeof value!=='number'||!Number.isFinite(value)||!Number.isInteger(value)||value<minimum||value>maximum)return error('تمركز الغلاف أو التكبير غير صالح: '+k);
+    update[k]=value;
    }else if(k==='socialLinks'){
     if(!Array.isArray(value)||value.length>10||value.some(x=>typeof x!=='string'||x.length>350))return error('الروابط غير صالحة');
     for(const x of value){const raw=x.includes('|')?x.slice(x.indexOf('|')+1):x;try{const url=new URL(raw);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)return error('الرابط غير آمن')}catch{return error('رابط غير صالح')}}
