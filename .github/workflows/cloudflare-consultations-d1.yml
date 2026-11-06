@@ -1,0 +1,24 @@
+name: Cloudflare consultations D1
+on:
+  push:
+    branches: [fix/cloudflare-consultations-d1-20261107]
+  pull_request:
+    paths:
+      - 'cloudflare/pages/consultations.js'
+      - 'cloudflare/migrations/0013_consultation_providers.sql'
+      - 'functions/api/[[path]].js'
+      - 'tests/cloudflare-consultations-d1.test.mjs'
+      - '.github/workflows/cloudflare-consultations-d1.yml'
+jobs:
+  consultations:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/pages/consultations.js
+      - run: node --check 'functions/api/[[path]].js'
+      - run: node --test tests/cloudflare-consultations-d1.test.mjs
