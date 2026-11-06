@@ -22,7 +22,7 @@ export async function onRequest(context) {
   if (pathname === '/api/school/management/teacher-applications') {
     return listTeacherApplications(context);
   }
-  if (/^\\/api\\/school\\/management\\/teacher-applications\\/[a-f0-9-]{36}(?:\\/(?:approve|reject))?$/i.test(pathname)) {
+  if (/^\/api\/school\/management\/teacher-applications\/[a-f0-9-]{36}(?:\/(?:approve|reject))?$/i.test(pathname)) {
     return teacherApplicationDetail(context);
   }
   // Other school paths remain on the legacy origin until their D1 migration.
