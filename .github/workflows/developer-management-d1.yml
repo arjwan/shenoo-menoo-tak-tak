@@ -1,0 +1,28 @@
+name: Developer management D1 migration checks
+on:
+  push:
+    branches:
+      - feat/cloudflare-developer-management-d1-20261106
+  pull_request:
+    paths:
+      - cloudflare/developer-management.js
+      - cloudflare/developer-api.js
+      - cloudflare/migrations/0006_developer_management.sql
+      - developer/app.js
+      - tests/developer-management-d1.test.mjs
+      - .github/workflows/developer-management-d1.yml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/developer-api.js
+      - run: node --check cloudflare/developer-management.js
+      - run: node --check developer/app.js
+      - run: node --test tests/developer-management-d1.test.mjs tests/developer-d1-contract.test.mjs tests/developer-console.test.mjs tests/developer-totp-retry.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
