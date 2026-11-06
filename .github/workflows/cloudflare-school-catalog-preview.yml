@@ -1,0 +1,27 @@
+name: Cloudflare school catalog preview checks
+on:
+  push:
+    branches:
+      - feat/cloudflare-school-catalog-20261106
+  pull_request:
+    paths:
+      - 'scripts/build-cloudflare-pages.sh'
+      - 'functions/api/school/**'
+      - 'cloudflare/pages/school-helpers.js'
+      - 'tests/cloudflare-school-catalog.test.mjs'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse Pages function syntax
+        run: |
+          node --check functions/api/school/books.js
+          node --check 'functions/api/school/books/[[path]].js'
+          node --check functions/api/school/curriculum/catalog.js
+          node --check cloudflare/pages/school-helpers.js
+      - name: Validate original 108-book catalog and session gates
+        run: node --test tests/cloudflare-school-catalog.test.mjs
