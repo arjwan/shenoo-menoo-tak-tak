@@ -1,6 +1,7 @@
 import { proxyLegacy } from '../../cloudflare/pages/legacy-origin.js';
 import { handleDeveloper } from '../../cloudflare/developer-api.js';
 import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
+import { submitTeacher, listTeacherApplications, teacherApplicationDetail } from '../../cloudflare/pages/school-teachers.js';
 
 export async function onRequest(context) {
   const pathname = new URL(context.request.url).pathname;
@@ -12,7 +13,19 @@ export async function onRequest(context) {
     }
     return handleDeveloper(context.request, context.env, developerHelpers);
   }
-  // School remains on its origin until the school migration is fully tested.
+  // Keep D1 teacher management out of the legacy school proxy. This explicit
+  // dispatch also handles catch-all resolution on Pages when a more-specific
+  // dynamic school route is not selected.
+  if (pathname === '/api/school/management/teachers/apply') {
+    return submitTeacher(context);
+  }
+  if (pathname === '/api/school/management/teacher-applications') {
+    return listTeacherApplications(context);
+  }
+  if (/^\/api\/school\/management\/teacher-applications\/[a-f0-9-]{36}(?:\/(?:approve|reject))?$/i.test(pathname)) {
+    return teacherApplicationDetail(context);
+  }
+  // Other school paths remain on the legacy origin until their D1 migration.
   if (pathname === '/api/school' || pathname.startsWith('/api/school/')) {
     return proxyLegacy(context);
   }

@@ -1,0 +1,23 @@
+name: Cloudflare school teacher route checks
+on:
+  push:
+    branches: [fix/cloudflare-school-teacher-routing-20261106]
+  pull_request:
+    paths:
+      - 'functions/api/**'
+      - cloudflare/pages/school-teachers.js
+      - tests/cloudflare-school-teacher-routing.test.mjs
+      - .github/workflows/cloudflare-school-teacher-routing.yml
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check 'functions/api/[[path]].js'
+      - run: node --test tests/cloudflare-school-teacher-routing.test.mjs tests/cloudflare-school-teachers.test.mjs tests/developer-d1-contract.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
