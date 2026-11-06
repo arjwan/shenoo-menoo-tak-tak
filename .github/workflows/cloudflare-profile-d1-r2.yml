@@ -1,0 +1,28 @@
+name: Cloudflare profile D1 R2 and interface
+on:
+  push:
+    branches: [fix/cloudflare-profile-media-settings-ui-20261106]
+  pull_request:
+    paths:
+      - 'profile.html'
+      - 'profile.js'
+      - 'profile-refresh.css'
+      - 'cloudflare/profile-api.js'
+      - 'cloudflare/pages/profile-session.js'
+      - 'functions/api/**'
+      - 'tests/cloudflare-profile-d1-r2.test.mjs'
+      - '.github/workflows/cloudflare-profile-d1-r2.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check profile.js
+      - run: node --check cloudflare/profile-api.js
+      - run: node --check cloudflare/pages/profile-session.js
+      - run: node --test tests/cloudflare-profile-d1-r2.test.mjs tests/shinomino-shared-visual.test.mjs tests/sumer-cloudflare-school-session.test.mjs
