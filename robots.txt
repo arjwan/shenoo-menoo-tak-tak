@@ -2,7 +2,8 @@ User-agent: *
 Allow: /
 
 # Public discovery pages stay crawlable. Account/authentication, private messaging,
-# developer/admin, old backups and authenticated app areas stay out of search results.
+# admin, old backups and authenticated app areas stay out of search results.
+# Developer pages are crawlable ONLY to let Google detect their X-Robots-Tag: noindex.
 Disallow: /signin.html
 Disallow: /signup.html
 Disallow: /backups/
@@ -19,5 +20,4 @@ Disallow: /group-room.html
 Disallow: /room-admin.html
 Disallow: /phone-privacy.html
 
-Sitemap: https://shino-mino-tak-tak.duckdns.org/sitemap.xml
-Disallow: /developer/
+Sitemap: https://shinomino.com/sitemap.xml
