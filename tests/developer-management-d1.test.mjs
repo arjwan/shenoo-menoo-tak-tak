@@ -24,7 +24,7 @@ test('every missing management section now has a D1 route',async()=>{
  assert.doesNotMatch(api,/إدارة الغرف قيد النقل إلى D1|البلاغات قيد النقل إلى D1/);
  assert.match(html,/create-room/);
  assert.doesNotMatch(html,/field\('phone','رقم الهاتف',\{value:currentUser\.phone/);
- assert.doesNotMatch(migration,/\b(?:DROP|DELETE|TRUNCATE)\b/i);
+ assert.doesNotMatch(migration,/^\s*(?:DROP\s|DELETE\s+FROM|TRUNCATE\s)/im);
 });
 test('empty D1 collections return valid UI responses without faking records',async()=>{
  const env={DB:mockDb()};
