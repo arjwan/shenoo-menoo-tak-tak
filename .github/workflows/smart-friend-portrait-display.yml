@@ -1,0 +1,24 @@
+name: Smart Friend portrait display
+on:
+  push:
+    branches: [fix/smart-friend-portrait-in-chat-20261107]
+  pull_request:
+    paths:
+      - 'smart-friend-chat.html'
+      - 'smart-friend-chat.js'
+      - 'smart-friend-chat.css'
+      - 'tests/cloudflare-smart-friend-portrait-display.test.mjs'
+      - 'tests/cloudflare-smart-friend-ai.test.mjs'
+jobs:
+  portrait:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check smart-friend-chat.js
+      - run: node --test tests/cloudflare-smart-friend-portrait-display.test.mjs
+      - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
