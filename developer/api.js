@@ -8,7 +8,8 @@ export function createClient({ fetcher = fetch, token = () => '', expired = () =
     const headers = new Headers(options.headers);
     headers.set('Accept', 'application/json');
     if (options.body) headers.set('Content-Type', 'application/json');
-    // Session authorization is an HttpOnly cookie. Only the short-lived MFA challenge uses Bearer.\n    const credential = typeof auth === 'string' ? auth : '';
+    // Session authorization is an HttpOnly cookie. Only the short-lived MFA challenge uses Bearer.
+    const credential = typeof auth === 'string' ? auth : '';
     if (credential) headers.set('Authorization', 'Bearer ' + credential);
     let response;
     try { response = await fetcher(path, { ...options, headers, credentials: 'same-origin', redirect: 'error', cache: 'no-store' }); }
