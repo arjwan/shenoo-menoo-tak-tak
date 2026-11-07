@@ -1,4 +1,5 @@
 import { handleDeveloper } from './developer-api.js';
+import { handleGameRooms } from './kahwa-rooms.js';
 import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
@@ -219,6 +220,7 @@ async function main(req,env){
   }
   if(req.method==='GET'&&path==='/api/auth/session'){
     const user=await authenticate(req,env);
+  if (path==='/api/game-rooms'||path.startsWith('/api/game-rooms/')) return handleGameRooms(req,env,user);
     return json({ok:true,user:safeUser(user),authenticated:true});
   }
   // D1 developer control plane is separate from the ordinary-user session.
