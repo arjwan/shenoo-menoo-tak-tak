@@ -22,3 +22,13 @@
 .azawi-ambient{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex-basis:100%;border-top:1px solid #35574b;padding-top:12px}
 .azawi-ambient label{font-size:12px;color:#d0e9e0}.azawi-ambient input{flex:1;min-width:180px;border-radius:10px;padding:10px;background:#0c2019;color:#fff;border:1px solid #4c7768}.azawi-ambient small{color:#c1dcd1}
 @media(max-width:800px){.azawi-games{grid-template-columns:repeat(2,minmax(0,1fr))}.azawi-games button{min-height:116px}}
+
+/* Azawi modal readability when global light-theme rules meet the dark lobby dialog. */
+.shinomino-ui .game-modal .game-modal-card{background:#101914!important;color:#f5f9f7!important;border-color:#3b6255}
+.shinomino-ui .game-modal .game-modal-card :is(h2,h3,strong){color:#ffffff!important}
+.shinomino-ui .game-modal .game-modal-card label{color:#e1eee9!important}
+.shinomino-ui .game-modal .game-modal-card :is(input,select,textarea){background:#0b1713!important;color:#ffffff!important;border-color:#77978d!important;color-scheme:dark}
+.shinomino-ui .game-modal .game-modal-card :is(input,textarea)::placeholder{color:#c0d2cb!important;opacity:1}
+.shinomino-ui .game-modal .game-modal-card select option{background:#0b1713;color:#ffffff}
+.shinomino-ui .game-modal .game-modal-card .form-message{color:#f5c4c0!important}
+.shinomino-ui .game-modal .game-modal-card .icon-button:not(.primary){color:#f1f7f4!important}
