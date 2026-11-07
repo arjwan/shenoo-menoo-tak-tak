@@ -228,6 +228,8 @@ async function main(req,env){
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
+  const islamicResponse=await handleIslamic(req,env,user,path);
+  if(islamicResponse)return islamicResponse;
 
   // Resumable 8 MiB chunks; no large file is buffered inside the Worker.
   const UPLOAD_LIMIT=100*1024*1024,PART_BYTES=8*1024*1024;
