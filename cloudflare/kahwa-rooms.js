@@ -13,7 +13,7 @@ async function prepare(db,row,viewerId=null) {
   const stored=await db.prepare('SELECT state_json,version FROM game_room_state WHERE room_id=?').bind(row.id).first();
   const state=stored?JSON.parse(stored.state_json):null;
   const engine=state?publicGame(row.game_type,state,players.some(p=>p.id===viewerId)?viewerId:null):null;
-  const gameState={status:state?.status||row.status,turn:state?.turn?(players.find(p=>p.id===state.turn)||state.turn):null,teamScores:{A:0,B:0},...(engine?.public||{})};
+  const gameState={status:state?.status||row.status,turn:state?.turn?(players.find(p=>p.id===state.turn)||state.turn):null,teamScores:state?.teamScores||{A:0,B:0},...(engine?.public||{})};
   return {id:row.id,roomCode:row.room_code,name:row.name,gameType:row.game_type,gameName:TYPES[row.game_type][0],gameIcon:TYPES[row.game_type][1],visibility:row.visibility,maxPlayers:row.max_players,teamMode:row.team_mode,owner,players,reservations:[],spectators:[],isActive:!!row.is_active,gameState,engineState:engine||undefined};
 }
 async function canSee(db,row,user) {
@@ -40,6 +40,10 @@ export async function handleGameRooms(req,env,user) {
     const visible=[];
     for(const row of rows)if(await canSee(db,row,user))visible.push(await prepare(db,row));
     return json({ok:true,rooms:visible,maxListed:100,gameTypes:Object.entries(TYPES).map(([id,[name,icon]])=>({id,name,icon}))});
+  }
+  if(sub.length===0&&method==='DELETE'){
+    const result=await db.prepare("UPDATE game_rooms SET is_active=0,updated_at=CURRENT_TIMESTAMP WHERE owner_id=? AND is_active=1").bind(user.id).run();
+    return json({ok:true,message:'تم إغلاق الغرف التي تملكها',closed:Number(result.meta?.changes||0)});
   }
   if(sub.length===0&&method==='POST') {
     const body=await req.json().catch(()=>null);
@@ -101,6 +105,7 @@ export async function handleGameRooms(req,env,user) {
     const players=(await db.prepare('SELECT user_id FROM game_room_players WHERE room_id=? ORDER BY seat_index').bind(roomId).all()).results.map(p=>p.user_id);
     if(players.length!==row.max_players)return bad('يجب اكتمال اللاعبين قبل بدء المباراة',409);
     const game=freshGame(row.game_type,players);
+    game.teamScores={A:0,B:0};
     try{
       const inserted=await db.prepare("INSERT INTO game_room_state(room_id,state_json,version) SELECT id,?,0 FROM game_rooms WHERE id=? AND is_active=1 AND status='waiting' AND NOT EXISTS(SELECT 1 FROM game_room_state WHERE room_id=?)").bind(JSON.stringify(game),roomId,roomId).run();
       if(!inserted.meta?.changes)return bad('تم بدء المباراة من جلسة أخرى',409);
