@@ -1,5 +1,6 @@
 import { handleDeveloper } from './developer-api.js';
 import { handleIslamic } from './islamic-api.js';
+import { handleServices } from './service-providers-api.js';
 import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
@@ -230,6 +231,8 @@ async function main(req,env){
   const user=await authenticate(req,env);
   const islamicResponse=await handleIslamic(req,env,user,path);
   if(islamicResponse)return islamicResponse;
+  const serviceResponse=await handleServices(req,env,user,path);
+  if(serviceResponse)return serviceResponse;
 
   // Resumable 8 MiB chunks; no large file is buffered inside the Worker.
   const UPLOAD_LIMIT=100*1024*1024,PART_BYTES=8*1024*1024;
