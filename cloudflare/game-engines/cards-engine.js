@@ -14,7 +14,7 @@ function normalize(state) {
   return state;
 }
 function createGame(params = {}) {
-  const players = (params.playerIds || ['p1', 'p2']).map(String).slice(0, 4), stock = makeDeck(), hands = {}, scores = {};
+  const players = (params.playerIds || ['p1', 'p2']).map(String).slice(0, 6), stock = makeDeck(), hands = {}, scores = {};
   players.forEach(id => { hands[id] = []; scores[id] = 0; });
   for (let n = 0; n < 7; n++) players.forEach(id => hands[id].push(stock.pop()));
   const discard = [stock.pop()];
