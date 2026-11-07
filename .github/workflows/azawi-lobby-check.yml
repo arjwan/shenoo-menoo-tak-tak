@@ -1,0 +1,29 @@
+name: Azawi lobby focused checks
+on:
+  push:
+    paths:
+      - 'game-room.html'
+      - 'game-room.js'
+      - 'game-room.css'
+      - 'azawi-ambient.js'
+      - 'tests/azawi-lobby.test.cjs'
+      - '.github/workflows/azawi-lobby-check.yml'
+  pull_request:
+    paths:
+      - 'game-room.html'
+      - 'game-room.js'
+      - 'game-room.css'
+      - 'azawi-ambient.js'
+      - 'tests/azawi-lobby.test.cjs'
+      - '.github/workflows/azawi-lobby-check.yml'
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/azawi-lobby.test.cjs

@@ -3,3 +3,22 @@
 @media(max-width:700px){.current-player-badge{order:-1;max-width:190px;padding:5px 8px;font-size:10px}.nav-actions{flex-wrap:wrap}}
 
 .room-player-names{margin:8px 0;padding:7px 9px;border-radius:10px;background:rgba(25,217,160,.08);color:#b9ffe9;font-size:12px;line-height:1.6;white-space:normal}
+
+/* Azawi readability and game launcher — preserve game engine styles. */
+.shinomino-ui .azawi-hero{background:linear-gradient(120deg,#102c25,#192035)!important;border-color:#3a6258}
+.shinomino-ui .azawi-hero :is(h1,p,.eyebrow){color:#f4fbff!important;text-shadow:none}
+.shinomino-ui .azawi-hero h1{font-size:clamp(2rem,5vw,3.8rem);line-height:1.2;font-weight:900}
+.shinomino-ui .azawi-hero p{color:#d8e8e8!important}
+.shinomino-ui .game-picker{background:#152820!important}
+.shinomino-ui .game-picker .game-chip:not(.active){color:#fff!important;background:#102019!important}
+.shinomino-ui .room-empty{color:#d4e6e1!important}
+.shinomino-ui [data-lobby-feedback]{color:#f8c7b9!important;min-height:1.4em}
+.azawi-games{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.azawi-games button{display:flex;flex-direction:column;align-items:center;gap:9px;min-height:140px;padding:19px 10px;background:#142c28;color:#f5ffff;border:1px solid #33685b;border-radius:20px;cursor:pointer;transition:transform .16s,border-color .16s}
+.azawi-games button:hover,.azawi-games button:focus-visible{transform:translateY(-2px);border-color:#32dbbb}
+.azawi-games span{font-size:38px}.azawi-games strong{font-size:20px}.azawi-games small{font-size:12px;color:#c5dfd7;text-align:center}
+.azawi-radio{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;margin:14px 0;padding:18px;border-radius:18px;background:#152820;color:#eefcf7;border:1px solid #335c52}
+.azawi-radio p{margin:5px 0;color:#c5ddd3}.azawi-radio-links{display:flex;gap:8px;flex-wrap:wrap}.azawi-radio-links a,.azawi-ambient button{padding:9px 13px;background:#263c35;border:1px solid #488171;color:#fff;border-radius:12px;text-decoration:none;cursor:pointer}
+.azawi-ambient{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex-basis:100%;border-top:1px solid #35574b;padding-top:12px}
+.azawi-ambient label{font-size:12px;color:#d0e9e0}.azawi-ambient input{flex:1;min-width:180px;border-radius:10px;padding:10px;background:#0c2019;color:#fff;border:1px solid #4c7768}.azawi-ambient small{color:#c1dcd1}
+@media(max-width:800px){.azawi-games{grid-template-columns:repeat(2,minmax(0,1fr))}.azawi-games button{min-height:116px}}
