@@ -19,8 +19,10 @@ async function prepare(db,row,viewerId=null) {
 async function canSee(db,row,user) {
   if(row.visibility==='public'||row.owner_id===user.id)return true;
   const member=await db.prepare('SELECT 1 AS present FROM game_room_players WHERE room_id=? AND user_id=?').bind(row.id,user.id).first();
-  // Private and friends rooms are invitation-only until friendship access checks are implemented.
-  return !!member;
+  if(member)return true;
+  if(row.visibility!=='friends')return false;
+  const friend=await db.prepare("SELECT 1 AS present FROM friend_requests WHERE status='accepted' AND ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) LIMIT 1").bind(user.id,row.owner_id,row.owner_id,user.id).first();
+  return !!friend;
 }
 function permitted(req) {
   const origin=req.headers.get('Origin');
