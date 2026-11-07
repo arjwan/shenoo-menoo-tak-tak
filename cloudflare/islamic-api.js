@@ -116,8 +116,25 @@ export async function handleIslamic(req,env,user,path){
     }
     if(p.general_post_id)return output({ok:true,alreadyShared:true,postId:p.general_post_id});
     const generalId=crypto.randomUUID(),generalText=[p.title,p.text,'/islamic.html#post='+p.id].filter(Boolean).join('\n\n');
-    await env.DB.prepare("INSERT INTO posts(id,author_id,text,visibility) VALUES(?,?,?,'everyone')").bind(generalId,user.id,generalText).run();
-    await env.DB.prepare('UPDATE islamic_posts SET shared_to_general=1,general_post_id=? WHERE id=? AND general_post_id IS NULL').bind(generalId,p.id).run();
+    let copiedKey=null;
+    if(p.media_key){
+      const object=await env.MEDIA.get(p.media_key);
+      if(!object)return failure('المرفق غير متاح للمشاركة',409);
+      copiedKey='islamic/shared/'+generalId+'/'+crypto.randomUUID();
+      await env.MEDIA.put(copiedKey,object.body,{httpMetadata:{contentType:p.media_mime}});
+    }
+    try{
+      await env.DB.prepare("INSERT INTO posts(id,author_id,text,visibility) VALUES(?,?,?,'everyone')").bind(generalId,user.id,generalText).run();
+      if(copiedKey){
+        await env.DB.prepare('INSERT INTO media(id,post_id,owner_id,r2_key,kind,mime_type,size) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(),generalId,user.id,copiedKey,p.media_type,p.media_mime,p.media_size).run();
+      }
+      await env.DB.prepare('UPDATE islamic_posts SET shared_to_general=1,general_post_id=? WHERE id=? AND general_post_id IS NULL').bind(generalId,p.id).run();
+    }catch(e){
+      await env.DB.prepare('DELETE FROM media WHERE post_id=?').bind(generalId).run().catch(()=>{});
+      await env.DB.prepare('DELETE FROM posts WHERE id=?').bind(generalId).run().catch(()=>{});
+      if(copiedKey)await env.MEDIA.delete(copiedKey).catch(()=>{});
+      throw e;
+    }
     return output({ok:true,postId:generalId},201);
   }
   return failure('عملية المنبر غير مدعومة',405);
