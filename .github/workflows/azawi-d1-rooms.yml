@@ -1,0 +1,26 @@
+name: Azawi D1 room API tests
+on:
+  pull_request:
+    paths:
+      - 'cloudflare/kahwa-rooms.js'
+      - 'cloudflare/worker.js'
+      - 'cloudflare/migrations/0014_kahwa_game_rooms.sql'
+      - 'tests/azawi-d1-rooms.test.mjs'
+      - '.github/workflows/azawi-d1-rooms.yml'
+  push:
+    paths:
+      - 'cloudflare/kahwa-rooms.js'
+      - 'cloudflare/migrations/0014_kahwa_game_rooms.sql'
+      - 'tests/azawi-d1-rooms.test.mjs'
+      - '.github/workflows/azawi-d1-rooms.yml'
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/azawi-d1-rooms.test.mjs
