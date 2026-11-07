@@ -105,3 +105,9 @@ test('original domino, tawla and cards expose only legal actions',()=>{
   assert.equal(result.ok,true,type+': '+result.error);
  }
 });
+
+test('six player cards option deals each enrolled player',()=>{
+ const s=freshGame('cards',['a','b','c','d','e','f']);
+ assert.equal(s.players.length,6);
+ for(const id of s.players)assert.equal(s.hands[id].length,7);
+});
