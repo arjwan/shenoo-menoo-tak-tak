@@ -413,6 +413,37 @@ async function main(req,env){
     return json({ok:true,message:'حُفظ الملف الشخصي على Cloudflare',profile:clean});
   }
 
+  // Profile timeline: owners can view their stored posts; other viewers see public posts only.
+  const profilePostsMatch=path.match(/^\/api\/posts\/user\/(me|[a-f0-9-]{36})$/i);
+  if(req.method==='GET'&&profilePostsMatch){
+    const targetId=profilePostsMatch[1]==='me'?user.id:profilePostsMatch[1];
+    const target=await env.DB.prepare("SELECT id FROM users WHERE id=? AND status='active'").bind(targetId).first();
+    if(!target)return err('الملف الشخصي غير موجود',404);
+    const owner=targetId===user.id;
+    const predicate="p.author_id=? "+(owner?"":"AND p.visibility='everyone' ")+"AND NOT EXISTS (SELECT 1 FROM ad_records a WHERE a.post_id=p.id)";
+    const [count,rows]=await Promise.all([
+      env.DB.prepare('SELECT COUNT(*) AS total FROM posts p WHERE '+predicate).bind(targetId).first(),
+      env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at FROM posts p WHERE '+predicate+' ORDER BY p.created_at DESC,p.id DESC LIMIT 60').bind(targetId).all()
+    ]);
+    const ids=rows.results.map(p=>p.id),media=[],likes=new Map(),comments=new Map();
+    if(ids.length){
+      const marks=ids.map(()=>'?').join(',');
+      const [attachments,reactions,replies]=await Promise.all([
+        env.DB.prepare('SELECT id,post_id,kind,mime_type,size FROM media WHERE post_id IN ('+marks+')').bind(...ids).all(),
+        env.DB.prepare('SELECT post_id,COUNT(*) AS n FROM post_likes WHERE post_id IN ('+marks+') GROUP BY post_id').bind(...ids).all(),
+        env.DB.prepare('SELECT post_id,COUNT(*) AS n FROM post_comments WHERE post_id IN ('+marks+') GROUP BY post_id').bind(...ids).all()
+      ]);
+      media.push(...attachments.results);
+      for(const r of reactions.results)likes.set(r.post_id,r.n);
+      for(const r of replies.results)comments.set(r.post_id,r.n);
+    }
+    return json({ok:true,total:count?.total||0,posts:rows.results.map(p=>({
+      id:p.id,text:p.text,visibility:p.visibility,createdAt:p.created_at,
+      media:media.filter(m=>m.post_id===p.id).map(m=>({url:'/media/'+m.id,type:m.kind,mimeType:m.mime_type,size:m.size})),
+      likesCount:likes.get(p.id)||0,commentsCount:comments.get(p.id)||0
+    }))});
+  }
+
   if(req.method==='GET'&&path==='/api/posts'){
     const rows=await env.DB.prepare('SELECT p.id,p.text,p.visibility,p.created_at,u.id as author_id,u.username,u.full_name FROM posts p JOIN users u ON u.id=p.author_id WHERE (p.visibility=? OR p.author_id=?) AND NOT EXISTS (SELECT 1 FROM ad_records a WHERE a.post_id=p.id) ORDER BY p.created_at DESC LIMIT 30').bind('everyone',user.id).all();
     const ids=rows.results.map(p=>p.id);
