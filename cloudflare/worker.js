@@ -713,7 +713,7 @@ async function main(req,env){
     await env.DB.prepare('UPDATE notifications SET read_at=CURRENT_TIMESTAMP WHERE user_id=? AND read_at IS NULL').bind(user.id).run();
     return json({ok:true});
   }
-  const notificationRead=path.match(/^\\/api\\/social\\/notifications\\/([a-f0-9-]{36})\\/read$/i);
+  const notificationRead=path.match(new RegExp('^/api/social/notifications/([a-f0-9-]{36})/read$','i'));
   if(notificationRead&&req.method==='PATCH'){
     const result=await env.DB.prepare('UPDATE notifications SET read_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=? AND read_at IS NULL').bind(notificationRead[1],user.id).run();
     if(!result.meta.changes){
