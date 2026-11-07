@@ -2,10 +2,29 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const html = fs.readFileSync('game-room.html','utf8');
-const js = fs.readFileSync('game-room.js','utf8');
-const ambient = fs.readFileSync('azawi-ambient.js','utf8');
-test('Azawi scripts parse without syntax errors',()=>{new vm.Script(js);new vm.Script(ambient)});
-test('Each supported game has a real table opener and a server engine',()=>{for(const game of ['domino','tawla','cards','chess']){assert.match(html,new RegExp('data-open-game="'+game+'"'));assert.match(html,new RegExp('data-game="'+game+'"'));assert.match(html,new RegExp('value="'+game+'"'));}assert.match(js,/createModal/);assert.match(js,/createGame/);assert.match(js,/api\\/game-rooms/)});
-test('Old socket host is not used and lobby failure is visible',()=>{assert.doesNotMatch(html,/shino-mino-tak-tak\\.duckdns\\.org/);assert.match(html,/\\/socket\\.io\\/socket\\.io\\.js/);assert.match(js,/تعذر تحميل الطاولات/);assert.match(js,/Array\\.isArray\\(d\\.rooms\\)/)});
-test('Music is opt-in and can be stopped; no third-party music is copied',()=>{assert.match(html,/azawiAmbientToggle/);assert.match(html,/azawiAmbientStop/);assert.match(ambient,/audio\\.volume=\\.12/);assert.match(ambient,/audio\\.pause\\(\\)/);assert.doesNotMatch(ambient,/autoplay/)});
+const html = fs.readFileSync('game-room.html', 'utf8');
+const js = fs.readFileSync('game-room.js', 'utf8');
+const ambient = fs.readFileSync('azawi-ambient.js', 'utf8');
+test('Azawi client scripts parse', () => { new vm.Script(js); new vm.Script(ambient); });
+test('All four games support selection and opening a table', () => {
+  for (const game of ['domino','tawla','cards','chess']) {
+    assert.ok(html.includes('data-open-game="'+game+'"'));
+    assert.ok(html.includes('data-game="'+game+'"'));
+    assert.ok(html.includes('value="'+game+'"'));
+  }
+  assert.ok(js.includes("$('#createModal').hidden=false"));
+  assert.ok(js.includes('/api/game-rooms'));
+});
+test('Same-host websocket and visible lobby errors', () => {
+  assert.ok(html.includes('src="/socket.io/socket.io.js"'));
+  assert.ok(!html.includes('shino-mino-tak-tak.duckdns.org'));
+  assert.ok(js.includes('تعذر تحميل الطاولات'));
+  assert.ok(js.includes('Array.isArray(d.rooms)'));
+});
+test('Ambient audio is opt-in, quiet, and stoppable', () => {
+  assert.ok(html.includes('azawiAmbientToggle'));
+  assert.ok(html.includes('azawiAmbientStop'));
+  assert.ok(ambient.includes('audio.volume=.12'));
+  assert.ok(ambient.includes('audio.pause()'));
+  assert.ok(!ambient.includes('autoplay'));
+});
