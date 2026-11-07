@@ -33,4 +33,4 @@ jobs:
           node-version: '22'
       - run: npm ci --ignore-scripts
       - run: node --test tests/azawi-d1-rooms.test.mjs
-      - run: npx --yes wrangler@4.45.0 deploy cloudflare/worker.js --dry-run --outdir /tmp/kahwa-worker --compatibility-date 2026-11-07 --compatibility-flags nodejs_compat
+      - run: npx --yes wrangler@4.45.0 deploy cloudflare/worker.js --name shno-kahwa-dryrun --dry-run --outdir /tmp/kahwa-worker --compatibility-date 2026-11-07 --compatibility-flags nodejs_compat
