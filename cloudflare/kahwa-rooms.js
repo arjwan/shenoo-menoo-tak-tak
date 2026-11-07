@@ -1,3 +1,4 @@
+import {freshGame,publicGame,moveGame} from './kahwa-engine.js';
 // Authenticated Azawi lobby; D1 stores real rooms, never dummy games.
 // Gameplay engines remain unavailable until the original engines are adapted and verified.
 const TYPES = { domino:['دومنة','🁫'], tawla:['طاولي','🎲'], cards:['ورق','🃏'], chess:['شطرنج','♟'] };
@@ -5,11 +6,15 @@ const json = (data,status=200) => Response.json(data,{status,headers:{'Cache-Con
 const bad = (message,status=400) => json({ok:false,message},status);
 const clean = value => String(value??'').trim();
 const profile = row => ({id:row.id,name:row.full_name||row.username||'لاعب',username:row.username||''});
-async function prepare(db,row) {
+async function prepare(db,row,viewerId=null) {
   const members = await db.prepare('SELECT u.id,u.full_name,u.username,p.seat_index FROM game_room_players p JOIN users u ON u.id=p.user_id WHERE p.room_id=? ORDER BY p.seat_index').bind(row.id).all();
   const players = members.results.map(profile);
   const owner = players.find(p=>p.id===row.owner_id)||{id:row.owner_id,name:'المالك'};
-  return {id:row.id,roomCode:row.room_code,name:row.name,gameType:row.game_type,gameName:TYPES[row.game_type][0],gameIcon:TYPES[row.game_type][1],visibility:row.visibility,maxPlayers:row.max_players,teamMode:row.team_mode,owner,players,reservations:[],spectators:[],isActive:!!row.is_active,gameState:{status:row.status,teamScores:{A:0,B:0}}};
+  const stored=await db.prepare('SELECT state_json,version FROM game_room_state WHERE room_id=?').bind(row.id).first();
+  const state=stored?JSON.parse(stored.state_json):null;
+  const engine=state?publicGame(row.game_type,state,players.some(p=>p.id===viewerId)?viewerId:null):null;
+  const gameState={status:state?.status||row.status,turn:state?.turn?(players.find(p=>p.id===state.turn)||state.turn):null,teamScores:{A:0,B:0},...(engine?.public||{})};
+  return {id:row.id,roomCode:row.room_code,name:row.name,gameType:row.game_type,gameName:TYPES[row.game_type][0],gameIcon:TYPES[row.game_type][1],visibility:row.visibility,maxPlayers:row.max_players,teamMode:row.team_mode,owner,players,reservations:[],spectators:[],isActive:!!row.is_active,gameState,engineState:engine||undefined};
 }
 async function canSee(db,row,user) {
   if(row.visibility==='public'||row.owner_id===user.id)return true;
@@ -64,7 +69,7 @@ export async function handleGameRooms(req,env,user) {
   const allowed=await canSee(db,row,user);
   if(sub.length===1&&method==='GET') {
     if(!allowed)return bad('الغرفة خاصة',403);
-    return json({ok:true,viewerId:user.id,room:await prepare(db,row)});
+    return json({ok:true,viewerId:user.id,room:await prepare(db,row,user.id)});
   }
   if(sub.length===1&&method==='DELETE') {
     if(row.owner_id!==user.id)return bad('حذف الغرفة متاح للمالك فقط',403);
@@ -82,7 +87,7 @@ export async function handleGameRooms(req,env,user) {
       if(seat>=row.max_players)return bad('الطاولة ممتلئة',409);
       try{await db.prepare('INSERT INTO game_room_players(room_id,user_id,seat_index) VALUES(?,?,?)').bind(roomId,user.id,seat).run()}catch{return bad('حاول الانضمام مجددًا',409)}
     }
-    return json({ok:true,room:await prepare(db,row)});
+    return json({ok:true,room:await prepare(db,row,user.id)});
   }
   if(sub.length===2&&sub[1]==='join'&&method==='DELETE') {
     if(row.owner_id===user.id)return bad('مالك الطاولة يغلقها بدل المغادرة',403);
@@ -90,6 +95,37 @@ export async function handleGameRooms(req,env,user) {
     await db.prepare('DELETE FROM game_room_players WHERE room_id=? AND user_id=?').bind(roomId,user.id).run();
     return json({ok:true});
   }
-  if(sub.length===2&&sub[1]==='start'&&method==='POST')return bad('محرك اللعبة لم يُنقل إلى Cloudflare بعد؛ لن نبدأ مباراة غير قابلة للعب',503);
+  if(sub.length===2&&sub[1]==='start'&&method==='POST'){
+    if(row.owner_id!==user.id)return bad('مالك الطاولة فقط يبدأ اللعبة',403);
+    if(row.status!=='waiting')return bad('اللعبة بدأت بالفعل',409);
+    const players=(await db.prepare('SELECT user_id FROM game_room_players WHERE room_id=? ORDER BY seat_index').bind(roomId).all()).results.map(p=>p.user_id);
+    if(players.length!==row.max_players)return bad('يجب اكتمال اللاعبين قبل بدء المباراة',409);
+    const game=freshGame(row.game_type,players);
+    try{
+      const inserted=await db.prepare("INSERT INTO game_room_state(room_id,state_json,version) SELECT id,?,0 FROM game_rooms WHERE id=? AND is_active=1 AND status='waiting' AND NOT EXISTS(SELECT 1 FROM game_room_state WHERE room_id=?)").bind(JSON.stringify(game),roomId,roomId).run();
+      if(!inserted.meta?.changes)return bad('تم بدء المباراة من جلسة أخرى',409);
+      const updated=await db.prepare("UPDATE game_rooms SET status='active',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='waiting' AND is_active=1").bind(roomId).run();
+      if(!updated.meta?.changes)return bad('تعذر تغيير حالة المباراة',409);
+      return json({ok:true,room:await prepare(db,{...row,status:'active'},user.id)});
+    }catch{return bad('تعذر حفظ بداية المباراة',503)}
+  }
+  if(sub.length===2&&sub[1]==='action'&&method==='POST'){
+    if(row.status!=='active')return bad('اللعبة غير نشطة',409);
+    const member=await db.prepare('SELECT 1 AS present FROM game_room_players WHERE room_id=? AND user_id=?').bind(roomId,user.id).first();
+    if(!member)return bad('هذه الحركة للاعبين فقط',403);
+    const action=await req.json().catch(()=>null);
+    if(!action||typeof action!=='object'||Array.isArray(action)||JSON.stringify(action).length>4096)return bad('بيانات الحركة غير صحيحة',400);
+    const latest=await db.prepare('SELECT state_json,version FROM game_room_state WHERE room_id=?').bind(roomId).first();
+    if(!latest)return bad('حالة اللعبة غير موجودة',503);
+    const result=moveGame(row.game_type,JSON.parse(latest.state_json),user.id,action);
+    if(!result.ok)return bad(result.error||'الحركة غير قانونية',400);
+    if(!result.duplicate){
+      const updated=await db.prepare("UPDATE game_room_state SET state_json=?,version=version+1,saved_at=CURRENT_TIMESTAMP WHERE room_id=? AND version=?").bind(JSON.stringify(result.state),roomId,latest.version).run();
+      if(!updated.meta?.changes)return bad('تغيرت حالة الطاولة. حدّث الصفحة وأعد الحركة',409);
+      if(result.state.status==='finished')await db.prepare("UPDATE game_rooms SET status='finished',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='active'").bind(roomId).run();
+    }
+    const updatedRow={...row,status:result.state.status};
+    return json({ok:true,duplicate:result.duplicate,room:await prepare(db,updatedRow,user.id)});
+  }
   return bad('خدمة اللعبة غير متاحة بعد',501);
 }
