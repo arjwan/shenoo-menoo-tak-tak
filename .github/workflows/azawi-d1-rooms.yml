@@ -1,0 +1,36 @@
+name: Azawi D1 room API tests
+on:
+  pull_request:
+    paths:
+      - 'cloudflare/kahwa-rooms.js'
+      - 'cloudflare/worker.js'
+      - 'cloudflare/kahwa-engine.js'
+      - 'cloudflare/kahwa-actions.js'
+      - 'cloudflare/game-engines/**'
+      - 'cloudflare/migrations/0015_kahwa_engine_state.sql'
+      - 'cloudflare/migrations/0014_kahwa_game_rooms.sql'
+      - 'tests/azawi-d1-rooms.test.mjs'
+      - '.github/workflows/azawi-d1-rooms.yml'
+  push:
+    paths:
+      - 'cloudflare/kahwa-rooms.js'
+      - 'cloudflare/migrations/0014_kahwa_game_rooms.sql'
+      - 'cloudflare/game-engines/**'
+      - 'cloudflare/kahwa-engine.js'
+      - 'cloudflare/kahwa-actions.js'
+      - 'cloudflare/migrations/0015_kahwa_engine_state.sql'
+      - 'tests/azawi-d1-rooms.test.mjs'
+      - '.github/workflows/azawi-d1-rooms.yml'
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/azawi-d1-rooms.test.mjs
+      - run: npx --yes wrangler@4.45.0 deploy cloudflare/kahwa-edge.js --name shno-kahwa-games --dry-run --outdir /tmp/kahwa-worker --compatibility-date 2026-11-07 --compatibility-flags nodejs_compat

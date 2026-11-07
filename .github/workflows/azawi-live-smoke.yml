@@ -1,0 +1,29 @@
+name: Azawi live route smoke
+on:
+  push:
+    branches:
+      - feat/azawi-d1-rooms-20261107
+    paths:
+      - '.github/workflows/azawi-live-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify isolated live routing without creating data
+        shell: bash
+        run: |
+          set -eu
+          for host in shinomino.com www.shinomino.com; do
+            for path in /api/game-rooms/ /api/game-actions/00000000-0000-0000-0000-000000000000/state; do
+              code="$(curl --max-time 25 -sS -o /tmp/kahwa-response -w '%{http_code}' "https://$host$path")"
+              echo "$host$path -> HTTP $code"
+              test "$code" = "401"
+              grep -q 'يرجى تسجيل الدخول' /tmp/kahwa-response
+            done
+          done
+          curl --max-time 25 -fsS https://shinomino.com/api/health > /dev/null
+          curl --max-time 25 -fsS https://shinomino.com/game-room.html > /dev/null
+          echo "PASS: isolated game routes and main site respond correctly"
