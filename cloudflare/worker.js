@@ -1,4 +1,5 @@
 import { handleDeveloper } from './developer-api.js';
+import { handleIslamic } from './islamic-api.js';
 import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
