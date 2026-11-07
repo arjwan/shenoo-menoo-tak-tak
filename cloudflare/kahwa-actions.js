@@ -18,6 +18,20 @@ export async function handleGameActions(req,env,user){
    if(mode!==room.team_mode||body.scoreTarget!==undefined&&Number(body.scoreTarget)!==100)return response({ok:false,message:'لا يمكن تغيير إعدادات هذه الطاولة بعد إنشائها'},409);
    return response({ok:true,teamMode:room.team_mode,maxPlayers:room.max_players,scoreTarget:100});
  }
+ if(operation==='score'&&req.method==='POST'){
+   if(room.owner_id!==user.id)return response({ok:false,message:'مالك الطاولة فقط يعدل النقاط'},403);
+   const body=await req.json().catch(()=>null);
+   if(!body||!['A','B'].includes(body.team)||!Number.isSafeInteger(Number(body.delta))||Math.abs(Number(body.delta))>999)return response({ok:false,message:'النقاط غير صالحة'},400);
+   const stored=await env.DB.prepare('SELECT state_json,version FROM game_room_state WHERE room_id=?').bind(roomId).first();
+   if(!stored)return response({ok:false,message:'لم تبدأ المباراة بعد'},409);
+   const state=JSON.parse(stored.state_json);
+   const scores=state.teamScores||{A:0,B:0};
+   scores[body.team]=Math.max(0,Number(scores[body.team]||0)+Number(body.delta));
+   state.teamScores=scores;
+   const updated=await env.DB.prepare("UPDATE game_room_state SET state_json=?,version=version+1,saved_at=CURRENT_TIMESTAMP WHERE room_id=? AND version=?").bind(JSON.stringify(state),roomId,stored.version).run();
+   if(!updated.meta?.changes)return response({ok:false,message:'تغيّرت حالة الطاولة. أعد المحاولة'},409);
+   return response({ok:true,teamScores:scores});
+ }
  if(operation==='save'&&req.method==='POST'){
    const state=await env.DB.prepare('SELECT saved_at FROM game_room_state WHERE room_id=?').bind(roomId).first();
    if(!state)return response({ok:false,message:'لم تبدأ المباراة بعد'},409);
