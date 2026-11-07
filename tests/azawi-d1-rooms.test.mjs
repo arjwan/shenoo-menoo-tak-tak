@@ -1,3 +1,4 @@
+import {freshGame,publicGame,moveGame} from '../cloudflare/kahwa-engine.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handleGameRooms } from '../cloudflare/kahwa-rooms.js';
@@ -76,4 +77,31 @@ test('moves use original engine, prevent outsiders, reject stale turns and dupli
  assert.equal(illegal.status,400);
  assert.equal((await call(db,'c','POST','/api/game-rooms/'+room.id+'/action',{type:'move',from:'a7',to:'a6'})).status,403);
  assert.equal((await call(db,'b','POST','/api/game-rooms/'+room.id+'/action',{type:'move',from:'e7',to:'e5',moveId:'move-3'})).status,200);
+});
+
+test('all four original engines construct playable authenticated states',()=>{
+ for(const type of ['domino','tawla','chess','cards']){
+   const state=freshGame(type,['a','b']);
+   assert.equal(state.status,'active',type);
+   const mine=publicGame(type,state,'a');
+   assert.ok(mine.public&&typeof mine.public==='object',type);
+   assert.ok(mine.private&&typeof mine.private==='object',type);
+   assert.ok(Array.isArray(mine.legalActions),type);
+   const spectator=publicGame(type,state,null);
+   assert.equal(spectator.private,null,type);
+   assert.deepEqual(spectator.legalActions,[],type);
+   assert.ok(!Object.hasOwn(spectator.public,'hands'),type);
+   assert.ok(!Object.hasOwn(spectator.public,'stock'),type);
+ }
+});
+test('original domino, tawla and cards expose only legal actions',()=>{
+ for(const type of ['domino','tawla','cards']){
+  const state=freshGame(type,['a','b']);
+  const a=publicGame(type,state,'a').legalActions;
+  const b=publicGame(type,state,'b').legalActions;
+  const actions=a.length?a:b,actor=a.length?'a':'b';
+  assert.ok(actions.length>0,type+' has no legal opening');
+  const result=moveGame(type,state,actor,{...actions[0],moveId:type+'-first'});
+  assert.equal(result.ok,true,type+': '+result.error);
+ }
 });
