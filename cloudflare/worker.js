@@ -1,6 +1,8 @@
 import { handleDeveloper } from './developer-api.js';
 import { handleIslamic } from './islamic-api.js';
 import { handleServices } from './service-providers-api.js';
+import { handleProfileMedia } from './profile-media-api.js';
+import { handleSmartFriend } from './smart-friend-api.js';
 import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
@@ -233,6 +235,10 @@ async function main(req,env){
   if(islamicResponse)return islamicResponse;
   const serviceResponse=await handleServices(req,env,user,path);
   if(serviceResponse)return serviceResponse;
+  const profileResponse=await handleProfileMedia(req,env,user,path);
+  if(profileResponse)return profileResponse;
+  const smartResponse=await handleSmartFriend(req,env,user,path);
+  if(smartResponse)return smartResponse;
 
   // Resumable 8 MiB chunks; no large file is buffered inside the Worker.
   const UPLOAD_LIMIT=100*1024*1024,PART_BYTES=8*1024*1024;
@@ -367,7 +373,9 @@ async function main(req,env){
     ]);
     if(!account)return err('الحساب غير متاح',404);
     let profile={};try{profile=JSON.parse(extra?.profile_json||'{}')}catch{profile={}}
-    return json({ok:true,user:{...safeUser(account),email:account.email,contactType:account.email?'email':null,contact:account.email||null,birthDate:extra?.birth_date||null,gender:extra?.gender||'other',profile,createdAt:account.created_at}});
+    const avatarUrl=profile.avatarKey?'/api/profile-picture/'+account.id+'/avatar':'';
+    const coverUrl=profile.coverKey?'/api/profile-picture/'+account.id+'/cover':'';
+    return json({ok:true,user:{...safeUser(account),email:account.email,contactType:account.email?'email':null,contact:account.email||null,birthDate:extra?.birth_date||null,gender:extra?.gender||'other',avatarUrl,coverUrl,profile:{...profile,avatarUrl,coverUrl},createdAt:account.created_at}});
   }
   if(req.method==='PATCH'&&path==='/api/users/me'){
     const b=await bodyJSON(req);
@@ -398,7 +406,9 @@ async function main(req,env){
       if(!['https:','http:'].includes(url.protocol)||url.username||url.password)return err('عنوان الموقع غير آمن',400);
       clean.website=url.href;
     }
-    const jsonProfile=JSON.stringify(clean);
+    const existingProfile=await env.DB.prepare('SELECT profile_json FROM user_profiles WHERE user_id=?').bind(user.id).first();
+    let prior={};try{prior=JSON.parse(existingProfile?.profile_json||'{}')}catch{}
+    const jsonProfile=JSON.stringify({...prior,...clean});
     await env.DB.prepare("INSERT INTO user_profiles(user_id,profile_json) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json,updated_at=CURRENT_TIMESTAMP").bind(user.id,jsonProfile).run();
     return json({ok:true,message:'حُفظ الملف الشخصي على Cloudflare',profile:clean});
   }
