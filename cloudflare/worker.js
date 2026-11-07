@@ -1,4 +1,6 @@
 import { handleDeveloper } from './developer-api.js';
+import { handleIslamic } from './islamic-api.js';
+import { handleServices } from './service-providers-api.js';
 import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 /* Cloudflare-only clean API. No Oracle, MongoDB, cPanel or external origin. */
 const encoder = new TextEncoder();
@@ -227,6 +229,10 @@ async function main(req,env){
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
+  const islamicResponse=await handleIslamic(req,env,user,path);
+  if(islamicResponse)return islamicResponse;
+  const serviceResponse=await handleServices(req,env,user,path);
+  if(serviceResponse)return serviceResponse;
 
   // Resumable 8 MiB chunks; no large file is buffered inside the Worker.
   const UPLOAD_LIMIT=100*1024*1024,PART_BYTES=8*1024*1024;
@@ -703,7 +709,21 @@ async function main(req,env){
   }
   if(req.method==='GET'&&path==='/api/social/notifications'){
     const rows=await env.DB.prepare('SELECT id,kind,body,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(user.id).all();
-    return json({ok:true,notifications:rows.results.map(n=>({id:n.id,type:n.kind,message:n.body,read:!!n.read_at,createdAt:n.created_at}))});
+    const notifications=rows.results.map(n=>({id:n.id,type:n.kind,text:n.body,message:n.body,read:!!n.read_at,readAt:n.read_at,createdAt:n.created_at,href:'/taktak.html'}));
+    return json({ok:true,notifications,unread:notifications.filter(n=>!n.read).length});
+  }
+  if(req.method==='PATCH'&&path==='/api/social/notifications/read-all'){
+    await env.DB.prepare('UPDATE notifications SET read_at=CURRENT_TIMESTAMP WHERE user_id=? AND read_at IS NULL').bind(user.id).run();
+    return json({ok:true});
+  }
+  const notificationRead=path.match(new RegExp('^/api/social/notifications/([a-f0-9-]{36})/read$','i'));
+  if(notificationRead&&req.method==='PATCH'){
+    const result=await env.DB.prepare('UPDATE notifications SET read_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=? AND read_at IS NULL').bind(notificationRead[1],user.id).run();
+    if(!result.meta.changes){
+      const found=await env.DB.prepare('SELECT id FROM notifications WHERE id=? AND user_id=?').bind(notificationRead[1],user.id).first();
+      if(!found)return err('الإشعار غير موجود',404);
+    }
+    return json({ok:true});
   }
 
   // Persist smart-friend persona settings in the authenticated user's D1 account.
