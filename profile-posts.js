@@ -2,7 +2,6 @@
   'use strict';
 
   const API=window.location.origin;
-  const token=localStorage.getItem('token')||sessionStorage.getItem('token')||'';
   const profileId=new URLSearchParams(location.search).get('id')||'me';
 
   function esc(v){return String(v||'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
@@ -24,7 +23,7 @@
     '</article>';
   }
   async function request(path){
-    const r=await fetch(API+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'}});
+    const r=await fetch(API+path,{credentials:'same-origin',headers:{Accept:'application/json'}});
     const d=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(d.message||'تعذر تحميل المنشورات');
     return d;
