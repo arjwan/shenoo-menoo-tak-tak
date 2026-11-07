@@ -41,3 +41,28 @@ html.profile-refresh .profile-photo-preview{width:min(100%,190px);height:110px;d
 html.profile-refresh .profile-photo-preview.is-visible{display:block}
 @media(max-width:740px){html.profile-refresh .social-page{padding-top:10px}html.profile-refresh .profile-cover{min-height:175px;border-radius:18px}html.profile-refresh .profile-head{gap:11px;margin:-24px 8px 16px;padding:14px}html.profile-refresh .profile-avatar{width:70px;height:70px;flex-basis:70px;font-size:28px}html.profile-refresh .profile-avatar-quick{margin-right:-51px;margin-top:43px}html.profile-refresh .profile-actions{flex-basis:100%}html.profile-refresh .profile-actions .icon-button{flex:1}html.profile-refresh .profile-section{padding:16px!important}html.profile-refresh .privacy-modal:not([hidden]){padding:10px}html.profile-refresh .privacy-card{max-height:calc(100dvh - 20px);padding:18px;border-radius:16px!important}html.profile-refresh .privacy-card .privacy-actions{margin:14px -18px -18px;bottom:-18px;padding:12px 18px}html.profile-refresh .cover-quick-edit{bottom:10px;left:10px;font-size:12px}}
 @media(prefers-reduced-motion:reduce){html.profile-refresh *{transition-duration:0.01ms!important;animation-duration:0.01ms!important}}
+
+/* Dark theme: override the light-only profile refresh surfaces without changing layout. */
+html.shinomino-ui.profile-refresh[data-theme="dark"]{color-scheme:dark;--profile-ink:#f3f0ff;--profile-muted:#b8afce;--profile-line:#3b3454}
+html.shinomino-ui.profile-refresh[data-theme="dark"] body{background:#111421!important;color:#f3f0ff!important}
+html.profile-refresh[data-theme="dark"] .site-header{background:#171b2a!important;border-color:#303348!important}
+html.profile-refresh[data-theme="dark"] .profile-head{background:#202339!important;border-color:#48415f!important;color:#f5f1ff!important;box-shadow:0 13px 35px #05071050}
+html.profile-refresh[data-theme="dark"] .profile-summary h1{color:#f7f3ff!important}
+html.profile-refresh[data-theme="dark"] .profile-summary p,
+html.profile-refresh[data-theme="dark"] .profile-summary .meta-chip{color:#d4cae8!important;opacity:1!important}
+html.profile-refresh[data-theme="dark"] .profile-avatar{border-color:#27233d;background:#4a3975;color:#f7f0ff}
+html.profile-refresh[data-theme="dark"] .profile-section,
+html.profile-refresh[data-theme="dark"] .profile-section.is-bio,
+html.profile-refresh[data-theme="dark"] .profile-section.is-details,
+html.profile-refresh[data-theme="dark"] .profile-section.is-social,
+html.profile-refresh[data-theme="dark"] .profile-section[data-privacy-section]{background:#1d2233!important;border-color:#343a52!important;color:#f2f0fb!important}
+html.profile-refresh[data-theme="dark"] .profile-section :is(h2,p,b,strong,label),
+html.profile-refresh[data-theme="dark"] .profile-info-item b{color:#f1edf9!important}
+html.profile-refresh[data-theme="dark"] .profile-section :is(small,.profile-info-item span,.empty-social,.social-link-main small){color:#c1b8d4!important}
+html.profile-refresh[data-theme="dark"] :is(.profile-info-item,.social-link-item,.privacy-row,.profile-stat,.bio-editor,.social-editor,.empty-social){background:#282c40!important;border-color:#43445f!important;color:#f4efff!important}
+html.profile-refresh[data-theme="dark"] :is(.social-link-item,.social-link-main,.social-link-main strong){color:#f4efff!important}
+html.profile-refresh[data-theme="dark"] :is(.profile-actions .icon-button,.section-mini-action){background:#342c51;color:#e8dcff;border-color:#594778}
+html.profile-refresh[data-theme="dark"] :is(.privacy-card,.privacy-card .privacy-actions){background:#22253a!important;color:#f1edfb!important;border-color:#48415f!important}
+html.profile-refresh[data-theme="dark"] .privacy-card label{color:#ede8f7!important}
+html.profile-refresh[data-theme="dark"] :is(.privacy-card input,.privacy-card select,.privacy-card textarea,.social-editor input,.social-editor select,.bio-editor textarea){background:#151a2a!important;color:#f5efff!important;border-color:#514a67!important}
+html.profile-refresh[data-theme="dark"] .cover-quick-edit{background:#2b2542;color:#e9ddff;border-color:#6b578b}
