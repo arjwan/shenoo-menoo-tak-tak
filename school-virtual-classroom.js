@@ -1220,6 +1220,10 @@
   }
 
   function releaseSpeechPlayback() {
+    if (window.SumerTeacherAvatar) {
+      window.SumerTeacherAvatar.setSpeakingState(false);
+      window.SumerTeacherAvatar.detachAudio();
+    }
     if (speechPlayback) {
       speechPlayback.pause();
       speechPlayback.src = '';
@@ -1235,6 +1239,7 @@
     speechGeneration += 1;
     releaseSpeechPlayback();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (window.SumerTeacherAvatar) window.SumerTeacherAvatar.setSpeakingState(false);
   }
 
   function delay(ms) {
@@ -1302,6 +1307,13 @@
     speechObjectURL = url;
     var player = new Audio(url);
     speechPlayback = player;
+    if (window.SumerTeacherAvatar) {
+      // Each playlist part is a fresh HTMLAudioElement; attach before playback.
+      await window.SumerTeacherAvatar.attachAudioElement(player);
+      player.addEventListener('playing', function () { window.SumerTeacherAvatar.setSpeakingState(true); });
+      player.addEventListener('pause', function () { window.SumerTeacherAvatar.setSpeakingState(false); });
+      player.addEventListener('ended', function () { window.SumerTeacherAvatar.setSpeakingState(false); });
+    }
     // A very short part can end before play() settles. Attach listeners first.
     var finished = new Promise(function (resolve, reject) {
       player.addEventListener('ended', resolve, { once: true });
@@ -1398,8 +1410,10 @@
         utterance.pitch = 1;
         utterance.rate = 1;
         utterance.volume = 1;
-        utterance.onend = nextPart;
+        utterance.onstart = function () { if (window.SumerTeacherAvatar) window.SumerTeacherAvatar.setSpeakingState(true); };
+        utterance.onend = function () { if (window.SumerTeacherAvatar) window.SumerTeacherAvatar.setSpeakingState(false); nextPart(); };
         utterance.onerror = function (event) {
+          if (window.SumerTeacherAvatar) window.SumerTeacherAvatar.setSpeakingState(false);
           if (key) spokenAnswers.delete(key);
           if (event.error !== 'interrupted' && event.error !== 'canceled') {
             notify('تعذر نطق صوت المعلم (' + event.error + '). تأكد من صوت الجهاز واضغط زر 🔊 للتجربة.', true);
