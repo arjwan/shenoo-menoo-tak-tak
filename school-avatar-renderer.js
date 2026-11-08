@@ -27,7 +27,7 @@
     async attachAudioElement(element) {
       if (!(element instanceof HTMLMediaElement)) return false;
       if (this.sourceElement === element && this.analyser) {
-        if (this.audioContext?.state === 'suspended') await this.audioContext.resume();
+        if (this.audioContext?.state === 'suspended') this.audioContext.resume().catch(() => {});
         return true;
       }
       // A media element can be attached to only one MediaElementAudioSourceNode.
@@ -48,7 +48,7 @@
         this.sourceElement = element;
         this.analyser = analyser;
         this.samples = new Uint8Array(analyser.fftSize);
-        if (context.state === 'suspended') await context.resume();
+        if (context.state === 'suspended') context.resume().catch(() => {});
         return true;
       } catch (_) {
         if (context) await context.close().catch(() => {});
