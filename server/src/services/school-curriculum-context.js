@@ -22,9 +22,9 @@ async function getLessonCurriculumContext(sessionCode, userId) {
   const conn = await getCurriculumConnection();
   // The exported model is a MariaDB wrapper; use its original Mongoose schema.
   const schema = KnowledgeSource.$original?.schema;
-  if (!schema) throw failure('CURRICULUM_SCHEMA_UNAVAILABLE', 503);
-  const Source = conn.models.SchoolKnowledgeSource ||
-    conn.model('SchoolKnowledgeSource', schema);
+  const Source = conn.models?.SchoolKnowledgeSource ||
+    (schema && conn.model('SchoolKnowledgeSource', schema));
+  if (!Source) throw failure('CURRICULUM_SCHEMA_UNAVAILABLE', 503);
   // Never trust a client-provided source ID or lesson title.
   // Match the server-stored class binding and require verified sources.
   const candidates = await Source.find({
