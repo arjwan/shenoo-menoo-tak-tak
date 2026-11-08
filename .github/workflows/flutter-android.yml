@@ -67,4 +67,4 @@ jobs:
             --draft \
             --title "Flutter debug ${{ matrix.app }} (run ${{ github.run_id }})" \
             --notes "Unsigned debug APK for internal testing. Created as a draft because Actions artifact storage quota blocked upload." \
-            "mobile/${{ matrix.app }}/build/app/outputs/flutter-apk/app-debug.apk#${{ matrix.app }}-debug.apk"
+            "build/app/outputs/flutter-apk/app-debug.apk#${{ matrix.app }}-debug.apk"
