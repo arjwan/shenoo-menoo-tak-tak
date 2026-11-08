@@ -1,0 +1,39 @@
+name: Sumer Avatar Curriculum Isolation
+on:
+  push:
+    branches:
+      - feature/sumer-avatar-curriculum-isolation
+    paths:
+      - '.github/workflows/sumer-avatar-curriculum.yml'
+      - 'server/src/config/curriculum-db.js'
+      - 'server/src/services/school-curriculum-context.js'
+      - 'server/src/routes/school-avatar.routes.js'
+      - 'server/src/middleware/auth.js'
+      - 'server/test/school-avatar-curriculum.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-tests:
+    name: Six isolated avatar and curriculum checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SCHOOL_AVATAR_ENABLED: 'false'
+      NODE_ENV: test
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run isolated curriculum security tests
+        run: node --test server/test/school-avatar-curriculum.test.js
