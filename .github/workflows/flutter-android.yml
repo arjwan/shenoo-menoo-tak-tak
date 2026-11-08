@@ -11,7 +11,7 @@ on:
       - '.github/workflows/flutter-android.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android:
@@ -47,9 +47,24 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
       - name: Upload APK
+        id: upload
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-debug-apk
           path: mobile/${{ matrix.app }}/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1
+      - name: Save APK to private draft release if artifact quota is full
+        if: steps.upload.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="flutter-debug-${{ github.run_id }}-${{ matrix.app }}"
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --draft \
+            --title "Flutter debug ${{ matrix.app }} (run ${{ github.run_id }})" \
+            --notes "Unsigned debug APK for internal testing. Created as a draft because Actions artifact storage quota blocked upload." \
+            "mobile/${{ matrix.app }}/build/app/outputs/flutter-apk/app-debug.apk#${{ matrix.app }}-debug.apk"
