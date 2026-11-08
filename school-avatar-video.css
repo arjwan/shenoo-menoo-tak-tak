@@ -10,3 +10,7 @@
 @media (prefers-reduced-motion: reduce) {
   .sumer-avatar-video { transition: none !important; }
 }
+
+#sumerTeacherCanvas { display: block; width: 100%; max-width: 280px; height: auto; margin: auto; aspect-ratio: 1 / 1; }
+#sumerTeacherCanvas[hidden] { display: none !important; }
+#teacherAvatarImg[hidden] { display: none !important; }
