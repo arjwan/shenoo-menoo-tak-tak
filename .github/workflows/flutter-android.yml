@@ -2,16 +2,6 @@ name: Flutter Android APKs (Shno Mano / Ittisal)
 
 on:
   workflow_dispatch:
-    inputs:
-      app:
-        description: Which Flutter application to build
-        required: true
-        default: both
-        type: choice
-        options:
-          - both
-          - shno_mano
-          - ittisal
   push:
     branches:
       - feature/flutter-cloud-build-20261108
@@ -26,7 +16,6 @@ permissions:
 jobs:
   android:
     name: Build ${{ matrix.app }}
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.app == 'both' || inputs.app == matrix.app }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
