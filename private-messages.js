@@ -149,16 +149,35 @@
   }
   document.querySelector("[data-conversation-search]").oninput = function () { var q = this.value.trim().toLowerCase(); list.querySelectorAll("[data-conversation-id]").forEach(function (row) { row.hidden = Boolean(q && !row.textContent.toLowerCase().includes(q)); }); };
   addEventListener("beforeunload", function () { if (activeCall && socket) socket.emit("call:end", callPayload({ reason: "page-closed" })); stopMedia(); if (peer) peer.close(); });
-  // Poll D1 without a fake WebSocket; do not overwrite draft text or reading position.
+  // Refresh message content without replacing the composer or changing scroll position.
+  // The current D1 messaging endpoint does not push socket events.
+  var messageRefreshBusy=false,lastListRefresh=0;
+  async function refreshCurrentMessages(){
+    if(document.hidden||messageRefreshBusy||!currentId)return;
+    var id=String(currentId),pane=windowEl.querySelector('[data-chat-messages]');
+    if(!pane)return;
+    messageRefreshBusy=true;
+    try{
+      var data=await SocialAPI.request('/api/conversations/'+encodeURIComponent(id)+'/messages');
+      if(String(currentId)!==id||pane!==windowEl.querySelector('[data-chat-messages]'))return;
+      var items=data.messages||[];
+      var html=items.length?items.map(messageHtml).join(''):'<div class="chat-empty"><strong>لا توجد رسائل بعد</strong></div>';
+      if(pane.innerHTML!==html){
+        var nearBottom=pane.scrollHeight-pane.scrollTop-pane.clientHeight<80;
+        var previousTop=pane.scrollTop;
+        pane.innerHTML=html;
+        pane.scrollTop=nearBottom?pane.scrollHeight:previousTop;
+      }
+    }catch(_){/* Retain the existing conversation on transient network failures. */}
+    finally{messageRefreshBusy=false;}
+  }
   setInterval(function(){
     if(document.hidden)return;
-    loadList();
-    if(!currentId)return;
-    var draft=windowEl.querySelector('[data-message-input]');
-    if(draft&&draft.value.trim())return;
-    var pane=windowEl.querySelector('[data-chat-messages]');
-    if(pane&&pane.scrollHeight-pane.scrollTop-pane.clientHeight>80)return;
-    openConversation(currentId);
-  },15000);
+    refreshCurrentMessages();
+    if(Date.now()-lastListRefresh>=10000){lastListRefresh=Date.now();loadList();}
+  },2500);
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden){refreshCurrentMessages();loadList();}
+  });
   loadList().then(start);
 }());
