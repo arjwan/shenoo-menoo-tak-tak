@@ -1,0 +1,46 @@
+name: Shno Mano production call signaling smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'functions/api/**'
+      - 'messages.html'
+      - 'private-messages.js'
+      - 'call-signaling.js'
+      - 'cloudflare/call-signaling.js'
+      - '.github/workflows/private-call-production-smoke.yml'
+jobs:
+  validate-live-call-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify private D1 call contract
+        run: node --test tests/private-call-signaling.test.mjs
+      - name: Verify deployed origin, no credentials or data mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          host=https://shinomino.com
+          for attempt in $(seq 1 18); do
+            code="$(curl -sSL -o /tmp/messages.html -w '%{http_code}' --max-time 15 "$host/messages.html" || true)"
+            if [ "$code" = 200 ] && grep -q 'call-signaling.js?v=20261109-d1-1' /tmp/messages.html; then break; fi
+            sleep 5
+          done
+          grep -q 'call-signaling.js?v=20261109-d1-1' /tmp/messages.html
+          curl -fsSL --max-time 20 "$host/call-signaling.js" -o /tmp/signaling.js
+          grep -q 'ShnoCallSignaling' /tmp/signaling.js
+          for attempt in $(seq 1 12); do
+            status="$(curl -sS -o /tmp/anonymous.json -w '%{http_code}' --max-time 15 "$host/api/call-signals" || true)"
+            if [ "$status" = 401 ]; then break; fi
+            sleep 5
+          done
+          test "$status" = 401
+          echo "Anonymous GET /api/call-signals -> $status"
+          bad="$(curl -sS -o /tmp/csrf.json -w '%{http_code}' --max-time 20 -X POST -H 'Origin: https://invalid.example' -H 'Content-Type: application/json' --data '{}' "$host/api/call-signals")"
+          echo "Cross-site POST /api/call-signals -> $bad"
+          test "$bad" = 403
+          echo 'PASS: published Pages auth, signaling JS and cross-origin restrictions'
