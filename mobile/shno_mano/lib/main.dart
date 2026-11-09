@@ -184,7 +184,7 @@ class _HomeState extends State<Home> {
           onTap: () => open(Chat(api: widget.api, conversation: item)))));
     } else {
       body = DataPanel(api: widget.api, path: '/api/posts', field: 'posts',
-        render: (item) => PostCard(api: widget.api, post: item));
+        render: (item) => PostCard(key: ValueKey(item['id']), api: widget.api, post: item));
     }
     return Scaffold(
       appBar: AppBar(title: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -251,10 +251,10 @@ class _DataPanelState extends State<DataPanel> {
   @override
   Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>>(future: data, builder: (context, snapshot) {
     if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-    if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+    if (snapshot.hasError) { return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Padding(padding: const EdgeInsets.all(24), child: Text(snapshot.error.toString(), textAlign: TextAlign.center)),
       FilledButton(onPressed: reload, child: const Text('إعادة المحاولة')),
-    ]));
+    ])); }
     final items = rows(snapshot.data?[widget.field]);
     return RefreshIndicator(onRefresh: reload, child: ListView(
       physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.all(12),
