@@ -15,30 +15,16 @@
   function stopSound(){
     if(timer){clearInterval(timer);timer=null;}
     if(audio){try{audio.close();}catch(_){ }audio=null;}
+    if(global.ShnoCallAudio)global.ShnoCallAudio.stop();
     if(global.ShnoManoNative&&typeof global.ShnoManoNative.stopIncomingCallAlert==='function'){
       try{global.ShnoManoNative.stopIncomingCallAlert();}catch(_){}
     }
   }
-  function beep(){
-    if(!audio){try{audio=new (global.AudioContext||global.webkitAudioContext)();}catch(_){return;}}
-    if(audio.state==='suspended')audio.resume().catch(function(){});
-    if(audio.state!=='running')return;
-    var now=audio.currentTime;
-    [0,0.34].forEach(function(delta){
-      var osc=audio.createOscillator(),gain=audio.createGain();
-      osc.type='sine';osc.frequency.value=523.25;
-      gain.gain.setValueAtTime(0.0001,now+delta);
-      gain.gain.exponentialRampToValueAtTime(0.06,now+delta+0.025);
-      gain.gain.exponentialRampToValueAtTime(0.0001,now+delta+0.27);
-      osc.connect(gain).connect(audio.destination);osc.start(now+delta);osc.stop(now+delta+0.28);
-    });
-  }
   function startSound(){
+    if(global.ShnoCallAudio)global.ShnoCallAudio.startIncoming();
     if(global.ShnoManoNative&&typeof global.ShnoManoNative.showIncomingCallAlert==='function'){
       try{global.ShnoManoNative.showIncomingCallAlert(active.callId,active.callerName,active.from,active.conversationId,active.type);}catch(_){}
-      return;
     }
-    beep();timer=setInterval(beep,2150);
   }
   function clear(){
     stopSound();
