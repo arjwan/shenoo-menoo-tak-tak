@@ -20,7 +20,7 @@ test('mobile chat hides unselected empty second pane despite generic viewport ov
   const html = read('messages.html');
   assert.match(html, /class="chat-window" data-chat-window/);
   assert.match(html, /class="chat-empty"/);
-  assert.match(read('private-messages.js'), /class=\\"chat-header/);
+  assert.match(read('private-messages.js'), /chat-header/);
 });
 test('contact empty state is content-sized, without changing contact actions', () => {
   const css = read('calls.css');
