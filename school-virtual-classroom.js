@@ -145,10 +145,22 @@
       });
     }
     fetchCatalog(0).then(function (data) {
-      state.catalogItems = Array.isArray(data.items) ? data.items : [];
+      if (!Array.isArray(data.items) || !data.items.length) throw new Error('كتالوج فارغ');
+      return data.items;
+    }).catch(function () {
+      // The published 108-book catalog is an independent, read-only fallback.
+      // Do not require a student account or downloadable PDFs to select a subject.
+      return fetch('/school-curriculum-catalog.json', { credentials: 'same-origin' })
+        .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+        .then(function (data) {
+          if (!Array.isArray(data.items) || !data.items.length) throw new Error('كتالوج غير متاح');
+          return data.items;
+        });
+    }).then(function (items) {
+      state.catalogItems = items;
       populateStages();
     }).catch(function (e) {
-      notify('تعذر تحميل كتالوج المناهج: ' + e.message, true);
+      notify('تعذر تحميل بيانات المواد الدراسية: ' + e.message, true);
     });
 
     // 2) Load real registered students of this account
