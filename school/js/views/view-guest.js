@@ -1383,8 +1383,18 @@
         for (var pb = 0; pb < previewBtns.length; pb++) {
           previewBtns[pb].onclick = function () {
             var bId = this.getAttribute('data-book-id');
-            var bTitle = this.getAttribute('data-book-title');
-            alert('كتاب رسمي معتمد: ' + bTitle + '\nسيتم تفعيل القارئ الرقمي التفاعلي الكامل في المرحلة 7.');
+            var books = (SumerStore.getState().curriculumCatalog || {}).items || [];
+            var book = books.find(function (item) { return String(item.id) === String(bId); });
+            if (!book) { alert('تعذر العثور على بيانات هذا الكتاب. حدّث المناهج وحاول مجدداً.'); return; }
+            var source = (book.file && book.file.url) || book.sourceUrl || '';
+            try {
+              var url = new URL(source, window.location.origin);
+              if (url.protocol === 'https:' && source.indexOf('https://') === 0) {
+                window.open(url.href, '_blank', 'noopener,noreferrer');
+                return;
+              }
+            } catch (e) {}
+            alert('لا يتوفر رابط قراءة فعلي لهذا الكتاب حالياً.');
           };
         }
       }
