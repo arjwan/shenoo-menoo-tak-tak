@@ -24,11 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.SessionStore
 
-private val HomeNight = Color(0xFF070910)
-private val HomePanel = Color(0xFF111522)
+private val HomeNight = Color(0xFF071529)
+private val HomePanel = Color(0xFF102443)
 private val HomeViolet = Color(0xFF7C5CFF)
-private val HomeAqua = Color(0xFF27D8C4)
-private val HomeMuted = Color(0xFF98A2B3)
+private val HomeAqua = Color(0xFF2C9AE9)
+private val HomeMuted = Color(0xFFA8BCD5)
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +47,7 @@ class HomeActivity : ComponentActivity() {
         Scaffold(
             containerColor = HomeNight,
             bottomBar = {
-                NavigationBar(containerColor = Color(0xFF0B0E17)) {
+                NavigationBar(containerColor = Color(0xFF091A36)) {
                     NavigationBarItem(false, { openConnection() }, { Icon(Icons.Default.ChatBubble, null) }, label = { Text("الدردشات", fontSize = 10.sp) })
                     NavigationBarItem(false, { openConnection() }, { Icon(Icons.Default.People, null) }, label = { Text("الأصدقاء", fontSize = 10.sp) })
                     NavigationBarItem(false, { openSection("mall.html") }, { Text("🛍️", fontSize = 20.sp) }, label = { Text("مول العراق", fontSize = 10.sp) })
@@ -58,7 +58,7 @@ class HomeActivity : ComponentActivity() {
         ) { padding ->
             Column(
                 Modifier.fillMaxSize().padding(padding).background(
-                    Brush.verticalGradient(listOf(Color(0xFF0B1020), HomeNight, Color(0xFF090C14)))
+                    Brush.verticalGradient(listOf(Color(0xFF10365D), HomeNight, Color(0xFF050D22)))
                 ).padding(18.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
