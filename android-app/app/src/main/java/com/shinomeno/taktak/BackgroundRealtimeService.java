@@ -31,6 +31,7 @@ public final class BackgroundRealtimeService extends Service {
     public static final String PREFS = "shno_native";
     public static final String KEY_TOKEN = "token";
     public static final String KEY_BACKGROUND = "background_enabled";
+    public static final String KEY_ACTIVITY_VISIBLE = "activity_visible";
     public static final String KEY_NOTIFICATION_PREFS = "notification_prefs";
 
     private static final String API = "https://shinomino.com";
@@ -48,6 +49,7 @@ public final class BackgroundRealtimeService extends Service {
     private static final String EXTRA_CONVERSATION_ID = "conversationId";
     private static final String EXTRA_CALL_TYPE = "callType";
 
+    private CallSignalPoller callPoller;
     private Socket socket;
     private Ringtone ringtone;
     private String ringingCallId;
@@ -68,12 +70,25 @@ public final class BackgroundRealtimeService extends Service {
             rejectCurrentCall(intent);
             return START_STICKY;
         }
-        if (!isBackgroundEnabled() || token().isEmpty()) {
+        if (!isBackgroundEnabled()) {
             stopSelf();
             return START_NOT_STICKY;
         }
         startForeground(SERVICE_NOTIFICATION_ID, realtimeNotification());
-        connectSocket();
+        if(callPoller==null){
+            callPoller=new CallSignalPoller(new CallSignalPoller.Listener(){
+                @Override public void onIncoming(JSONObject call){
+                    if(getSharedPreferences(PREFS,MODE_PRIVATE)
+                            .getBoolean(KEY_ACTIVITY_VISIBLE,false))return;
+                    if(call.optString("callId").equals(ringingCallId))return;
+                    handleIncomingCall(call);
+                }
+                @Override public void onEnded(String callId){
+                    if(callId!=null && callId.equals(ringingCallId))clearCall();
+                }
+            });
+        }
+        callPoller.start();
         return START_STICKY;
     }
 
@@ -253,22 +268,13 @@ public final class BackgroundRealtimeService extends Service {
     }
 
     private void rejectCurrentCall(Intent intent) {
-        if (socket == null) connectSocket();
-        String callId = intent.getStringExtra(EXTRA_CALL_ID);
-        String from = intent.getStringExtra(EXTRA_FROM);
-        String conversationId = intent.getStringExtra(EXTRA_CONVERSATION_ID);
-        String type = intent.getStringExtra(EXTRA_CALL_TYPE);
-        if (socket != null && callId != null) {
-            JSONObject payload = new JSONObject();
-            try {
-                payload.put("callId", callId);
-                payload.put("userId", from == null ? "" : from);
-                payload.put("conversationId", conversationId == null ? "" : conversationId);
-                payload.put("type", type == null ? "audio" : type);
-                payload.put("reason", "rejected");
-            } catch (Exception ignored) {}
-            socket.emit("call:reject", payload);
-        }
+        String id=intent.getStringExtra(EXTRA_CALL_ID);
+        String from=intent.getStringExtra(EXTRA_FROM);
+        String conversation=intent.getStringExtra(EXTRA_CONVERSATION_ID);
+        String type=intent.getStringExtra(EXTRA_CALL_TYPE);
+        if(callPoller!=null&&id!=null&&from!=null&&conversation!=null)
+            callPoller.send("call:reject",id,from,conversation,
+                    type==null?"audio":type,"rejected");
         clearCall();
     }
 
@@ -364,6 +370,7 @@ public final class BackgroundRealtimeService extends Service {
 
     @Override
     public void onDestroy() {
+        if(callPoller!=null){callPoller.stop();callPoller=null;}
         stopRingtone();
         if (socket != null) {
             socket.off();
@@ -377,7 +384,6 @@ public final class BackgroundRealtimeService extends Service {
     public static void startIfAllowed(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean(KEY_BACKGROUND, false)) return;
-        if (prefs.getString(KEY_TOKEN, "").isEmpty()) return;
         Intent intent = new Intent(context, BackgroundRealtimeService.class);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent);
