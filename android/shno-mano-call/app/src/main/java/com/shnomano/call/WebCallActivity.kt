@@ -63,6 +63,7 @@ class WebCallActivity : ComponentActivity() {
     private var muteControl: Button? = null
     private var muted = false
     private var callType = "audio"
+    private var callSurface: FrameLayout? = null
     private var connectedAt = 0L
     private var autoAcceptIncoming = false
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -151,6 +152,7 @@ class WebCallActivity : ComponentActivity() {
             if (callType == "video") setBackgroundColor(Color.TRANSPARENT)
         }
         root.addView(surface, FrameLayout.LayoutParams(-1, -1))
+        callSurface = surface
 
         val heading = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -199,9 +201,17 @@ class WebCallActivity : ComponentActivity() {
         second.addView(circleAction("+", "إضافة مشارك", outline) {
             showParticipantPicker()
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        second.addView(circleAction("▣", "الكاميرا", outline) {
-            if (callType == "video") invokeCallControl("[data-call-camera]")
-            else Toast.makeText(this, "الكاميرا متاحة في مكالمة الفيديو", Toast.LENGTH_SHORT).show()
+        second.addView(circleAction("▣", "فيديو / صوت", outline) {
+            if (!webPageReady) {
+                Toast.makeText(this, "انتظر اتصال المكالمة", Toast.LENGTH_SHORT).show()
+            } else {
+                val nextMode = if (callType == "video") "audio" else "video"
+                webView.evaluateJavascript(
+                    "(function(){if(!window.shnoSwitchCallMedia)return 'false';window.shnoSwitchCallMedia('$nextMode');return 'true'})()"
+                ) { result ->
+                    if (result != "\"true\"") Toast.makeText(this, "التحويل غير متاح قبل اتصال الطرفين", Toast.LENGTH_SHORT).show()
+                }
+            }
         }, LinearLayout.LayoutParams(0, -2, 1f))
         second.addView(circleAction("♙", "جهات الاتصال", outline) {
             showParticipantPicker()
@@ -390,6 +400,7 @@ class WebCallActivity : ComponentActivity() {
               var report=function(){
                 var text=(status&&status.textContent||'').trim();
                 if(text) ShnoAndroidCall.onState(text);
+                if(typeof window.shnoGetCallMediaType==='function'){var media=window.shnoGetCallMediaType();if(media)ShnoAndroidCall.onMediaType(media)}
                 var name=document.querySelector('[data-call-name]');
                 if(name&&name.textContent)ShnoAndroidCall.onName(name.textContent.trim());
                 var accept=document.querySelector('[data-incoming-call-actions]');
@@ -410,6 +421,18 @@ class WebCallActivity : ComponentActivity() {
     }
 
     private inner class CallStateBridge {
+        @JavascriptInterface fun onMediaType(type: String) = runOnUiThread {
+            if (type != "video" && type != "audio") return@runOnUiThread
+            callType = type
+            if (type == "video") {
+                callSurface?.setBackgroundColor(Color.TRANSPARENT)
+            } else {
+                callSurface?.background = GradientDrawable(
+                    GradientDrawable.Orientation.TL_BR,
+                    intArrayOf(Color.rgb(18, 13, 25), Color.rgb(56, 30, 51), Color.rgb(8, 13, 23))
+                )
+            }
+        }
         @JavascriptInterface fun onName(name: String) = runOnUiThread {
             if (name.isNotBlank()) callNameLabel?.text = name
         }
