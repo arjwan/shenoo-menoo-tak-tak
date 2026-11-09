@@ -42,7 +42,7 @@ class Api {
       }
       for (final cookie in res.cookies) {
         if (cookie.name != '__Host-shino_session' || (cookie.path != null && cookie.path != '/') ||
-            (cookie.domain != null && cookie.domain!.isNotEmpty)) continue;
+            (cookie.domain != null && cookie.domain!.isNotEmpty)) { continue; }
         _session = cookie.value.isEmpty || cookie.maxAge == 0 ? null : cookie;
       }
       return value;

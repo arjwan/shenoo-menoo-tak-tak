@@ -140,10 +140,16 @@ class _HomeState extends State<Home> {
       body = DataPanel(api: widget.api, path: '/api/social/notifications', field: 'notifications',
         render: (item) => ListTile(leading: const Icon(Icons.notifications_outlined), title: Text(item['text']?.toString() ?? '')));
     } else if (!isMessenger && selected == 1) {
-      body = DataPanel(api: widget.api, path: '/api/school/curriculum/catalog', field: 'catalog',
+      body = DataPanel(api: widget.api, path: '/api/school/curriculum/catalog', field: 'items',
         render: (item) => Card(child: ListTile(leading: const Icon(Icons.school),
           title: Text(item['title']?.toString() ?? ''),
-          subtitle: Text((item['grades'] is List ? (item['grades'] as List).join(' • ') : '')))));
+          subtitle: Text([item['stage'], item['grade'], item['subject']].whereType<String>().join(' • ')),
+          onTap: () => open(Scaffold(appBar: AppBar(title: Text(item['title']?.toString() ?? 'المنهج')),
+            body: ListView(padding: const EdgeInsets.all(20), children: [
+              Text(item['content']?.toString() ?? ''),
+              const SizedBox(height: 16),
+              SelectableText(item['sourceUrl']?.toString() ?? object(item['file'])['url']?.toString() ?? ''),
+            ]))))));
     } else if ((isMessenger && selected == 0) || (!isMessenger && selected == 3)) {
       body = DataPanel(api: widget.api, path: '/api/conversations', field: 'conversations', pollEvery: const Duration(seconds: 10),
         render: (item) => Card(child: ListTile(
