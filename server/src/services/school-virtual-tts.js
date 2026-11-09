@@ -40,7 +40,7 @@ const TRANSIENT_RETRY_ATTEMPTS = 2;
 const TRANSIENT_RETRY_DELAY_MS = 700;
 
 const DEFAULT_EDGE_BIN = '/home/opc/.local/tts/venv/bin/edge-tts';
-const EDGE_VOICES = { male: 'ar-IQ-BasselNeural', female: 'ar-IQ-RanaNeural', 'english-female': 'en-US-JennyNeural' };
+const EDGE_VOICES = { male: 'ar-IQ-BasselNeural', female: 'ar-IQ-RanaNeural', 'iraqi-female': 'ar-IQ-RanaNeural', 'english-female': 'en-US-JennyNeural' };
 
 function redact(message, secrets) {
   let safe = String(message || '');
@@ -281,7 +281,9 @@ function createTeacherTTS(options = {}) {
       const failures = [];
       for (const provider of providers) {
         try {
-          if (voice === 'english-female' && provider.id === 'groq') continue;
+          // Saudi Orpheus does not produce an Iraqi dialect; use the Iraqi
+          // neural voice (Edge) first, with other providers as a fallback.
+          if ((voice === 'english-female' || voice === 'iraqi-female') && provider.id === 'groq') continue;
           const audio = await provider.synthesize(String(text), voice);
           if (!isValidAudioBytes(audio.bytes)) throw new Error(`${provider.label} أعاد ملف صوت غير صالح`);
           return audio;
