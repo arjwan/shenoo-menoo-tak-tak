@@ -58,7 +58,8 @@ public final class MainActivity extends Activity {
         handleIncomingIntent(getIntent());
         createNotificationChannels();
         buildView();
-        loadAuthPage("signin.html");
+        // Use the current Cloudflare website and its HttpOnly session instead of bundled legacy login HTML.
+        webView.loadUrl(SITE_ORIGIN + "/signin.html");
     }
 
     @Override
@@ -139,13 +140,8 @@ public final class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
-                if (request.isForMainFrame() && SITE_ORIGIN.equals(url.getScheme() + "://" + url.getHost())) {
-                    String path = url.getPath();
-                    if ("/signin.html".equals(path) || "/signup.html".equals(path)) {
-                        loadAuthPage(path.substring(1));
-                        return true;
-                    }
-                }
+                // Keep first-party navigation in the real site: the newer auth protocol is cookie-based.
+                // Bundled 2026 HTML is intentionally not substituted for current server pages.
                 return false;
             }
 
@@ -229,7 +225,7 @@ public final class MainActivity extends Activity {
         } catch (java.io.IOException error) {
             offlineBanner.setText("تعذر فتح شاشة الدخول. اضغط لإعادة المحاولة");
             offlineBanner.setVisibility(View.VISIBLE);
-            offlineBanner.setOnClickListener(view -> loadAuthPage("signin.html"));
+            offlineBanner.setOnClickListener(view -> webView.loadUrl(SITE_ORIGIN + "/signin.html"));
         }
     }
 
