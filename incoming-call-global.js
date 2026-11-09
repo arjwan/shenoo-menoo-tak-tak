@@ -69,7 +69,14 @@
     if(!event||!event.callId||!event.conversationId||!event.from)return;
     if(active){
       if(active.callId===event.callId)return;
-      send('call:reject','busy');return;
+      // Reject the second caller, never accidentally reject the active caller.
+      request('/api/call-signals',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({event:'call:reject',callId:String(event.callId),
+          conversationId:String(event.conversationId),userId:String(event.from),
+          type:event.type==='video'?'video':'audio',reason:'busy'})
+      }).catch(function(){});
+      return;
     }
     active={callId:String(event.callId),conversationId:String(event.conversationId),
       from:String(event.from),type:event.type==='video'?'video':'audio',
