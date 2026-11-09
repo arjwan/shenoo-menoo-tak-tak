@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - 'android/shno-mano-call/**'
+      - 'call-groups.js'
+      - 'cloudflare/call-groups.js'
+      - 'private-messages.js'
+      - 'call-signaling.js'
+      - 'functions/api/**'
+      - 'cloudflare/migrations/20261110_call_groups.sql'
       - '.github/workflows/standalone-call-stability.yml'
   workflow_dispatch:
 
@@ -16,6 +22,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate-shared-call-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shared signaling and group scripts
+        run: |
+          node --check call-groups.js
+          node --check cloudflare/call-groups.js
+          node --check call-signaling.js
+          node --check private-messages.js
+          node --check functions/api/\[\[path\]\].js
+      - name: Validate D1 group migration SQL
+        run: |
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect(':memory:')
+          c.executescript('CREATE TABLE users(id TEXT PRIMARY KEY); CREATE TABLE conversations(id TEXT PRIMARY KEY);')
+          c.executescript(open('cloudflare/migrations/20261110_call_groups.sql').read())
+          print('D1 group schema syntax OK')
+          PY
   compile-standalone-call:
     runs-on: ubuntu-latest
     defaults:
