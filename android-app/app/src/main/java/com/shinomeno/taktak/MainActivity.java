@@ -359,8 +359,8 @@ public final class MainActivity extends Activity {
                         String name = cursor.getString(0);
                         String phone = cursor.getString(1);
                         if (phone != null && !phone.trim().isEmpty()) {
-                            String payload = "[{\\\"name\\\":[" + JSONObject.quote(name == null ? "جهة اتصال" : name)
-                                    + "],\\\"tel\\\":[" + JSONObject.quote(phone) + "]}]";
+                            String payload = "[{\"name\":[" + JSONObject.quote(name == null ? "جهة اتصال" : name)
+                                    + "],\"tel\":[" + JSONObject.quote(phone) + "]}]";
                             webView.evaluateJavascript(
                                     "window.dispatchEvent(new CustomEvent('shnomano:contacts',{detail:"
                                     + payload + "}));", null);
