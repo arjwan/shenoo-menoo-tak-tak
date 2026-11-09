@@ -1,3 +1,4 @@
+import { handleCallSignaling } from './call-signaling.js';
 import { handleDeveloper } from './developer-api.js';
 import { handleIslamic } from './islamic-api.js';
 import { handleServices } from './service-providers-api.js';
@@ -231,6 +232,8 @@ async function main(req,env){
   }
   if(!path.startsWith('/api/'))return err('المسار غير موجود',404);
   const user=await authenticate(req,env);
+  const callSignalResponse=await handleCallSignaling(req,env,user);
+  if(callSignalResponse)return callSignalResponse;
   const islamicResponse=await handleIslamic(req,env,user,path);
   if(islamicResponse)return islamicResponse;
   const serviceResponse=await handleServices(req,env,user,path);
