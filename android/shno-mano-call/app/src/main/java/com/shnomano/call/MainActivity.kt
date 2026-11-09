@@ -122,11 +122,37 @@ fun ShnoManoCallApp() {
             }
         }
     ) { padding ->
-        Box(
+        Column(
             Modifier.fillMaxSize().padding(padding).background(
                 Brush.verticalGradient(listOf(Color(0xFF10365D), Bg, Color(0xFF050D22)))
             )
         ) {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF172D51))
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        Modifier.size(49.dp).background(
+                            Brush.linearGradient(listOf(Color(0xFF7C5CFF), Color(0xFF2C9AE9))), CircleShape
+                        ),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.Default.Call, contentDescription = null, tint = Color.White) }
+                    Spacer(Modifier.width(13.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("اتصال", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                        Text("محادثاتك ومكالماتك في مكان واحد", color = Muted, fontSize = 11.sp)
+                    }
+                    Box(
+                        Modifier.size(10.dp).background(Color(0xFF24D3B0), CircleShape)
+                    )
+                }
+            }
+            Box(Modifier.fillMaxWidth().weight(1f)) {
             when (selected) {
                 0 -> ConversationsScreen(repo, onlineUserIds) { activeChat = it }
                 1 -> CallsScreen(repo, onlineUserIds) { userId ->
@@ -140,6 +166,7 @@ fun ShnoManoCallApp() {
                     activeChat = null
                     signedIn = false
                 }
+            }
             }
         }
     }
@@ -224,9 +251,9 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
 private fun BrandHeader(title: String, subtitle: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(52.dp).background(Brush.linearGradient(listOf(Accent, Color(0xFF7D5FFF))), CircleShape),
+            Modifier.size(58.dp).background(Brush.linearGradient(listOf(Color(0xFF7C5CFF), Accent)), RoundedCornerShape(18.dp)),
             contentAlignment = Alignment.Center
-        ) { Text("ش", color = Bg, fontSize = 24.sp, fontWeight = FontWeight.Black) }
+        ) { Icon(Icons.Default.Call, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp)) }
         Column(Modifier.padding(start = 12.dp)) {
             Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 21.sp)
             Text(subtitle, color = Muted, fontSize = 12.sp)
