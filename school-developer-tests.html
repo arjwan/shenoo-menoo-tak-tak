@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مركز فحص المطور — مدرسة سومر</title>
+<style>
+:root{color-scheme:light}body{font-family:system-ui,Tahoma,sans-serif;background:#f4f8fa;color:#102f38;margin:0}
+header{background:#07343b;color:#fff;padding:22px max(20px,5vw)}main{max-width:1100px;margin:auto;padding:22px}
+a{color:#08718a}header a{color:#e8c16d}.panel{background:white;border:1px solid #d6e6ea;border-radius:14px;padding:20px;margin:16px 0}
+.links{display:flex;flex-wrap:wrap;gap:10px}.links a,button{display:inline-block;border:1px solid #9cc3cb;border-radius:9px;padding:10px 14px;background:#f0f8f9;color:#07516a;text-decoration:none;font:inherit;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}table{border-collapse:collapse;width:100%}th,td{padding:10px;border-bottom:1px solid #e4ecef;text-align:right;word-break:break-word}
+.ok{color:#147343}.bad{color:#b42318}.muted{color:#586a70}.notice{background:#fff6dc;padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<header><h1>🧪 مركز فحص مدرسة سومر — حساب المطور</h1><p id="identity">التحقق من جلسة المطور...</p><a href="/school-admin.html">العودة إلى إدارة المدرسة</a></header>
+<main id="workspace" hidden>
+<section class="panel"><h2>المرافق التعليمية</h2><p>الوصول عبر جلسة المطور المعتمدة، من دون إنشاء حساب طالب أو معلم جديد.</p>
+<div class="links">
+<a href="/school.html#curriculum">مكتبة المناهج</a>
+<a href="/school-admin.html">إدارة المدرسة</a>
+<a href="/school-virtual-classroom.html">اختبار المعلم الافتراضي</a>
+<a href="/school-live.html">الصف المباشر</a>
+<a href="/developer/">لوحة المطور</a>
+</div><p class="notice">فحص الصف الافتراضي الصوتي يتطلب أيضاً اتصال خادم الصف وتفعيل خدمة الصوت. لا يتم تجاوز حماية الخادم أو إنشاء حصص أو تعديل سجلات تلقائياً.</p></section>
+<section class="panel"><h2>فحص الاتصال والمناهج</h2><button id="run">تشغيل الفحص الفعلي</button>
+<p class="muted">الاختبار قراءة فقط: يتحقق من استجابة الخادم وكتالوج المناهج، ولا يعدل بيانات الطلاب.</p>
+<table><thead><tr><th>الخدمة</th><th>النتيجة</th><th>التفاصيل</th></tr></thead><tbody id="results"><tr><td colspan="3">لم يبدأ الفحص بعد</td></tr></tbody></table></section>
+</main>
+<main id="denied" hidden><section class="panel"><h2>الدخول محمي</h2><p id="deniedReason">يلزم تسجيل الدخول إلى حساب المطور الأصلي أولاً. لا تحتاج إلى تسجيل جديد في المدرسة.</p><a href="/developer/">فتح تسجيل دخول المطور</a></section></main>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+async function check(url){
+  const start=performance.now();
+  try{
+    const response=await fetch(url,{credentials:'same-origin',headers:{Accept:'application/json'},cache:'no-store'});
+    const data=await response.json().catch(()=>null);
+    return {status:response.status,ok:response.ok&&!!data&&data.ok!==false,data,ms:Math.round(performance.now()-start)};
+  }catch(e){return {status:0,ok:false,error:String(e.message||e),ms:Math.round(performance.now()-start)}}
+}
+async function boot(){
+  const me=await check('/api/school/management/me');
+  if(!me.ok||!me.data||me.data.authenticated!==true||me.data.schoolContext?.isDeveloper!==true){
+    $('identity').textContent='لا توجد جلسة مطور معتمدة';
+    $('denied').hidden=false;return;
+  }
+  $('identity').textContent='المطور المعتمد: '+(me.data.user.fullName||me.data.user.username||'المطور');
+  $('workspace').hidden=false;
+}
+$('run').addEventListener('click',async function(){
+  this.disabled=true;$('results').replaceChildren();
+  const checks=[
+    ['جلسة الإدارة','/api/school/management/me'],
+    ['فهرس المناهج','/api/school/curriculum/catalog'],
+    ['ملفات المناهج (محمي)','/api/school/curriculum/files'],
+    ['شخصيات المعلم الافتراضي','/api/school/virtual/profiles']
+  ];
+  for(const [label,url] of checks){
+    const r=await check(url);const tr=document.createElement('tr');
+    const a=document.createElement('td');a.textContent=label;
+    const status=document.createElement('td');status.className=r.ok?'ok':'bad';status.textContent=r.ok?'متاح ('+r.status+')':'غير متاح ('+(r.status||'شبكة')+')';
+    const detail=document.createElement('td');
+    const count=Array.isArray(r.data?.catalog)?r.data.catalog.length:Array.isArray(r.data?.profiles)?r.data.profiles.length:null;
+    detail.textContent=(count!==null?'العناصر: '+count+' — ':'')+(r.data?.message||r.data?.error||r.error||'')+' '+r.ms+'ms';
+    tr.append(a,status,detail);$('results').appendChild(tr);
+  }
+  this.disabled=false;
+});
+boot().catch(()=>{$('denied').hidden=false;$('identity').textContent='تعذر التحقق من جلسة المطور'});
+})();
+</script>
+</body></html>
