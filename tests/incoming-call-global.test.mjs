@@ -30,3 +30,12 @@ test('notifications use native Android bridge when present',()=>{
  assert.match(code,/ShnoManoNative\.showIncomingCallAlert/);
  assert.match(code,/ShnoManoNative\.stopIncomingCallAlert/);
 });
+
+test('desktop notification appears alongside existing call UI, including messages, and closes on end',()=>{
+ const code=read('incoming-call-global.js');
+ assert.match(code,/function showDesktopNotification\(/);
+ assert.match(code,/if\(inMessages\)\{startSound\(\);showDesktopNotification\(\);return;\}/);
+ assert.match(code,/document\.body\.appendChild\(bell\);startSound\(\);\s*showDesktopNotification\(\)/);
+ assert.match(code,/desktopNotice\.close\(\)/);
+ assert.doesNotMatch(code,/Notification\.permission==='granted'&&document\.hidden/);
+});
