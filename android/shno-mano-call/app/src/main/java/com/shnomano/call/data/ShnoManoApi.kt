@@ -147,7 +147,7 @@ object ApiFactory {
             val token = tokenProvider()
             val request = chain.request().newBuilder().apply {
                 if (!session.sessionCookie.isNullOrBlank()) header("Cookie", "__Host-shino_session=${session.sessionCookie}")
-                else if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+
                 header("Accept", "application/json")
             }.build()
             val response = chain.proceed(request)
