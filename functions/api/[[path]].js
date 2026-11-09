@@ -80,7 +80,7 @@ export async function onRequest(context) {
           forwarded.delete('x-school-developer-bridge');
           forwarded.delete('authorization');
           forwarded.set('x-school-developer-bridge',encoded+'.'+signed);
-          return proxyLegacy({...context,request:new Request(context.request,{headers:forwarded})});
+          return proxyLegacy({...context,verifiedDeveloperBridge:true,request:new Request(context.request,{headers:forwarded})});
         }
       }
     }
