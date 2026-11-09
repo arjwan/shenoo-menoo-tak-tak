@@ -141,6 +141,8 @@
         if (previewOff) { previewOff.srcObject = null; previewOff.classList.remove('is-visible'); }
       }
       activeCall.type = targetType;
+      var modeButton=document.querySelector('[data-call-switch-mode]');
+      if(modeButton)modeButton.textContent=targetType==='video'?'🎙 صوت':'📹 فيديو';
       callName(currentOther && currentOther.fullName || document.querySelector('[data-call-name]')?.textContent || 'مستخدم', targetType);
       var offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
@@ -158,6 +160,14 @@
   document.querySelector("[data-call-reject]").onclick = function () { if (activeCall) socket.emit("call:reject", callPayload({ reason: "rejected" })); endCall(false, "رفض المكالمة"); };
   document.querySelector("[data-call-mute]").onclick = function () { var b = this; if (localStream) localStream.getAudioTracks().forEach(function (t) { t.enabled = !t.enabled; b.classList.toggle("is-off", !t.enabled); }); };
   document.querySelector("[data-call-camera]").onclick = function () { var b = this; if (localStream) localStream.getVideoTracks().forEach(function (t) { t.enabled = !t.enabled; b.classList.toggle("is-off", !t.enabled); }); };
+  var modeButton=document.querySelector('[data-call-switch-mode]');
+  if(modeButton)modeButton.onclick=async function(){
+    if(!activeCall)return;
+    var next=activeCall.type==='video'?'audio':'video';
+    this.disabled=true;
+    try { await window.shnoSwitchCallMedia(next); }
+    finally { this.disabled=false; }
+  };
   if (socket) {
     socket.on("private:message", function (p) { String(p.conversationId) === String(currentId) ? openConversation(currentId) : loadList(); });
     socket.on("private:typing", function (p) { var line = windowEl.querySelector("[data-typing-line]"); if (line && String(p.conversationId) === String(currentId)) line.textContent = p.active ? "يكتب الآن…" : ""; });
