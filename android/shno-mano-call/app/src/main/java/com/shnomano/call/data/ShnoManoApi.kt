@@ -142,13 +142,21 @@ interface ShnoManoApi {
 
 object ApiFactory {
     fun create(tokenProvider: () -> String?): ShnoManoApi {
+        val session = SessionStore(com.shnomano.call.ShnoManoApp.instance)
         val auth = Interceptor { chain ->
             val token = tokenProvider()
             val request = chain.request().newBuilder().apply {
-                if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+                if (!session.sessionCookie.isNullOrBlank()) header("Cookie", "__Host-shino_session=${session.sessionCookie}")
+                else if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
                 header("Accept", "application/json")
             }.build()
-            chain.proceed(request)
+            val response = chain.proceed(request)
+            if (request.url.encodedPath == "/api/auth/signin" && response.isSuccessful) {
+                response.headers("Set-Cookie").firstOrNull { it.startsWith("__Host-shino_session=") }
+                    ?.substringAfter("__Host-shino_session=")?.substringBefore(";")
+                    ?.takeIf { it.isNotBlank() }?.let { session.saveSessionCookie(it) }
+            }
+            response
         }
         val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         val client = OkHttpClient.Builder().addInterceptor(auth).addInterceptor(logging).build()
