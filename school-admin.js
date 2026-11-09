@@ -151,6 +151,8 @@
 
       const developerPanelLink = $('schoolDeveloperPanelLink');
       if (developerPanelLink) developerPanelLink.hidden = !(schoolContext && schoolContext.isDeveloper === true);
+      const developerTestsLink = $('schoolDeveloperTestsLink');
+      if (developerTestsLink) developerTestsLink.hidden = !(schoolContext && schoolContext.isDeveloper === true);
 
       $('currentUserName').textContent = currentUser.fullName || currentUser.username;
       const roleEl = $('currentUserRole');
