@@ -10,6 +10,10 @@ on:
       - 'android/shno-mano-call/**'
       - '.github/workflows/native-shno-ittisal-releases.yml'
 
+concurrency:
+  group: native-android-delivery-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
