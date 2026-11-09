@@ -523,8 +523,8 @@ async function main(req,env){
     return json({ok:true,following:req.method==='POST'});
   }
   if(req.method==='GET'&&path==='/api/friends'){
-    const rows=await env.DB.prepare("SELECT u.id,u.username,u.full_name FROM follows f JOIN users u ON u.id=f.followed_id WHERE f.follower_id=? AND u.status='active' ORDER BY u.username LIMIT 100").bind(user.id).all();
-    return json({ok:true,friends:rows.results.map(safeUser),users:rows.results.map(safeUser),mode:'following'});
+    const rows=await env.DB.prepare("SELECT u.id,u.username,u.full_name FROM follows f JOIN follows back ON back.follower_id=f.followed_id AND back.followed_id=f.follower_id JOIN users u ON u.id=f.followed_id WHERE f.follower_id=? AND u.status='active' ORDER BY u.username LIMIT 100").bind(user.id).all();
+    return json({ok:true,friends:rows.results.map(safeUser),users:rows.results.map(safeUser),mode:'mutual'});
   }
   const postRoute=path.match(/^\/api\/posts\/([a-f0-9-]{36})$/i);
   if(postRoute&&req.method==='DELETE'){
