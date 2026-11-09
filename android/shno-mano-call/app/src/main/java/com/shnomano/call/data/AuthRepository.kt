@@ -9,7 +9,7 @@ class AuthRepository(
 ) {
     suspend fun signIn(identifier: String, password: String): Result<SignedInUserDto> = runCatching {
         val response = api.signIn(SignInRequest(identifier.trim(), password))
-        if (!response.ok || response.token.isNullOrBlank() || response.user == null) {
+        if (!response.ok || (response.token.isNullOrBlank() && sessionStore.sessionCookie.isNullOrBlank()) || response.user == null) {
             error(response.message ?: "تعذر تسجيل الدخول")
         }
         sessionStore.save(response)
