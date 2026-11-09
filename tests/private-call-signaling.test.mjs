@@ -72,3 +72,11 @@ test('client uses same-origin authenticated API, never legacy Socket.IO',()=>{
  assert.match(client,/call:invite/);
  assert.match(client,/webrtc:offer/);
 });
+
+test('Pages API routes calls through its authenticated D1 session with CSRF protection',()=>{
+ const source=fs.readFileSync(new URL('../functions/api/[[path]].js',import.meta.url),'utf8');
+ assert.match(source,/pathname === '\/api\/call-signals'/);
+ assert.match(source,/getAuthenticatedAppUser\(context.request,context.env\)/);
+ assert.match(source,/handleCallSignaling\(context.request,context.env,actor\)/);
+ assert.match(source,/Sec-Fetch-Site/);
+});
