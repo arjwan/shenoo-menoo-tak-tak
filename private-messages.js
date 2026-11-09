@@ -68,7 +68,7 @@
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) { var chunks = []; recorder = new MediaRecorder(stream); recorder.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); }; recorder.onstop = async function () { stream.getTracks().forEach(function (t) { t.stop(); }); var mime = recorder.mimeType || "audio/webm", blob = new Blob(chunks, { type: mime }); if (blob.size > 10 * 1024 * 1024) return show("الرسالة الصوتية أكبر من 10 ميغابايت", "error"); var form = new FormData(); form.append("type", "audio"); form.append("attachment", blob, "voice-message.webm"); try { await SocialAPI.request("/api/conversations/" + encodeURIComponent(currentId) + "/messages", { method: "POST", body: form }); } catch (e) { show(e.message, "error"); } }; recorder.start(); button.textContent = "■"; }).catch(function () { show("تعذر الوصول إلى الميكروفون", "error"); });
   }
   function stopMedia() { if (localStream) localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; document.querySelectorAll("[data-local-video],[data-remote-video]").forEach(function (v) { v.pause(); v.srcObject = null; v.classList.remove("is-visible"); }); }
-  function endCall(notify, status, reason) { if (notify && socket && activeCall) socket.emit("call:end", callPayload({ reason: reason || "ended" })); clearTimeout(callTimer); clearTimeout(connectionTimer); stopMedia(); if (peer) { peer.ontrack = peer.onicecandidate = peer.onconnectionstatechange = null; peer.close(); } peer = null; pendingIce = []; activeCall = null; callModal.hidden = true; document.querySelector("[data-incoming-call-actions]").hidden = true; if (status) show(status, status === "تعذر الاتصال" ? "error" : "success"); }
+  function endCall(notify, status, reason) { if (window.ShnoIncomingCalls && activeCall) window.ShnoIncomingCalls.end(activeCall.callId); if (notify && socket && activeCall) socket.emit("call:end", callPayload({ reason: reason || "ended" })); clearTimeout(callTimer); clearTimeout(connectionTimer); stopMedia(); if (peer) { peer.ontrack = peer.onicecandidate = peer.onconnectionstatechange = null; peer.close(); } peer = null; pendingIce = []; activeCall = null; callModal.hidden = true; document.querySelector("[data-incoming-call-actions]").hidden = true; if (status) show(status, status === "تعذر الاتصال" ? "error" : "success"); }
   function callPayload(data) { return Object.assign({ callId: activeCall.callId, userId: activeCall.userId, conversationId: activeCall.conversationId, type: activeCall.type }, data || {}); }
   async function getMedia(type) { stopMedia(); localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "video" }); var v = document.querySelector("[data-local-video]"); if (type === "video") { v.srcObject = localStream; v.classList.add("is-visible"); } }
   function ensurePeer() {
@@ -99,6 +99,10 @@
     callName(payload.callerName || "مستخدم شنو منو", type);
     callStatus("مكالمة واردة");
     document.querySelector("[data-incoming-call-actions]").hidden = false;
+    if(window.ShnoIncomingCalls)window.ShnoIncomingCalls.incoming({
+      callId:callId,conversationId:conversationId,from:from,
+      callerName:payload.callerName||"مستخدم شنو منو",type:type
+    });
   }
   // Native Android hands off an invite that was already received by its
   // foreground service. Keeping the callId here avoids waiting for a second
@@ -110,7 +114,7 @@
     if (!socket || !socket.connected || !currentOther || !currentOther.id) return show("تعذر بدء المكالمة الآن", "error"); activeCall = { callId: newCallId(), userId: String(currentOther.id), conversationId: currentId, type: type, incoming: false }; callModal.hidden = false; callName(currentOther.fullName, type); callStatus("جارٍ الاتصال…");
     try { await getMedia(type); socket.emit("call:invite", callPayload(), function (result) { if (!activeCall) return; if (result && result.ok) { callStatus("يرن…"); return; } endCall(false); show((result && result.message) || "تعذر الاتصال", "error"); }); callTimer = setTimeout(function () { if (!activeCall || activeCall.incoming) return; socket.emit("call:end", callPayload({ reason: "no-answer" })); endCall(false, "لا يوجد رد"); }, 30000); } catch (_) { endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); }
   }
-  async function acceptCall() { if (!activeCall) return; try { await getMedia(activeCall.type); ensurePeer(); document.querySelector("[data-incoming-call-actions]").hidden = true; callStatus("جاري إنشاء الاتصال…"); socket.emit("call:accept", callPayload(), function (result) { if (result && !result.ok) endCall(false, "انتهت المكالمة"); }); } catch (_) { socket.emit("call:reject", callPayload({ reason: "media-denied" })); endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); } }
+  async function acceptCall() { if (!activeCall) return; if(window.ShnoIncomingCalls)window.ShnoIncomingCalls.end(activeCall.callId); try { await getMedia(activeCall.type); ensurePeer(); document.querySelector("[data-incoming-call-actions]").hidden = true; callStatus("جاري إنشاء الاتصال…"); socket.emit("call:accept", callPayload(), function (result) { if (result && !result.ok) endCall(false, "انتهت المكالمة"); }); } catch (_) { socket.emit("call:reject", callPayload({ reason: "media-denied" })); endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); } }
   async function flushIce() { while (pendingIce.length && peer && peer.remoteDescription) await peer.addIceCandidate(pendingIce.shift()).catch(function () {}); }
   document.querySelector("[data-call-end]").onclick = function () { endCall(true, "انتهت المكالمة"); };
   document.querySelector("[data-call-accept]").onclick = acceptCall;
