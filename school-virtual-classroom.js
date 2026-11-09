@@ -1390,11 +1390,15 @@
     try {
       window.speechSynthesis.cancel();
       var voices = window.speechSynthesis.getVoices();
-      var arabic = voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); }) ||
-        voices.find(function (v) { return /^ar[-_]/i.test(v.lang); });
-      if (!arabic) {
+      var dialect = state.session && state.session.virtualTeacher && state.session.virtualTeacher.dialect || 'ar-standard';
+      var english = dialect === 'en';
+      var selectedVoice = english
+        ? (voices.find(function (v) { return /^en[-_]US$/i.test(v.lang); }) || voices.find(function (v) { return /^en[-_]/i.test(v.lang); }))
+        : ((dialect === 'ar-iraqi' && voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); })) ||
+          voices.find(function (v) { return /^ar[-_]/i.test(v.lang); }));
+      if (!selectedVoice) {
         if (key) spokenAnswers.delete(key);
-        notify('صوت الخادم غير متاح حاليًا، ولا يوجد صوت عربي محلي على هذا الجهاز. اضغط 🔊 لإعادة المحاولة بعد عودة الخادم.', true);
+        notify('صوت الخادم غير متاح حاليًا، ولا يوجد صوت ' + (english ? 'إنجليزي' : 'عربي') + ' محلي على هذا الجهاز. اضغط 🔊 لإعادة المحاولة بعد عودة الخادم.', true);
         return;
       }
       // Chromium can silently stop a long utterance. Read shorter sentences in sequence.
@@ -1405,8 +1409,8 @@
         if (generation !== speechGeneration || index >= parts.length) return;
         var part = parts[index++];
         var utterance = new SpeechSynthesisUtterance(part);
-        utterance.voice = arabic;
-        utterance.lang = arabic.lang;
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
         utterance.pitch = 1;
         utterance.rate = 1;
         utterance.volume = 1;
