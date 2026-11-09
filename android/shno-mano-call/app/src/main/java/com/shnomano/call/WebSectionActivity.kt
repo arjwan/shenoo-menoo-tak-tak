@@ -29,6 +29,15 @@ class WebSectionActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent.getBooleanExtra(EXTRA_GROUP_INVITE, false)) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            } else {
+                @Suppress("DEPRECATION")
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            }
+        }
         webView = WebView(this).apply {
             setBackgroundColor(android.graphics.Color.rgb(7, 9, 16))
             settings.javaScriptEnabled = true
@@ -82,6 +91,7 @@ class WebSectionActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_URL = "url"
+        const val EXTRA_GROUP_INVITE = "group_invite"
         const val BASE = "https://shinomino.com/"
     }
 }
