@@ -26,7 +26,7 @@ class SessionStore(context: Context) {
     val username: String?
         get() = prefs.getString(KEY_USERNAME, null)
 
-    fun isSignedIn(): Boolean = (!sessionCookie.isNullOrBlank() || !token.isNullOrBlank()) && !userId.isNullOrBlank()
+    fun isSignedIn(): Boolean = !sessionCookie.isNullOrBlank() && !userId.isNullOrBlank()
 
     fun save(response: SignInResponse) {
         val user = requireNotNull(response.user)
