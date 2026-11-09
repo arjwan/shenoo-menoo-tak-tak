@@ -223,8 +223,8 @@ class WebCallActivity : ComponentActivity() {
               window.__shnoCallStageReady=true;
               var style=document.createElement('style');
               style.textContent=`
-                body{margin:0!important;background:#050b09!important;overflow:hidden!important}
-                body>*:not([data-call-modal]){display:none!important}
+                body{margin:0!important;background:#050b09!important}
+                /* Keep page content available while the call is being prepared. */
                 [data-call-modal][hidden]{display:none!important}
                 [data-call-modal]{position:fixed!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#050b09!important;z-index:9999!important}
                 [data-call-modal] [data-remote-video]{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;object-fit:cover!important;background:#050b09!important;border-radius:0!important;z-index:1!important}
@@ -234,7 +234,6 @@ class WebCallActivity : ComponentActivity() {
                 [data-call-modal].shno-focus [data-local-video]{width:46vw!important;max-width:240px!important;height:34vh!important}
               `;
               document.head.appendChild(style);
-              document.querySelectorAll('header,main,nav,aside,footer').forEach(function(el){el.style.display='none'});
               window.shnoSwapVideo=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-swap')};
               window.shnoToggleVideoSize=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-focus')};
               var modal=document.querySelector('[data-call-modal]');
@@ -247,7 +246,7 @@ class WebCallActivity : ComponentActivity() {
                 if(modal&&modal.hidden){
                   var done=(feedback&&feedback.textContent||'').trim();
                   if(terminal.test(done)) ShnoAndroidCall.onEnded(done);
-                  else modal.hidden=false;
+                  // Do not force the modal open: the original call state owns it.
                 }
               };
               if(modal||status||feedback){
