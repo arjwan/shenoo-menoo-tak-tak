@@ -1358,7 +1358,22 @@
           var pageData = (results[1].ok && results[1].data && results[1].data.pageData) || {};
           renderReader(container, student, bookId, pageNum, bookData, pageData, viewMode);
         }).catch(function () {
-          renderReader(container, student, bookId, pageNum, {}, {}, viewMode);
+          // Keep the original reader usable with real catalog metadata even
+          // when the PDF/page API is unavailable. Never invent textbook text.
+          fetch('/school-curriculum-catalog.json', { credentials: 'same-origin' })
+            .then(function (res) { if (!res.ok) throw new Error('catalog unavailable'); return res.json(); })
+            .then(function (catalog) {
+              var item = Array.isArray(catalog.items) && catalog.items.find(function (book) { return book.id === bookId; });
+              var metadata = item ? {
+                title: item.title,
+                totalPages: item.file && item.file.pages,
+                file: { url: '' },
+                sourceUrl: ''
+              } : {};
+              renderReader(container, student, bookId, pageNum, metadata, {}, viewMode);
+            }).catch(function () {
+              renderReader(container, student, bookId, pageNum, {}, {}, viewMode);
+            });
         });
       } else if (mainRoute === '#student/assignments') {
         Promise.all([
