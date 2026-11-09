@@ -74,7 +74,7 @@ interface MediaMessageApi {
 class MediaMessageRepository(
     private val session: SessionStore
 ) {
-    private val api: MediaMessageApi = createMediaApi { session.token }
+    private val api: MediaMessageApi = createMediaApi(session)
 
     suspend fun load(conversationId: String): Result<List<MediaMessageDto>> = runCatching {
         api.messages(conversationId).messages
@@ -108,11 +108,10 @@ class MediaMessageRepository(
     }
 }
 
-private fun createMediaApi(tokenProvider: () -> String?): MediaMessageApi {
+private fun createMediaApi(session: SessionStore): MediaMessageApi {
     val auth = Interceptor { chain ->
-        val token = tokenProvider()
         val request = chain.request().newBuilder().apply {
-            if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+            session.sessionCookie?.takeIf { it.isNotBlank() }?.let { header("Cookie", "__Host-shino_session=$it") }
             header("Accept", "application/json")
         }.build()
         chain.proceed(request)
