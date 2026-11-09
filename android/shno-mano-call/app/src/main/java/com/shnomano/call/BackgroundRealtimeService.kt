@@ -42,6 +42,19 @@ class BackgroundRealtimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (intent?.action == ACTION_REJECT_CALL) {
+            val callId = intent.getStringExtra("call_id").orEmpty()
+            val conversationId = intent.getStringExtra("conversation_id").orEmpty()
+            val from = intent.getStringExtra("from").orEmpty()
+            if (callId.isNotBlank() && conversationId.isNotBlank() && from.isNotBlank()) {
+                Executors.newSingleThreadExecutor().execute {
+                    try { rejectRemoteCall(callId, conversationId, from) }
+                    catch (error: Exception) { Log.w(TAG, "Call rejection failed", error) }
+                }
+                clearCallAlert(callId)
+            }
+            return START_STICKY
+        }
         startAsForeground()
         startPolling()
         return START_STICKY
@@ -195,6 +208,30 @@ class BackgroundRealtimeService : Service() {
         postIncomingCallNotification(call, isGroup)
     }
 
+    private fun rejectRemoteCall(callId: String, conversationId: String, from: String) {
+        val cookie = SessionStore(this).sessionCookie ?: return
+        val conn = URL(SHNO_MANO_BASE_URL + "api/call-signals").openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "POST"
+            conn.connectTimeout = 7000
+            conn.readTimeout = 7000
+            conn.doOutput = true
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("Cookie", "__Host-shino_session=$cookie")
+            val body = JSONObject()
+                .put("event", "call:reject")
+                .put("callId", callId)
+                .put("conversationId", conversationId)
+                .put("userId", from)
+                .put("reason", "declined")
+                .toString()
+            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            if (conn.responseCode !in 200..299) Log.w(TAG, "Reject signal HTTP ${conn.responseCode}")
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     private fun postIncomingCallNotification(call: IncomingCall, isGroup: Boolean) {
         val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(call.from)}"
         val openCall = Intent(this, WebCallActivity::class.java).apply {
@@ -212,6 +249,23 @@ class BackgroundRealtimeService : Service() {
             this,
             call.callId.hashCode(),
             openCall,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val answerCall = Intent(openCall).apply {
+            putExtra(WebCallActivity.EXTRA_AUTO_ACCEPT, true)
+        }
+        val answerPending = PendingIntent.getActivity(
+            this, call.callId.hashCode() xor 0x2345, answerCall,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val rejectCall = Intent(this, BackgroundRealtimeService::class.java).apply {
+            action = ACTION_REJECT_CALL
+            putExtra("call_id", call.callId)
+            putExtra("conversation_id", call.conversationId)
+            putExtra("from", call.from)
+        }
+        val rejectPending = PendingIntent.getService(
+            this, call.callId.hashCode() xor 0x3476, rejectCall,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val typeLabel = when {
@@ -232,7 +286,8 @@ class BackgroundRealtimeService : Service() {
             .setOngoing(true)
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)
-            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "فتح المكالمة", pendingIntent).build())
+            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "قبول", answerPending).build())
+            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "رفض", rejectPending).build())
             .build()
         getSystemService(NotificationManager::class.java).notify(CALL_NOTIFICATION_ID, notification)
     }
@@ -263,6 +318,7 @@ class BackgroundRealtimeService : Service() {
     companion object {
         private const val TAG = "ShnoRealtime"
         private const val ACTION_STOP = "com.shnomano.call.action.STOP_REALTIME"
+        private const val ACTION_REJECT_CALL = "com.shnomano.call.action.REJECT_CALL"
         private const val SERVICE_NOTIFICATION_ID = 4101
         private const val CALL_NOTIFICATION_ID = 4102
         @Volatile private var running: BackgroundRealtimeService? = null
