@@ -8,6 +8,8 @@ import android.app.PendingIntent;
 import android.app.NotificationChannel;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
+import android.media.ToneGenerator;
+import android.media.AudioManager;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -55,6 +57,7 @@ public final class MainActivity extends Activity {
     private TextView offlineBanner;
     private ValueCallback<Uri[]> fileCallback;
     private PermissionRequest pendingPermissionRequest;
+    private ToneGenerator outgoingCallTone;
     private Ringtone incomingRingtone;
     private String currentAlertCallId;
     private static final int INCOMING_CALL_NOTIFICATION_ID = 9318;
@@ -412,6 +415,25 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void startCallTone(String mode) {
+            runOnUiThread(() -> {
+                stopCallToneNative();
+                if (!"ringback".equals(mode)) return;
+                try {
+                    outgoingCallTone = new ToneGenerator(AudioManager.STREAM_VOICE_CALL, 75);
+                    outgoingCallTone.startTone(ToneGenerator.TONE_SUP_RINGTONE);
+                } catch (Exception ignored) {
+                    stopCallToneNative();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void stopCallTone() {
+            runOnUiThread(MainActivity.this::stopCallToneNative);
+        }
+
+        @JavascriptInterface
         public void showIncomingCallAlert(String callId, String callerName, String from,
                                           String conversationId, String type) {
             runOnUiThread(() -> {
@@ -551,6 +573,13 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void stopCallToneNative() {
+        if (outgoingCallTone != null) {
+            try { outgoingCallTone.stopTone(); outgoingCallTone.release(); } catch (Exception ignored) {}
+            outgoingCallTone = null;
+        }
+    }
+
     private void stopIncomingCallAlertNative() {
         if(incomingRingtone!=null){
             try{incomingRingtone.stop();}catch(Exception ignored){}
@@ -563,6 +592,7 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy(){
+        stopCallToneNative();
         stopIncomingCallAlertNative();
         super.onDestroy();
     }
