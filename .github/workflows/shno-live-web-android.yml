@@ -60,17 +60,17 @@ jobs:
           test -s "$apk"
           signer="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           "$signer" verify --verbose "$apk"
-          cp "$apk" Shno-Mano-2.0.10-live-web.apk
-          sha256sum Shno-Mano-2.0.10-live-web.apk > Shno-Mano-2.0.10-live-web.apk.sha256
+          cp "$apk" Shno-Mano-2.0.11-live-web.apk
+          sha256sum Shno-Mano-2.0.11-live-web.apk > Shno-Mano-2.0.11-live-web.apk.sha256
       - name: Publish signed APK for review
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "shno-live-web-2.0.10-${{ github.run_id }}" \
+          gh release create "shno-live-web-2.0.11-${{ github.run_id }}" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
-            --title "شنو منو 2.0.10 - Live Website Compatibility" \
+            --title "شنو منو 2.0.11 - Live Website Compatibility" \
             --notes "Retains original Android app and signing identity. Loads official current website for login and all application functions. Site uses Cloudflare HttpOnly cookie sessions. Test login/navigation on a device before production deployment." \
-            Shno-Mano-2.0.10-live-web.apk \
-            Shno-Mano-2.0.10-live-web.apk.sha256
+            Shno-Mano-2.0.11-live-web.apk \
+            Shno-Mano-2.0.11-live-web.apk.sha256
