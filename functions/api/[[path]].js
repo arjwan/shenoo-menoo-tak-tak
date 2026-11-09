@@ -1,3 +1,4 @@
+import { handleCallSignaling } from '../../cloudflare/call-signaling.js';
 import { proxyLegacy } from '../../cloudflare/pages/legacy-origin.js';
 import { handleDeveloper } from '../../cloudflare/developer-api.js';
 import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
@@ -27,6 +28,20 @@ export async function onRequest(context) {
     if (!actor) return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401,headers:{'Cache-Control':'no-store'}});
     if (pathname.startsWith('/api/friends/qr')) return friendQrRequest(context.request,context.env,actor);
     return smartFriendRoute(context.request,context.env,actor);
+  }
+  // Private WebRTC signaling runs on the existing Pages D1 binding and same-origin
+  // HttpOnly session. It does not depend on the retired Socket.IO origin or a
+  // separately redeployed API Worker.
+  if(pathname === '/api/call-signals'){
+    if(!context.env.DB)return Response.json({ok:false,message:'خدمة الاتصالات غير مهيأة'},{status:503});
+    const origin=context.request.headers.get('Origin'),site=context.request.headers.get('Sec-Fetch-Site');
+    if(!['GET','HEAD','OPTIONS'].includes(context.request.method)&&
+       ((origin&&origin!==new URL(context.request.url).origin)||(!origin&&site==='cross-site')))
+      return Response.json({ok:false,message:'طلب من مصدر غير موثوق'},{status:403});
+    const actor=await getAuthenticatedAppUser(context.request,context.env);
+    if(!actor)return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401,headers:{'Cache-Control':'no-store'}});
+    try{return await handleCallSignaling(context.request,context.env,actor);}
+    catch(e){console.error('Call signaling error',String(e?.message||e));return Response.json({ok:false,message:'تعذّر توجيه المكالمة'},{status:500});}
   }
   // Profile editing, photo/cover media and privacy now run natively on D1/R2.
   if (pathname === '/api/users/me/profile' || pathname === '/api/users/me/privacy' ||
