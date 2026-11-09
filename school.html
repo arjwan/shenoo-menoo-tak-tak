@@ -173,7 +173,7 @@
       function defaultRouteForVerifiedUser() {
         var state = store.getState();
         var ctx = state.schoolContext || {};
-        if (ctx.isDeveloper || ctx.isManager) return '#welcome';
+        if (ctx.isDeveloper || ctx.isManager) return '#admin/overview';
         if (ctx.isTeacher) return '#teacher/overview';
         if (ctx.isStudent) return '#student/overview';
         if (ctx.isGuardian) return '#guardian/overview';
