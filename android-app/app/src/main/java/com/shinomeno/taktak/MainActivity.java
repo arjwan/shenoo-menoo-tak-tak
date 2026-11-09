@@ -54,7 +54,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(17, 24, 39));
+        getWindow().setStatusBarColor(Color.rgb(42, 39, 115));
         handleIncomingIntent(getIntent());
         createNotificationChannels();
         buildView();
@@ -164,6 +164,9 @@ public final class MainActivity extends Activity {
                     view.clearHistory();
                     signinSeen = false;
                 }
+                if (url != null && url.startsWith(SITE_ORIGIN + "/taktak.html")) {
+                    applyNativeVisualPolish(view);
+                }
                 syncWebSessionToNative(view);
                 if (pendingCommunicationUser != null && !pendingCommunicationUser.isEmpty()) {
                     openCommunicationCard(pendingCommunicationUser);
@@ -208,6 +211,22 @@ public final class MainActivity extends Activity {
         setContentView(root);
     }
 
+
+    private void applyNativeVisualPolish(WebView view) {
+        try {
+            String css = readBundledPage("native-mobile-polish.css");
+            String script = "(function(){"
+                    + "var id='shno-native-mobile-polish';"
+                    + "if(document.getElementById(id))return;"
+                    + "var style=document.createElement('style');"
+                    + "style.id=id;style.textContent=" + JSONObject.quote(css) + ";"
+                    + "document.head.appendChild(style);"
+                    + "})();";
+            view.evaluateJavascript(script, null);
+        } catch (java.io.IOException ignored) {
+            // Website remains functional even when visual polish is unavailable.
+        }
+    }
 
     private String readBundledPage(String name) throws java.io.IOException {
         try (java.io.InputStream input = getAssets().open(name);
