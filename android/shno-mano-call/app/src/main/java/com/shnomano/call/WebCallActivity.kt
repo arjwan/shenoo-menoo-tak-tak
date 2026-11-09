@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -61,6 +62,7 @@ class WebCallActivity : ComponentActivity() {
     private var incomingActions: LinearLayout? = null
     private var muteControl: Button? = null
     private var muted = false
+    private var callType = "audio"
     private var connectedAt = 0L
     private var autoAcceptIncoming = false
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -87,6 +89,7 @@ class WebCallActivity : ComponentActivity() {
         targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
         incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
         pendingIncomingCall = incomingCallFrom(intent)
+        callType = pendingIncomingCall?.type ?: if (targetUrl.contains("call=video")) "video" else "audio"
         autoAcceptIncoming = intent.getBooleanExtra(EXTRA_AUTO_ACCEPT, false)
         if (pendingIncomingCall != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -136,94 +139,117 @@ class WebCallActivity : ComponentActivity() {
         }
         root.addView(webView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
 
-        val close = controlButton("⌄") { minimizeCall() }
-        root.addView(close, FrameLayout.LayoutParams(60, 60).apply { gravity = Gravity.TOP or Gravity.END; topMargin = 18; marginEnd = 18 })
 
-        val settings = controlButton("⚙") { showCallSettings() }
-        root.addView(settings, FrameLayout.LayoutParams(68, 60).apply { gravity = Gravity.TOP or Gravity.START; topMargin = 18; marginStart = 18 })
+        // The web view owns WebRTC media; one native, always-visible call UI
+        // owns presentation and controls for both outgoing and incoming calls.
+        val tint = GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            intArrayOf(Color.rgb(18, 13, 25), Color.rgb(56, 30, 51), Color.rgb(8, 13, 23))
+        )
+        val surface = FrameLayout(this).apply {
+            background = tint
+            if (callType == "video") setBackgroundColor(Color.TRANSPARENT)
+        }
+        root.addView(surface, FrameLayout.LayoutParams(-1, -1))
 
-        // Native controls deliberately remain visible when the web call modal
-        // is loading or fails to paint. The actual media session stays in WebView.
         val heading = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(18, 18, 18, 18)
-            setBackgroundColor(Color.argb(205, 7, 18, 17))
+            setPadding(dp(20), dp(22), dp(20), dp(22))
         }
         callNameLabel = TextView(this).apply {
             text = pendingIncomingCall?.callerName ?: "شنو منو اتصال"
-            textSize = 22f
+            textSize = 30f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
+            maxLines = 2
         }
         callStatusLabel = TextView(this).apply {
-            text = if (pendingIncomingCall != null) "مكالمة واردة" else "جارٍ تجهيز المكالمة…"
-            textSize = 15f
+            text = if (pendingIncomingCall != null) "مكالمة واردة" else "جارٍ الاتصال…"
+            textSize = 16f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(177, 204, 199))
+            setTextColor(Color.rgb(218, 213, 222))
         }
         heading.addView(callNameLabel)
         heading.addView(callStatusLabel)
-        root.addView(heading, FrameLayout.LayoutParams(-1, -2).apply {
+        surface.addView(heading, FrameLayout.LayoutParams(-1, -2).apply {
             gravity = Gravity.TOP
-            topMargin = 76
-            leftMargin = 20
-            rightMargin = 20
+            topMargin = dp(68)
         })
 
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(8, 16, 8, 12)
-            setBackgroundColor(Color.argb(235, 7, 18, 17))
+            setPadding(dp(12), dp(8), dp(12), dp(24))
         }
-        val actions = LinearLayout(this).apply { gravity = Gravity.CENTER }
-        muteControl = controlButton("🎙 كتم") {
-            if (invokeCallControl("[data-call-mute]")) {
-                muted = !muted
-                muteControl?.text = if (muted) "🎙 تشغيل" else "🎙 كتم"
-            }
+        val first = LinearLayout(this).apply { gravity = Gravity.CENTER }
+        val second = LinearLayout(this).apply { gravity = Gravity.CENTER }
+        val white = Color.WHITE
+        val outline = Color.argb(190, 226, 221, 231)
+        val mute = circleAction("♩", "كتم الصوت", outline) {
+            if (invokeCallControl("[data-call-mute]")) muted = !muted
         }
-        actions.addView(muteControl, LinearLayout.LayoutParams(0, -2, 1f))
-        actions.addView(controlButton("🔊 السماعة") {
+        first.addView(mute, LinearLayout.LayoutParams(0, -2, 1f))
+        first.addView(circleAction("⠿", "لوحة الأرقام", outline) {
+            Toast.makeText(this, "لوحة الأرقام غير مستخدمة في مكالمات الإنترنت", Toast.LENGTH_SHORT).show()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        first.addView(circleAction("◖))", "السماعة", white) {
             setAudioRoute(!SettingsStore(this).speakerphoneEnabled)
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        actions.addView(controlButton("＋ مشارك") { showParticipantPicker() },
-            LinearLayout.LayoutParams(0, -2, 1f))
-        controls.addView(actions)
-
-        val incoming = LinearLayout(this).apply { gravity = Gravity.CENTER }
+        second.addView(circleAction("+", "إضافة مشارك", outline) {
+            showParticipantPicker()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        second.addView(circleAction("▣", "الكاميرا", outline) {
+            if (callType == "video") invokeCallControl("[data-call-camera]")
+            else Toast.makeText(this, "الكاميرا متاحة في مكالمة الفيديو", Toast.LENGTH_SHORT).show()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        second.addView(circleAction("♙", "جهات الاتصال", outline) {
+            showParticipantPicker()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(first)
+        controls.addView(second)
+        val incoming = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(12), 0, 0)
+        }
         incoming.addView(controlButton("✓ قبول") {
             if (invokeCallControl("[data-call-accept]")) {
                 prepareCallAudio()
                 callStatusLabel?.text = "جارٍ إنشاء الاتصال…"
-                // The web call handler owns accept state; do not hide controls
-                // until it reports that acceptance has actually started.
             }
-        }, LinearLayout.LayoutParams(0, -2, 1f))
+        }, LinearLayout.LayoutParams(0, dp(52), 1f))
         incoming.addView(controlButton("✕ رفض") {
             invokeCallControl("[data-call-reject]")
             stopRingback()
             finish()
-        }, LinearLayout.LayoutParams(0, -2, 1f))
+        }, LinearLayout.LayoutParams(0, dp(52), 1f))
         incoming.visibility = if (pendingIncomingCall != null) View.VISIBLE else View.GONE
         incomingActions = incoming
         controls.addView(incoming)
 
-        controls.addView(controlButton("☎ إنهاء المكالمة") {
-            if (pendingIncomingCall != null && incomingActions?.visibility == View.VISIBLE) {
-                invokeCallControl("[data-call-reject]")
-            } else {
-                invokeCallControl("[data-call-end]")
+        val endContainer = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(24), 0, 0)
+        }
+        endContainer.addView(Button(this).apply {
+            text = "☎"
+            textSize = 32f
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(228, 56, 44))
             }
-            stopRingback()
-            finish()
-        }, LinearLayout.LayoutParams(-1, -2))
-        root.addView(controls, FrameLayout.LayoutParams(-1, -2).apply {
+            setOnClickListener {
+                if (incomingActions?.visibility == View.VISIBLE) invokeCallControl("[data-call-reject]")
+                else invokeCallControl("[data-call-end]")
+                stopRingback()
+                finish()
+            }
+        }, LinearLayout.LayoutParams(dp(84), dp(84)))
+        controls.addView(endContainer)
+        surface.addView(controls, FrameLayout.LayoutParams(-1, -2).apply {
             gravity = Gravity.BOTTOM
-            bottomMargin = 18
-            leftMargin = 12
-            rightMargin = 12
+            bottomMargin = dp(54)
         })
 
         setContentView(root)
@@ -256,6 +282,38 @@ class WebCallActivity : ComponentActivity() {
             if (result != "true") Toast.makeText(this, "تعذر تنفيذ الإجراء؛ لا تزال المكالمة قيد التحميل", Toast.LENGTH_SHORT).show()
         }
         return true
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
+
+    private fun circleAction(symbol: String, caption: String, ringColor: Int, action: () -> Unit): LinearLayout {
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(2), dp(10), dp(2), dp(10))
+        }
+        val button = Button(this).apply {
+            text = symbol
+            textSize = 27f
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(if (ringColor == Color.WHITE) Color.WHITE else Color.argb(38, 255, 255, 255))
+                setStroke(dp(1), ringColor)
+            }
+            if (ringColor == Color.WHITE) setTextColor(Color.BLACK)
+            setPadding(0, 0, 0, 0)
+            setOnClickListener { action() }
+        }
+        column.addView(button, LinearLayout.LayoutParams(dp(70), dp(70)))
+        column.addView(TextView(this).apply {
+            text = caption
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(0, dp(8), 0, 0)
+        })
+        return column
     }
 
     private fun controlButton(label: String, click: () -> Unit) = Button(this).apply {
@@ -314,6 +372,7 @@ class WebCallActivity : ComponentActivity() {
                 body{margin:0!important;background:#050b09!important}
                 /* Keep page content available while the call is being prepared. */
                 [data-call-modal][hidden]{display:none!important}
+                [data-call-modal] .call-controls,[data-call-modal] .incoming-call-actions,[data-call-modal] [data-call-name],[data-call-modal] [data-call-status]{visibility:hidden!important}
                 [data-call-modal]{position:fixed!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#050b09!important;z-index:9999!important}
                 [data-call-modal] [data-remote-video]{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;object-fit:cover!important;background:#050b09!important;border-radius:0!important;z-index:1!important}
                 [data-call-modal] [data-local-video]{position:fixed!important;right:18px!important;top:96px!important;width:30vw!important;max-width:170px!important;height:22vh!important;object-fit:cover!important;border-radius:18px!important;border:2px solid rgba(255,255,255,.65)!important;z-index:5!important;box-shadow:0 12px 36px rgba(0,0,0,.45)!important}
