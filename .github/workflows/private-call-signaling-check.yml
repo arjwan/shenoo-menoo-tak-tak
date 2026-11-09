@@ -7,6 +7,7 @@ on:
     paths:
       - 'cloudflare/call-signaling.js'
       - 'cloudflare/worker.js'
+      - 'functions/api/[[path]].js'
       - 'call-signaling.js'
       - 'private-messages.js'
       - 'messages.html'
@@ -20,6 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: node --check 'functions/api/[[path]].js'
       - run: node --check cloudflare/call-signaling.js
       - run: node --check call-signaling.js
       - run: node --check private-messages.js
