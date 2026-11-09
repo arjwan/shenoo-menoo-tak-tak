@@ -81,11 +81,11 @@ router.post('/sessions', async (req, res, next) => {
   try {
     // Permission check: Real teacher/admin/developer/guardian can create
     const role = String(req.user.role || '').toLowerCase();
-    const teacherProfile = await SchoolTeacher.findOne({ user: req.user._id, status: 'active' }).lean();
+    const teacherProfile = ['admin', 'developer'].includes(role) ? null : await SchoolTeacher.findOne({ user: req.user._id, status: 'active' }).lean();
     const isPrivileged = ['admin', 'developer'].includes(role) || Boolean(teacherProfile);
 
     // Also allow any authenticated account that is a guardian of students
-    const studentCount = await Student.countDocuments({ guardian: req.user._id, active: true });
+    const studentCount = isPrivileged ? 0 : await Student.countDocuments({ guardian: req.user._id, active: true });
     if (!isPrivileged && studentCount === 0) {
       // Must be teacher, admin, developer, or have registered student profiles
       return res.status(403).json({
