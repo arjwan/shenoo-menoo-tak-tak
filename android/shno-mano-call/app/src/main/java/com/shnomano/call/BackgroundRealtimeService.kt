@@ -6,9 +6,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.media.AudioAttributes
-import android.media.Ringtone
-import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
@@ -34,7 +31,6 @@ class BackgroundRealtimeService : Service() {
     private val seenUnread = mutableMapOf<String, Int>()
     private var baselineLoaded = false
     private var lastMessagesCheck = 0L
-    private var ringtone: Ringtone? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -170,6 +166,8 @@ class BackgroundRealtimeService : Service() {
                     .setContentIntent(pending)
                     .setAutoCancel(true)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                     .build()
                 getSystemService(NotificationManager::class.java).notify(id.hashCode(), notification)
             }
@@ -193,7 +191,7 @@ class BackgroundRealtimeService : Service() {
             callerName = payload.optString("callerName").ifBlank { "مستخدم شنو منو" }
         )
         if (!PresenceStore.acceptIncomingCall(call)) return
-        startRingtone()
+        // Android notification channel owns the call ringtone (no second player).
         postIncomingCallNotification(call, isGroup)
     }
 
@@ -239,31 +237,10 @@ class BackgroundRealtimeService : Service() {
         getSystemService(NotificationManager::class.java).notify(CALL_NOTIFICATION_ID, notification)
     }
 
-    private fun startRingtone() {
-        stopRingtone()
-        if (!SettingsStore(this).callSoundEnabled) return
-        val uri = SettingsStore(this).ringtoneUri?.let(Uri::parse) ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        ringtone = RingtoneManager.getRingtone(applicationContext, uri)?.also { tone ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                tone.audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            }
-            tone.play()
-        }
-    }
-
-    private fun stopRingtone() {
-        ringtone?.let { if (it.isPlaying) it.stop() }
-        ringtone = null
-    }
-
     private fun clearCallAlert(callId: String?) {
         val current = PresenceStore.incomingCall.value
         if (callId.isNullOrBlank() || current?.callId == callId) {
             PresenceStore.clearIncomingCall(callId)
-            stopRingtone()
             getSystemService(NotificationManager::class.java).cancel(CALL_NOTIFICATION_ID)
         }
     }
@@ -275,7 +252,6 @@ class BackgroundRealtimeService : Service() {
     }
 
     override fun onDestroy() {
-        stopRingtone()
         getSystemService(NotificationManager::class.java).cancel(CALL_NOTIFICATION_ID)
         poller?.shutdownNow()
         poller = null
