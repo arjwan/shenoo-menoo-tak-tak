@@ -22,6 +22,20 @@ class AppRepository(context: Context) {
     suspend fun signIn(identifier: String, password: String): Result<SignedInUserDto> =
         AuthRepository(session, api).signIn(identifier, password)
 
+    // Only HTTP 401 invalidates the app's private session.
+    suspend fun validateSession(): Boolean {
+        if (!session.isSignedIn()) return false
+        return try {
+            val response = api.currentSession()
+            if (response.ok && response.user?.id == session.userId) true
+            else { session.clear(); false }
+        } catch (error: HttpException) {
+            if (error.code() == 401) { session.clear(); false } else true
+        } catch (_: IOException) {
+            true
+        }
+    }
+
     fun signOut() = session.clear()
 
     suspend fun importPickedPhone(uri: android.net.Uri): Result<ContactEntity> = runCatching {
