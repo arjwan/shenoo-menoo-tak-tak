@@ -60,6 +60,7 @@ public final class MainActivity extends Activity {
     private static final int INCOMING_CALL_NOTIFICATION_ID = 9318;
     private boolean signinSeen;
     private String pendingCommunicationUser;
+    private String pendingCallConversation;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -69,7 +70,10 @@ public final class MainActivity extends Activity {
         createNotificationChannels();
         buildView();
         // Use the current Cloudflare website and its HttpOnly session instead of bundled legacy login HTML.
-        webView.loadUrl(SITE_ORIGIN + "/signin.html");
+        if (pendingCallConversation != null && !pendingCallConversation.isEmpty()) {
+            webView.loadUrl(SITE_ORIGIN + "/messages.html?conversation=" + Uri.encode(pendingCallConversation));
+            pendingCallConversation = null;
+        } else webView.loadUrl(SITE_ORIGIN + "/signin.html");
     }
 
     @Override
@@ -77,7 +81,10 @@ public final class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIncomingIntent(intent);
-        if (webView != null && pendingCommunicationUser != null && !pendingCommunicationUser.isEmpty()) {
+        if (webView != null && pendingCallConversation != null && !pendingCallConversation.isEmpty()) {
+            webView.loadUrl(SITE_ORIGIN + "/messages.html?conversation=" + Uri.encode(pendingCallConversation));
+            pendingCallConversation = null;
+        } else if (webView != null && pendingCommunicationUser != null && !pendingCommunicationUser.isEmpty()) {
             openCommunicationCard(pendingCommunicationUser);
         }
     }
@@ -85,6 +92,7 @@ public final class MainActivity extends Activity {
     private void handleIncomingIntent(Intent intent) {
         if (intent == null) return;
         pendingCommunicationUser = intent.getStringExtra("incoming_user");
+        pendingCallConversation = intent.getStringExtra("incoming_conversation");
         if (intent.getBooleanExtra("incoming_call", false)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 setShowWhenLocked(true);
@@ -414,6 +422,7 @@ public final class MainActivity extends Activity {
                 Intent intent = new Intent(MainActivity.this, MainActivity.class);
                 intent.putExtra("incoming_call", true);
                 intent.putExtra("incoming_user", from == null ? "" : from);
+                intent.putExtra("incoming_conversation", conversationId == null ? "" : conversationId);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 PendingIntent open = PendingIntent.getActivity(MainActivity.this, 9318, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -521,7 +530,7 @@ public final class MainActivity extends Activity {
                 editor.putString(BackgroundRealtimeService.KEY_NOTIFICATION_PREFS, notificationPreferences == null ? "{}" : notificationPreferences);
                 editor.putBoolean(BackgroundRealtimeService.KEY_BACKGROUND, enabled);
                 editor.apply();
-                if (token == null || token.isEmpty() || !enabled) BackgroundRealtimeService.stop(MainActivity.this);
+                if (!enabled) BackgroundRealtimeService.stop(MainActivity.this);
                 else BackgroundRealtimeService.startIfAllowed(MainActivity.this);
             });
         }
@@ -556,6 +565,16 @@ public final class MainActivity extends Activity {
     protected void onDestroy(){
         stopIncomingCallAlertNative();
         super.onDestroy();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        nativePrefs().edit().putBoolean(BackgroundRealtimeService.KEY_ACTIVITY_VISIBLE,true).apply();
+    }
+
+    @Override protected void onPause() {
+        nativePrefs().edit().putBoolean(BackgroundRealtimeService.KEY_ACTIVITY_VISIBLE,false).apply();
+        super.onPause();
     }
 
     @Override
