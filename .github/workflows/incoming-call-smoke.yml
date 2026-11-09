@@ -1,0 +1,22 @@
+name: Incoming Call Global Notification Regression
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/incoming-call-global-ring-20261109]
+    paths:
+      - 'incoming-call-global.js'
+      - 'private-messages.js'
+      - 'auth-guard.js'
+      - 'tests/incoming-call-global.test.mjs'
+      - '.github/workflows/incoming-call-smoke.yml'
+jobs:
+  calls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check incoming-call-global.js
+      - run: node --check private-messages.js
+      - run: node --test tests/incoming-call-global.test.mjs
