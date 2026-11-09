@@ -3,7 +3,11 @@ package com.shinomeno.taktak;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.NotificationChannel;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -51,6 +55,9 @@ public final class MainActivity extends Activity {
     private TextView offlineBanner;
     private ValueCallback<Uri[]> fileCallback;
     private PermissionRequest pendingPermissionRequest;
+    private Ringtone incomingRingtone;
+    private String currentAlertCallId;
+    private static final int INCOMING_CALL_NOTIFICATION_ID = 9318;
     private boolean signinSeen;
     private String pendingCommunicationUser;
 
@@ -101,6 +108,8 @@ public final class MainActivity extends Activity {
         calls.setDescription("المكالمات الصوتية ومكالمات الفيديو الواردة");
         calls.enableVibration(true);
         calls.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+        calls.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
+                new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE).build());
 
         NotificationChannel missed = new NotificationChannel(CHANNEL_MISSED, "المكالمات الفائتة", NotificationManager.IMPORTANCE_HIGH);
         missed.setDescription("تنبيهات المكالمات التي لم يتم الرد عليها");
@@ -395,6 +404,62 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void showIncomingCallAlert(String callId, String callerName, String from,
+                                          String conversationId, String type) {
+            runOnUiThread(() -> {
+                if (callId == null || callId.isEmpty() || !callId.matches("[a-fA-F0-9-]{36}")) return;
+                if (callId.equals(currentAlertCallId)) return;
+                stopIncomingCallAlertNative();
+                currentAlertCallId = callId;
+                Intent intent = new Intent(MainActivity.this, MainActivity.class);
+                intent.putExtra("incoming_call", true);
+                intent.putExtra("incoming_user", from == null ? "" : from);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                PendingIntent open = PendingIntent.getActivity(MainActivity.this, 9318, intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                Notification notification;
+                String label = "video".equals(type) ? "مكالمة فيديو واردة" : "مكالمة صوتية واردة";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    notification = new Notification.Builder(MainActivity.this, CHANNEL_CALLS)
+                            .setSmallIcon(R.drawable.ic_launcher)
+                            .setContentTitle(label)
+                            .setContentText(callerName == null ? "شنو منو" : callerName)
+                            .setContentIntent(open)
+                            .setCategory(Notification.CATEGORY_CALL)
+                            .setVisibility(Notification.VISIBILITY_PUBLIC)
+                            .setOngoing(true)
+                            .build();
+                } else {
+                    notification = new Notification.Builder(MainActivity.this)
+                            .setSmallIcon(R.drawable.ic_launcher)
+                            .setContentTitle(label)
+                            .setContentText(callerName == null ? "شنو منو" : callerName)
+                            .setContentIntent(open)
+                            .setCategory(Notification.CATEGORY_CALL)
+                            .setOngoing(true)
+                            .build();
+                }
+                NotificationManager manager = getSystemService(NotificationManager.class);
+                if (manager != null && (Build.VERSION.SDK_INT < 33 ||
+                        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
+                    manager.notify(INCOMING_CALL_NOTIFICATION_ID, notification);
+                } else {
+                    requestNotificationPermissionNative();
+                }
+                try {
+                    incomingRingtone=RingtoneManager.getRingtone(getApplicationContext(),
+                            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
+                    if(incomingRingtone!=null)incomingRingtone.play();
+                } catch (Exception ignored) {}
+            });
+        }
+
+        @JavascriptInterface
+        public void stopIncomingCallAlert() {
+            runOnUiThread(MainActivity.this::stopIncomingCallAlertNative);
+        }
+
+        @JavascriptInterface
         public void scanFriendQr() {
             runOnUiThread(() -> new IntentIntegrator(MainActivity.this)
                 .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
@@ -475,6 +540,22 @@ public final class MainActivity extends Activity {
         public void saveNotificationPreferences(String json) {
             nativePrefs().edit().putString(BackgroundRealtimeService.KEY_NOTIFICATION_PREFS, json == null ? "{}" : json).apply();
         }
+    }
+
+    private void stopIncomingCallAlertNative() {
+        if(incomingRingtone!=null){
+            try{incomingRingtone.stop();}catch(Exception ignored){}
+            incomingRingtone=null;
+        }
+        currentAlertCallId=null;
+        NotificationManager manager=getSystemService(NotificationManager.class);
+        if(manager!=null)manager.cancel(INCOMING_CALL_NOTIFICATION_ID);
+    }
+
+    @Override
+    protected void onDestroy(){
+        stopIncomingCallAlertNative();
+        super.onDestroy();
     }
 
     @Override
