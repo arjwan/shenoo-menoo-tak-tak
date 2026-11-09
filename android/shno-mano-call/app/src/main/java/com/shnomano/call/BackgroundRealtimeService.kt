@@ -29,6 +29,8 @@ class BackgroundRealtimeService : Service() {
     private var poller: ScheduledExecutorService? = null
     private var callCursor = 0L
     private val seenUnread = mutableMapOf<String, Int>()
+    private val groupCursors = mutableMapOf<String, Long>()
+    private val notifiedGroupCalls = mutableSetOf<String>()
     private var baselineLoaded = false
     private var lastMessagesCheck = 0L
 
@@ -101,6 +103,7 @@ class BackgroundRealtimeService : Service() {
                     if (System.currentTimeMillis() - lastMessagesCheck > 5000) {
                         lastMessagesCheck = System.currentTimeMillis()
                         pollMessages()
+                        pollGroups()
                     }
                 } catch (error: Exception) {
                     Log.w(TAG, "D1 realtime check failed: ${error.message}")
@@ -188,6 +191,54 @@ class BackgroundRealtimeService : Service() {
         seenUnread.clear()
         seenUnread.putAll(updated)
         baselineLoaded = true
+    }
+
+    // Private group invitations also arrive when the group's web page is closed.
+    private fun pollGroups() {
+        val list = getJson("api/call-groups").optJSONArray("groups") ?: return
+        for (index in 0 until list.length()) {
+            val group = list.optJSONObject(index) ?: continue
+            val groupId = group.optString("id")
+            if (groupId.isBlank()) continue
+            val cursor = groupCursors[groupId] ?: 0L
+            val response = getJson("api/call-groups/$groupId/signals?after=$cursor")
+            val signals = response.optJSONArray("signals") ?: continue
+            for (i in 0 until signals.length()) {
+                val signal = signals.optJSONObject(i) ?: continue
+                if (signal.optString("event") == "invite") {
+                    val callId = signal.optString("callId")
+                    if (callId.isNotBlank() && notifiedGroupCalls.add(callId)) {
+                        notifyGroupCall(groupId, group.optString("name"), callId)
+                    }
+                }
+            }
+            groupCursors[groupId] = response.optLong("cursor", cursor)
+        }
+    }
+
+    private fun notifyGroupCall(groupId: String, name: String, callId: String) {
+        val url = SHNO_MANO_BASE_URL + "call-groups.html?group=" + Uri.encode(groupId)
+        val open = Intent(this, WebSectionActivity::class.java).apply {
+            putExtra(WebSectionActivity.EXTRA_URL, url)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pending = PendingIntent.getActivity(
+            this, callId.hashCode(), open,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_CALLS)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle("مكالمة جماعية واردة")
+            .setContentText(name.ifBlank { "شنو منو اتصال" })
+            .setContentIntent(pending)
+            .setFullScreenIntent(pending, true)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "فتح وقبول الدعوة", pending).build())
+            .build()
+        getSystemService(NotificationManager::class.java).notify(callId.hashCode(), notification)
     }
 
     private fun handleIncomingInvite(payload: JSONObject, isGroup: Boolean) {
