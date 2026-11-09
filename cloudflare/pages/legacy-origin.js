@@ -1,6 +1,6 @@
 // Keep the original MongoDB application's authorization and MFA at the origin.
 // Never retry protected requests against the D1 application.
-export async function proxyLegacy({ request, env }, upstreamFetch = fetch) {
+export async function proxyLegacy({ request, env, verifiedDeveloperBridge }, upstreamFetch = fetch) {
   const incoming = new URL(request.url);
   const origin = new URL(env.LEGACY_ORIGIN || 'https://api.shinomino.com');
   if (origin.protocol !== 'https:' || origin.username || origin.password ||
@@ -10,6 +10,9 @@ export async function proxyLegacy({ request, env }, upstreamFetch = fetch) {
   const target = new URL(incoming.pathname + incoming.search, origin);
   const headers = new Headers(request.headers);
   headers.delete('host');
+  // Never forward a caller-supplied developer identity header.
+  // Only the verified school proxy may attach this header.
+  if (!verifiedDeveloperBridge) headers.delete('x-school-developer-bridge');
   headers.set('X-Forwarded-Host', incoming.host);
   headers.set('X-Forwarded-Proto', incoming.protocol.replace(':', ''));
   try {
