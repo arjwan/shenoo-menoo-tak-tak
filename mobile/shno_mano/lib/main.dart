@@ -1,5 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
+import 'dart:async';
+import 'web_api.dart';
+export 'web_api.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -8,36 +9,6 @@ const brand = isMessenger ? Color(0xFF004563) : Color(0xFF65158E);
 const accent = Color(0xFF922AFF);
 const title = isMessenger ? 'اتصال' : 'شنو منو';
 
-class Api {
-  String? token;
-  Future<Map<String, dynamic>> request(String path, {String method = 'GET', Map<String, dynamic>? body}) async {
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
-    try {
-      final req = await client.openUrl(method, Uri.https('shinomino.com', path));
-      req.followRedirects = false;
-      req.headers.contentType = ContentType.json;
-      if (token != null) req.headers.set('Authorization', 'Bearer $token');
-      if (body != null) req.write(jsonEncode(body));
-      final res = await req.close().timeout(const Duration(seconds: 25));
-      final text = await utf8.decoder.bind(res).join().timeout(const Duration(seconds: 25));
-      final value = jsonDecode(text);
-      if (value is! Map<String, dynamic>) throw const FormatException();
-      if (res.statusCode < 200 || res.statusCode >= 300 || value['ok'] == false) {
-        throw ApiError(value['message']?.toString() ?? 'تعذر تنفيذ الطلب', res.statusCode);
-      }
-      return value;
-    } on ApiError { rethrow;
-    } catch (_) { throw ApiError('تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً.', 0);
-    } finally { client.close(force: true); }
-  }
-}
-class ApiError implements Exception {
-  const ApiError(this.message, this.status);
-  final String message;
-  final int status;
-  @override
-  String toString() => message;
-}
 List<Map<String, dynamic>> rows(dynamic value) => value is List
     ? value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() : [];
 Map<String, dynamic> object(dynamic value) => value is Map ? Map<String, dynamic>.from(value) : {};
@@ -80,15 +51,11 @@ class _SignInState extends State<SignIn> {
     setState(() { busy = true; error = null; });
     try {
       final api = Api();
-      final result = await api.request('/api/auth/signin', method: 'POST',
-        body: {'identifier': identifier.text.trim(), 'password': password.text});
-      final token = result['token'];
-      if (token is! String || token.isEmpty) throw const ApiError('تعذر التحقق من جلسة الدخول', 401);
-      api.token = token;
+      final user = await api.signIn(identifier.text.trim(), password.text);
       if (!mounted) return;
       password.clear();
       await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
-        builder: (_) => Home(api: api, user: object(result['user']))));
+        builder: (_) => Home(api: api, user: user)));
     } catch (e) { if (mounted) setState(() => error = e.toString());
     } finally { if (mounted) setState(() => busy = false); }
   }
@@ -135,8 +102,12 @@ class Home extends StatefulWidget {
 }
 class _HomeState extends State<Home> {
   int selected = 0;
-  void logout() {
-    widget.api.token = null;
+  Future<void> logout() async {
+    try { await widget.api.logout(); } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      return;
+    }
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => const SignIn()), (_) => false);
   }
   void open(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
@@ -162,7 +133,7 @@ class _HomeState extends State<Home> {
             try {
               final result = await widget.api.request('/api/conversations/${item['id'] ?? item['_id']}', method: 'POST');
               if (!context.mounted) return;
-              open(Chat(api: widget.api, conversation: object(result['conversation'])));
+              open(Chat(api: widget.api, conversation: {...object(result['conversation']), 'otherUser': item}));
             } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
           }));
     } else if (isMessenger && selected == 3) {
@@ -174,7 +145,7 @@ class _HomeState extends State<Home> {
           title: Text(item['title']?.toString() ?? ''),
           subtitle: Text((item['grades'] is List ? (item['grades'] as List).join(' • ') : '')))));
     } else if ((isMessenger && selected == 0) || (!isMessenger && selected == 3)) {
-      body = DataPanel(api: widget.api, path: '/api/conversations', field: 'conversations',
+      body = DataPanel(api: widget.api, path: '/api/conversations', field: 'conversations', pollEvery: const Duration(seconds: 10),
         render: (item) => Card(child: ListTile(
           leading: const CircleAvatar(backgroundColor: brand, child: Icon(Icons.chat_bubble_outline, color: Colors.white)),
           title: Text(name(item['otherUser']), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -227,24 +198,50 @@ class EmptyState extends StatelessWidget {
     ])));
 }
 class DataPanel extends StatefulWidget {
-  const DataPanel({super.key, required this.api, required this.path, required this.field, required this.render});
+  const DataPanel({super.key, required this.api, required this.path, required this.field, required this.render, this.pollEvery, this.onLoaded});
   final Api api;
   final String path, field;
+  final Duration? pollEvery;
+  final void Function(Map<String, dynamic>)? onLoaded;
   final Widget Function(Map<String, dynamic>) render;
   @override
   State<DataPanel> createState() => _DataPanelState();
 }
-class _DataPanelState extends State<DataPanel> {
+class _DataPanelState extends State<DataPanel> with WidgetsBindingObserver {
+  Timer? poll;
+  bool fetching = false;
+  Future<Map<String, dynamic>> fetch() async {
+    fetching = true;
+    try {
+      final value = await widget.api.request(widget.path);
+      if (value[widget.field] is! List) throw const ApiError('استجابة الخدمة غير مكتملة', 0);
+      if (mounted) widget.onLoaded?.call(value);
+      return value;
+    } finally { fetching = false; }
+  }
+  void startPolling() {
+    poll?.cancel();
+    if (widget.pollEvery != null) {
+      poll = Timer.periodic(widget.pollEvery!, (_) { if (!fetching && mounted) unawaited(reload()); });
+    }
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) { startPolling(); unawaited(reload()); } else { poll?.cancel(); }
+  }
+  @override
+  void dispose() { poll?.cancel(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
   late Future<Map<String, dynamic>> data;
   @override
-  void initState() { super.initState(); data = widget.api.request(widget.path); }
+  void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); data = fetch(); startPolling(); }
   @override
   void didUpdateWidget(DataPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path) data = widget.api.request(widget.path);
+    if (oldWidget.path != widget.path) { data = fetch(); }
+    if (oldWidget.pollEvery != widget.pollEvery) startPolling();
   }
   Future<void> reload() async {
-    final next = widget.api.request(widget.path);
+    final next = fetch();
     setState(() => data = next);
     try { await next; } catch (_) { /* Displayed by FutureBuilder. */ }
   }
@@ -277,7 +274,7 @@ class _PostCardState extends State<PostCard> {
     if (busy) return;
     setState(() => busy = true);
     try {
-      final r = await widget.api.request('/api/posts/${widget.post['id']}/like', method: 'POST');
+      final r = await widget.api.request('/api/posts/${widget.post['id']}/like', method: liked ? 'DELETE' : 'POST');
       if (mounted) setState(() { liked = r['liked'] == true; likes = (r['likesCount'] as num?)?.toInt() ?? likes; });
     } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally { if (mounted) setState(() => busy = false); }
@@ -293,7 +290,7 @@ class _PostCardState extends State<PostCard> {
           Padding(padding: const EdgeInsets.all(16), child: Text(widget.post['text'].toString())),
         for (final item in media)
           if (item['type'] == 'image' && item['url'] is String)
-            Image.network(Uri.https('shinomino.com').resolve(item['url']).toString(),
+            Image.network(widget.api.resolve(item['url']).toString(), headers: widget.api.mediaHeaders,
               fit: BoxFit.cover, errorBuilder: (_, error, stack) => const EmptyState(text: 'تعذر تحميل الصورة'))
           else const Padding(padding: EdgeInsets.all(16), child: Text('مرفق وسائط — تشغيل الفيديو والصوت قيد الاستكمال')),
         Row(children: [TextButton.icon(onPressed: busy ? null : like,
@@ -341,6 +338,18 @@ class Chat extends StatefulWidget {
 class _ChatState extends State<Chat> {
   final text = TextEditingController();
   int revision = 0;
+  String? lastRead;
+  Future<void> markRead(Map<String, dynamic> value) async {
+    final messages = rows(value['messages']);
+    final remote = messages.where((m) => m['mine'] != true).toList();
+    if (remote.isEmpty) return;
+    final id = (remote.last['id'] ?? remote.last['_id'])?.toString();
+    if (id == null || id == lastRead) return;
+    try {
+      await widget.api.request('/api/conversations/${widget.conversation['id']}/read', method: 'PATCH');
+      lastRead = id;
+    } catch (_) { /* Next successful refresh retries the read receipt. */ }
+  }
   bool busy = false;
   String get path => '/api/conversations/${widget.conversation['id']}/messages';
   @override
@@ -349,7 +358,7 @@ class _ChatState extends State<Chat> {
     if (busy || text.text.trim().isEmpty) return;
     setState(() => busy = true);
     try {
-      await widget.api.request(path, method: 'POST', body: {'text': text.text.trim()});
+      await widget.api.request(path, method: 'POST', body: {'type': 'text', 'text': text.text.trim()});
       if (mounted) setState(() { text.clear(); revision++; });
     } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally { if (mounted) setState(() => busy = false); }
@@ -358,7 +367,7 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(name(widget.conversation['otherUser']))),
     body: Column(children: [
-      Expanded(child: DataPanel(key: ValueKey(revision), api: widget.api, path: path, field: 'messages',
+      Expanded(child: DataPanel(key: ValueKey(revision), api: widget.api, path: path, field: 'messages', pollEvery: const Duration(seconds: 5), onLoaded: (v) => unawaited(markRead(v)),
         render: (item) => Align(alignment: item['mine'] == true ? Alignment.centerRight : Alignment.centerLeft,
           child: Card(color: item['mine'] == true ? const Color(0xFFE8D9FF) : Colors.white,
             child: Padding(padding: const EdgeInsets.all(14),
@@ -370,3 +379,4 @@ class _ChatState extends State<Chat> {
       ]))),
     ]));
 }
+
