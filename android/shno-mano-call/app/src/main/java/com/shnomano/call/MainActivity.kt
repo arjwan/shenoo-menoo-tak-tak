@@ -75,8 +75,12 @@ fun ShnoManoCallApp() {
 
     LaunchedEffect(signedIn) {
         if (signedIn) {
-            (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
-            BackgroundRealtimeService.start(context)
+            if (!repo.validateSession()) {
+                signedIn = false
+            } else {
+                (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
+                BackgroundRealtimeService.start(context)
+            }
         } else {
             BackgroundRealtimeService.stop(context)
         }
