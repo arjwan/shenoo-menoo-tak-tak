@@ -2,7 +2,8 @@
   "use strict";
   var list = document.querySelector("[data-conversation-list]"), windowEl = document.querySelector("[data-chat-window]"), feedback = document.querySelector("[data-message-feedback]"), callModal = document.querySelector("[data-call-modal]");
   var params = new URLSearchParams(location.search), currentId = params.get("conversation"), currentOther, recorder, localStream, peer, activeCall, pendingIce = [], callTimer, connectionTimer, typingTimer, liveOnline = {};
-  var socket = null; // No browser bearer tokens or unproven real-time transport.
+  var socket = window.ShnoCallSignaling && window.ShnoCallSignaling.create();
+  // Signaling is now delivered by the same-origin, cookie-authenticated D1 Worker.
   function esc(v) { return String(v || "").replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function url(v) { return /^https?:\/\//i.test(v || "") ? v : SocialAPI.baseUrl + (v || ""); }
   function show(v, type) { if (feedback) { feedback.textContent = v || ""; feedback.className = "form-message" + (type ? " is-" + type : ""); } }
