@@ -26,6 +26,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.CookieManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -95,13 +96,6 @@ class WebCallActivity : ComponentActivity() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     prepareCallAudio()
-                    if (!bootstrapped && url?.contains("signin.html") == true) {
-                        bootstrapped = true
-                        val tokenJs = JSONObject.quote(SessionStore(this@WebCallActivity).token.orEmpty())
-                        val targetJs = JSONObject.quote(targetUrl)
-                        evaluateJavascript("localStorage.setItem('token',$tokenJs);sessionStorage.setItem('token',$tokenJs);location.replace($targetJs);", null)
-                        return
-                    }
                     if (url?.contains("messages.html") == true) {
                         webPageReady = true
                         injectCallStage()
@@ -161,7 +155,20 @@ class WebCallActivity : ComponentActivity() {
 
         setContentView(root)
         webView.visibility = View.INVISIBLE
-        webView.loadUrl("https://shinomino.com/signin.html")
+        // Use this app's private session for its embedded call window.
+        val cookie = SessionStore(this).sessionCookie
+        if (cookie.isNullOrBlank()) {
+            Toast.makeText(this, "انتهت جلسة اتصال. يرجى تسجيل الدخول من التطبيق.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setCookie(
+            "https://shinomino.com",
+            "__Host-shino_session=$cookie; Path=/; Secure; HttpOnly; SameSite=Lax"
+        )
+        CookieManager.getInstance().flush()
+        webView.loadUrl(targetUrl)
     }
 
     private fun controlButton(label: String, click: () -> Unit) = Button(this).apply {
