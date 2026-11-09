@@ -6,7 +6,7 @@
   'use strict';
   if(global.ShnoIncomingCalls)return;
   var inMessages=/\/messages\.html$/i.test(location.pathname);
-  var active=null, bell=null, audio=null, timer=null, cursor=0, stopped=false, ready=false;
+  var active=null, bell=null, desktopNotice=null, audio=null, timer=null, cursor=0, stopped=false, ready=false;
   var lastCursorKey='shno-call-cursor';
   function request(url,options){
     return fetch(url,Object.assign({credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}},options||{}))
@@ -29,6 +29,7 @@
   function clear(){
     stopSound();
     if(bell){bell.remove();bell=null;}
+    if(desktopNotice){try{desktopNotice.close();}catch(_){}desktopNotice=null;}
     active=null;
   }
   function send(event,reason){
@@ -68,7 +69,7 @@
       from:String(event.from),type:event.type==='video'?'video':'audio',
       callerName:String(event.callerName||'مستخدم شنو منو')};
     // In the conversation page, the existing call modal owns the buttons.
-    if(inMessages){startSound();return;}
+    if(inMessages){startSound();showDesktopNotification();return;}
     // Use DOM methods for contact names to avoid HTML injection.
     bell=document.createElement('div');
     bell.setAttribute('role','alertdialog');
@@ -84,10 +85,28 @@
     accept.addEventListener('click',answer);reject.addEventListener('click',dismiss);
     actions.append(accept,reject);card.append(title,name,actions);bell.append(card);
     document.body.appendChild(bell);startSound();
-    if('Notification' in global&&Notification.permission==='granted'&&document.hidden){
-      try{var n=new Notification('مكالمة واردة من شنو منو',{body:active.callerName,tag:'shno-incoming-call',requireInteraction:true});
-        n.onclick=function(){global.focus();n.close();answer();};}catch(_){}
-    }
+    showDesktopNotification();
+  }
+  function showDesktopNotification(){
+    if(!active||!('Notification' in global)||Notification.permission!=='granted')return;
+    // The Android bridge already owns its native incoming-call notification.
+    if(global.ShnoManoNative)return;
+    try{
+      if(desktopNotice)desktopNotice.close();
+      var callId=active.callId;
+      var notice=new Notification(active.type==='video'?'مكالمة فيديو واردة':'مكالمة صوتية واردة',{
+        body:active.callerName+' — شنو منو',
+        tag:'shno-incoming-call',
+        requireInteraction:true
+      });
+      desktopNotice=notice;
+      notice.onclick=function(){
+        try{global.focus();}catch(_){}
+        notice.close();
+        if(active&&active.callId===callId)answer();
+      };
+      notice.onclose=function(){if(desktopNotice===notice)desktopNotice=null;};
+    }catch(_){}
   }
   function onSignal(event){
     var d=event&&event.payload||{};
