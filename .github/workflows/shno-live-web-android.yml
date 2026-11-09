@@ -30,7 +30,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Verify live website navigation and preserved app features
-        run: node --test tests/live-web-routing.test.cjs tests/contact-picker.test.cjs tests/incoming-call-native.test.cjs
+        run: node --test tests/live-web-routing.test.cjs tests/contact-picker.test.cjs tests/incoming-call-native.test.cjs tests/call-ringing.test.cjs
       - name: Restore existing release signing certificate
         env:
           SHNO_MANO_KEYSTORE_BASE64: ${{ secrets.SHNO_MANO_KEYSTORE_BASE64 }}
