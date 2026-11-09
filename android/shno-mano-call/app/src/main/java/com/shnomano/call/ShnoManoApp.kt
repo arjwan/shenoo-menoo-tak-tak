@@ -10,6 +10,7 @@ import android.os.Build
 class ShnoManoApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        instance = this
         createNotificationChannels()
     }
 
@@ -58,6 +59,8 @@ class ShnoManoApp : Application() {
     }
 
     companion object {
+        lateinit var instance: ShnoManoApp
+            private set
         const val CHANNEL_REALTIME = "shno_realtime"
         const val CHANNEL_MESSAGES = "shno_messages"
         const val CHANNEL_CALLS = "shno_calls"
