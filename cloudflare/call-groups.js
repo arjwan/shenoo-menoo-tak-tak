@@ -37,6 +37,13 @@ export async function handleCallGroups(req,env,user){
   ]);
   return out({ok:true,group:{id:group,name,ownerId:user.id,memberCount:members.length+1}},201);
  }
+ if(parts.length===3&&parts[2]==="alerts"&&method==="GET"){
+  const after=Number(url.searchParams.get("after")||0);
+  if(!Number.isSafeInteger(after)||after<0)return out({ok:false,message:"مؤشر إشعارات غير صالح"},400);
+  const rows=await db.prepare("SELECT s.id,s.group_id,s.call_id,s.sender_id,s.event,g.name FROM shno_call_group_signals s JOIN shno_call_groups g ON g.id=s.group_id JOIN shno_call_group_members m ON m.group_id=s.group_id AND m.user_id=s.recipient_id WHERE s.recipient_id=? AND s.event='invite' AND s.id>? AND s.expires_at>unixepoch() ORDER BY s.id ASC LIMIT 60").bind(user.id,after).all();
+  const invites=rows.results.map(s=>({id:s.id,groupId:s.group_id,callId:s.call_id,from:s.sender_id,name:s.name}));
+  return out({ok:true,invites,cursor:invites.length?invites[invites.length-1].id:after});
+ }
  if(parts.length<3||parts[0]!=="api"||parts[1]!=="call-groups"||!uuid.test(parts[2]))return out({ok:false,message:"المجموعة غير صالحة"},400);
  const group=parts[2];
  if(!await isMember(db,group,user.id))return out({ok:false,message:"ليس لديك صلاحية الوصول إلى المجموعة"},403);
