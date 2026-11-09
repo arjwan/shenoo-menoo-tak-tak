@@ -1,0 +1,16 @@
+/* Optional real-avatar video layer; original teacher image remains fallback. */
+.teacher-visual-box { position: relative; overflow: hidden; }
+.teacher-visual-box .sumer-avatar-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; background: #111827;
+}
+.teacher-visual-box .sumer-avatar-video[hidden] { display: none !important; }
+.sumer-avatar-status { font-size: .78rem; text-align: center; padding: .35rem .5rem; }
+.sumer-avatar-status[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .sumer-avatar-video { transition: none !important; }
+}
+
+#sumerTeacherCanvas { display: block; width: 100%; max-width: 280px; height: auto; margin: auto; aspect-ratio: 1 / 1; }
+#sumerTeacherCanvas[hidden] { display: none !important; }
+#teacherAvatarImg[hidden] { display: none !important; }

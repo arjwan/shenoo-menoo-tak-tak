@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="school.css?v=20260913-7">
   <link rel="stylesheet" href="school-virtual-classroom.css?v=20260925-board-chat-1">
   <script src="auth-guard.js?v=20260913-7"></script>
+  <link rel="stylesheet" href="school-avatar-video.css">
 </head>
 <body class="school-virtual-page">
   <!-- Top Navigation Bar -->
@@ -123,7 +124,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="selectDialect">لغة وشرح الحوار</label>
+            <label for="selectDialect">لغة الحوار والصوت (العربية متاحة)</label>
             <select id="selectDialect">
               <option value="ar-standard">العربية الفصحى (الافتراضية)</option>
               <option value="ar-iraqi">اللهجة العراقية (مبسط وودود)</option>
@@ -185,6 +186,7 @@
           <!-- Teacher Visual Representation -->
           <div class="teacher-figure-wrap">
             <div id="teacherVisual" class="teacher-visual-box">
+              <canvas id="sumerTeacherCanvas" width="280" height="280" aria-label="رسم المعلم الافتراضي ثنائي الأبعاد"></canvas>
               <img id="teacherAvatarImg" src="school-assets/virtual-teachers/math.svg" alt="صورة المعلمة الافتراضية" class="teacher-img">
             </div>
           </div>
@@ -439,7 +441,8 @@
           <div id="modalProfilesList" class="profiles-radio-grid"></div>
         </div>
         <div class="modal-section">
-          <h4>لغة الحوار والشرح:</h4>
+          <h4>لغة الحوار والشرح والصوت:</h4>
+          <p class="teacher-language-help">للتحدث بالعربية اختر إحدى المعلمات العربيات، ثم العربية الفصحى أو اللهجة العراقية. معلمة الإنجليزية مخصصة للإنجليزية فقط. جودة النطق تعتمد على محرك الصوت المتوفر.</p>
           <select id="modalDialectSelect">
             <option value="ar-standard">العربية الفصحى (الافتراضية)</option>
             <option value="ar-iraqi">اللهجة العراقية (شرح محلي مبسط)</option>
@@ -456,6 +459,8 @@
   <script src="social-api.js?v=20260916-identity-7"></script>
   <script src="https://shino-mino-tak-tak.duckdns.org/socket.io/socket.io.js"></script>
   <script src="school-virtual-teacher-core.js?v=20260925-six-1"></script>
-  <script src="school-virtual-classroom.js?v=20260925-voice-catalog-2"></script>
+  <script src="school-avatar-renderer.js"></script>
+  <script src="school-virtual-classroom.js?v=20261108-sumer-avatar-1"></script>
+  <script src="school-avatar-video.js"></script>
 </body>
 </html>

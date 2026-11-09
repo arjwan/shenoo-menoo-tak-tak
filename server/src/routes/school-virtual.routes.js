@@ -646,8 +646,10 @@ router.get('/sessions/:code/messages/:messageId/speech', async (req, res) => {
     if (!parts.length) return res.status(400).json({ ok: false, message: 'لا يوجد نص قابل للنطق في رد المعلم' });
     const index = Number(req.query.part || 0);
     if (!Number.isInteger(index) || index < 0 || index >= parts.length) return res.status(400).json({ ok: false, message: 'مقطع صوت غير صالح' });
-    const voice = session.virtualTeacher.dialect === 'en' ? 'english-female' : 'female';
-    const cacheKey = `${message._id}:${index}:${voice}`;
+    const voice = session.virtualTeacher.dialect === 'en' ? 'english-female' :
+      (session.virtualTeacher.dialect === 'ar-iraqi' ? 'iraqi-female' : 'female');
+    // Distinguish Arabic dialects so switching language cannot replay stale audio.
+    const cacheKey = `${message._id}:${index}:${session.virtualTeacher.dialect}:${voice}`;
     let audio = speechCache.get(cacheKey);
     if (!audio) {
       if (!tts.isConfigured()) {

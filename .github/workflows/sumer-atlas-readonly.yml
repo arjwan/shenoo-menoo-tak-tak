@@ -1,0 +1,32 @@
+name: Sumer Atlas Read-only Verification
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: sumer-curriculum-test
+    env:
+      NODE_ENV: test
+      SCHOOL_AVATAR_ENABLED: 'false'
+      SCHOOL_CURRICULUM_MONGO_URI: ${{ secrets.SCHOOL_CURRICULUM_MONGO_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Require dedicated read-only Atlas secret
+        run: |
+          if [ -z "$SCHOOL_CURRICULUM_MONGO_URI" ]; then
+            echo 'Missing SCHOOL_CURRICULUM_MONGO_URI in sumer-curriculum-test environment'
+            exit 2
+          fi
+      - name: Verify curriculum read-only metadata
+        run: node server/src/scripts/verify-sumer-atlas.js
