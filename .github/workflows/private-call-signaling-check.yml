@@ -7,7 +7,7 @@ on:
     paths:
       - 'cloudflare/call-signaling.js'
       - 'cloudflare/worker.js'
-      - 'functions/api/[[path]].js'
+      - 'functions/api/**'
       - 'call-signaling.js'
       - 'private-messages.js'
       - 'messages.html'
