@@ -1,0 +1,24 @@
+/* Application-only mobile visual layer. Original website markup, links, actions and APIs remain unchanged. */
+@media (max-width: 800px) {
+  html.shinomino-ui body { background:linear-gradient(165deg,#eef2ff,#f3fbff 42%,#f7f1ff) !important; }
+  .home-top { background:linear-gradient(105deg,#352477,#236ab2,#0f9d9f)!important; border-bottom:0!important; box-shadow:0 10px 28px #152e7850!important; }
+  .home-top .home-brand,.home-top .home-nav a { color:#fff!important; }
+  .home-search { border:1px solid #ffffff50!important; border-radius:17px!important; background:#ffffff20!important; }
+  .home-grid { gap:13px!important; }
+  .feed { border-radius:22px!important; }
+  .profile-cover { border-radius:24px!important; overflow:hidden!important; box-shadow:0 8px 26px #132c5540!important; }
+  .stories-block,.people-strip,.composer,.post-card,.reels-block,.side-card {
+    border-radius:23px!important; box-shadow:0 9px 28px #1d2b5a16!important;
+    border:1px solid #aaa3ed35!important;
+  }
+  .composer { background:linear-gradient(150deg,#fff,#f4f8ff)!important; }
+  .section-head { font-weight:800!important; }
+  .story-tile,.reel-card { border-radius:20px!important; }
+  .create-shortcuts { gap:8px!important; }
+  .create-shortcut { border-radius:16px!important; }
+  .mobile-bar { background:linear-gradient(105deg,#18265d,#303a87)!important; border-top:1px solid #ffffff29!important; box-shadow:0 -5px 28px #141a4330!important; }
+  .mobile-bar a,.mobile-bar button { color:#fff!important; font-weight:700!important; }
+  .mobile-services-drawer { background:linear-gradient(160deg,#21285d,#11152f)!important; }
+  .mobile-services-drawer nav a { border:1px solid #ffffff26!important; border-radius:18px!important; background:#ffffff12!important; color:#fff!important; }
+}
+@media (prefers-reduced-motion:reduce) { .mobile-services-drawer { transition:none!important; } }
