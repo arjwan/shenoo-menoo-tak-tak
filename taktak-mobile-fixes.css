@@ -112,3 +112,32 @@ button,a,input,textarea,select{-webkit-tap-highlight-color:transparent}
   .composer-tools{grid-template-columns:repeat(3,minmax(0,1fr))!important}
   .composer-tools select.tool-btn,.composer-tools .publish{grid-column:span 3!important}
 }
+
+/* Scoped override for the messaging page. These selectors intentionally outrank
+   the generic full-viewport rules above when no chat is open. */
+@media(max-width:850px){
+  html.shinomino-ui .chat-shell:has(> .chat-window > .chat-empty){
+    min-height:0!important;
+    height:auto!important;
+    display:block!important;
+  }
+  html.shinomino-ui .chat-shell > .chat-window:has(> .chat-empty){
+    display:none!important;
+    min-height:0!important;
+    height:0!important;
+  }
+  html.shinomino-ui .chat-shell:has(> .chat-window > .chat-empty) > .conversation-list{
+    max-height:none!important;
+    height:auto!important;
+    overflow:visible!important;
+    border-bottom:0!important;
+  }
+  html.shinomino-ui .chat-shell:has(> .chat-window .chat-header) > .conversation-list{
+    display:none!important;
+  }
+  html.shinomino-ui .chat-shell:has(> .chat-window .chat-header) > .chat-window{
+    display:flex!important;
+    min-height:calc(100dvh - 110px)!important;
+    height:auto!important;
+  }
+}
