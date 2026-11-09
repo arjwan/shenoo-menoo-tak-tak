@@ -73,7 +73,7 @@
   async function getMedia(type) { stopMedia(); localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "video" }); var v = document.querySelector("[data-local-video]"); if (type === "video") { v.srcObject = localStream; v.classList.add("is-visible"); } }
   function ensurePeer() {
     if (peer) return peer; peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }); localStream.getTracks().forEach(function (t) { peer.addTrack(t, localStream); });
-    peer.ontrack = function (e) { var v = document.querySelector("[data-remote-video]"); v.srcObject = e.streams[0]; if (activeCall && activeCall.type === "video") v.classList.add("is-visible"); v.play().catch(function () {}); };
+    peer.ontrack = function (e) { var v = document.querySelector("[data-remote-video]"); if (!v) return; v.srcObject = e.streams[0]; if (e.track.kind === 'video') { v.classList.add('is-visible'); v.play().catch(function(){}); } else { v.play().catch(function(){}); } };
     peer.onicecandidate = function (e) { if (e.candidate) socket.emit("webrtc:ice", callPayload({ data: e.candidate })); };
     peer.onconnectionstatechange = function () { if (!peer) return; if (peer.connectionState === "connected") { clearTimeout(connectionTimer); callStatus("متصل الآن"); } else if (["failed", "closed"].includes(peer.connectionState)) endCall(true, "تعذر الاتصال", "connection-failed"); else if (peer.connectionState === "disconnected") { clearTimeout(connectionTimer); connectionTimer = setTimeout(function () { if (peer && peer.connectionState === "disconnected") endCall(true, "تعذر الاتصال", "disconnected"); }, 8000); } };
     return peer;
@@ -115,6 +115,43 @@
     try { await getMedia(type); socket.emit("call:invite", callPayload(), function (result) { if (!activeCall) return; if (result && result.ok) { callStatus("يرن…"); if(window.ShnoCallAudio)window.ShnoCallAudio.startRingback(); return; } endCall(false); show((result && result.message) || "تعذر الاتصال", "error"); }); callTimer = setTimeout(function () { if (!activeCall || activeCall.incoming) return; socket.emit("call:end", callPayload({ reason: "no-answer" })); endCall(false, "لا يوجد رد"); }, 30000); } catch (_) { endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); }
   }
   async function acceptCall() { if (!activeCall) return; if(window.ShnoIncomingCalls)window.ShnoIncomingCalls.end(activeCall.callId); try { await getMedia(activeCall.type); ensurePeer(); document.querySelector("[data-incoming-call-actions]").hidden = true; callStatus("جاري إنشاء الاتصال…"); socket.emit("call:accept", callPayload(), function (result) { if (result && !result.ok) endCall(false, "انتهت المكالمة"); }); } catch (_) { socket.emit("call:reject", callPayload({ reason: "media-denied" })); endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); } }
+  // Switch media without ending the existing call or generating a new callId.
+  // The existing WebRTC offer/answer signaling renegotiates the video m-line.
+  window.shnoSwitchCallMedia = async function (targetType) {
+    if (!activeCall || !peer || peer.signalingState !== 'stable' || !localStream) return false;
+    targetType = targetType === 'video' ? 'video' : 'audio';
+    if (activeCall.type === targetType) return true;
+    var videoSender = peer.getSenders().find(function (sender) {
+      return sender.track && sender.track.kind === 'video';
+    });
+    try {
+      if (targetType === 'video') {
+        var camera = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
+        var track = camera.getVideoTracks()[0];
+        if (!track) { camera.getTracks().forEach(function(t){t.stop();}); return false; }
+        localStream.addTrack(track);
+        if (videoSender) await videoSender.replaceTrack(track);
+        else peer.addTrack(track, localStream);
+        var preview = document.querySelector('[data-local-video]');
+        if (preview) { preview.srcObject = localStream; preview.classList.add('is-visible'); preview.play().catch(function(){}); }
+      } else {
+        if (videoSender) await videoSender.replaceTrack(null);
+        localStream.getVideoTracks().forEach(function (track) { localStream.removeTrack(track); track.stop(); });
+        var previewOff = document.querySelector('[data-local-video]');
+        if (previewOff) { previewOff.srcObject = null; previewOff.classList.remove('is-visible'); }
+      }
+      activeCall.type = targetType;
+      callName(currentOther && currentOther.fullName || document.querySelector('[data-call-name]')?.textContent || 'مستخدم', targetType);
+      var offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      socket.emit('webrtc:offer', callPayload({data: peer.localDescription}));
+      return true;
+    } catch (error) {
+      show('تعذر تغيير وضع المكالمة: '+(error.message || 'تحقق من صلاحية الكاميرا'),'error');
+      return false;
+    }
+  };
+  window.shnoGetCallMediaType = function () { return activeCall ? activeCall.type : null; };
   async function flushIce() { while (pendingIce.length && peer && peer.remoteDescription) await peer.addIceCandidate(pendingIce.shift()).catch(function () {}); }
   document.querySelector("[data-call-end]").onclick = function () { endCall(true, "انتهت المكالمة"); };
   document.querySelector("[data-call-accept]").onclick = acceptCall;
@@ -142,7 +179,7 @@
     socket.on("call:accept", async function (p) { if (!activeCall || activeCall.incoming || String(p.callId) !== activeCall.callId) return; clearTimeout(callTimer); if(window.ShnoCallAudio)window.ShnoCallAudio.stop(); try { var pc = ensurePeer(), offer = await pc.createOffer(); await pc.setLocalDescription(offer); socket.emit("webrtc:offer", callPayload({ data: pc.localDescription })); } catch (_) { endCall(true, "تعذر الاتصال", "offer-failed"); } });
     socket.on("call:reject", function (p) { if (activeCall && String(p.callId) === activeCall.callId) endCall(false, p.reason === "busy" ? "المستخدم مشغول بمكالمة أخرى" : "رفض المكالمة"); });
     socket.on("call:end", function (p) { if (activeCall && String(p.callId) === activeCall.callId) endCall(false, p.reason === "no-answer" ? "لا يوجد رد" : p.reason === "disconnected" ? "تعذر الاتصال" : "انتهت المكالمة"); });
-    socket.on("webrtc:offer", async function (p) { if (!activeCall || String(p.callId) !== activeCall.callId) return; try { var pc = ensurePeer(); await pc.setRemoteDescription(p.data); await flushIce(); var answer = await pc.createAnswer(); await pc.setLocalDescription(answer); socket.emit("webrtc:answer", callPayload({ data: pc.localDescription })); } catch (_) { endCall(true, "تعذر الاتصال", "answer-failed"); } });
+    socket.on("webrtc:offer", async function (p) { if (!activeCall || String(p.callId) !== activeCall.callId) return; try { var pc = ensurePeer(); await pc.setRemoteDescription(p.data); await flushIce(); var answer = await pc.createAnswer(); await pc.setLocalDescription(answer); socket.emit("webrtc:answer", callPayload({ data: pc.localDescription })); } catch (_) { show("تعذر تحديث وسائط المكالمة","error"); } });
     socket.on("webrtc:answer", async function (p) { if (!activeCall || String(p.callId) !== activeCall.callId || !peer) return; try { await peer.setRemoteDescription(p.data); await flushIce(); } catch (_) { endCall(true, "تعذر الاتصال", "answer-failed"); } });
     socket.on("webrtc:ice", async function (p) { if (!activeCall || String(p.callId) !== activeCall.callId) return; if (!peer || !peer.remoteDescription) pendingIce.push(p.data); else await peer.addIceCandidate(p.data).catch(function () {}); });
     socket.on("disconnect", function () { if (activeCall) endCall(false, "تعذر الاتصال"); });
