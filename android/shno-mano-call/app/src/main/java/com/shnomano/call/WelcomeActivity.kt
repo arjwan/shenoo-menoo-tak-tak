@@ -32,32 +32,42 @@ class WelcomeActivity : ComponentActivity() {
     private fun WelcomeScreen() {
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(listOf(Color(0xFF0B1020), Color(0xFF070910), Color(0xFF090C14)))
+                Brush.verticalGradient(listOf(Color(0xFF273A85), Color(0xFF101D43), Color(0xFF090E26)))
             ).padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF172B57)),
                 shape = RoundedCornerShape(30.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         Modifier.size(78.dp).background(
-                            Brush.linearGradient(listOf(Color(0xFF7C5CFF), Color(0xFF27D8C4))), CircleShape
+                            Brush.linearGradient(listOf(Color(0xFF7C5CFF), Color(0xFF2C9AE9))), CircleShape
                         ), contentAlignment = Alignment.Center
-                    ) { Text("ش", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black) }
+                    ) { Text("☎", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black) }
                     Spacer(Modifier.height(18.dp))
-                    Text("شنو منو", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
+                    Text("اتصال", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black)
                     Text(
-                        "حساب واحد لكل شنو منو: اتصال، رسائل، مول العراق، الريلز والخدمات",
-                        color = Color(0xFF98A2B3), fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 20.sp
+                        "مكالماتك ومحادثاتك وجهات اتصالك في مساحة خاصة، متصلة بحساب شنو منو",
+                        color = Color(0xFFB7CEEF), fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 20.sp
                     )
-                    Spacer(Modifier.height(26.dp))
+                    Spacer(Modifier.height(16.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF223E75)),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("💬 رسائل     •     📞 مكالمات     •     👥 أصدقاء",
+                            modifier = Modifier.fillMaxWidth().padding(13.dp),
+                            color = Color(0xFFE9F6FF), textAlign = TextAlign.Center, fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.height(24.dp))
                     Button(
                         onClick = { startActivity(Intent(this@WelcomeActivity, MainActivity::class.java)) },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C5CFF))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3D80F4))
                     ) { Icon(Icons.Default.Login, null); Spacer(Modifier.width(8.dp)); Text("تسجيل الدخول") }
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
