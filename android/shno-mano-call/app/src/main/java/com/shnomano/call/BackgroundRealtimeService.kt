@@ -30,6 +30,8 @@ class BackgroundRealtimeService : Service() {
     private var callCursor = 0L
     private val seenUnread = mutableMapOf<String, Int>()
     private var groupCursor = 0L
+    private var groupMessagesCursor = 0L
+    private var groupMessageBaseline = false
     private val notifiedGroupCalls = mutableSetOf<String>()
     private var baselineLoaded = false
     private var lastMessagesCheck = 0L
@@ -104,6 +106,7 @@ class BackgroundRealtimeService : Service() {
                         lastMessagesCheck = System.currentTimeMillis()
                         pollMessages()
                         pollGroups()
+                        pollGroupMessages()
                     }
                 } catch (error: Exception) {
                     Log.w(TAG, "D1 realtime check failed: ${error.message}")
@@ -206,6 +209,37 @@ class BackgroundRealtimeService : Service() {
             }
         }
         groupCursor = response.optLong("cursor", groupCursor)
+    }
+
+    private fun pollGroupMessages() {
+        val response = getJson("api/call-groups/message-alerts?after=$groupMessagesCursor")
+        val messages = response.optJSONArray("messages") ?: return
+        for (i in 0 until messages.length()) {
+            val msg = messages.optJSONObject(i) ?: continue
+            val groupId = msg.optString("groupId")
+            if (groupId.isBlank() || !groupMessageBaseline) continue
+            val link = Intent(this, WebSectionActivity::class.java).apply {
+                putExtra(WebSectionActivity.EXTRA_URL, SHNO_MANO_BASE_URL + "call-groups.html?group=" + Uri.encode(groupId))
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pending = PendingIntent.getActivity(
+                this, groupId.hashCode(), link,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val n = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_MESSAGES)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentTitle(msg.optString("senderName") + " · " + msg.optString("groupName"))
+                .setContentText(msg.optString("text"))
+                .setContentIntent(pending)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .build()
+            getSystemService(NotificationManager::class.java).notify(groupId.hashCode(), n)
+        }
+        groupMessagesCursor = response.optLong("cursor", groupMessagesCursor)
+        groupMessageBaseline = true
     }
 
     private fun notifyGroupCall(groupId: String, name: String, callId: String) {
