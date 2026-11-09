@@ -1,3 +1,4 @@
+// Developer login rate limiting requires DEVELOPER_RATE_LIMIT_SECRET in the production Pages environment.
 // Portable WebCrypto helpers for Pages Functions (no Node.js compatibility flag required).
 // The password KDF matches the existing D1 auth Worker: PBKDF2-SHA256/100000/32.
 const encoder = new TextEncoder();
