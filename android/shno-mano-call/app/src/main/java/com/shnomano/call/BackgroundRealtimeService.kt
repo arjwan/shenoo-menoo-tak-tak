@@ -17,9 +17,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.shnomano.call.data.SHNO_MANO_BASE_URL
 import com.shnomano.call.data.SessionStore
-import io.socket.client.IO
-import io.socket.client.Socket
-import io.socket.emitter.Emitter
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import org.json.JSONObject
 
 /**
@@ -28,8 +30,11 @@ import org.json.JSONObject
  * ad-hoc group calls.
  */
 class BackgroundRealtimeService : Service() {
-    private var socket: Socket? = null
-    private var socketToken: String? = null
+    private var poller: ScheduledExecutorService? = null
+    private var callCursor = 0L
+    private val seenUnread = mutableMapOf<String, Int>()
+    private var baselineLoaded = false
+    private var lastMessagesCheck = 0L
     private var ringtone: Ringtone? = null
 
     override fun onCreate() {
@@ -43,7 +48,7 @@ class BackgroundRealtimeService : Service() {
             return START_NOT_STICKY
         }
         startAsForeground()
-        connectOnce()
+        startPolling()
         return START_STICKY
     }
 
@@ -75,70 +80,104 @@ class BackgroundRealtimeService : Service() {
         }
     }
 
+    // Single source of truth: the same D1 endpoints used by shinomino.com.
+    // The standalone app retains its own session cookie in SessionStore.
     @Synchronized
-    private fun connectOnce() {
-        val token = SessionStore(this).token?.takeIf { it.isNotBlank() } ?: run {
-            stopSelf()
-            return
+    private fun startPolling() {
+        if (poller != null) return
+        if (!SessionStore(this).isSignedIn()) { stopSelf(); return }
+        poller = Executors.newSingleThreadScheduledExecutor().also { worker ->
+            worker.scheduleWithFixedDelay({
+                try {
+                    pollIncomingCalls()
+                    if (System.currentTimeMillis() - lastMessagesCheck > 5000) {
+                        lastMessagesCheck = System.currentTimeMillis()
+                        pollMessages()
+                    }
+                } catch (error: Exception) {
+                    Log.w(TAG, "D1 realtime check failed: ${error.message}")
+                }
+            }, 0, 1600, TimeUnit.MILLISECONDS)
         }
-        val current = socket
-        if (current != null && socketToken == token) {
-            if (!current.connected()) current.connect()
-            return
-        }
-
-        disconnectSocket()
-        val options = IO.Options().apply {
-            forceNew = false
-            reconnection = true
-            reconnectionAttempts = Int.MAX_VALUE
-            reconnectionDelay = 1_000
-            reconnectionDelayMax = 10_000
-            randomizationFactor = 0.25
-            timeout = 20_000
-            extraHeaders = mapOf("Authorization" to listOf("Bearer $token"))
-        }
-        val created = runCatching { IO.socket(SHNO_MANO_BASE_URL, options) }.getOrNull() ?: return
-        socketToken = token
-        socket = created
-        registerSocketListeners(created)
-        created.connect()
     }
 
-    private fun registerSocketListeners(client: Socket) {
-        client.on(Socket.EVENT_CONNECT, Emitter.Listener { Log.d(TAG, "realtime socket connected") })
-        client.on("presence:state", Emitter.Listener { args ->
-            val payload = args.firstOrNull() as? JSONObject ?: return@Listener
-            val ids = payload.optJSONArray("userIds") ?: return@Listener
-            val online = buildList { for (index in 0 until ids.length()) add(ids.optString(index)) }
-            PresenceStore.replaceOnline(online)
-        })
-        client.on("presence:online", Emitter.Listener { args ->
-            val payload = args.firstOrNull() as? JSONObject ?: return@Listener
-            PresenceStore.markOnline(payload.optString("userId"))
-        })
-        client.on("presence:offline", Emitter.Listener { args ->
-            val payload = args.firstOrNull() as? JSONObject ?: return@Listener
-            PresenceStore.markOffline(payload.optString("userId"))
-        })
-        client.on("call:invite", Emitter.Listener { args ->
-            val payload = args.firstOrNull() as? JSONObject ?: return@Listener
-            handleIncomingInvite(payload, false)
-        })
-        client.on("call-group:invite", Emitter.Listener { args ->
-            val payload = args.firstOrNull() as? JSONObject ?: return@Listener
-            handleIncomingInvite(payload, true)
-        })
-        listOf("call:accept", "call:reject", "call:end", "call-group:end", "call-group:rejected").forEach { event ->
-            client.on(event, Emitter.Listener { args -> clearCallAlert(callIdFrom(args)) })
+    private fun getJson(path: String): JSONObject {
+        val session = SessionStore(this)
+        val cookie = session.sessionCookie ?: throw IllegalStateException("لا توجد جلسة اتصال")
+        val connection = URL(SHNO_MANO_BASE_URL + path).openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 7000
+            connection.readTimeout = 7000
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("Cookie", "__Host-shino_session=$cookie")
+            if (connection.responseCode != 200) {
+                if (connection.responseCode == 401) Log.w(TAG, "Standalone session expired or rejected")
+                throw IllegalStateException("HTTP ${connection.responseCode}")
+            }
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            return JSONObject(body)
+        } finally {
+            connection.disconnect()
         }
-        client.on(Socket.EVENT_DISCONNECT, Emitter.Listener {
-            PresenceStore.replaceOnline(emptySet())
-            Log.d(TAG, "realtime socket disconnected; waiting for Socket.IO reconnect")
-        })
-        client.on(Socket.EVENT_CONNECT_ERROR, Emitter.Listener { args ->
-            Log.w(TAG, "realtime socket connection error: ${args.firstOrNull()}")
-        })
+    }
+
+    private fun pollIncomingCalls() {
+        val data = getJson("api/call-signals?after=$callCursor")
+        if (!data.optBoolean("ok")) return
+        val events = data.optJSONArray("events") ?: return
+        for (i in 0 until events.length()) {
+            val event = events.optJSONObject(i) ?: continue
+            if (event.optString("event") == "call:invite") {
+                val payload = JSONObject()
+                    .put("callId", event.optString("callId"))
+                    .put("from", event.optString("from"))
+                    .put("conversationId", event.optString("conversationId"))
+                    .put("callerName", event.optString("callerName"))
+                    .put("type", event.optJSONObject("payload")?.optString("type") ?: "audio")
+                handleIncomingInvite(payload, false)
+            } else if (event.optString("event") in listOf("call:end", "call:reject", "call:accept")) {
+                clearCallAlert(event.optString("callId"))
+            }
+            callCursor = maxOf(callCursor, event.optLong("id", 0L))
+        }
+        callCursor = maxOf(callCursor, data.optLong("cursor", callCursor))
+    }
+
+    private fun pollMessages() {
+        val data = getJson("api/conversations")
+        val entries = data.optJSONArray("conversations") ?: return
+        val updated = mutableMapOf<String, Int>()
+        for (i in 0 until entries.length()) {
+            val row = entries.optJSONObject(i) ?: continue
+            val id = row.optString("id")
+            val unread = row.optInt("unreadCount", 0)
+            if (id.isBlank()) continue
+            updated[id] = unread
+            if (baselineLoaded && unread > (seenUnread[id] ?: 0)) {
+                val other = row.optJSONObject("otherUser")
+                val name = other?.optString("fullName")?.takeIf { it.isNotBlank() } ?: "شنو منو"
+                val target = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val pending = PendingIntent.getActivity(
+                    this, id.hashCode(), target,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_MESSAGES)
+                    .setSmallIcon(R.drawable.ic_launcher)
+                    .setContentTitle("رسالة جديدة من $name")
+                    .setContentText("لديك رسائل جديدة في شنو منو اتصال")
+                    .setContentIntent(pending)
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .build()
+                getSystemService(NotificationManager::class.java).notify(id.hashCode(), notification)
+            }
+        }
+        seenUnread.clear()
+        seenUnread.putAll(updated)
+        baselineLoaded = true
     }
 
     private fun handleIncomingInvite(payload: JSONObject, isGroup: Boolean) {
@@ -236,19 +275,11 @@ class BackgroundRealtimeService : Service() {
             ?: payload.optString("groupId").takeIf { it.isNotBlank() }
     }
 
-    @Synchronized
-    private fun disconnectSocket() {
-        socket?.off()
-        socket?.disconnect()
-        socket?.close()
-        socket = null
-        socketToken = null
-    }
-
     override fun onDestroy() {
         stopRingtone()
         getSystemService(NotificationManager::class.java).cancel(CALL_NOTIFICATION_ID)
-        disconnectSocket()
+        poller?.shutdownNow()
+        poller = null
         PresenceStore.clearAll()
         if (running === this) running = null
         super.onDestroy()
