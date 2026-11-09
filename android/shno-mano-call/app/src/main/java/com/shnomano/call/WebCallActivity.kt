@@ -60,6 +60,7 @@ class WebCallActivity : ComponentActivity() {
     private var incomingActions: LinearLayout? = null
     private var muteControl: Button? = null
     private var muted = false
+    private var autoAcceptIncoming = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mediaPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -79,11 +80,23 @@ class WebCallActivity : ComponentActivity() {
         window.navigationBarColor = Color.rgb(4, 10, 8)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        prepareCallAudio()
+        // Incoming ring remains active until the user answers.
 
         targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
         incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
         pendingIncomingCall = incomingCallFrom(intent)
+        autoAcceptIncoming = intent.getBooleanExtra(EXTRA_AUTO_ACCEPT, false)
+        if (pendingIncomingCall != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            } else {
+                @Suppress("DEPRECATION")
+                window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            }
+        } else {
+            prepareCallAudio()
+        }
         if (targetUrl.isBlank()) { finish(); return }
         pendingIncomingCall?.let { BackgroundRealtimeService.acknowledgeIncomingCall(it.callId) }
 
@@ -100,7 +113,6 @@ class WebCallActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    prepareCallAudio()
                     if (url?.contains("messages.html") == true) {
                         webPageReady = true
                         injectCallStage()
@@ -182,6 +194,7 @@ class WebCallActivity : ComponentActivity() {
         val incoming = LinearLayout(this).apply { gravity = Gravity.CENTER }
         incoming.addView(controlButton("✓ قبول") {
             if (invokeCallControl("[data-call-accept]")) {
+                prepareCallAudio()
                 callStatusLabel?.text = "جارٍ إنشاء الاتصال…"
                 // The web call handler owns accept state; do not hide controls
                 // until it reports that acceptance has actually started.
@@ -457,6 +470,12 @@ class WebCallActivity : ComponentActivity() {
                 incomingActions?.visibility = View.VISIBLE
                 BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
                 pendingIncomingCall = null
+                if (autoAcceptIncoming) {
+                    autoAcceptIncoming = false
+                    invokeCallControl("[data-call-accept]")
+                    prepareCallAudio()
+                    callStatusLabel?.text = "جارٍ إنشاء الاتصال…"
+                }
             }
             else mainHandler.postDelayed({ deliverPendingIncomingCall() }, 250)
         }
@@ -477,7 +496,7 @@ class WebCallActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() { super.onResume(); if (::audioManager.isInitialized) prepareCallAudio() }
+    override fun onResume() { super.onResume(); if (::audioManager.isInitialized && pendingIncomingCall == null && !autoAcceptIncoming && incomingActions?.visibility != View.VISIBLE) prepareCallAudio() }
 
     private fun showCallSettings() {
         val choices = arrayOf("السماعة الخارجية", "سماعة المكالمات", "إعدادات النغمة والإشعارات")
@@ -499,6 +518,7 @@ class WebCallActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_URL = "url"
+        const val EXTRA_AUTO_ACCEPT = "auto_accept"
         const val EXTRA_INCOMING = "incoming_call"
         const val EXTRA_GROUP_CALL = "group_call"
         const val EXTRA_CALL_ID = "call_id"
