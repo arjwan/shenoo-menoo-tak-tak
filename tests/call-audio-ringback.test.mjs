@@ -22,6 +22,6 @@ test('audio engine is installed before incoming watcher, is user gesture unlocke
  assert.match(audio,/pointerdown/);
  assert.match(audio,/startRingback/);
  assert.match(audio,/startIncoming/);
- assert.match(audio,/startTone/);
+ assert.match(audio,/ShnoManoNative\.startCallTone/);
  assert.match(audio,/pagehide/);
 });
