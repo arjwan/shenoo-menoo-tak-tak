@@ -9,10 +9,37 @@ async function resolveToken(token) {
   return user;
 }
 
+
+// Signed, short-lived Cloudflare developer identity. This is accepted only
+// when the Pages proxy and the Node origin share a separately configured secret.
+async function resolveSchoolDeveloperBridge(req) {
+  const secret = process.env.SCHOOL_DEVELOPER_BRIDGE_SECRET;
+  if (!secret || secret.length < 32) return null;
+  const value = req.headers['x-school-developer-bridge'];
+  if (typeof value !== 'string' || value.length > 1500) return null;
+  const parts = value.split('.');
+  if (parts.length !== 2) return null;
+  const crypto = require('node:crypto');
+  const expected = crypto.createHmac('sha256', secret).update(parts[0]).digest('base64url');
+  const received = Buffer.from(parts[1], 'base64url');
+  const signature = Buffer.from(expected, 'base64url');
+  if (received.length !== signature.length || !crypto.timingSafeEqual(received, signature)) return null;
+  let payload;
+  try { payload = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8')); } catch { return null; }
+  if (payload.aud !== 'sumer-school-developer' || payload.role !== 'developer' ||
+      typeof payload.id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(payload.id) ||
+      !Number.isSafeInteger(payload.iat) || Math.abs(Date.now() - payload.iat) > 30000) return null;
+  // The bridge does not issue MongoDB tokens or persist developer identities.
+  return { id: payload.id, _id: payload.id, role: 'developer', status: 'active',
+    username: payload.username || 'developer', fullName: payload.username || 'developer' };
+}
+
 async function requireAuth(req, res, next) {
   try {
     const header = req.headers.authorization || '';
 
+    const bridge = await resolveSchoolDeveloperBridge(req);
+    if (bridge) { req.user = bridge; return next(); }
     if (!header.startsWith('Bearer ')) {
       return res.status(401).json({
         ok: false,
