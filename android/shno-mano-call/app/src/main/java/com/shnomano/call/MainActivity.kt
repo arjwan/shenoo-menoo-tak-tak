@@ -38,11 +38,11 @@ import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.*
 import kotlinx.coroutines.launch
 
-private val Bg = Color(0xFF061514)
-private val Panel = Color(0xFF10201B)
-private val Panel2 = Color(0xFF132824)
-private val Accent = Color(0xFF19D9A0)
-private val Muted = Color(0xFF91A39D)
+private val Bg = Color(0xFF071529)
+private val Panel = Color(0xFF102443)
+private val Panel2 = Color(0xFF172D51)
+private val Accent = Color(0xFF468CF9)
+private val Muted = Color(0xFFA8BCD5)
 
 class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -103,7 +103,7 @@ fun ShnoManoCallApp() {
     Scaffold(
         containerColor = Bg,
         bottomBar = {
-            NavigationBar(containerColor = Color(0xFF071815)) {
+            NavigationBar(containerColor = Color(0xFF091A36)) {
                 tabs.forEachIndexed { index, tab ->
                     NavigationBarItem(
                         selected = selected == index,
@@ -124,7 +124,7 @@ fun ShnoManoCallApp() {
     ) { padding ->
         Box(
             Modifier.fillMaxSize().padding(padding).background(
-                Brush.verticalGradient(listOf(Color(0xFF062522), Bg, Color(0xFF020A09)))
+                Brush.verticalGradient(listOf(Color(0xFF10365D), Bg, Color(0xFF050D22)))
             )
         ) {
             when (selected) {
@@ -162,7 +162,7 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
     val scope = rememberCoroutineScope()
 
     Box(
-        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF062522), Bg))),
+        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF10365D), Bg))),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -224,7 +224,7 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
 private fun BrandHeader(title: String, subtitle: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(52.dp).background(Brush.linearGradient(listOf(Accent, Color(0xFF43E0BE))), CircleShape),
+            Modifier.size(52.dp).background(Brush.linearGradient(listOf(Accent, Color(0xFF7D5FFF))), CircleShape),
             contentAlignment = Alignment.Center
         ) { Text("ش", color = Bg, fontSize = 24.sp, fontWeight = FontWeight.Black) }
         Column(Modifier.padding(start = 12.dp)) {
@@ -593,7 +593,7 @@ private fun AvatarLetter(name: String, online: Boolean = false) {
                 Modifier.size(12.dp)
                     .align(Alignment.BottomEnd)
                     .border(2.dp, Panel, CircleShape)
-                    .background(Color(0xFF31E981), CircleShape)
+                    .background(Color(0xFF19C98A), CircleShape)
             )
         }
     }
