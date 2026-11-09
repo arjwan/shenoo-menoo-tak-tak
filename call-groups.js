@@ -20,6 +20,8 @@ async function init(){
   const rows=await SocialAPI.request('/api/conversations');
   contacts=(rows.conversations||[]).map(c=>c.otherUser).filter(u=>u&&u.id);
   await loadGroups();
+  const requested=new URLSearchParams(location.search).get('group');
+  if(requested&&groups.some(g=>g.id===requested))await openGroup(requested);
   setInterval(tick,1800);
  }catch(e){feedback(e.message||'تعذر بدء المجموعات')}
 }
