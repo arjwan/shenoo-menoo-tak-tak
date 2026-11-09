@@ -1,0 +1,17 @@
+name: Check Shno Mano call audio
+on:
+  push:
+    branches: [fix/call-audio-ringback-incoming-20261109]
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check call-audio.js
+      - run: node --check incoming-call-global.js
+      - run: node --check private-messages.js
+      - run: node --test tests/call-audio-ringback.test.mjs tests/incoming-call-global.test.mjs
