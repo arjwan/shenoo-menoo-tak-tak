@@ -89,6 +89,15 @@
     return false;
   }());
 
+  // Share a gesture-unlocked audio engine between outgoing and incoming calls.
+  if (!document.querySelector('script[data-shno-call-audio]')) {
+    var sound=document.createElement('script');
+    sound.src='call-audio.js?v=20261109-ring-1';
+    sound.setAttribute('data-shno-call-audio','1');
+    sound.defer=false;
+    document.head.appendChild(sound);
+  }
+
   // Receive incoming calls on every authenticated page, not only the chat page.
   if (!document.querySelector('script[data-shno-incoming-calls]')) {
     var incoming=document.createElement('script');
