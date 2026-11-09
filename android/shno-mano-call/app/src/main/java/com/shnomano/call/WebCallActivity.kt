@@ -45,7 +45,6 @@ class WebCallActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private lateinit var audioManager: AudioManager
     private var targetUrl: String = ""
-    private var bootstrapped = false
     private var pendingPermissionRequest: PermissionRequest? = null
     private var audioFocusRequest: AudioFocusRequest? = null
     private var ringbackTone: ToneGenerator? = null
