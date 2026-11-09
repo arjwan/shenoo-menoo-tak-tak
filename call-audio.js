@@ -37,6 +37,7 @@
     if(!['ringback','incoming'].includes(next))return;
     if(mode===next)return;
     stop();mode=next;
+    if(next==='incoming' && global.ShnoManoNative && typeof global.ShnoManoNative.showIncomingCallAlert==='function')return;
     if(global.ShnoManoNative && typeof global.ShnoManoNative.startCallTone==='function'){
       try{global.ShnoManoNative.startCallTone(next);return;}catch(_){}
     }
