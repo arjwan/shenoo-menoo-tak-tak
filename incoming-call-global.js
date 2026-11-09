@@ -74,6 +74,8 @@
     active={callId:String(event.callId),conversationId:String(event.conversationId),
       from:String(event.from),type:event.type==='video'?'video':'audio',
       callerName:String(event.callerName||'مستخدم شنو منو')};
+    // In the conversation page, the existing call modal owns the buttons.
+    if(inMessages){startSound();return;}
     // Use DOM methods for contact names to avoid HTML injection.
     bell=document.createElement('div');
     bell.setAttribute('role','alertdialog');
