@@ -10,6 +10,13 @@ class SessionStore(context: Context) {
     val token: String?
         get() = prefs.getString(KEY_TOKEN, null)
 
+    val sessionCookie: String?
+        get() = prefs.getString(KEY_SESSION_COOKIE, null)
+
+    fun saveSessionCookie(cookie: String) {
+        if (cookie.isNotBlank()) prefs.edit().putString(KEY_SESSION_COOKIE, cookie).commit()
+    }
+
     val userId: String?
         get() = prefs.getString(KEY_USER_ID, null)
 
@@ -19,17 +26,17 @@ class SessionStore(context: Context) {
     val username: String?
         get() = prefs.getString(KEY_USERNAME, null)
 
-    fun isSignedIn(): Boolean = !token.isNullOrBlank() && !userId.isNullOrBlank()
+    fun isSignedIn(): Boolean = (!sessionCookie.isNullOrBlank() || !token.isNullOrBlank()) && !userId.isNullOrBlank()
 
     fun save(response: SignInResponse) {
         val user = requireNotNull(response.user)
-        val authToken = requireNotNull(response.token)
+        val authToken = response.token
         prefs.edit()
             .putString(KEY_TOKEN, authToken)
             .putString(KEY_USER_ID, user.id)
             .putString(KEY_FULL_NAME, user.fullName)
             .putString(KEY_USERNAME, user.username)
-            .apply()
+            .commit()
     }
 
     fun clear() {
@@ -41,6 +48,7 @@ class SessionStore(context: Context) {
 
     companion object {
         private const val KEY_TOKEN = "token"
+        private const val KEY_SESSION_COOKIE = "session_cookie"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_FULL_NAME = "full_name"
         private const val KEY_USERNAME = "username"
