@@ -25,9 +25,8 @@ import java.util.concurrent.TimeUnit
 import org.json.JSONObject
 
 /**
- * Owns the authenticated background Socket.IO connection while the user is
- * signed in. It keeps presence alive and wakes the call UI for private and
- * ad-hoc group calls.
+ * Keeps an independent D1 session active for call invitations and new messages.
+ * Browser and native app share the same signaling API, not the legacy Socket.IO route.
  */
 class BackgroundRealtimeService : Service() {
     private var poller: ScheduledExecutorService? = null
