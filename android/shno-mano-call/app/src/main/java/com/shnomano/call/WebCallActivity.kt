@@ -30,6 +30,7 @@ import android.webkit.CookieManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import android.app.AlertDialog
 import androidx.activity.ComponentActivity
@@ -54,6 +55,11 @@ class WebCallActivity : ComponentActivity() {
     private var webPageReady = false
     private var speakerRouteButton: Button? = null
     private var earpieceRouteButton: Button? = null
+    private var callNameLabel: TextView? = null
+    private var callStatusLabel: TextView? = null
+    private var incomingActions: LinearLayout? = null
+    private var muteControl: Button? = null
+    private var muted = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mediaPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -123,33 +129,85 @@ class WebCallActivity : ComponentActivity() {
         val settings = controlButton("⚙") { showCallSettings() }
         root.addView(settings, FrameLayout.LayoutParams(68, 60).apply { gravity = Gravity.TOP or Gravity.START; topMargin = 18; marginStart = 18 })
 
-        val audioRoutes = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+        // Native controls deliberately remain visible when the web call modal
+        // is loading or fails to paint. The actual media session stays in WebView.
+        val heading = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(8, 4, 8, 4)
-            val speakerButton = controlButton("🔊 صوت عالي") { setAudioRoute(true) }
-            val earpieceButton = controlButton("📱 صوت الهاتف") { setAudioRoute(false) }
-            speakerRouteButton = speakerButton
-            earpieceRouteButton = earpieceButton
-            addView(speakerButton)
-            addView(earpieceButton)
+            setPadding(18, 18, 18, 18)
+            setBackgroundColor(Color.argb(205, 7, 18, 17))
         }
-        root.addView(audioRoutes, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 86
+        callNameLabel = TextView(this).apply {
+            text = pendingIncomingCall?.callerName ?: "شنو منو اتصال"
+            textSize = 22f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+        }
+        callStatusLabel = TextView(this).apply {
+            text = if (pendingIncomingCall != null) "مكالمة واردة" else "جارٍ تجهيز المكالمة…"
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(177, 204, 199))
+        }
+        heading.addView(callNameLabel)
+        heading.addView(callStatusLabel)
+        root.addView(heading, FrameLayout.LayoutParams(-1, -2).apply {
+            gravity = Gravity.TOP
+            topMargin = 76
+            leftMargin = 20
+            rightMargin = 20
         })
 
-        val tools = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+        val controls = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(8, 8, 8, 8)
-            addView(controlButton("↔ تبديل") { webView.evaluateJavascript("window.shnoSwapVideo&&window.shnoSwapVideo()", null) })
-            addView(controlButton("⛶ تكبير") { webView.evaluateJavascript("window.shnoToggleVideoSize&&window.shnoToggleVideoSize()", null) })
-            addView(controlButton("＋ مشارك") { showParticipantPicker() })
+            setPadding(8, 16, 8, 12)
+            setBackgroundColor(Color.argb(235, 7, 18, 17))
         }
-        root.addView(tools, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 28
+        val actions = LinearLayout(this).apply { gravity = Gravity.CENTER }
+        muteControl = controlButton("🎙 كتم") {
+            if (invokeCallControl("[data-call-mute]")) {
+                muted = !muted
+                muteControl?.text = if (muted) "🎙 تشغيل" else "🎙 كتم"
+            }
+        }
+        actions.addView(muteControl, LinearLayout.LayoutParams(0, -2, 1f))
+        actions.addView(controlButton("🔊 السماعة") {
+            setAudioRoute(!SettingsStore(this).speakerphoneEnabled)
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        actions.addView(controlButton("＋ مشارك") { showParticipantPicker() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(actions)
+
+        val incoming = LinearLayout(this).apply { gravity = Gravity.CENTER }
+        incoming.addView(controlButton("✓ قبول") {
+            invokeCallControl("[data-call-accept]")
+            incomingActions?.visibility = View.GONE
+            callStatusLabel?.text = "جارٍ إنشاء الاتصال…"
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        incoming.addView(controlButton("✕ رفض") {
+            invokeCallControl("[data-call-reject]")
+            stopRingback()
+            finish()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        incoming.visibility = if (pendingIncomingCall != null) View.VISIBLE else View.GONE
+        incomingActions = incoming
+        controls.addView(incoming)
+
+        controls.addView(controlButton("☎ إنهاء المكالمة") {
+            if (pendingIncomingCall != null && incomingActions?.visibility == View.VISIBLE) {
+                invokeCallControl("[data-call-reject]")
+            } else {
+                invokeCallControl("[data-call-end]")
+            }
+            stopRingback()
+            finish()
+        }, LinearLayout.LayoutParams(-1, -2))
+        root.addView(controls, FrameLayout.LayoutParams(-1, -2).apply {
+            gravity = Gravity.BOTTOM
+            bottomMargin = 18
+            leftMargin = 12
+            rightMargin = 12
         })
 
         setContentView(root)
@@ -168,6 +226,20 @@ class WebCallActivity : ComponentActivity() {
         )
         CookieManager.getInstance().flush()
         webView.loadUrl(targetUrl)
+    }
+
+    private fun invokeCallControl(selector: String): Boolean {
+        if (!webPageReady || !::webView.isInitialized) {
+            Toast.makeText(this, "الاتصال لم يجهز بعد", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        val quoted = JSONObject.quote(selector)
+        webView.evaluateJavascript(
+            "(function(){var button=document.querySelector($quoted);if(!button)return false;button.click();return true;})()"
+        ) { result ->
+            if (result != "true") Toast.makeText(this, "تعذر تنفيذ الإجراء؛ لا تزال المكالمة قيد التحميل", Toast.LENGTH_SHORT).show()
+        }
+        return true
     }
 
     private fun controlButton(label: String, click: () -> Unit) = Button(this).apply {
@@ -243,6 +315,10 @@ class WebCallActivity : ComponentActivity() {
               var report=function(){
                 var text=(status&&status.textContent||'').trim();
                 if(text) ShnoAndroidCall.onState(text);
+                var name=document.querySelector('[data-call-name]');
+                if(name&&name.textContent)ShnoAndroidCall.onName(name.textContent.trim());
+                var accept=document.querySelector('[data-incoming-call-actions]');
+                ShnoAndroidCall.onIncoming(Boolean(accept&&!accept.hidden));
                 if(modal&&modal.hidden){
                   var done=(feedback&&feedback.textContent||'').trim();
                   if(terminal.test(done)) ShnoAndroidCall.onEnded(done);
@@ -259,7 +335,14 @@ class WebCallActivity : ComponentActivity() {
     }
 
     private inner class CallStateBridge {
+        @JavascriptInterface fun onName(name: String) = runOnUiThread {
+            if (name.isNotBlank()) callNameLabel?.text = name
+        }
+        @JavascriptInterface fun onIncoming(show: Boolean) = runOnUiThread {
+            incomingActions?.visibility = if (show) View.VISIBLE else View.GONE
+        }
         @JavascriptInterface fun onState(state: String) = runOnUiThread {
+            callStatusLabel?.text = state
             when {
                 state.contains("يرن") -> startRingback()
                 state.contains("متصل") || state.contains("واردة") || state.contains("إنشاء") -> stopRingback()
@@ -366,7 +449,13 @@ class WebCallActivity : ComponentActivity() {
         if (incomingGroupCall || !webPageReady || !::webView.isInitialized) return
         val payload = JSONObject().apply { put("callId", call.callId); put("from", call.from); put("conversationId", call.conversationId); put("type", call.type); put("callerName", call.callerName) }.toString()
         webView.evaluateJavascript("(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);var modal=document.querySelector('[data-call-modal]');var incoming=document.querySelector('[data-incoming-call-actions]');if(modal)modal.hidden=false;if(incoming)incoming.hidden=false;return modal&&incoming?'ready':'waiting';}return 'waiting';})()") { result ->
-            if (result?.contains("ready") == true) { BackgroundRealtimeService.acknowledgeIncomingCall(call.callId); pendingIncomingCall = null }
+            if (result?.contains("ready") == true) {
+                callNameLabel?.text = call.callerName
+                callStatusLabel?.text = "مكالمة واردة"
+                incomingActions?.visibility = View.VISIBLE
+                BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
+                pendingIncomingCall = null
+            }
             else mainHandler.postDelayed({ deliverPendingIncomingCall() }, 250)
         }
     }
@@ -377,6 +466,9 @@ class WebCallActivity : ComponentActivity() {
         incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
         incomingCallFrom(intent)?.let { call ->
             pendingIncomingCall = call
+            callNameLabel?.text = call.callerName
+            callStatusLabel?.text = "مكالمة واردة"
+            incomingActions?.visibility = View.VISIBLE
             targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }
             BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
             if (!incomingGroupCall) deliverPendingIncomingCall()
