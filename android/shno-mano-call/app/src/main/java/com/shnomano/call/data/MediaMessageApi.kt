@@ -55,11 +55,10 @@ interface MediaMessageApi {
         @Query("limit") limit: Int = 100
     ): MediaMessagesResponse
 
-    @Multipart
     @POST("api/conversations/{id}/messages")
     suspend fun sendText(
         @Path("id") conversationId: String,
-        @Part("text") text: RequestBody
+        @retrofit2.http.Body body: SendMessageRequest
     ): MediaSendResponse
 
     @Multipart
@@ -83,10 +82,8 @@ class MediaMessageRepository(
     suspend fun sendText(conversationId: String, text: String): Result<MediaMessageDto> = runCatching {
         val clean = text.trim()
         require(clean.isNotBlank()) { "الرسالة فارغة" }
-        api.sendText(
-            conversationId,
-            clean.toRequestBody("text/plain; charset=utf-8".toMediaTypeOrNull())
-        ).message ?: error("تعذر إرسال الرسالة")
+        api.sendText(conversationId, SendMessageRequest(clean)).message
+            ?: error("تعذر إرسال الرسالة")
     }
 
     suspend fun sendFile(
