@@ -420,7 +420,7 @@ public final class MainActivity extends Activity {
                 stopCallToneNative();
                 if (!"ringback".equals(mode)) return;
                 try {
-                    outgoingCallTone = new ToneGenerator(AudioManager.STREAM_VOICE_CALL, 75);
+                    outgoingCallTone = new ToneGenerator(AudioManager.STREAM_MUSIC, 80);
                     outgoingCallTone.startTone(ToneGenerator.TONE_SUP_RINGTONE);
                 } catch (Exception ignored) {
                     stopCallToneNative();
