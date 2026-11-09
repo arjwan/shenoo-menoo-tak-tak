@@ -181,9 +181,11 @@ class WebCallActivity : ComponentActivity() {
 
         val incoming = LinearLayout(this).apply { gravity = Gravity.CENTER }
         incoming.addView(controlButton("✓ قبول") {
-            invokeCallControl("[data-call-accept]")
-            incomingActions?.visibility = View.GONE
-            callStatusLabel?.text = "جارٍ إنشاء الاتصال…"
+            if (invokeCallControl("[data-call-accept]")) {
+                callStatusLabel?.text = "جارٍ إنشاء الاتصال…"
+                // The web call handler owns accept state; do not hide controls
+                // until it reports that acceptance has actually started.
+            }
         }, LinearLayout.LayoutParams(0, -2, 1f))
         incoming.addView(controlButton("✕ رفض") {
             invokeCallControl("[data-call-reject]")
