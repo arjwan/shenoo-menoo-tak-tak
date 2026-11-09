@@ -42,7 +42,7 @@
   }
   async function start() {
     var user = params.get("user"); if (!user) { if (currentId) openConversation(currentId); return; }
-    try { var d = await SocialAPI.request("/api/conversations/" + encodeURIComponent(user), { method: "POST" }); await loadList(); await openConversation(d.conversation.id); if (["audio", "video"].includes(params.get("call"))) startCall(params.get("call")); } catch (e) { show(e.message, "error"); }
+    try { var d = await SocialAPI.request("/api/conversations/" + encodeURIComponent(user), { method: "POST" }); await loadList(); await openConversation(d.conversation.id); var requestedCall=params.get("call")||params.get("prepare"); if (["audio", "video"].includes(requestedCall)) startCall(requestedCall); } catch (e) { show(e.message, "error"); }
   }
   list.addEventListener("click", function (e) { var row = e.target.closest("[data-conversation-id]"); if (row) openConversation(row.dataset.conversationId); });
   windowEl.addEventListener("submit", async function (e) {
