@@ -6,17 +6,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val ShnoDarkColors = darkColorScheme(
-    primary = Color(0xFF8B75FF),
+    primary = Color(0xFF7C5CFF),
     onPrimary = Color.White,
-    secondary = Color(0xFF27D8C4),
-    onSecondary = Color(0xFF001F1A),
-    background = Color(0xFF070910),
+    secondary = Color(0xFF2C9AE9),
+    onSecondary = Color(0xFF05142C),
+    background = Color(0xFF071529),
     onBackground = Color(0xFFF7F8FC),
-    surface = Color(0xFF111522),
+    surface = Color(0xFF102443),
     onSurface = Color(0xFFF7F8FC),
-    surfaceVariant = Color(0xFF171C2A),
+    surfaceVariant = Color(0xFF172D51),
     onSurfaceVariant = Color(0xFFD6DAE5),
-    outline = Color(0xFF3A4258),
+    outline = Color(0xFF35547A),
     error = Color(0xFFFF6B7A),
     onError = Color.White
 )
