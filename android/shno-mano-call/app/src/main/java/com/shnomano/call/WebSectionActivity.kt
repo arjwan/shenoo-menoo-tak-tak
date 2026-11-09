@@ -20,10 +20,23 @@ class WebSectionActivity : ComponentActivity() {
             setBackgroundColor(android.graphics.Color.rgb(7, 9, 16))
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = true
+            settings.mediaPlaybackRequiresUserGesture = false
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
+                    runOnUiThread {
+                        val requested = request.resources.filter { it == android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE || it == android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE }
+                        val microphone = androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        val camera = androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        if (requested.isNotEmpty() &&
+                            (android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE !in requested || microphone) &&
+                            (android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE !in requested || camera))
+                            request.grant(requested.toTypedArray())
+                        else request.deny()
+                    }
+                }
+            }
             webViewClient = WebViewClient()
         }
         setContentView(FrameLayout(this).apply { addView(webView, FrameLayout.LayoutParams(-1, -1)) })
