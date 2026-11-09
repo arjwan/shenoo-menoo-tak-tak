@@ -30,7 +30,8 @@ async function resolveSchoolDeveloperBridge(req) {
       typeof payload.id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(payload.id) ||
       !Number.isSafeInteger(payload.iat) || Math.abs(Date.now() - payload.iat) > 30000) return null;
   // The bridge does not issue MongoDB tokens or persist developer identities.
-  return { id: payload.id, _id: payload.id, role: 'developer', status: 'active',
+  const syntheticId = crypto.createHash('sha256').update('sumer-developer:'+payload.id).digest('hex').slice(0,24);
+  return { id: syntheticId, _id: syntheticId, role: 'developer', status: 'active',
     username: payload.username || 'developer', fullName: payload.username || 'developer' };
 }
 
