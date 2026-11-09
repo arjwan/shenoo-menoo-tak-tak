@@ -98,7 +98,6 @@ class WebCallActivity : ComponentActivity() {
             prepareCallAudio()
         }
         if (targetUrl.isBlank()) { finish(); return }
-        pendingIncomingCall?.let { BackgroundRealtimeService.acknowledgeIncomingCall(it.callId) }
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.rgb(4, 10, 8)) }
         webView = WebView(this).apply {
@@ -491,7 +490,6 @@ class WebCallActivity : ComponentActivity() {
             callStatusLabel?.text = "مكالمة واردة"
             incomingActions?.visibility = View.VISIBLE
             targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }
-            BackgroundRealtimeService.acknowledgeIncomingCall(call.callId)
             if (!incomingGroupCall) deliverPendingIncomingCall()
         }
     }
