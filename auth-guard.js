@@ -28,7 +28,7 @@
     var mediaCache=document.createElement('script'); mediaCache.src='media-cache.js?v=20261005-same-origin-3'; mediaCache.defer=true; mediaCache.setAttribute('data-shno-media-cache','1'); document.head.appendChild(mediaCache);
   }
   if (!document.querySelector('link[data-taktak-mobile-fixes]')) {
-    var fixes=document.createElement('link'); fixes.rel='stylesheet'; fixes.href='taktak-mobile-fixes.css?v=20260910-2'; fixes.setAttribute('data-taktak-mobile-fixes','1'); document.head.appendChild(fixes);
+    var fixes=document.createElement('link'); fixes.rel='stylesheet'; fixes.href='taktak-mobile-fixes.css?v=20261109-overlay-1'; fixes.setAttribute('data-taktak-mobile-fixes','1'); document.head.appendChild(fixes);
   }
 
   var smartFriendPolish=document.createElement('script'); smartFriendPolish.src='smart-friend-ui-polish.js?v=20260911-2'; smartFriendPolish.defer=true; document.head.appendChild(smartFriendPolish);
