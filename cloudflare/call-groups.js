@@ -37,6 +37,13 @@ export async function handleCallGroups(req,env,user){
   ]);
   return out({ok:true,group:{id:group,name,ownerId:user.id,memberCount:members.length+1}},201);
  }
+ if(parts.length===3&&parts[2]==="message-alerts"&&method==="GET"){
+  const after=Number(url.searchParams.get("after")||0);
+  if(!Number.isSafeInteger(after)||after<0)return out({ok:false,message:"مؤشر الإشعارات غير صالح"},400);
+  const rows=await db.prepare("SELECT m.rowid AS cursor,m.group_id,m.sender_id,g.name AS group_name,u.full_name AS sender_name,m.text FROM shno_call_group_messages m JOIN shno_call_group_members gm ON gm.group_id=m.group_id AND gm.user_id=? JOIN shno_call_groups g ON g.id=m.group_id JOIN users u ON u.id=m.sender_id WHERE m.rowid>? AND m.sender_id<>? ORDER BY m.rowid ASC LIMIT 60").bind(user.id,after,user.id).all();
+  const messages=rows.results.map(m=>({cursor:m.cursor,groupId:m.group_id,groupName:m.group_name,senderName:m.sender_name,text:m.text.slice(0,100)}));
+  return out({ok:true,messages,cursor:messages.length?messages[messages.length-1].cursor:after});
+ }
  if(parts.length===3&&parts[2]==="alerts"&&method==="GET"){
   const after=Number(url.searchParams.get("after")||0);
   if(!Number.isSafeInteger(after)||after<0)return out({ok:false,message:"مؤشر إشعارات غير صالح"},400);
