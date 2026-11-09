@@ -58,18 +58,18 @@ jobs:
           test -s "$apk"
           signer="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           "$signer" verify --verbose "$apk"
-          cp "$apk" Shno-Mano-2.0.6.apk
-          sha256sum Shno-Mano-2.0.6.apk > Shno-Mano-2.0.6.apk.sha256
+          cp "$apk" Shno-Mano-2.0.7.apk
+          sha256sum Shno-Mano-2.0.7.apk > Shno-Mano-2.0.7.apk.sha256
       - name: Publish Shno Mano signed APK as prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "shno-mano-2.0.6-native-${{ github.run_id }}" \
+          gh release create "shno-mano-2.0.7-native-${{ github.run_id }}" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "شنو منو Android 2.0.6 (original application)" \
+            --title "شنو منو Android 2.0.7 (original application)" \
             --notes "Original Android application, retains existing service URLs and functions. Visual theme refresh, no Flutter starter." \
-            Shno-Mano-2.0.6.apk Shno-Mano-2.0.6.apk.sha256
+            Shno-Mano-2.0.7.apk Shno-Mano-2.0.7.apk.sha256
 
   ittisal-android:
     name: Ittisal (existing native Kotlin app)
@@ -110,15 +110,15 @@ jobs:
           test -s "$apk"
           signer="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           "$signer" verify --verbose "$apk"
-          cp "$apk" Ittisal-1.3.4.apk
-          sha256sum Ittisal-1.3.4.apk > Ittisal-1.3.4.apk.sha256
+          cp "$apk" Ittisal-1.3.5.apk
+          sha256sum Ittisal-1.3.5.apk > Ittisal-1.3.5.apk.sha256
       - name: Publish Ittisal signed APK as prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "ittisal-1.3.4-native-${{ github.run_id }}" \
+          gh release create "ittisal-1.3.5-native-${{ github.run_id }}" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "اتصال Android 1.3.4 (original Kotlin application)" \
+            --title "اتصال Android 1.3.5 (original Kotlin application)" \
             --notes "Original Kotlin app, preserves messaging, contacts, calls, and backend API integrations; updated visual palette." \
-            Ittisal-1.3.4.apk Ittisal-1.3.4.apk.sha256
+            Ittisal-1.3.5.apk Ittisal-1.3.5.apk.sha256
