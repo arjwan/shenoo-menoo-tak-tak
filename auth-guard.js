@@ -94,7 +94,7 @@
     var sound=document.createElement('script');
     sound.src='call-audio.js?v=20261109-ring-1';
     sound.setAttribute('data-shno-call-audio','1');
-    sound.defer=false;
+    sound.async=false;
     document.head.appendChild(sound);
   }
 
@@ -102,7 +102,7 @@
   if (!document.querySelector('script[data-shno-incoming-calls]')) {
     var incoming=document.createElement('script');
     incoming.src='incoming-call-global.js?v=20261109-1';
-    incoming.defer=true;
+    incoming.async=false;
     incoming.setAttribute('data-shno-incoming-calls','1');
     document.head.appendChild(incoming);
   }
