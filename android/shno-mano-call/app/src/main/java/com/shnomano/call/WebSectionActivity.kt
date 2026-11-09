@@ -12,6 +12,19 @@ import com.shnomano.call.data.SessionStore
 
 class WebSectionActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private var pendingMediaRequest: android.webkit.PermissionRequest? = null
+    private val mediaPermissions = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val req = pendingMediaRequest
+        pendingMediaRequest = null
+        if (req != null) {
+            if (result.values.all { it }) req.grant(req.resources.filter {
+                it == android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE || it == android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE
+            }.toTypedArray())
+            else req.deny()
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,13 +40,12 @@ class WebSectionActivity : ComponentActivity() {
                 override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
                     runOnUiThread {
                         val requested = request.resources.filter { it == android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE || it == android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE }
-                        val microphone = androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        val camera = androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        if (requested.isNotEmpty() &&
-                            (android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE !in requested || microphone) &&
-                            (android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE !in requested || camera))
-                            request.grant(requested.toTypedArray())
-                        else request.deny()
+                        if (requested.isEmpty()) { request.deny(); return@runOnUiThread }
+                        val needed = mutableListOf<String>()
+                        if (android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE in requested && androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) needed += android.Manifest.permission.RECORD_AUDIO
+                        if (android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE in requested && androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) needed += android.Manifest.permission.CAMERA
+                        if (needed.isEmpty()) request.grant(requested.toTypedArray())
+                        else { pendingMediaRequest?.deny(); pendingMediaRequest = request; mediaPermissions.launch(needed.toTypedArray()) }
                     }
                 }
             }
