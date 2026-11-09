@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private val Bg = Color(0xFF061514)
 private val Panel = Color(0xFF10201B)
@@ -239,8 +240,11 @@ private fun ConversationsScreen(repo: AppRepository, onlineUserIds: Set<String>,
     var conversations by remember { mutableStateOf<List<ConversationDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        conversations = repo.loadConversations()
-        loading = false
+        while (true) {
+            conversations = repo.loadConversations()
+            loading = false
+            delay(4000)
+        }
     }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("الدردشات", "محادثات شنو منو الحقيقية")
@@ -444,7 +448,12 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
         repo.loadMessages(conversation.id).onSuccess { messages = it }
     }
 
-    LaunchedEffect(conversation.id) { reloadMessages() }
+    LaunchedEffect(conversation.id) {
+        while (true) {
+            reloadMessages()
+            delay(3000)
+        }
+    }
 
     Scaffold(
         containerColor = Bg,
