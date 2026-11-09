@@ -81,3 +81,33 @@ html.home-colors-scope,html.home-colors-scope body{height:100%;overflow:hidden!i
  html.home-colors-scope .feed{height:auto;overflow:visible;}
 }
 html.home-colors-scope [data-feed]{display:grid;gap:16px;}
+
+/* Mobile WebView: let the document own vertical scrolling. A fixed, GPU-composited
+   full-screen grid can produce an opaque dark tile while the internal feed scrolls.
+   Desktop retains its independent column scrolling. */
+@media(max-width:760px){
+  html.home-colors-scope,html.home-colors-scope body{
+    height:auto!important;
+    min-height:100%!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
+  html.home-colors-scope .home-grid{
+    position:relative!important;
+    inset:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:132px 0 0!important;
+    padding:0 12px calc(98px + env(safe-area-inset-bottom))!important;
+    overflow:visible!important;
+    scrollbar-gutter:auto!important;
+  }
+  html.home-colors-scope .feed{
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+    align-content:start;
+    grid-auto-rows:max-content;
+  }
+  html.home-colors-scope .profile-cover{isolation:auto;}
+}
