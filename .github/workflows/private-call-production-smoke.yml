@@ -9,6 +9,7 @@ on:
       - 'private-messages.js'
       - 'call-signaling.js'
       - 'cloudflare/call-signaling.js'
+      - 'tests/private-call-signaling.test.mjs'
       - '.github/workflows/private-call-production-smoke.yml'
 jobs:
   validate-live-call-api:
