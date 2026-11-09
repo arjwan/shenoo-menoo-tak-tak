@@ -8,9 +8,11 @@ void main() {
   late Api api;
   late bool active;
   late List<String> paths;
+  late List<int> partSizes;
+  late bool failPart;
   setUp(() async {
     active = false;
-    paths = [];
+    paths = []; partSizes = []; failPart = false;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     api = Api(baseUri: Uri.parse('http://127.0.0.1:${server.port}'));
     server.listen((req) async {
@@ -34,6 +36,12 @@ void main() {
         expect(body['type'], 'text');
         expect(body['text'], 'من الهاتف إلى الويب');
         data = {'ok': true, 'message': {'id': 'web-message'}};
+      } else if (req.uri.path == '/api/uploads') {
+        data = {'ok': true, 'uploadId': '11111111-1111-4111-8111-111111111111', 'partSize': 4};
+      } else if (req.uri.path.contains('/part/')) {
+        final count = await req.fold<int>(0, (n, bytes) => n + bytes.length);
+        partSizes.add(count); expect(req.contentLength, count);
+        if (failPart) { req.response.statusCode = 500; data = {'ok': false, 'message': 'Upload failed'}; }
       } else if (req.uri.path == '/api/auth/logout') {
         active = false;
         req.response.cookies.add(Cookie('__Host-shino_session', '')..path = '/'..maxAge = 0);
@@ -59,6 +67,21 @@ void main() {
     expect(api.hasSession, isFalse);
     expect(paths, ['POST /api/auth/signin', 'GET /api/auth/session',
       'POST /api/conversations/web-chat/messages', 'POST /api/auth/logout']);
+  });
+  test('Streams exact upload parts and completes original upload session', () async {
+    await api.signIn('web-user', 'test-password');
+    final id = await api.uploadMedia(name: 'photo.jpg', mime: 'image/jpeg', size: 10,
+      stream: Stream<List<int>>.fromIterable([[1,2], [3,4,5,6,7], [8,9,10]]));
+    expect(id, '11111111-1111-4111-8111-111111111111');
+    expect(partSizes, [4,4,2]);
+    expect(paths.last, 'POST /api/uploads/$id/complete');
+  });
+  test('Failed part aborts upload instead of publishing partial media', () async {
+    await api.signIn('web-user', 'test-password'); failPart = true;
+    await expectLater(api.uploadMedia(name: 'photo.jpg', mime: 'image/jpeg', size: 3,
+      stream: Stream<List<int>>.value([1,2,3])), throwsA(isA<ApiError>()));
+    expect(paths.last, 'DELETE /api/uploads/11111111-1111-4111-8111-111111111111/abort');
+    expect(paths.any((p) => p.endsWith('/complete')), isFalse);
   });
   test('Expired session cannot silently access protected data', () async {
     await api.signIn('web-user', 'test-password');

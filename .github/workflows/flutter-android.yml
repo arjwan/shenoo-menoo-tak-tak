@@ -27,6 +27,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Node for original web integration tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify original web integration
+        run: node --test ../../tests/native-web-integration.test.mjs
       - name: Install Java 17
         uses: actions/setup-java@v4
         with:
@@ -77,3 +83,4 @@ jobs:
             --title "Flutter debug ${{ matrix.app }} (run ${{ github.run_id }})" \
             --notes "Unsigned debug APK for internal testing. Created as a draft because Actions artifact storage quota blocked upload." \
             "build/app/outputs/flutter-apk/app-debug.apk#${{ matrix.app }}-debug.apk"
+

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:file_picker/file_picker.dart';
+import 'media.dart';
 import 'web_api.dart';
 export 'web_api.dart';
 import 'package:flutter/material.dart';
@@ -77,7 +79,7 @@ class _SignInState extends State<SignIn> {
             const SizedBox(height: 20),
             TextField(controller: identifier, enabled: !busy,
               autofillHints: const [AutofillHints.username],
-              decoration: const InputDecoration(labelText: 'اسم المستخدم أو الهاتف أو البريد')),
+              decoration: const InputDecoration(labelText: 'اسم المستخدم أو البريد الإلكتروني')),
             const SizedBox(height: 16),
             TextField(controller: password, enabled: !busy, obscureText: obscure,
               onSubmitted: (_) => login(), autofillHints: const [AutofillHints.password],
@@ -89,6 +91,8 @@ class _SignInState extends State<SignIn> {
             const SizedBox(height: 20),
             FilledButton(onPressed: busy ? null : login, child: Padding(
               padding: const EdgeInsets.all(14), child: Text(busy ? 'جارٍ التحقق...' : 'دخول'))),
+            TextButton(onPressed: busy ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const WebAccountForm())), child: const Text('إنشاء حساب')),
           ]))),
       ])))))));
 }
@@ -102,6 +106,7 @@ class Home extends StatefulWidget {
 }
 class _HomeState extends State<Home> {
   int selected = 0;
+  String feed = 'posts';
   Future<void> logout() async {
     try { await widget.api.logout(); } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -120,7 +125,8 @@ class _HomeState extends State<Home> {
     if (selected == 4) {
       body = ListView(children: [
         ListTile(leading: const Icon(Icons.person_outline), title: Text(name(widget.user)),
-          subtitle: Text(widget.user['username']?.toString() ?? '')),
+          subtitle: Text(widget.user['username']?.toString() ?? ''),
+          onTap: () => open(WebAccountForm(api: widget.api))),
         ListTile(leading: const Icon(Icons.logout), title: const Text('تسجيل الخروج'), onTap: logout),
       ]);
     } else if (isMessenger && selected == 1) {
@@ -160,8 +166,14 @@ class _HomeState extends State<Home> {
             ? CircleAvatar(radius: 14, child: Text('${item['unreadCount']}')) : null,
           onTap: () => open(Chat(api: widget.api, conversation: item)))));
     } else {
-      body = DataPanel(api: widget.api, path: '/api/posts', field: 'posts',
-        render: (item) => PostCard(key: ValueKey(item['id']), api: widget.api, post: item));
+      body = DataPanel(api: widget.api, path: '/api/$feed', field: feed,
+        render: (item) => feed == 'stories' ? Card(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          ListTile(title: Text(name(item['author']))),
+          Padding(padding: const EdgeInsets.all(16), child: Text(item['text']?.toString() ?? '')),
+          for (final media in rows(item['media'])) MediaView(api: widget.api, item: media),
+        ])) : PostCard(key: ValueKey(item['id']), api: widget.api, post: {
+          ...item, if (feed == 'reels') 'likesCount': item['likes'],
+        }));
     }
     return Scaffold(
       appBar: AppBar(title: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -178,10 +190,14 @@ class _HomeState extends State<Home> {
           Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: ChoiceChip(
             selected: selected == i, label: Text(labels[i], style: const TextStyle(fontSize: 12)),
             onSelected: (_) => setState(() => selected = i))))))),
+        if (!isMessenger && (selected == 0 || selected == 2)) Padding(padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(children: ['posts', 'stories', 'reels'].map((kind) => Expanded(child: TextButton(
+            onPressed: () => setState(() => feed = kind), child: Text({'posts': 'المنشورات', 'stories': 'القصص', 'reels': 'الريلز'}[kind]!,
+              style: TextStyle(fontWeight: feed == kind ? FontWeight.bold : FontWeight.normal))))).toList())),
         Expanded(child: body),
       ]),
       floatingActionButton: !isMessenger && (selected == 0 || selected == 2)
-        ? FloatingActionButton(onPressed: () => open(Compose(api: widget.api)),
+        ? FloatingActionButton(onPressed: () => open(Compose(api: widget.api, purpose: feed == 'stories' ? 'stories' : 'posts')),
           backgroundColor: accent, foregroundColor: Colors.white, child: const Icon(Icons.add)) : null,
       bottomNavigationBar: NavigationBar(selectedIndex: selected,
         onDestinationSelected: (i) => setState(() => selected = i), destinations: List.generate(5, (i) =>
@@ -294,43 +310,72 @@ class _PostCardState extends State<PostCard> {
           title: Text(name(widget.post['author']), style: const TextStyle(fontWeight: FontWeight.bold))),
         if ((widget.post['text'] ?? '').toString().isNotEmpty)
           Padding(padding: const EdgeInsets.all(16), child: Text(widget.post['text'].toString())),
-        for (final item in media)
-          if (item['type'] == 'image' && item['url'] is String)
-            Image.network(widget.api.resolve(item['url']).toString(), headers: widget.api.mediaHeaders,
-              fit: BoxFit.cover, errorBuilder: (_, error, stack) => const EmptyState(text: 'تعذر تحميل الصورة'))
-          else const Padding(padding: EdgeInsets.all(16), child: Text('مرفق وسائط — تشغيل الفيديو والصوت قيد الاستكمال')),
+        for (final item in media) MediaView(api: widget.api, item: item),
         Row(children: [TextButton.icon(onPressed: busy ? null : like,
           icon: Icon(liked ? Icons.favorite : Icons.favorite_border, color: liked ? Colors.red : brand),
           label: Text('$likes')), const Spacer(),
-          Padding(padding: const EdgeInsets.all(16), child: Text('${widget.post['commentsCount'] ?? 0} تعليق'))]),
+          TextButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => Comments(api: widget.api, postId: widget.post['id'].toString()))),
+            icon: const Icon(Icons.chat_bubble_outline), label: Text('${widget.post['commentsCount'] ?? 0} تعليق'))]),
       ]));
   }
 }
 class Compose extends StatefulWidget {
-  const Compose({super.key, required this.api});
+  const Compose({super.key, required this.api, this.purpose = 'posts'});
   final Api api;
+  final String purpose;
   @override
   State<Compose> createState() => _ComposeState();
 }
 class _ComposeState extends State<Compose> {
   final text = TextEditingController();
+  PlatformFile? attachment;
+  double progress = 0;
   bool busy = false;
+  static const mime = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp',
+    'mp4': 'video/mp4', 'webm': 'video/webm', 'mp3': 'audio/mpeg'};
+  Future<void> pick() async {
+    try {
+      final file = await FilePicker.pickFile(type: FileType.custom,
+        allowedExtensions: mime.keys.where((k) => widget.purpose != 'stories' || k != 'mp3').toList());
+      if (file == null || !mounted) return;
+      final size = await file.length();
+      if (!mounted) return;
+      if (size == null || size < 1 || size > 100 * 1024 * 1024) throw const ApiError('الحد الأقصى للملف 100 ميغابايت', 413);
+      setState(() => attachment = file);
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
+  }
   @override
   void dispose() { text.dispose(); super.dispose(); }
   Future<void> send() async {
-    if (busy || text.text.trim().isEmpty) return;
-    setState(() => busy = true);
+    if (busy || (text.text.trim().isEmpty && attachment == null)) return;
+    setState(() { busy = true; progress = 0; });
     try {
-      await widget.api.request('/api/posts', method: 'POST', body: {'text': text.text.trim(), 'visibility': 'everyone'});
+      String? uploadId;
+      final file = attachment;
+      if (file != null) {
+        final type = mime[file.extension?.toLowerCase()];
+        final size = await file.length();
+        if (type == null || size == null) throw const ApiError('تعذر قراءة الملف', 0);
+        uploadId = await widget.api.uploadMedia(name: file.name, mime: type, size: size, stream: file.readAsByteStream(), purpose: widget.purpose,
+          onProgress: (value) { if (mounted) setState(() => progress = value); });
+      }
+      await widget.api.request('/api/${widget.purpose}', method: 'POST', body: {'text': text.text.trim(), 'visibility': 'everyone',
+        if (uploadId != null && widget.purpose == 'posts') 'uploadId': uploadId,
+        if (uploadId != null && widget.purpose == 'stories') 'uploads': {'main': uploadId},
+      });
       if (mounted) Navigator.of(context).pop();
     } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally { if (mounted) setState(() => busy = false); }
   }
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('إنشاء منشور')),
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: Text(widget.purpose == 'stories' ? 'إنشاء قصة' : 'إنشاء منشور')),
     body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-      TextField(controller: text, maxLength: 5000, minLines: 4, maxLines: 8,
+      TextField(controller: text, maxLength: widget.purpose == 'stories' ? 1000 : 5000, minLines: 4, maxLines: 8,
         decoration: const InputDecoration(hintText: 'ماذا تود أن تشارك؟')),
+      OutlinedButton.icon(onPressed: busy ? null : pick, icon: const Icon(Icons.attach_file), label: Text(attachment?.name ?? 'إضافة صورة أو فيديو أو صوت')),
+      if (attachment != null && !busy) TextButton(onPressed: () => setState(() => attachment = null), child: const Text('إزالة المرفق')),
+      if (busy && attachment != null) LinearProgressIndicator(value: progress),
       FilledButton(onPressed: busy ? null : send, child: Text(busy ? 'جارٍ النشر...' : 'نشر للجميع')),
     ])));
 }
@@ -386,3 +431,116 @@ class _ChatState extends State<Chat> {
     ]));
 }
 
+
+class WebAccountForm extends StatefulWidget {
+  const WebAccountForm({super.key, this.api});
+  final Api? api;
+  @override
+  State<WebAccountForm> createState() => _WebAccountFormState();
+}
+class _WebAccountFormState extends State<WebAccountForm> {
+  final form = GlobalKey<FormState>();
+  final fullName = TextEditingController(), username = TextEditingController(), email = TextEditingController();
+  final password = TextEditingController(), confirm = TextEditingController(), bio = TextEditingController();
+  Map<String, dynamic> original = {};
+  bool loading = false, busy = false;
+  String? error;
+  bool get editing => widget.api != null;
+  @override
+  void initState() { super.initState(); if (editing) unawaited(load()); }
+  Future<void> load() async {
+    setState(() { loading = true; error = null; });
+    try {
+      final result = await widget.api!.request('/api/users/me');
+      final user = object(result['user']);
+      if (!mounted) return;
+      original = user;
+      fullName.text = name(user); username.text = user['username']?.toString() ?? '';
+      email.text = user['email']?.toString() ?? '';
+      bio.text = object(user['profile'])['bio']?.toString() ?? user['bio']?.toString() ?? '';
+    } catch (e) { if (mounted) setState(() => error = e.toString());
+    } finally { if (mounted) setState(() => loading = false); }
+  }
+  @override
+  void dispose() { for (final c in [fullName, username, email, password, confirm, bio]) { c.dispose(); } super.dispose(); }
+  Future<void> save() async {
+    if (busy || !(form.currentState?.validate() ?? false)) return;
+    setState(() { busy = true; error = null; });
+    try {
+      final api = widget.api ?? Api();
+      if (editing) {
+        await api.request('/api/users/me', method: 'PATCH', body: {
+          'fullName': fullName.text.trim(), 'username': username.text.trim(),
+          'birthDate': original['birthDate']?.toString().split('T').first ?? '',
+          'gender': original['gender'] ?? 'other',
+        });
+        await api.request('/api/users/me/profile', method: 'PATCH', body: {
+          ...object(original['profile']), 'bio': bio.text.trim(),
+        });
+      } else {
+        await api.request('/api/auth/signup', method: 'POST', body: {
+          'fullName': fullName.text.trim(), 'username': username.text.trim(),
+          'email': email.text.trim(), 'password': password.text, 'confirmPassword': confirm.text,
+        });
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(editing ? 'حُفظت البيانات في حساب الويب' : 'تم إنشاء الحساب. يمكنك تسجيل الدخول الآن.')));
+      Navigator.of(context).pop();
+    } catch (e) { if (mounted) setState(() => error = e.toString());
+    } finally { if (mounted) setState(() => busy = false); }
+  }
+  Widget field(TextEditingController controller, String label, {bool secret = false, String? Function(String?)? validator}) =>
+    Padding(padding: const EdgeInsets.only(bottom: 16), child: TextFormField(controller: controller,
+      enabled: !busy, obscureText: secret, decoration: InputDecoration(labelText: label),
+      validator: validator ?? (v) => v == null || v.trim().isEmpty ? 'هذا الحقل مطلوب' : null));
+  @override
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: Text(editing ? 'حسابي' : 'إنشاء حساب')),
+    body: loading ? const Center(child: CircularProgressIndicator()) : Form(key: form, child: ListView(
+      padding: const EdgeInsets.all(20), children: [
+        if (error != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(error!)),
+        if (editing && original.isEmpty) FilledButton(onPressed: load, child: const Text('إعادة المحاولة'))
+        else ...[
+          field(fullName, 'الاسم الكامل'), field(username, 'اسم المستخدم'),
+          if (!editing) ...[
+            field(email, 'البريد الإلكتروني', validator: (v) => v != null && RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim()) ? null : 'أدخل بريداً صحيحاً'),
+            field(password, 'كلمة المرور', secret: true, validator: (v) => v != null && v.length >= 10 && v.length <= 128 ? null : 'كلمة المرور من 10 إلى 128 حرفاً'),
+            field(confirm, 'تأكيد كلمة المرور', secret: true, validator: (v) => v == password.text ? null : 'كلمتا المرور غير متطابقتين'),
+          ] else field(bio, 'نبذة عنك', validator: (v) => (v?.length ?? 0) <= 500 ? null : 'الحد الأقصى 500 حرف'),
+          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'جارٍ الحفظ...' : editing ? 'حفظ' : 'إنشاء الحساب')),
+        ],
+      ])));
+}
+class Comments extends StatefulWidget {
+  const Comments({super.key, required this.api, required this.postId});
+  final Api api;
+  final String postId;
+  @override
+  State<Comments> createState() => _CommentsState();
+}
+class _CommentsState extends State<Comments> {
+  final text = TextEditingController();
+  bool busy = false;
+  int revision = 0;
+  String get path => '/api/posts/${widget.postId}/comments';
+  @override
+  void dispose() { text.dispose(); super.dispose(); }
+  Future<void> send() async {
+    if (busy || text.text.trim().isEmpty) return;
+    setState(() => busy = true);
+    try {
+      await widget.api.request(path, method: 'POST', body: {'text': text.text.trim()});
+      if (mounted) setState(() { text.clear(); revision++; });
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally { if (mounted) setState(() => busy = false); }
+  }
+  @override
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('التعليقات')),
+    body: Column(children: [
+      Expanded(child: DataPanel(key: ValueKey(revision), api: widget.api, path: path, field: 'comments',
+        render: (item) => Card(child: ListTile(title: Text(name(item['author'])), subtitle: Text(item['text']?.toString() ?? ''))))),
+      SafeArea(top: false, child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [
+        Expanded(child: TextField(controller: text, maxLength: 2000, decoration: const InputDecoration(hintText: 'اكتب تعليقاً', counterText: ''))),
+        IconButton(onPressed: busy ? null : send, icon: const Icon(Icons.send)),
+      ]))),
+    ]));
+}
