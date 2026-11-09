@@ -11,6 +11,9 @@ on:
       - 'server/src/middleware/auth.js'
       - 'server/test/school-avatar-curriculum.test.js'
       - 'server/test/school-avatar-renderer.test.js'
+      - 'server/test/school-virtual-arabic-voice.test.js'
+      - 'server/src/services/school-virtual-tts.js'
+      - 'server/src/routes/school-virtual.routes.js'
       - 'school-avatar-renderer.js'
       - 'school-avatar-video.js'
       - 'school-virtual-classroom.js'
@@ -25,7 +28,7 @@ permissions:
 
 jobs:
   isolated-tests:
-    name: Six isolated avatar and curriculum checks
+    name: Isolated avatar, curriculum and Arabic speech checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -42,9 +45,11 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
       - name: Run isolated curriculum security tests
-        run: node --test server/test/school-avatar-curriculum.test.js server/test/school-avatar-renderer.test.js
+        run: node --test server/test/school-avatar-curriculum.test.js server/test/school-avatar-renderer.test.js server/test/school-virtual-arabic-voice.test.js
       - name: Check browser JavaScript syntax
         run: |
           node --check school-avatar-renderer.js
           node --check school-avatar-video.js
           node --check school-virtual-classroom.js
+          node --check server/src/services/school-virtual-tts.js
+          node --check server/src/routes/school-virtual.routes.js
