@@ -312,6 +312,23 @@
         padding:28px 18px;
       }
     }
+
+    @media(max-width:760px){
+      body{background:radial-gradient(circle at 90% 0%,#6544ca60,transparent 43%),linear-gradient(170deg,#101b3e,#090d22 55%,#1c123d)!important}
+      .topbar{padding:15px 19px!important}
+      .brand span:last-child{display:inline!important;font-size:17px!important}
+      .layout{background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;display:flex!important;flex-direction:column!important;gap:14px!important}
+      .visual{border-radius:30px!important;background:linear-gradient(125deg,#5632ad,#146d94)!important;padding:25px 22px!important;box-shadow:0 18px 42px #070e2a77!important}
+      .visual h1{font-size:29px!important}
+      .visual p{font-size:13px!important;line-height:1.7!important}
+      .visual .badge{background:#ffffff1d!important;color:#fff!important;border-color:#ffffff3b!important;margin-bottom:8px!important}
+      .form-side{border:1px solid #ffffff25!important;background:linear-gradient(145deg,#17254c,#11182f)!important;border-radius:28px!important;padding:27px 19px!important;box-shadow:0 16px 38px #0007!important}
+      .form-side h2{font-size:26px!important}
+      .field input{min-height:51px!important;border-radius:15px!important;background:#101a39!important;border-color:#6e88af60!important}
+      .btn{background:linear-gradient(105deg,#5c68ff,#168fc4,#16b7ac)!important;min-height:54px!important;border-radius:18px!important}
+      .logo{background:linear-gradient(135deg,#9569ff,#16b5ae)!important}
+      main{padding:4px 14px 28px!important;place-items:start center!important}
+    }
   </style>
 </head>
 
@@ -491,7 +508,20 @@
         storage.setItem('token', data.token);
         storage.setItem('user', JSON.stringify(data.user));
         message.textContent = 'تم تسجيل الدخول باسم ' + (data.user.displayName || data.user.fullName || data.user.username || 'المستخدم') + '، جارٍ فتح المنصة...';
-        setTimeout(() => { window.location.href = 'taktak.html'; }, 500);
+        try {
+          const upgraded = await fetch(API_BASE_URL + '/api/auth/upgrade', {
+            method: 'POST', credentials: 'include', cache: 'no-store',
+            headers: { Authorization: 'Bearer ' + data.token, Accept: 'application/json' }
+          });
+          if (!upgraded.ok) {
+            message.textContent = 'تم الدخول، لكن تعذر تفعيل جلسة المنصة (' + upgraded.status + ').';
+            return;
+          }
+          window.location.replace(API_BASE_URL + '/taktak.html');
+        } catch (_) {
+          message.textContent = 'تم تسجيل الدخول، لكن تعذر فتح جلسة المنصة. حاول مجدداً.';
+          return;
+        }
       }
     } catch (error) {
       message.className = 'message info';
