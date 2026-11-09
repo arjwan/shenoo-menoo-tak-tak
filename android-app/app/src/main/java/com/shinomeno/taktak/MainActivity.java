@@ -7,6 +7,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.database.Cursor;
+import android.provider.ContactsContract;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -38,6 +40,7 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final String SITE_ORIGIN = "https://shinomino.com";
     private static final int FILE_PICKER = 41;
+    private static final int CONTACT_PICKER = 45;
     private static final int MEDIA_PERMISSIONS = 42;
     private static final int NOTIFICATION_PERMISSION = 43;
     private static final int LOCATION_PERMISSION = 44;
@@ -341,6 +344,34 @@ public final class MainActivity extends Activity {
             return;
         }
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CONTACT_PICKER) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null
+                    && webView != null && webView.getUrl() != null
+                    && webView.getUrl().startsWith(SITE_ORIGIN + "/")) {
+                Uri selected = data.getData();
+                try (Cursor cursor = getContentResolver().query(
+                        selected,
+                        new String[]{
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                        }, null, null, null)) {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        String name = cursor.getString(0);
+                        String phone = cursor.getString(1);
+                        if (phone != null && !phone.trim().isEmpty()) {
+                            String payload = "[{\\\"name\\\":[" + JSONObject.quote(name == null ? "جهة اتصال" : name)
+                                    + "],\\\"tel\\\":[" + JSONObject.quote(phone) + "]}]";
+                            webView.evaluateJavascript(
+                                    "window.dispatchEvent(new CustomEvent('shnomano:contacts',{detail:"
+                                    + payload + "}));", null);
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // The user may revoke or cancel a one-time contact selection.
+                }
+            }
+            return;
+        }
         if (requestCode == FILE_PICKER && fileCallback != null) {
             fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
             fileCallback = null;
@@ -348,6 +379,21 @@ public final class MainActivity extends Activity {
     }
 
     private final class NativeBridge {
+        @JavascriptInterface
+        public void pickPhoneContact() {
+            runOnUiThread(() -> {
+                if (webView == null || webView.getUrl() == null
+                        || !webView.getUrl().startsWith(SITE_ORIGIN + "/calls.html")) return;
+                try {
+                    Intent picker = new Intent(Intent.ACTION_PICK,
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
+                    startActivityForResult(picker, CONTACT_PICKER);
+                } catch (ActivityNotFoundException ignored) {
+                    // Keep the screen usable when the system has no contacts provider.
+                }
+            });
+        }
+
         @JavascriptInterface
         public void scanFriendQr() {
             runOnUiThread(() -> new IntentIntegrator(MainActivity.this)
