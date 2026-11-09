@@ -386,6 +386,10 @@ class _ComposeState extends State<Compose> {
         uploadId = await widget.api.uploadMedia(name: file.name, mime: type, size: size, stream: file.readAsByteStream(), purpose: widget.purpose,
           onProgress: (value) { if (mounted) setState(() => progress = value); });
       }
+      if (!mounted) {
+        if (uploadId != null) { try { await widget.api.request('/api/uploads/$uploadId/abort', method: 'DELETE'); } catch (_) {} }
+        return;
+      }
       await widget.api.request('/api/${widget.purpose}', method: 'POST', body: {'text': text.text.trim(), 'visibility': 'everyone',
         if (uploadId != null && widget.purpose == 'posts') 'uploadId': uploadId,
         if (uploadId != null && widget.purpose == 'stories') 'uploads': {'main': uploadId},
