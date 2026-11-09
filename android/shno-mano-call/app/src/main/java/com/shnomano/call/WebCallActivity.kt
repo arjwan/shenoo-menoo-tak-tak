@@ -361,8 +361,10 @@ class WebCallActivity : ComponentActivity() {
             when {
                 state.contains("متصل الآن") -> {
                     stopRingback()
-                    if (connectedAt == 0L) connectedAt = SystemClock.elapsedRealtime()
-                    updateCallDuration()
+                    if (connectedAt == 0L) {
+                        connectedAt = SystemClock.elapsedRealtime()
+                        updateCallDuration()
+                    }
                 }
                 else -> {
                     if (connectedAt == 0L) callStatusLabel?.text = state
