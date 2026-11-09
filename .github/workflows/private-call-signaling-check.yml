@@ -1,0 +1,26 @@
+name: Verify private calls against Cloudflare session API
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/cloudflare-private-webrtc-signaling-20261109
+    paths:
+      - 'cloudflare/call-signaling.js'
+      - 'cloudflare/worker.js'
+      - 'call-signaling.js'
+      - 'private-messages.js'
+      - 'messages.html'
+      - 'tests/private-call-signaling.test.mjs'
+      - '.github/workflows/private-call-signaling-check.yml'
+jobs:
+  test-call-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloudflare/call-signaling.js
+      - run: node --check call-signaling.js
+      - run: node --check private-messages.js
+      - run: node --test tests/private-call-signaling.test.mjs
