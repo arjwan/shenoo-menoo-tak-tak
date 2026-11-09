@@ -28,5 +28,12 @@ jobs:
           test -n "$ANDROID_HOME"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
-      - name: Compile independent Android call app
-        run: bash ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
+      - name: Compile and package isolated debug APK
+        run: bash ./gradlew :app:assembleDebug --no-daemon --stacktrace
+      - name: Upload test APK without replacing production installation
+        uses: actions/upload-artifact@v4
+        with:
+          name: shno-mano-call-standalone-debug
+          path: android/shno-mano-call/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
