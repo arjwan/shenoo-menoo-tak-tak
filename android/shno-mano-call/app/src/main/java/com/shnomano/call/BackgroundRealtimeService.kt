@@ -29,7 +29,7 @@ class BackgroundRealtimeService : Service() {
     private var poller: ScheduledExecutorService? = null
     private var callCursor = 0L
     private val seenUnread = mutableMapOf<String, Int>()
-    private val groupCursors = mutableMapOf<String, Long>()
+    private var groupCursor = 0L
     private val notifiedGroupCalls = mutableSetOf<String>()
     private var baselineLoaded = false
     private var lastMessagesCheck = 0L
@@ -195,25 +195,17 @@ class BackgroundRealtimeService : Service() {
 
     // Private group invitations also arrive when the group's web page is closed.
     private fun pollGroups() {
-        val list = getJson("api/call-groups").optJSONArray("groups") ?: return
-        for (index in 0 until list.length()) {
-            val group = list.optJSONObject(index) ?: continue
-            val groupId = group.optString("id")
-            if (groupId.isBlank()) continue
-            val cursor = groupCursors[groupId] ?: 0L
-            val response = getJson("api/call-groups/$groupId/signals?after=$cursor")
-            val signals = response.optJSONArray("signals") ?: continue
-            for (i in 0 until signals.length()) {
-                val signal = signals.optJSONObject(i) ?: continue
-                if (signal.optString("event") == "invite") {
-                    val callId = signal.optString("callId")
-                    if (callId.isNotBlank() && notifiedGroupCalls.add(callId)) {
-                        notifyGroupCall(groupId, group.optString("name"), callId)
-                    }
-                }
+        val response = getJson("api/call-groups/alerts?after=$groupCursor")
+        val invites = response.optJSONArray("invites") ?: return
+        for (i in 0 until invites.length()) {
+            val event = invites.optJSONObject(i) ?: continue
+            val callId = event.optString("callId")
+            val groupId = event.optString("groupId")
+            if (callId.isNotBlank() && groupId.isNotBlank() && notifiedGroupCalls.add(callId)) {
+                notifyGroupCall(groupId, event.optString("name"), callId)
             }
-            groupCursors[groupId] = response.optLong("cursor", cursor)
         }
+        groupCursor = response.optLong("cursor", groupCursor)
     }
 
     private fun notifyGroupCall(groupId: String, name: String, callId: String) {
