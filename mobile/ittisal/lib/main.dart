@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'media.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'web_api.dart';
 export 'web_api.dart';
 import 'package:flutter/material.dart';
@@ -155,6 +156,14 @@ class _HomeState extends State<Home> {
               Text(item['content']?.toString() ?? ''),
               const SizedBox(height: 16),
               SelectableText(item['sourceUrl']?.toString() ?? object(item['file'])['url']?.toString() ?? ''),
+              FilledButton.icon(onPressed: () async {
+                final uri = Uri.tryParse(item['sourceUrl']?.toString() ?? object(item['file'])['url']?.toString() ?? '');
+                try {
+                  if (uri == null || uri.scheme != 'https' || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                    throw const ApiError('تعذر فتح الكتاب', 0);
+                  }
+                } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
+              }, icon: const Icon(Icons.menu_book), label: const Text('فتح الكتاب الأصلي')),
             ]))))));
     } else if ((isMessenger && selected == 0) || (!isMessenger && selected == 3)) {
       body = DataPanel(api: widget.api, path: '/api/conversations', field: 'conversations', pollEvery: const Duration(seconds: 10),

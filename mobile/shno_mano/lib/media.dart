@@ -39,8 +39,8 @@ class _MediaViewState extends State<MediaView> with WidgetsBindingObserver {
     }
     if (loading) return const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()));
     if (error != null) return Padding(padding: const EdgeInsets.all(30), child: Text(error!));
-    if (controller == null) return Padding(padding: const EdgeInsets.all(24), child: FilledButton.icon(
-      onPressed: load, icon: const Icon(Icons.play_arrow), label: Text(widget.item['type'] == 'audio' ? 'فتح الصوت' : 'فتح الفيديو')));
+    if (controller == null) { return Padding(padding: const EdgeInsets.all(24), child: FilledButton.icon(
+      onPressed: load, icon: const Icon(Icons.play_arrow), label: Text(widget.item['type'] == 'audio' ? 'فتح الصوت' : 'فتح الفيديو'))); }
     final player = controller!;
     return ValueListenableBuilder<VideoPlayerValue>(valueListenable: player, builder: (context, value, _) => Column(children: [
       if (widget.item['type'] == 'audio') const Padding(padding: EdgeInsets.all(24), child: Icon(Icons.audiotrack, size: 48))
