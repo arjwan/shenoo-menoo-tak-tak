@@ -1,0 +1,28 @@
+name: Mobile WebView Overlay Regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/mobile-chat-obstruction-20261109
+    paths:
+      - 'calls.css'
+      - 'messages-call-fix.css'
+      - 'taktak-layout.css'
+      - 'taktak-mobile-fixes.css'
+      - 'tests/mobile-webview-overlay.test.cjs'
+      - '.github/workflows/mobile-overlay-visual-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate mobile scrolling and non-obscured chat
+        run: node --test tests/mobile-webview-overlay.test.cjs
