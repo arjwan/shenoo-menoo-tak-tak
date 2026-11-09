@@ -246,6 +246,7 @@ class BackgroundRealtimeService : Service() {
         val url = SHNO_MANO_BASE_URL + "call-groups.html?group=" + Uri.encode(groupId)
         val open = Intent(this, WebSectionActivity::class.java).apply {
             putExtra(WebSectionActivity.EXTRA_URL, url)
+            putExtra(WebSectionActivity.EXTRA_GROUP_INVITE, true)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pending = PendingIntent.getActivity(
@@ -262,7 +263,7 @@ class BackgroundRealtimeService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "فتح وقبول الدعوة", pending).build())
+            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "عرض المكالمة", pending).build())
             .build()
         getSystemService(NotificationManager::class.java).notify(callId.hashCode(), notification)
     }
