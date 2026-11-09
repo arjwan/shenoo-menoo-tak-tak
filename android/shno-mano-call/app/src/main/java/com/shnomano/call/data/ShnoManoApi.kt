@@ -122,6 +122,7 @@ interface ShnoManoApi {
     @POST("api/auth/verify-registration") suspend fun verifyRegistration(@Body body: VerifyRegistrationRequest): VerificationResponse
     @POST("api/auth/resend-verification") suspend fun resendVerification(@Body body: ResendVerificationRequest): VerificationResponse
     @POST("api/auth/signin") suspend fun signIn(@Body body: SignInRequest): SignInResponse
+    @GET("api/auth/session") suspend fun currentSession(): SignInResponse
     @GET("api/phone-contacts") suspend fun phoneContacts(): PhoneContactsResponse
     @PUT("api/phone-contacts") suspend fun savePhoneContacts(@Body body: SavePhoneContactsRequest): PhoneContactsResponse
     @GET("api/friends") suspend fun friends(): FriendsResponse
