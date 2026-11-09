@@ -1,0 +1,44 @@
+name: Production Shno Mano call audio smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'call-audio.js'
+      - 'incoming-call-global.js'
+      - 'private-messages.js'
+      - 'communication-dock.js'
+      - 'auth-guard.js'
+      - 'messages.html'
+      - 'taktak.html'
+      - 'calls.html'
+      - 'friends.html'
+      - '.github/workflows/shno-call-audio-production-smoke.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/call-audio-ringback.test.mjs tests/incoming-call-global.test.mjs
+      - name: Confirm live Shno Mano serves the ringing implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=https://shinomino.com
+          for i in $(seq 1 16); do
+            curl -fsSL --max-time 20 "$base/messages.html" -o /tmp/shno-messages.html
+            if grep -q 'private-messages.js?v=20261109-calltone-2' /tmp/shno-messages.html; then break; fi
+            sleep 5
+          done
+          grep -q 'private-messages.js?v=20261109-calltone-2' /tmp/shno-messages.html
+          curl -fsSL --max-time 20 "$base/call-audio.js?v=20261109-ring-1" -o /tmp/shno-call-audio.js
+          curl -fsSL --max-time 20 "$base/private-messages.js?v=20261109-calltone-2" -o /tmp/shno-call-messages.js
+          curl -fsSL --max-time 20 "$base/communication-dock.js?v=20261109-livecall-1" -o /tmp/shno-dock.js
+          grep -q 'startRingback' /tmp/shno-call-audio.js
+          grep -q 'startIncoming' /tmp/shno-call-audio.js
+          grep -q 'ShnoCallAudio.startRingback' /tmp/shno-call-messages.js
+          grep -q 'messages.html?user=' /tmp/shno-dock.js
+          echo 'PASS: live audio, ringback and sidebar call route published'
