@@ -108,6 +108,21 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int selected = 0;
   String feed = 'posts';
+  bool redirecting = false;
+  @override
+  void initState() { super.initState(); widget.api.onUnauthorized = expired; }
+  void expired() {
+    if (redirecting || !mounted) return;
+    redirecting = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => const SignIn()), (_) => false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('انتهت الجلسة. سجل الدخول مجدداً.')));
+    });
+  }
+  @override
+  void dispose() { widget.api.onUnauthorized = null; super.dispose(); }
+
   Future<void> logout() async {
     try { await widget.api.logout(); } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -144,8 +159,9 @@ class _HomeState extends State<Home> {
             } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
           }));
     } else if (isMessenger && selected == 3) {
-      body = DataPanel(api: widget.api, path: '/api/social/notifications', field: 'notifications',
-        render: (item) => ListTile(leading: const Icon(Icons.notifications_outlined), title: Text(item['text']?.toString() ?? '')));
+      body = NotificationList(api: widget.api);
+    } else if (!isMessenger && selected == 2) {
+      body = Discover(api: widget.api);
     } else if (!isMessenger && selected == 1) {
       body = DataPanel(api: widget.api, path: '/api/school/curriculum/catalog', field: 'items',
         render: (item) => Card(child: ListTile(leading: const Icon(Icons.school),
@@ -189,23 +205,24 @@ class _HomeState extends State<Home> {
         Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 27)),
         Text(isMessenger ? 'Ittisal' : 'Tak Tak', style: TextStyle(fontSize: 13)),
       ]), actions: [
+        IconButton(tooltip: 'بحث', icon: const Icon(Icons.search), onPressed: () => open(Scaffold(
+          appBar: AppBar(title: const Text('البحث')), body: Discover(api: widget.api)))),
         IconButton(tooltip: 'الإشعارات', icon: const Icon(Icons.notifications_outlined),
           onPressed: () => open(Scaffold(appBar: AppBar(title: const Text('الإشعارات')),
-            body: DataPanel(api: widget.api, path: '/api/social/notifications', field: 'notifications',
-              render: (item) => ListTile(title: Text(item['text']?.toString() ?? '')))))),
+            body: NotificationList(api: widget.api)))),
       ]),
       body: Column(children: [
         Padding(padding: const EdgeInsets.all(10), child: Row(children: List.generate(3, (i) =>
           Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: ChoiceChip(
             selected: selected == i, label: Text(labels[i], style: const TextStyle(fontSize: 12)),
             onSelected: (_) => setState(() => selected = i))))))),
-        if (!isMessenger && (selected == 0 || selected == 2)) Padding(padding: const EdgeInsets.symmetric(horizontal: 12),
+        if (!isMessenger && selected == 0) Padding(padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(children: ['posts', 'stories', 'reels'].map((kind) => Expanded(child: TextButton(
             onPressed: () => setState(() => feed = kind), child: Text({'posts': 'المنشورات', 'stories': 'القصص', 'reels': 'الريلز'}[kind]!,
               style: TextStyle(fontWeight: feed == kind ? FontWeight.bold : FontWeight.normal))))).toList())),
         Expanded(child: body),
       ]),
-      floatingActionButton: !isMessenger && (selected == 0 || selected == 2)
+      floatingActionButton: !isMessenger && selected == 0
         ? FloatingActionButton(onPressed: () => open(Compose(api: widget.api, purpose: feed == 'stories' ? 'stories' : 'posts')),
           backgroundColor: accent, foregroundColor: Colors.white, child: const Icon(Icons.add)) : null,
       bottomNavigationBar: NavigationBar(selectedIndex: selected,
@@ -453,6 +470,7 @@ class _WebAccountFormState extends State<WebAccountForm> {
   final password = TextEditingController(), confirm = TextEditingController(), bio = TextEditingController();
   Map<String, dynamic> original = {};
   bool loading = false, busy = false;
+  bool accepted = false;
   String? error;
   bool get editing => widget.api != null;
   @override
@@ -490,6 +508,7 @@ class _WebAccountFormState extends State<WebAccountForm> {
         await api.request('/api/auth/signup', method: 'POST', body: {
           'fullName': fullName.text.trim(), 'username': username.text.trim(),
           'email': email.text.trim(), 'password': password.text, 'confirmPassword': confirm.text,
+          'privacyAccepted': accepted, 'termsAccepted': accepted,
         });
       }
       if (!mounted) return;
@@ -515,7 +534,15 @@ class _WebAccountFormState extends State<WebAccountForm> {
             field(password, 'كلمة المرور', secret: true, validator: (v) => v != null && v.length >= 10 && v.length <= 128 ? null : 'كلمة المرور من 10 إلى 128 حرفاً'),
             field(confirm, 'تأكيد كلمة المرور', secret: true, validator: (v) => v == password.text ? null : 'كلمتا المرور غير متطابقتين'),
           ] else field(bio, 'نبذة عنك', validator: (v) => (v?.length ?? 0) <= 500 ? null : 'الحد الأقصى 500 حرف'),
-          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'جارٍ الحفظ...' : editing ? 'حفظ' : 'إنشاء الحساب')),
+          if (!editing) ...[
+            CheckboxListTile(value: accepted, onChanged: busy ? null : (value) => setState(() => accepted = value ?? false),
+              title: const Text('قرأت اتفاقية الخصوصية والأمان وأوافق عليها')),
+            TextButton(onPressed: () async {
+              try { await launchUrl(Uri.parse('https://shinomino.com/privacy.html'), mode: LaunchMode.externalApplication); }
+              catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
+            }, child: const Text('قراءة الاتفاقية')),
+          ],
+          FilledButton(onPressed: busy || (!editing && !accepted) ? null : save, child: Text(busy ? 'جارٍ الحفظ...' : editing ? 'حفظ' : 'إنشاء الحساب')),
         ],
       ])));
 }
@@ -552,4 +579,109 @@ class _CommentsState extends State<Comments> {
         IconButton(onPressed: busy ? null : send, icon: const Icon(Icons.send)),
       ]))),
     ]));
+}
+
+class Discover extends StatefulWidget {
+  const Discover({super.key, required this.api});
+  final Api api;
+  @override
+  State<Discover> createState() => _DiscoverState();
+}
+class _DiscoverState extends State<Discover> {
+  final text = TextEditingController();
+  Timer? debounce;
+  String query = '';
+  @override
+  void dispose() { debounce?.cancel(); text.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    Padding(padding: const EdgeInsets.all(12), child: TextField(controller: text, maxLength: 60,
+      decoration: const InputDecoration(labelText: 'البحث عن الأشخاص', prefixIcon: Icon(Icons.search)),
+      onChanged: (value) { debounce?.cancel(); debounce = Timer(const Duration(milliseconds: 400), () {
+        if (mounted) setState(() => query = value.trim());
+      }); })),
+    Expanded(child: query.length < 2 ? const EmptyState(text: 'اكتب حرفين على الأقل للبحث')
+      : DataPanel(api: widget.api, path: '/api/users/search?q=${Uri.encodeQueryComponent(query)}', field: 'users',
+        render: (item) => ListTile(title: Text(name(item)), subtitle: Text(item['username']?.toString() ?? ''),
+          leading: const CircleAvatar(child: Icon(Icons.person)),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => WebUser(api: widget.api, id: item['id'].toString())))))),
+  ]);
+}
+class WebUser extends StatefulWidget {
+  const WebUser({super.key, required this.api, required this.id});
+  final Api api;
+  final String id;
+  @override
+  State<WebUser> createState() => _WebUserState();
+}
+class _WebUserState extends State<WebUser> {
+  late Future<Map<String, dynamic>> data;
+  bool busy = false;
+  String get path => '/api/users/${widget.id}';
+  @override
+  void initState() { super.initState(); data = widget.api.request(path); }
+  Future<void> follow(bool following) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await widget.api.request('$path/follow', method: following ? 'DELETE' : 'POST');
+      if (mounted) setState(() => data = widget.api.request(path));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally { if (mounted) setState(() => busy = false); }
+  }
+  Future<void> chat(Map<String, dynamic> user) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final result = await widget.api.request('/api/conversations/${widget.id}', method: 'POST');
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Chat(api: widget.api,
+        conversation: {...object(result['conversation']), 'otherUser': user})));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally { if (mounted) setState(() => busy = false); }
+  }
+  @override
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('الملف الشخصي')),
+    body: FutureBuilder<Map<String, dynamic>>(future: data, builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+      if (snapshot.hasError) return EmptyState(text: snapshot.error.toString());
+      final user = object(snapshot.data?['user']);
+      return ListView(padding: const EdgeInsets.all(20), children: [
+        const Icon(Icons.account_circle, size: 80, color: brand),
+        Text(name(user), textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text('@${user['username'] ?? ''}', textAlign: TextAlign.center),
+        Text('${user['followersCount'] ?? 0} متابع', textAlign: TextAlign.center),
+        FilledButton(onPressed: busy ? null : () => follow(user['isFollowing'] == true),
+          child: Text(user['isFollowing'] == true ? 'إلغاء المتابعة' : 'متابعة')),
+        OutlinedButton.icon(onPressed: busy ? null : () => chat(user), icon: const Icon(Icons.chat), label: const Text('إرسال رسالة')),
+      ]);
+    }));
+}
+class NotificationList extends StatefulWidget {
+  const NotificationList({super.key, required this.api});
+  final Api api;
+  @override
+  State<NotificationList> createState() => _NotificationListState();
+}
+class _NotificationListState extends State<NotificationList> {
+  int revision = 0;
+  bool busy = false;
+  Future<void> read(String? id) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await widget.api.request(id == null ? '/api/social/notifications/read-all' : '/api/social/notifications/$id/read', method: 'PATCH');
+      if (mounted) setState(() => revision++);
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally { if (mounted) setState(() => busy = false); }
+  }
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    TextButton(onPressed: busy ? null : () => read(null), child: const Text('تعليم الكل كمقروء')),
+    Expanded(child: DataPanel(key: ValueKey(revision), api: widget.api,
+      path: '/api/social/notifications', field: 'notifications', pollEvery: const Duration(seconds: 15),
+      render: (item) => ListTile(leading: Icon(item['readAt'] == null ? Icons.notifications_active : Icons.notifications_none),
+        title: Text(item['text']?.toString() ?? ''), onTap: busy ? null : () => read(item['id']?.toString())))),
+  ]);
 }

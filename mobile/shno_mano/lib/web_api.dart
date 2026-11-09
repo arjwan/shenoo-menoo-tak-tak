@@ -9,6 +9,7 @@ class Api {
   Api({Uri? baseUri}) : baseUri = baseUri ?? Uri.parse('https://shinomino.com');
   final Uri baseUri;
   Cookie? _session;
+  void Function()? onUnauthorized;
   bool get hasSession => _session != null;
   Map<String, String> get mediaHeaders => _session == null
       ? const {} : {HttpHeaders.cookieHeader: '${_session!.name}=${_session!.value}'};
@@ -35,7 +36,7 @@ class Api {
       if (body != null) req.write(jsonEncode(body));
       final res = await req.close().timeout(const Duration(seconds: 25));
       final text = await utf8.decoder.bind(res).join().timeout(const Duration(seconds: 25));
-      if (res.statusCode == 401 && path != '/api/auth/signin') clearSession();
+      if (res.statusCode == 401 && path != '/api/auth/signin') { clearSession(); onUnauthorized?.call(); }
       final dynamic value;
       try { value = jsonDecode(text); }
       catch (_) { throw ApiError('الخادم لم يُرجع بيانات صالحة. حاول مجدداً.', res.statusCode); }
@@ -123,7 +124,7 @@ class Api {
       req.add(bytes);
       final response = await req.close().timeout(const Duration(seconds: 90));
       final value = jsonDecode(await utf8.decoder.bind(response).join().timeout(const Duration(seconds: 30)));
-      if (response.statusCode == 401) clearSession();
+      if (response.statusCode == 401) { clearSession(); onUnauthorized?.call(); }
       if (response.statusCode != 200 || value is! Map || value['ok'] != true) {
         throw ApiError(value is Map ? value['message']?.toString() ?? 'تعذر رفع الملف' : 'تعذر رفع الملف', response.statusCode);
       }

@@ -78,7 +78,8 @@ test('Original web sessions, native text, reactions, comments and isolation shar
   r=await call('/api/posts/'+post.id+'/comments',{cookie:alice.cookie});assert.equal(r.data.comments[0].text,'تعليق من الويب');
   r=await call('/api/posts/'+post.id,{method:'DELETE',cookie:stranger.cookie});assert.equal(r.status,403);
   r=await call('/api/conversations/'+bob.id,{method:'POST',cookie:alice.cookie});assert.equal(r.status,403,'Non-mutual accounts must not message');
-  db.prepare('INSERT INTO follows(follower_id,followed_id) VALUES(?,?),(?,?)').run(alice.id,bob.id,bob.id,alice.id);
+  r=await call('/api/users/'+bob.id+'/follow',{method:'POST',cookie:alice.cookie});assert.equal(r.status,200);
+  r=await call('/api/users/'+alice.id+'/follow',{method:'POST',cookie:bob.cookie});assert.equal(r.status,200);
   r=await call('/api/conversations/'+bob.id,{method:'POST',cookie:alice.cookie});assert.equal(r.status,200,JSON.stringify(r.data));
   const conversation=r.data.conversation.id;
   r=await call('/api/conversations/'+conversation+'/messages',{method:'POST',cookie:alice.cookie,body:{type:'text',text:'رسالة مشتركة'}});assert.equal(r.status,201,JSON.stringify(r.data));
