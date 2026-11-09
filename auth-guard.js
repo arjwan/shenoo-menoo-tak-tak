@@ -101,7 +101,7 @@
   // Receive incoming calls on every authenticated page, not only the chat page.
   if (!document.querySelector('script[data-shno-incoming-calls]')) {
     var incoming=document.createElement('script');
-    incoming.src='incoming-call-global.js?v=20261109-1';
+    incoming.src='incoming-call-global.js?v=20261110-desktop-1';
     incoming.async=false;
     incoming.setAttribute('data-shno-incoming-calls','1');
     document.head.appendChild(incoming);
