@@ -25,8 +25,8 @@ android {
         applicationId = "com.shnomano.call"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.3.4"
+        versionCode = 18
+        versionName = "1.3.5"
     }
 
     signingConfigs {
