@@ -365,7 +365,7 @@ class WebCallActivity : ComponentActivity() {
         val call = pendingIncomingCall ?: return
         if (incomingGroupCall || !webPageReady || !::webView.isInitialized) return
         val payload = JSONObject().apply { put("callId", call.callId); put("from", call.from); put("conversationId", call.conversationId); put("type", call.type); put("callerName", call.callerName) }.toString()
-        webView.evaluateJavascript("(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);return 'ready';}return 'waiting';})()") { result ->
+        webView.evaluateJavascript("(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){window.shnoHandleIncomingCall(p);var modal=document.querySelector('[data-call-modal]');var incoming=document.querySelector('[data-incoming-call-actions]');if(modal)modal.hidden=false;if(incoming)incoming.hidden=false;return modal&&incoming?'ready':'waiting';}return 'waiting';})()") { result ->
             if (result?.contains("ready") == true) { BackgroundRealtimeService.acknowledgeIncomingCall(call.callId); pendingIncomingCall = null }
             else mainHandler.postDelayed({ deliverPendingIncomingCall() }, 250)
         }
