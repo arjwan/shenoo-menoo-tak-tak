@@ -415,6 +415,7 @@ private fun CallsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMessa
     LaunchedEffect(Unit) { friends = repo.loadFriends() }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("المكالمات", "صوت وفيديو مع الأصدقاء")
+        Button(onClick = { context.startActivity(Intent(context, WebSectionActivity::class.java).putExtra(WebSectionActivity.EXTRA_URL, WebSectionActivity.BASE + "call-groups.html")) }) { Text("👥 المجموعات والدردشة الجماعية") }
         Spacer(Modifier.height(14.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(friends, key = { it.userId }) { f ->
