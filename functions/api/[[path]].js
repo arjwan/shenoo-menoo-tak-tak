@@ -57,7 +57,7 @@ export async function onRequest(context) {
   if (pathname === '/api/school' || pathname.startsWith('/api/school/')) {
     // A verified MFA developer may use the original school endpoints without
     // registering as a separate student or teacher. No browser-supplied role.
-    if (/^\\/api\\/school\\/(?:virtual|classroom)(?:\\/|$)/.test(pathname) &&
+    if (/^\/api\/school\/(?:virtual|classroom)(?:\/|$)/.test(pathname) &&
         context.env.SCHOOL_DEVELOPER_BRIDGE_SECRET?.length >= 32) {
       const checkUrl = new URL('/api/developer/me', context.request.url);
       const headers = new Headers();
@@ -71,11 +71,11 @@ export async function onRequest(context) {
           const claims = {aud:'sumer-school-developer',role:'developer',id:String(actor.user.id),
             username:String(actor.user.username || 'developer').slice(0,100),iat:Date.now()};
           const encoded = btoa(String.fromCharCode(...enc.encode(JSON.stringify(claims))))
-            .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');
+            .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
           const key = await crypto.subtle.importKey('raw',enc.encode(context.env.SCHOOL_DEVELOPER_BRIDGE_SECRET),
             {name:'HMAC',hash:'SHA-256'},false,['sign']);
           const sig = new Uint8Array(await crypto.subtle.sign('HMAC',key,enc.encode(encoded)));
-          const signed = btoa(String.fromCharCode(...sig)).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');
+          const signed = btoa(String.fromCharCode(...sig)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
           const forwarded = new Headers(context.request.headers);
           forwarded.delete('x-school-developer-bridge');
           forwarded.delete('authorization');
