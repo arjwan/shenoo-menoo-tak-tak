@@ -1,30 +1,31 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:ittisal/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Arabic login validates input and obscures password', (tester) async {
     await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
+    expect(find.text(title), findsOneWidget);
     expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.text('دخول'));
+    await tester.pump();
+    expect(find.text('أدخل اسم المستخدم وكلمة المرور'), findsOneWidget);
+    final fields = tester.widgetList<TextField>(find.byType(TextField)).toList();
+    expect(fields.last.obscureText, isTrue);
+    expect(Directionality.of(tester.element(find.text('دخول'))), TextDirection.rtl);
   });
+  testWidgets('Tabs navigate without counter demo or fabricated records', (tester) async {
+    final api = FakeApi();
+    await tester.pumpWidget(MaterialApp(home: Directionality(textDirection: TextDirection.rtl,
+      child: Home(api: api, user: const {'fullName': 'اختبار'}))));
+    await tester.pumpAndSettle();
+    expect(find.text('لا توجد بيانات لعرضها بعد'), findsOneWidget);
+    await tester.tap(find.text('المزيد').last);
+    await tester.pumpAndSettle();
+    expect(find.text('تسجيل الخروج'), findsOneWidget);
+  });
+}
+class FakeApi extends Api {
+  @override
+  Future<Map<String, dynamic>> request(String path, {String method = 'GET', Map<String, dynamic>? body}) async =>
+    {'ok': true, 'posts': [], 'conversations': []};
 }

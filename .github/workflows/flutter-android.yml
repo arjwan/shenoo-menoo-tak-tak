@@ -51,6 +51,8 @@ jobs:
         run: flutter pub get
       - name: Analyze
         run: flutter analyze
+      - name: Test native screens
+        run: flutter test
       - name: Build debug APK
         run: flutter build apk --debug
       - name: Upload APK
