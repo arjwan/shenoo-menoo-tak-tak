@@ -17,6 +17,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -60,6 +61,7 @@ class WebCallActivity : ComponentActivity() {
     private var incomingActions: LinearLayout? = null
     private var muteControl: Button? = null
     private var muted = false
+    private var connectedAt = 0L
     private var autoAcceptIncoming = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -356,10 +358,17 @@ class WebCallActivity : ComponentActivity() {
             incomingActions?.visibility = if (show) View.VISIBLE else View.GONE
         }
         @JavascriptInterface fun onState(state: String) = runOnUiThread {
-            callStatusLabel?.text = state
             when {
-                state.contains("يرن") -> startRingback()
-                state.contains("متصل") || state.contains("واردة") || state.contains("إنشاء") -> stopRingback()
+                state.contains("متصل الآن") -> {
+                    stopRingback()
+                    if (connectedAt == 0L) connectedAt = SystemClock.elapsedRealtime()
+                    updateCallDuration()
+                }
+                else -> {
+                    if (connectedAt == 0L) callStatusLabel?.text = state
+                    if (state.contains("يرن")) startRingback()
+                    else if (state.contains("واردة") || state.contains("إنشاء")) stopRingback()
+                }
             }
         }
         @JavascriptInterface fun onEnded(message: String) = runOnUiThread {
@@ -367,6 +376,13 @@ class WebCallActivity : ComponentActivity() {
             if (message.contains("غير متصل") || message.contains("مشغول")) Toast.makeText(this@WebCallActivity, message, Toast.LENGTH_LONG).show()
             if (!isFinishing) finish()
         }
+    }
+
+    private fun updateCallDuration() {
+        if (connectedAt == 0L || isFinishing) return
+        val seconds = (SystemClock.elapsedRealtime() - connectedAt) / 1000
+        callStatusLabel?.text = "متصل • %02d:%02d".format(seconds / 60, seconds % 60)
+        mainHandler.postDelayed({ updateCallDuration() }, 1000)
     }
 
     private fun startRingback() {
