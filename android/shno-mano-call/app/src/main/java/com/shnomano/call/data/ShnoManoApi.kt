@@ -99,7 +99,7 @@ data class ConversationDto(val id: String, val otherUser: OtherUserDto? = null, 
 data class ConversationsResponse(val ok: Boolean = false, val conversations: List<ConversationDto> = emptyList())
 data class ConversationResponse(val ok: Boolean = false, val conversation: ConversationDto? = null, val message: String? = null)
 data class MessagesResponse(val ok: Boolean = false, val conversation: ConversationDto? = null, val messages: List<MessageDto> = emptyList())
-data class SendMessageRequest(val text: String)
+data class SendMessageRequest(val text: String, val type: String = "text")
 data class SendMessageResponse(val ok: Boolean = false, val message: MessageDto? = null)
 data class OkResponse(
     val ok: Boolean = false,
