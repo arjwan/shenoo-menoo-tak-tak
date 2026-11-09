@@ -89,6 +89,15 @@
     return false;
   }());
 
+  // Receive incoming calls on every authenticated page, not only the chat page.
+  if (!document.querySelector('script[data-shno-incoming-calls]')) {
+    var incoming=document.createElement('script');
+    incoming.src='incoming-call-global.js?v=20261109-1';
+    incoming.defer=true;
+    incoming.setAttribute('data-shno-incoming-calls','1');
+    document.head.appendChild(incoming);
+  }
+
   if (!document.querySelector('script[data-shno-presence]')) { var presence=document.createElement('script'); presence.src='presence-client.js?v=20260913-1'; presence.defer=true; presence.setAttribute('data-shno-presence','1'); document.head.appendChild(presence); }
 
   if (!document.querySelector('link[data-shno-communication-dock]')) { var commCss=document.createElement('link'); commCss.rel='stylesheet'; commCss.href='communication-dock.css?v=20260913-toggle-page-4'; commCss.setAttribute('data-shno-communication-dock','1'); document.head.appendChild(commCss); }
