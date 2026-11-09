@@ -192,8 +192,10 @@ class WebCallActivity : ComponentActivity() {
             if (invokeCallControl("[data-call-mute]")) muted = !muted
         }
         first.addView(mute, LinearLayout.LayoutParams(0, -2, 1f))
-        first.addView(circleAction("⠿", "لوحة الأرقام", outline) {
-            Toast.makeText(this, "لوحة الأرقام غير مستخدمة في مكالمات الإنترنت", Toast.LENGTH_SHORT).show()
+        first.addView(circleAction("▦", "تقسيم الشاشة", outline) {
+            if (callType == "video" && webPageReady)
+                webView.evaluateJavascript("window.shnoSplitVideo&&window.shnoSplitVideo()", null)
+            else Toast.makeText(this, "تقسيم الشاشة متاح أثناء مكالمة الفيديو", Toast.LENGTH_SHORT).show()
         }, LinearLayout.LayoutParams(0, -2, 1f))
         first.addView(circleAction("◖))", "السماعة", white) {
             setAudioRoute(!SettingsStore(this).speakerphoneEnabled)
@@ -389,8 +391,11 @@ class WebCallActivity : ComponentActivity() {
                 [data-call-modal].shno-swap [data-local-video]{inset:0!important;width:100vw!important;max-width:none!important;height:100vh!important;border:0!important;border-radius:0!important;z-index:1!important}
                 [data-call-modal].shno-swap [data-remote-video]{right:18px!important;left:auto!important;top:96px!important;bottom:auto!important;width:30vw!important;height:22vh!important;border-radius:18px!important;border:2px solid rgba(255,255,255,.65)!important;z-index:5!important}
                 [data-call-modal].shno-focus [data-local-video]{width:46vw!important;max-width:240px!important;height:34vh!important}
+                [data-call-modal].shno-split [data-remote-video]{position:fixed!important;top:8vh!important;right:0!important;left:auto!important;width:50vw!important;height:76vh!important;object-fit:contain!important;border:1px solid #6a6570!important;border-radius:12px!important;z-index:5!important}
+                [data-call-modal].shno-split [data-local-video]{position:fixed!important;top:8vh!important;right:auto!important;left:0!important;width:50vw!important;max-width:none!important;height:76vh!important;object-fit:contain!important;border:1px solid #6a6570!important;border-radius:12px!important;z-index:5!important}
               `;
               document.head.appendChild(style);
+              window.shnoSplitVideo=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-split')};
               window.shnoSwapVideo=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-swap')};
               window.shnoToggleVideoSize=function(){var m=document.querySelector('[data-call-modal]');if(m)m.classList.toggle('shno-focus')};
               var modal=document.querySelector('[data-call-modal]');
