@@ -50,7 +50,7 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
    const file=path.resolve(root,'.'+url.pathname);
    if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
    let content=fs.readFileSync(file);
-   if(file.endsWith('.html'))content=content.toString().replace(/<script src="(?:auth-guard|mall|call-permission-guard)\.js[^"\n]*"><\/script>/g,'');
+   if(file.endsWith('.html')&&!process.env.TEST_EMBEDDED_UI)content=content.toString().replace(/<script src="(?:auth-guard|mall|call-permission-guard)\.js[^"\n]*"><\/script>/g,'');
    res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(content);
   }catch(e){console.error(e);errors.push(e.stack);res.writeHead(500);res.end(String(e));}
  });
@@ -59,7 +59,7 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
  t.after(async()=>{console.log('diagnostic',db.prepare('SELECT event_type,payload FROM private_call_signals').all().map(x=>({event:x.event_type,type:JSON.parse(x.payload).data?.type})));for(const page of pages)if(!page.isClosed())console.log('peer states',await page.evaluate(()=>({peers:window.testPeers.map(p=>({state:p.connectionState,ice:p.iceConnectionState,signaling:p.signalingState,local:p.localDescription?.type,remote:p.remoteDescription?.type,senders:p.getSenders().map(s=>({kind:s.track?.kind,state:s.track?.readyState}))})),feedback:document.querySelector('[data-message-feedback]')?.textContent})));await browser.close();await new Promise(resolve=>server.close(resolve));db.close()});
  const pages=[];
- for(const u of users){const context=await browser.newContext({permissions:['microphone','camera'],viewport:{width:412,height:915}});const page=await context.newPage();await page.addInitScript(turn=>{window.__testTurn=turn;window.testPeers=[];const Native=RTCPeerConnection;window.RTCPeerConnection=function(...args){const config=window.__testTurn?{iceServers:[{urls:window.__testTurn,username:'test',credential:'local-test-only'}],iceTransportPolicy:'relay'}:args[0];const pc=new Native(config);window.testPeers.push(pc);return pc;};},process.env.TEST_TURN_URL||null);page.on('pageerror',e=>{console.error('PAGE',e);errors.push(e.stack)});pages.push(page)}
+ for(const u of users){const context=await browser.newContext({permissions:['microphone','camera'],viewport:{width:412,height:915}});const page=await context.newPage();await page.addInitScript(turn=>{window.__testTurn=turn;window.testPeers=[];const Native=RTCPeerConnection;window.RTCPeerConnection=function(...args){const config=window.__testTurn?{iceServers:[{urls:window.__testTurn,username:'test',credential:'local-test-only'}],iceTransportPolicy:'relay'}:args[0];const pc=new Native(config);window.testPeers.push(pc);return pc;};},process.env.TEST_TURN_URL||null);if(process.env.TEST_EMBEDDED_UI)await page.addInitScript(()=>{window.ShnoAndroidCall={getBuildInfo:()=> '1.3.5 (18)',onCallState(){},setSpeaker(){}};});page.on('pageerror',e=>{console.error('PAGE',e);errors.push(e.stack)});pages.push(page)}
  // HTTP localhost rejects __Host- cookies by design; inject only the test session
  // header at the boundary, keeping production handlers/authentication unchanged.
  for(let i=0;i<pages.length;i++)await pages[i].route('**/api/**',route=>route.continue({headers:{...route.request().headers(),'x-test-session':users[i].secret}}));
@@ -71,6 +71,7 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
  const conversation=new URL(a.url()).searchParams.get('conversation');
  const invalid=await worker.fetch(new Request(base+'/api/conversations/'+conversation+'/messages',{method:'POST',headers:{Cookie:'__Host-shino_session='+users[0].secret,'Content-Type':'application/json'},body:JSON.stringify({text:'missing type'})}),env);
  assert.equal(invalid.status,400);assert.equal((await invalid.json()).message,'الرسالة النصية غير صالحة');
+ if(process.env.TEST_EMBEDDED_UI)assert.equal(await a.locator('[data-call-build]').textContent(),'اتصال 1.3.5 (18)');
  await a.locator('[data-message-input]').fill('رسالة اختبار Android JSON');
  await a.locator('[data-composer]').evaluate(form=>form.requestSubmit());
  await b.locator('[data-chat-messages]').getByText('رسالة اختبار Android JSON').waitFor();console.log('text passed');
@@ -84,6 +85,12 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
  for(const page of [a,b])await until(()=>page.locator('[data-call-status]').textContent().then(s=>s.includes('متصل الآن')),'audio connection');
  for(const page of [a,b])assert.equal(await page.locator('[data-remote-video]').evaluate(v=>v.srcObject.getAudioTracks().length),1);
  console.log('audio passed');
+ // Reproduce the phone's light-theme button/card overrides. They must not enter
+ // the isolated call tree, while the rest of the website may keep that theme.
+ await a.addStyleTag({content:'body *{background-color:#f5f9ff!important;color:#172334!important}body button{border-radius:24px!important;padding:24px!important}body button:nth-child(3n){background:#e9dcff!important}'});
+ const isolated=await a.locator('[data-call-mute] .call-control-icon').evaluate(el=>({radius:getComputedStyle(el).borderRadius,color:getComputedStyle(el).color,width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
+ assert.equal(isolated.radius,'50%');assert.equal(isolated.color,'rgb(255, 255, 255)');assert.equal(isolated.width,isolated.height);
+
  await a.screenshot({path:path.join(artifacts,'call-audio-preview.png')});
  await a.evaluate(()=>{window.sentTones=[];window.testPeers[0].getSenders().find(s=>s.track.kind==='audio').dtmf.ontonechange=e=>window.sentTones.push(e.tone);});
  await a.locator('[data-call-keypad]').click();await a.locator('.call-keypad-grid').getByRole('button',{name:'1',exact:true}).click();

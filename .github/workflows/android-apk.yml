@@ -62,16 +62,17 @@ jobs:
           SHNO_MANO_KEYSTORE_PASSWORD: ${{ secrets.SHNO_MANO_KEYSTORE_PASSWORD }}
           SHNO_MANO_KEY_ALIAS: ${{ secrets.SHNO_MANO_KEY_ALIAS }}
           SHNO_MANO_KEY_PASSWORD: ${{ secrets.SHNO_MANO_KEY_PASSWORD }}
-        run: gradle clean assembleRelease --stacktrace
+        run: gradle clean assembleRelease --stacktrace --no-build-cache --rerun-tasks
       - name: Verify APK signature
         run: |
           APK=app/build/outputs/apk/release/app-release.apk
           test -f "$APK"
+          python ../../scripts/verify-call-apk.py "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: shno-mano-call-1.3.4-signed
+          name: shno-mano-call-1.3.5-signed
           path: android/shno-mano-call/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30

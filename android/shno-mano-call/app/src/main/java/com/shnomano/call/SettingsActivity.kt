@@ -64,6 +64,13 @@ private fun SettingsScreen(onBack: () -> Unit) {
             TextButton(onClick = onBack) { Text("رجوع") }
             Text("إعدادات شنو منو اتصال", color = Color.White, fontSize = 22.sp)
         }
+        val version = remember {
+            @Suppress("DEPRECATION")
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            val code = if (android.os.Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
+            "${info.versionName} ($code)"
+        }
+        Text("إصدار اتصال $version", color = Color(0xFF98A2B3), fontSize = 13.sp)
         SettingSwitch("الإشعارات", "تنبيهات الرسائل والمكالمات", notifications) {
             notifications = it; store.notificationsEnabled = it
         }

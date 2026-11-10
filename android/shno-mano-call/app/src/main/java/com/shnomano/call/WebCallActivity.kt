@@ -95,11 +95,26 @@ class WebCallActivity : ComponentActivity() {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.mediaPlaybackRequiresUserGesture = false
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
+            settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             addJavascriptInterface(CallStateBridge(), "ShnoAndroidCall")
             webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(view: WebView?, request: android.webkit.WebResourceRequest?): android.webkit.WebResourceResponse? {
+                    if (request == null || request.method != "GET" || !isTrustedUrl(request.url.toString())) return null
+                    val name = request.url.path?.removePrefix("/") ?: return null
+                    if (name !in packagedCallFiles) return null
+                    val mime = when {
+                        name.endsWith(".html") -> "text/html"
+                        name.endsWith(".css") -> "text/css"
+                        name.endsWith(".js") -> "text/javascript"
+                        else -> "application/json"
+                    }
+                    return android.webkit.WebResourceResponse(mime, "UTF-8", 200, "OK",
+                        mapOf("Cache-Control" to "no-store", "X-Shno-Call-UI" to buildIdentity()),
+                        assets.open("call-web/$name"))
+                }
+
                 override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean =
                     !isTrustedUrl(request?.url?.toString().orEmpty())
 
@@ -112,6 +127,9 @@ class WebCallActivity : ComponentActivity() {
                 }
             }
             webChromeClient = object : WebChromeClient() {
+                override fun getDefaultVideoPoster(): android.graphics.Bitmap =
+                    android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+
                 override fun onPermissionRequest(request: PermissionRequest) {
                     runOnUiThread {
                         if (request.origin.toString().trimEnd('/') != "https://shinomino.com") { request.deny(); return@runOnUiThread }
@@ -155,14 +173,25 @@ class WebCallActivity : ComponentActivity() {
         }
         val quoted = JSONObject.quote(selector)
         webView.evaluateJavascript(
-            "(function(){var button=document.querySelector($quoted);if(!button)return false;button.click();return true;})()"
+            "(function(){return typeof window.shnoClickCallControl==='function'&&window.shnoClickCallControl($quoted);})()"
         ) { result ->
             if (result != "true") Toast.makeText(this, "تعذر تنفيذ الإجراء؛ لا تزال المكالمة قيد التحميل", Toast.LENGTH_SHORT).show()
         }
         return true
     }
 
+    private val packagedCallFiles by lazy { assets.list("call-web")?.toSet().orEmpty() }
+
+    @Suppress("DEPRECATION")
+    private fun buildIdentity(): String {
+        val info = packageManager.getPackageInfo(packageName, 0)
+        val code = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
+        return "${info.versionName} ($code)"
+    }
+
     private inner class CallStateBridge {
+        @JavascriptInterface fun getBuildInfo(): String = buildIdentity()
+
         @JavascriptInterface fun startScreenShare() = runOnUiThread {
             if (!isFinishing) screenConsent.launch(getSystemService(android.media.projection.MediaProjectionManager::class.java).createScreenCaptureIntent())
         }

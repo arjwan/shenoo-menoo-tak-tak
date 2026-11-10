@@ -1,4 +1,15 @@
 (function () {
+  // The embedded call window is a self-contained surface. Keep its session and
+  // ringtone support; do not attach unrelated site docks or theme overrides.
+  if(window.ShnoAndroidCall && /\/(messages|call-groups)\.html$/.test(location.pathname)){
+    window.shnoSessionReady=fetch('/api/auth/session',{credentials:'same-origin',cache:'no-store'})
+      .then(function(r){return r.ok;}).catch(function(){return false;});
+    ['call-audio.js?v=20261109-ring-1','incoming-call-global.js?v=20261110-native-2'].forEach(function(src){
+      var script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
+    });
+    return;
+  }
+
   var themeScript = document.createElement('script');
   themeScript.src = 'theme.js?v=20260913-6';
   themeScript.defer = true;

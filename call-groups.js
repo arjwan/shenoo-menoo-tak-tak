@@ -3,7 +3,8 @@
    No Socket.IO or user-supplied sender identity. */
 (function(){
 'use strict';
-const $=id=>document.getElementById(id);
+const groupRoot=window.ShnoCallSurface.mount(document.getElementById('group-stage'));
+const $=id=>document.getElementById(id)||groupRoot.getElementById(id);
 const api=(path,opts)=>SocialAPI.request('/api/call-groups'+path,opts);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let selfId='',groups=[],contacts=[],current=null,members=[],signalCursor=0,messageSnapshot='',polling=false;
