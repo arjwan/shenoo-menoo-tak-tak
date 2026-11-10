@@ -1,0 +1,52 @@
+name: Publish verified standalone call test APK
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run:
+        description: Signed APK workflow run
+        required: true
+        default: '42763022280'
+      source_commit:
+        description: Exact source commit matching the signed call UI
+        required: true
+        default: '3152ab3cf045c40941266f1c49b0243ed6525a13'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish-test-download:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_commit }}
+      - name: Download and verify the existing signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN: ${{ inputs.artifact_run }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/call-apk"
+          gh run download "$ARTIFACT_RUN" --repo "$GITHUB_REPOSITORY" --name shno-mano-call-1.3.5-signed --dir "$RUNNER_TEMP/call-apk"
+          python scripts/verify-call-apk.py "$RUNNER_TEMP/call-apk/app-release.apk"
+          mv "$RUNNER_TEMP/call-apk/app-release.apk" "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.3.5.apk"
+          cd "$RUNNER_TEMP/call-apk"
+          sha256sum Shno-Mano-Call-1.3.5.apk > Shno-Mano-Call-1.3.5.apk.sha256
+      - name: Publish a direct APK download for live testing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          cat > "$RUNNER_TEMP/call-notes.md" <<'NOTES'
+          نسخة اختبار حي 1.3.5 (18)، الحزمة com.shnomano.call.
+
+          واجهة الصوت والفيديو داخل APK ومعزولة عن ثيم الموقع حتى لا تتحول الأزرار إلى بطاقات ملوّنة. يظهر رقم البناء أسفل شاشة المكالمة وفي الإعدادات.
+
+          بناء نظيف وموقّع بالمفتاح الموجود. جرى التحقق من بصمات ملفات الواجهة الـ18 داخل APK ومن تطابقها مع الكود. اجتازت اختبارات المكالمات الأربعة عشر، بما فيها اختبار تنسيقات الثيم الفاتح.
+
+          ثبّت كتحديث دون حذف التطبيق الحالي أو مسح بياناته. هذه نسخة للاختبار الحي؛ اختبارات الهاتفين ومشاركة MediaProjection على الجهاز ما زالت مطلوبة.
+          NOTES
+          gh release create standalone-call-live-1.3.5 \
+            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.3.5.apk" \
+            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.3.5.apk.sha256" \
+            --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" --prerelease --latest=false \
+            --title 'شنو منو اتصال 1.3.5 — واجهة معزولة واختبار حي' --notes-file "$RUNNER_TEMP/call-notes.md"
