@@ -53,13 +53,30 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Cache Gradle dependencies across build runs
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
       - name: Install required Android SDK platform
         run: |
           test -n "$ANDROID_HOME"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
       - name: Compile and package isolated debug APK
-        run: bash ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            echo "Android debug build attempt $attempt/3"
+            if bash ./gradlew :app:assembleDebug --no-daemon --console=plain; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Android build failed after three attempts. Inspect the FIRST Gradle error."
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
       - name: Upload test APK without replacing production installation
         uses: actions/upload-artifact@v4
         with:
