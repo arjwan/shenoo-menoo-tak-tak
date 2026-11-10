@@ -49,7 +49,8 @@ class BackgroundRealtimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        startAsForeground()
+        try { startAsForeground() }
+        catch (error: Exception) { AppDiagnostics.record(this, error, "foreground-service"); stopSelf(); return START_NOT_STICKY }
         startPolling()
         if (intent?.action == ACTION_END_CALL) {
             if (!WebCallActivity.endActiveCall()) {
@@ -68,6 +69,8 @@ class BackgroundRealtimeService : Service() {
             val conversationId = intent.getStringExtra("conversation_id").orEmpty()
             val from = intent.getStringExtra("from").orEmpty()
             if (callId.isNotBlank() && conversationId.isNotBlank() && from.isNotBlank()) {
+                CallAlertState.close(callId)
+                WebCallActivity.dismissIncomingCall(callId)
                 poller?.execute {
                     try { sendTerminalSignal(callId, conversationId, from) }
                     catch (error: Exception) { Log.w(TAG, "Call rejection failed", error) }
@@ -181,6 +184,7 @@ class BackgroundRealtimeService : Service() {
             } else if (event.optString("event") in listOf("call:end", "call:reject", "call:accept")) {
                 val id = event.optString("callId")
                 clearCallAlert(id)
+                if (event.optString("event") != "call:accept") CallAlertState.close(id)
                 if (event.optString("event") != "call:accept" && activeCall?.optString("callId") == id) {
                     mainHandler.post { WebCallActivity.endActiveCall(); clearActiveNotification(id) }
                 }
@@ -314,7 +318,7 @@ class BackgroundRealtimeService : Service() {
             type = type,
             callerName = payload.optString("callerName").ifBlank { "مستخدم شنو منو" }
         )
-        if (!handledCalls.add(callId)) return
+        if (CallAlertState.isClosed(callId) || !handledCalls.add(callId)) return
         synchronized(handledCalls) { if (handledCalls.size > 128) handledCalls.remove(handledCalls.first()) }
         if (!PresenceStore.acceptIncomingCall(call)) return
         mainHandler.postDelayed({ clearCallAlert(callId) }, 30_000)
@@ -478,7 +482,8 @@ class BackgroundRealtimeService : Service() {
         fun start(context: Context) {
             val app = context.applicationContext
             if (!SessionStore(app).isSignedIn()) return
-            ContextCompat.startForegroundService(app, Intent(app, BackgroundRealtimeService::class.java))
+            try { ContextCompat.startForegroundService(app, Intent(app, BackgroundRealtimeService::class.java)) }
+            catch (error: Exception) { AppDiagnostics.record(app, error, "background-start"); Log.e(TAG, "Unable to start background alerts", error) }
         }
 
         fun stop(context: Context) {
@@ -491,7 +496,10 @@ class BackgroundRealtimeService : Service() {
         fun trackActiveCall(state: JSONObject, url: String) {
             running?.showActiveCall(state, url)
         }
-        fun refreshCaptureForeground() { running?.startAsForeground() }
+        fun refreshCaptureForeground() {
+            val service = running ?: return
+            try { service.startAsForeground() } catch (error: Exception) { AppDiagnostics.record(service, error, "foreground-capture") }
+        }
         fun clearActiveCall(callId: String) { running?.clearActiveNotification(callId) }
         fun acknowledgeIncomingCall(callId: String) { running?.clearCallAlert(callId) }
     }

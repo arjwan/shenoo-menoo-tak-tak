@@ -49,7 +49,7 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Compile Android Kotlin
-        run: gradle :app:compileDebugKotlin --stacktrace
+        run: gradle :app:compileDebugKotlin :app:testDebugUnitTest --stacktrace
       - name: Restore release signing key
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.SHNO_MANO_KEYSTORE_BASE64 }}
@@ -72,7 +72,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: shno-mano-call-1.3.5-signed
+          name: shno-mano-call-1.4.0-signed
           path: android/shno-mano-call/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30

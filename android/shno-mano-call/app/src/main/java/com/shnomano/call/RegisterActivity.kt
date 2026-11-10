@@ -64,22 +64,22 @@ class RegisterActivity : ComponentActivity() {
         var otpCode by remember { mutableStateOf("") }
 
         Scaffold(
-            containerColor = Color(0xFF070910),
+            containerColor = Color(0xFF0B1020),
             topBar = {
                 TopAppBar(
                     title = { Text("إنشاء حساب شنو منو", color = Color.White, fontWeight = FontWeight.Bold) },
                     navigationIcon = { IconButton(onClick = { finish() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF111522))
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF151E32))
                 )
             }
         ) { padding ->
             Column(
                 Modifier.fillMaxSize().padding(padding).background(
-                    Brush.verticalGradient(listOf(Color(0xFF0B1020), Color(0xFF070910)))
+                    Brush.verticalGradient(listOf(Color(0xFF0B1020), Color(0xFF0B1020)))
                 ).verticalScroll(rememberScrollState()).padding(18.dp)
             ) {
                 Text("حساب موحّد لكل شنو منو", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                Text("سيعمل نفس الحساب في التطبيق والويب بعد تأكيد رمز البريد الإلكتروني.", color = Color(0xFF98A2B3), fontSize = 12.sp, lineHeight = 18.sp)
+                Text("سيعمل نفس الحساب في التطبيق والويب بعد تأكيد رمز البريد الإلكتروني.", color = Color(0xFFA4B4CC), fontSize = 12.sp, lineHeight = 18.sp)
                 Spacer(Modifier.height(16.dp))
 
                 Field("الاسم الكامل", fullName) { fullName = it }
@@ -229,7 +229,7 @@ class RegisterActivity : ComponentActivity() {
                     ) { Text("العودة لتسجيل الدخول") }
                 }
                 Spacer(Modifier.height(20.dp))
-                Text("لن يُفعّل التسجيل العادي قبل تأكيد رمز البريد. حساب المطور له مسار إداري مستقل.", color = Color(0xFF98A2B3), fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Text("لن يُفعّل التسجيل العادي قبل تأكيد رمز البريد. حساب المطور له مسار إداري مستقل.", color = Color(0xFFA4B4CC), fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             }
         }
     }

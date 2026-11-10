@@ -41,7 +41,7 @@
           var events=r.events||[];
           var finished=new Set(events.filter(function(e){return ['call:end','call:reject','call:accept'].includes(e.event);}).map(function(e){return e.callId;}));
           for(var event of events){
-            if(event.event==='call:invite' && finished.has(event.callId))continue;
+            if(event.event==='call:invite' && (finished.has(event.callId)||global.ShnoCallSession?.isTerminal(event.callId)))continue;
             var d=event.payload||{};
             await dispatch(event.event,{
               callId:event.callId,conversationId:event.conversationId,

@@ -38,7 +38,7 @@ async function init(){
 async function loadGroups(){
  const result=await api('');
  groups=result.groups||[];
- $('group-items').innerHTML=groups.map(g=>'<button class="group-btn" data-group="'+esc(g.id)+'">'+esc(g.name)+' · '+g.memberCount+' أعضاء</button>').join('')||'<p>لا توجد مجموعات بعد</p>';
+ $('group-items').innerHTML=groups.map(g=>'<button class="group-btn" data-group="'+esc(g.id)+'"><span class="group-list-icon">◉</span><span class="group-list-copy"><strong>'+esc(g.name)+'</strong><small>'+g.memberCount+' أعضاء</small></span><span class="group-list-arrow">‹</span></button>').join('')||'<p>لا توجد مجموعات بعد</p>';
 }
 $('group-items').addEventListener('click',event=>{
  const el=event.target.closest('[data-group]');
@@ -120,6 +120,7 @@ function tile(id,name,stream,own=false){
  return el;
 }
 async function takeMedia(type){
+ if(window.ShnoCallIce)await window.ShnoCallIce.prepare();
  if(local){local.getTracks().forEach(t=>t.stop());local=null}
  local=await navigator.mediaDevices.getUserMedia({audio:true,video:type==='video'});
  mute=false;
@@ -141,7 +142,7 @@ $('group-start-audio').onclick=()=>startCall('audio');
 $('group-start-video').onclick=()=>startCall('video');
 function ensurePeer(userId,initiator){
  if(peers.has(userId))return peers.get(userId);
- const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+ const pc=new RTCPeerConnection(window.ShnoCallIce?window.ShnoCallIce.config():{iceServers:[{urls:'stun:stun.cloudflare.com:3478'}]});
  peers.set(userId,pc);
  if(local)local.getTracks().forEach(track=>pc.addTrack(track,local));
  pc.ontrack=e=>{const m=members.find(x=>x.id===userId);tile(userId,m?.fullName||'مشارك',e.streams[0])};

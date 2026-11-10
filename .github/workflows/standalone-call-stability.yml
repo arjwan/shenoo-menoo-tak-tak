@@ -12,6 +12,9 @@ on:
       - 'call-screen.css'
       - 'screen-share.js'
       - 'call-surface.js'
+      - 'call-session-state.js'
+      - 'call-ice.js'
+      - 'tests/call-ice.test.mjs'
       - 'auth-guard.js'
       - 'incoming-call-global.js'
       - 'tests/standalone-call-runtime.test.cjs'
@@ -74,7 +77,7 @@ jobs:
           TURN_PID=$!
           trap 'kill "$TURN_PID" || true' EXIT
           export NODE_PATH="$RUNNER_TEMP/call-runtime/node_modules"
-          node --test tests/private-call-signaling.test.mjs tests/incoming-call-global.test.mjs tests/call-audio-ringback.test.mjs tests/standalone-call-runtime.test.cjs
+          node --test tests/private-call-signaling.test.mjs tests/incoming-call-global.test.mjs tests/call-audio-ringback.test.mjs tests/call-ice.test.mjs tests/standalone-call-runtime.test.cjs
       - name: Save call screen previews
         if: always()
         uses: actions/upload-artifact@v4

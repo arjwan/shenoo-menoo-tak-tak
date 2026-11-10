@@ -1,10 +1,10 @@
 (function () {
   // The embedded call window is a self-contained surface. Keep its session and
   // ringtone support; do not attach unrelated site docks or theme overrides.
-  if(window.ShnoAndroidCall && /\/(messages|call-groups)\.html$/.test(location.pathname)){
+  if(window.ShnoAndroidCall && /\/(messages|call-groups)(?:\.html)?\/?$/.test(location.pathname)){
     window.shnoSessionReady=fetch('/api/auth/session',{credentials:'same-origin',cache:'no-store'})
       .then(function(r){return r.ok;}).catch(function(){return false;});
-    ['call-audio.js?v=20261109-ring-1','incoming-call-global.js?v=20261110-native-2'].forEach(function(src){
+    ['call-session-state.js?v=20261110-1','call-audio.js?v=20261109-ring-1','incoming-call-global.js?v=20261110-lifecycle-2'].forEach(function(src){
       var script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
     });
     return;
@@ -100,6 +100,7 @@
     return false;
   }());
 
+  if(!window.ShnoCallSession){var sessionState=document.createElement('script');sessionState.src='call-session-state.js?v=20261110-1';sessionState.async=false;document.head.appendChild(sessionState);}
   // Share a gesture-unlocked audio engine between outgoing and incoming calls.
   if (!document.querySelector('script[data-shno-call-audio]')) {
     var sound=document.createElement('script');
@@ -112,7 +113,7 @@
   // Receive incoming calls on every authenticated page, not only the chat page.
   if (!document.querySelector('script[data-shno-incoming-calls]')) {
     var incoming=document.createElement('script');
-    incoming.src='incoming-call-global.js?v=20261110-native-2';
+    incoming.src='incoming-call-global.js?v=20261110-lifecycle-2';
     incoming.async=false;
     incoming.setAttribute('data-shno-incoming-calls','1');
     document.head.appendChild(incoming);

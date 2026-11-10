@@ -34,6 +34,8 @@ async function until(fn,label,timeout=20000){const start=Date.now();while(Date.n
 test('real browser WebRTC: text, reject, audio/video, group upgrade and three-way mesh', {timeout:180000},async t=>{
  const {default:worker}=await import('../cloudflare/worker.js');
  const {onRequest}=await import('../functions/api/[[path]].js');
+ const {callIceRoute}=await import('../cloudflare/pages/call-ice.js');
+ const {callGroupsRoute}=await import('../cloudflare/pages/call-groups-route.js');
  const {db,adapter}=database();
  const env={DB:adapter,MEDIA:{},AUTH_SECRET:'local-test-secret-only'};
  env.API={fetch:r=>worker.fetch(r,env)};
@@ -43,9 +45,11 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
    const url=new URL(req.url,'http://127.0.0.1:'+server.address().port);
    if(url.pathname.startsWith('/api/')){
     const chunks=[];for await(const chunk of req)chunks.push(chunk);
-    const r=await onRequest({request:new Request(url,{method:req.method,headers:{...req.headers,cookie:'__Host-shino_session='+req.headers['x-test-session']},...(!['GET','HEAD'].includes(req.method)?{body:Buffer.concat(chunks)}:{})}),env});
-    const result=Buffer.from(await r.arrayBuffer());if(r.status>=400)console.error('API',url.pathname,r.status,result.toString());res.writeHead(r.status,Object.fromEntries(r.headers));res.end(result);return;
+    const handler=url.pathname==='/api/call-ice'?callIceRoute:url.pathname.startsWith('/api/call-groups')?callGroupsRoute:onRequest;
+    const r=await handler({request:new Request(url,{method:req.method,headers:{...req.headers,cookie:'__Host-shino_session='+req.headers['x-test-session']},...(!['GET','HEAD'].includes(req.method)?{body:Buffer.concat(chunks)}:{})}),env});
+    const result=Buffer.from(await r.arrayBuffer());if(req.headers.referer?.includes('incoming-test') && url.pathname==='/api/call-signals')console.log('watcher',r.status,JSON.parse(result.toString()).events?.map(e=>e.event));if(r.status>=400)console.error('API',url.pathname,r.status,result.toString());res.writeHead(r.status,Object.fromEntries(r.headers));res.end(result);return;
    }
+   if(url.pathname==='/incoming-test.html'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><meta charset="utf-8"><body><script src="call-session-state.js"></script><script src="incoming-call-global.js"></script>');return;}
    if(url.pathname==='/sw.js'){res.writeHead(404);res.end();return;}
    const file=path.resolve(root,'.'+url.pathname);
    if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
@@ -57,9 +61,9 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const base='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
- t.after(async()=>{console.log('diagnostic',db.prepare('SELECT event_type,payload FROM private_call_signals').all().map(x=>({event:x.event_type,type:JSON.parse(x.payload).data?.type})));for(const page of pages)if(!page.isClosed())console.log('peer states',await page.evaluate(()=>({peers:window.testPeers.map(p=>({state:p.connectionState,ice:p.iceConnectionState,signaling:p.signalingState,local:p.localDescription?.type,remote:p.remoteDescription?.type,senders:p.getSenders().map(s=>({kind:s.track?.kind,state:s.track?.readyState}))})),feedback:document.querySelector('[data-message-feedback]')?.textContent})));await browser.close();await new Promise(resolve=>server.close(resolve));db.close()});
+ t.after(async()=>{console.log('diagnostic',db.prepare('SELECT event_type,payload FROM private_call_signals').all().map(x=>({event:x.event_type,type:JSON.parse(x.payload).data?.type})));for(const page of pages)if(!page.isClosed())console.log('peer states',await page.evaluate(()=>({peers:window.testPeers.map(p=>({state:p.connectionState,ice:p.iceConnectionState,signaling:p.signalingState,local:p.localDescription?.type,remote:p.remoteDescription?.type,senders:p.getSenders().map(s=>({kind:s.track?.kind,state:s.track?.readyState}))})),feedback:document.querySelector('[data-message-feedback]')?.textContent,body:location.pathname.includes('incoming-test')?document.body.innerText:'',watcher:typeof window.ShnoIncomingCalls})));await browser.close();await new Promise(resolve=>server.close(resolve));db.close()});
  const pages=[];
- for(const u of users){const context=await browser.newContext({permissions:['microphone','camera'],viewport:{width:412,height:915}});const page=await context.newPage();await page.addInitScript(turn=>{window.__testTurn=turn;window.testPeers=[];const Native=RTCPeerConnection;window.RTCPeerConnection=function(...args){const config=window.__testTurn?{iceServers:[{urls:window.__testTurn,username:'test',credential:'local-test-only'}],iceTransportPolicy:'relay'}:args[0];const pc=new Native(config);window.testPeers.push(pc);return pc;};},process.env.TEST_TURN_URL||null);if(process.env.TEST_EMBEDDED_UI)await page.addInitScript(()=>{window.ShnoAndroidCall={getBuildInfo:()=> '1.3.5 (18)',onCallState(){},setSpeaker(){}};});page.on('pageerror',e=>{console.error('PAGE',e);errors.push(e.stack)});pages.push(page)}
+ for(const u of users){const context=await browser.newContext({permissions:['microphone','camera'],viewport:{width:412,height:915}});const page=await context.newPage();await page.addInitScript(turn=>{window.__testTurn=turn;window.testPeers=[];const Native=RTCPeerConnection;window.RTCPeerConnection=function(...args){const config=window.__testTurn?{iceServers:[{urls:window.__testTurn,username:'test',credential:'local-test-only'}],iceTransportPolicy:'relay'}:args[0];const pc=new Native(config);window.testPeers.push(pc);return pc;};},process.env.TEST_TURN_URL||null);if(process.env.TEST_EMBEDDED_UI)await page.addInitScript(()=>{window.ShnoAndroidCall={getBuildInfo:()=> '1.4.0 (19)',onCallState(){},setSpeaker(){}};});page.on('pageerror',e=>{console.error('PAGE',e);errors.push(e.stack)});pages.push(page)}
  // HTTP localhost rejects __Host- cookies by design; inject only the test session
  // header at the boundary, keeping production handlers/authentication unchanged.
  for(let i=0;i<pages.length;i++)await pages[i].route('**/api/**',route=>route.continue({headers:{...route.request().headers(),'x-test-session':users[i].secret}}));
@@ -71,17 +75,20 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
  const conversation=new URL(a.url()).searchParams.get('conversation');
  const invalid=await worker.fetch(new Request(base+'/api/conversations/'+conversation+'/messages',{method:'POST',headers:{Cookie:'__Host-shino_session='+users[0].secret,'Content-Type':'application/json'},body:JSON.stringify({text:'missing type'})}),env);
  assert.equal(invalid.status,400);assert.equal((await invalid.json()).message,'الرسالة النصية غير صالحة');
- if(process.env.TEST_EMBEDDED_UI)assert.equal(await a.locator('[data-call-build]').textContent(),'اتصال 1.3.5 (18)');
+ if(process.env.TEST_EMBEDDED_UI)assert.equal(await a.locator('[data-call-build]').textContent(),'اتصال 1.4.0 (19)');
  await a.locator('[data-message-input]').fill('رسالة اختبار Android JSON');
  await a.locator('[data-composer]').evaluate(form=>form.requestSubmit());
  await b.locator('[data-chat-messages]').getByText('رسالة اختبار Android JSON').waitFor();console.log('text passed');
  assert.equal(db.prepare('SELECT count(*) AS n FROM messages').get().n,1);
+ await b.goto(base+'/incoming-test.html');
  await a.locator('[data-start-call="audio"]').click();
- await b.locator('[data-call-accept]').waitFor({state:'visible'});
- await b.locator('[data-call-reject]').click();
+ await b.getByRole('button',{name:'رفض',exact:true}).click();
+ assert(new URL(b.url()).pathname==='/incoming-test.html');
  await a.locator('[data-call-modal]').waitFor({state:'hidden'});console.log('reject passed');
+ await b.reload();await b.waitForTimeout(1600);assert.equal(await b.getByRole('button',{name:'قبول',exact:true}).count(),0);
  await a.locator('[data-start-call="audio"]').click();
- await b.locator('[data-call-accept]').click();
+ await b.getByRole('button',{name:'قبول',exact:true}).click();
+ await b.waitForURL('**/messages.html?**');
  for(const page of [a,b])await until(()=>page.locator('[data-call-status]').textContent().then(s=>s.includes('متصل الآن')),'audio connection');
  for(const page of [a,b])assert.equal(await page.locator('[data-remote-video]').evaluate(v=>v.srcObject.getAudioTracks().length),1);
  console.log('audio passed');

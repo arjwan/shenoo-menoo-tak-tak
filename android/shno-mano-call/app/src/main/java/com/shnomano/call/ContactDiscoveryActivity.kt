@@ -67,7 +67,7 @@ private fun ContactDiscoveryScreen(onBack: () -> Unit) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(Color(0xFF070910)).padding(16.dp),
+        Modifier.fillMaxSize().background(Color(0xFF0B1020)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -87,18 +87,18 @@ private fun ContactDiscoveryScreen(onBack: () -> Unit) {
             else Text("بحث في شنو منو")
         }
 
-        status?.let { Text(it, color = Color(0xFF19D9A0), fontSize = 12.sp) }
+        status?.let { Text(it, color = Color(0xFF54DFCF), fontSize = 12.sp) }
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
             items(results, key = { it.userId }) { user ->
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(44.dp).background(Color(0xFF19D9A0).copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
-                            Text(user.displayName.firstOrNull()?.toString() ?: "ش", color = Color(0xFF19D9A0), fontWeight = FontWeight.Bold)
+                        Box(Modifier.size(44.dp).background(Color(0xFF54DFCF).copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
+                            Text(user.displayName.firstOrNull()?.toString() ?: "ش", color = Color(0xFF54DFCF), fontWeight = FontWeight.Bold)
                         }
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                             Text(user.displayName, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("@${user.username.orEmpty()}", color = Color(0xFF98A2B3), fontSize = 11.sp)
+                            Text("@${user.username.orEmpty()}", color = Color(0xFFA4B4CC), fontSize = 11.sp)
                         }
                         TextButton(onClick = {
                             scope.launch {

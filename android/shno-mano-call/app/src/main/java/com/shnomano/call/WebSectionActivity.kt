@@ -111,7 +111,7 @@ class WebSectionActivity : ComponentActivity() {
 
     private fun isCallSurface(url: String): Boolean = android.net.Uri.parse(url).let {
         it.scheme == "https" && it.host == "shinomino.com" && it.port in listOf(-1, 443) &&
-            it.path in listOf("/messages.html", "/call-groups.html")
+            it.path?.trimEnd('/') in listOf("/messages.html", "/call-groups.html", "/messages", "/call-groups")
     }
 
     companion object {

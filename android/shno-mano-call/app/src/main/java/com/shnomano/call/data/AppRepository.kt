@@ -33,6 +33,9 @@ class AppRepository(context: Context) {
             if (error.code() == 401) { session.clear(); false } else true
         } catch (_: IOException) {
             true
+        } catch (error: Exception) {
+            com.shnomano.call.AppDiagnostics.record(app, error, "session-validation")
+            true
         }
     }
 
@@ -74,7 +77,7 @@ class AppRepository(context: Context) {
         if (!session.isSignedIn()) return@withContext emptyList()
         val friends = runCatching { api.friends().all() }.getOrDefault(emptyList())
         val friendIds = friends.map { it.userId }.filter { it.isNotBlank() }.toSet()
-        val remote = runCatching { api.phoneContacts().contacts }.getOrDefault(emptyList())
+        val remote = runCatching { api.phoneContacts().contacts.orEmpty() }.getOrDefault(emptyList())
         val contacts = remote.map { item ->
             val linked = runCatching { api.lookupPhone(item.phone).user }.getOrNull()
             ContactEntity(
@@ -91,8 +94,8 @@ class AppRepository(context: Context) {
     }
 
     suspend fun loadFriends(): List<FriendDto> = runCatching { api.friends().all() }.getOrDefault(emptyList())
-    suspend fun loadFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests().requests }.getOrDefault(emptyList())
-    suspend fun loadSentFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests("sent").requests }.getOrDefault(emptyList())
+    suspend fun loadFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests().requests.orEmpty().filter { !it.id.isNullOrBlank() && it.user != null } }.getOrDefault(emptyList())
+    suspend fun loadSentFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests("sent").requests.orEmpty().filter { !it.id.isNullOrBlank() && it.user != null } }.getOrDefault(emptyList())
     suspend fun loadFriendQr(): Result<FriendQrResponse> = apiResult {
         val response = api.friendQr()
         if (!response.ok || response.payload.isNullOrBlank()) {

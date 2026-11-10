@@ -5,7 +5,7 @@
 (function(global){
   'use strict';
   if(global.ShnoIncomingCalls)return;
-  var inMessages=/\/messages\.html$/i.test(location.pathname);
+  var inMessages=/\/messages(?:\.html)?\/?$/i.test(location.pathname);
   var active=null, bell=null, desktopNotice=null, audio=null, timer=null, cursor=0, stopped=false, ready=false;
   var lastCursorKey='shno-call-cursor';
   function request(url,options){
@@ -46,15 +46,18 @@
   function answer(){
     if(!active)return;
     var url='messages.html?conversation='+encodeURIComponent(active.conversationId)+'&incomingCall='+encodeURIComponent(active.callId);
-    // The original conversation page handles the real WebRTC acceptance.
+    if(inMessages&&typeof global.shnoClickCallControl==='function'){stopSound();global.shnoClickCallControl('[data-call-accept]');return;}
+    if(global.ShnoCallSession)global.ShnoCallSession.handoff(active);
     stopSound();location.assign(url);
   }
   function dismiss(){
+    if(active&&global.ShnoCallSession)global.ShnoCallSession.close(active.callId);
     send('call:reject','rejected');
     clear();
   }
   function show(event){
     if(!event||!event.callId||!event.conversationId||!event.from)return;
+    if(global.ShnoCallSession?.isTerminal(event.callId))return;
     if(active){
       if(active.callId===event.callId)return;
       // Reject the second caller, never accidentally reject the active caller.
