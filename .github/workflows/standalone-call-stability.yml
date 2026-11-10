@@ -65,10 +65,10 @@ jobs:
       - name: Exercise real WebRTC through local TURN TCP
         env:
           CHROMIUM_PATH: /usr/bin/google-chrome
-          TEST_TURN_URL: turn:127.0.0.1:3478?transport=tcp
+          TEST_TURN_URL: turn:127.0.0.1:53490?transport=tcp
           CALL_TEST_ARTIFACTS: ${{ runner.temp }}/call-previews
         run: |
-          turnserver -n --no-cli --no-tls --no-dtls --listening-ip=127.0.0.1 --relay-ip=127.0.0.1 --listening-port=3478 --min-port=49160 --max-port=49200 --allow-loopback-peers --realm=local-test --lt-cred-mech --user=test:local-test-only --pidfile="$RUNNER_TEMP/turn.pid" --log-file="$RUNNER_TEMP/turn.log" --no-stdout-log &
+          turnserver -n --no-cli --no-tls --no-dtls --listening-ip=127.0.0.1 --relay-ip=127.0.0.1 --listening-port=53490 --min-port=49160 --max-port=49200 --allow-loopback-peers --realm=local-test --lt-cred-mech --user=test:local-test-only --pidfile="$RUNNER_TEMP/turn.pid" --log-file="$RUNNER_TEMP/turn.log" --no-stdout-log >"$RUNNER_TEMP/turn-start.log" 2>&1 &
           TURN_PID=$!
           trap 'kill "$TURN_PID" || true' EXIT
           export NODE_PATH="$RUNNER_TEMP/call-runtime/node_modules"
