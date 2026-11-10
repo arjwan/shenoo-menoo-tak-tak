@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private val Bg = Color(0xFF061514)
 private val Panel = Color(0xFF10201B)
@@ -74,8 +75,12 @@ fun ShnoManoCallApp() {
 
     LaunchedEffect(signedIn) {
         if (signedIn) {
-            (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
-            BackgroundRealtimeService.start(context)
+            if (!repo.validateSession()) {
+                signedIn = false
+            } else {
+                (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
+                BackgroundRealtimeService.start(context)
+            }
         } else {
             BackgroundRealtimeService.stop(context)
         }
@@ -239,8 +244,11 @@ private fun ConversationsScreen(repo: AppRepository, onlineUserIds: Set<String>,
     var conversations by remember { mutableStateOf<List<ConversationDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        conversations = repo.loadConversations()
-        loading = false
+        while (true) {
+            conversations = repo.loadConversations()
+            loading = false
+            delay(4000)
+        }
     }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("الدردشات", "محادثات شنو منو الحقيقية")
@@ -252,7 +260,7 @@ private fun ConversationsScreen(repo: AppRepository, onlineUserIds: Set<String>,
                 val online = other?.id?.let { it in onlineUserIds } == true
                 PersonRow(
                     name = other?.fullName ?: other?.username ?: "محادثة",
-                    subtitle = if (online) "متصل الآن" else "غير متصل",
+                    subtitle = if (online) "متصل الآن" else "الحالة غير مؤكدة",
                     badge = c.unreadCount,
                     online = online,
                     onClick = { onOpen(c) }
@@ -362,7 +370,7 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
             if (filteredFriends.isNotEmpty()) item { SectionTitle("أصدقاء شنو منو") }
             items(filteredFriends, key = { "friend-${it.userId}" }) { f ->
                 val online = f.userId in onlineUserIds
-                PersonRow(f.displayName, if (online) "متصل الآن" else "غير متصل", online = online, onClick = { onMessage(f.userId) })
+                PersonRow(f.displayName, if (online) "متصل الآن" else "الحالة غير مؤكدة", online = online, onClick = { onMessage(f.userId) })
             }
             if (filteredContacts.isNotEmpty()) item { SectionTitle("جهات الهاتف") }
             items(filteredContacts, key = { "phone-${it.phone}" }) { c ->
@@ -407,6 +415,7 @@ private fun CallsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMessa
     LaunchedEffect(Unit) { friends = repo.loadFriends() }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("المكالمات", "صوت وفيديو مع الأصدقاء")
+        Button(onClick = { context.startActivity(Intent(context, WebSectionActivity::class.java).putExtra(WebSectionActivity.EXTRA_URL, WebSectionActivity.BASE + "call-groups.html")) }) { Text("👥 المجموعات والدردشة الجماعية") }
         Spacer(Modifier.height(14.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(friends, key = { it.userId }) { f ->
@@ -416,7 +425,7 @@ private fun CallsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMessa
                         AvatarLetter(f.displayName, online)
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                             Text(f.displayName, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text(if (online) "متصل الآن" else "غير متصل", color = if (online) Accent else Muted, fontSize = 11.sp)
+                            Text(if (online) "متصل الآن" else "الحالة غير مؤكدة", color = if (online) Accent else Muted, fontSize = 11.sp)
                         }
                         IconButton(onClick = { openShnoCall(context, f.userId, "audio") }) { Icon(Icons.Default.Call, null, tint = Accent) }
                         IconButton(onClick = { openShnoCall(context, f.userId, "video") }) { Icon(Icons.Default.Videocam, null, tint = Accent) }
@@ -444,7 +453,12 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
         repo.loadMessages(conversation.id).onSuccess { messages = it }
     }
 
-    LaunchedEffect(conversation.id) { reloadMessages() }
+    LaunchedEffect(conversation.id) {
+        while (true) {
+            reloadMessages()
+            delay(3000)
+        }
+    }
 
     Scaffold(
         containerColor = Bg,
@@ -454,7 +468,7 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
                 AvatarLetter(other?.fullName ?: other?.username ?: "ش", online)
                 Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                     Text(other?.fullName ?: other?.username ?: "محادثة", color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(if (online) "متصل الآن" else "غير متصل", color = if (online) Accent else Muted, fontSize = 10.sp)
+                    Text(if (online) "متصل الآن" else "الحالة غير مؤكدة", color = if (online) Accent else Muted, fontSize = 10.sp)
                 }
                 if (!other?.id.isNullOrBlank()) {
                     IconButton(onClick = { openShnoCall(context, other!!.id, "audio") }) { Icon(Icons.Default.Call, null, tint = Accent) }

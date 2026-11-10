@@ -25,8 +25,8 @@ android {
         applicationId = "com.shnomano.call"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.3.3"
+        versionCode = 17
+        versionName = "1.3.4"
     }
 
     signingConfigs {
@@ -88,8 +88,5 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("io.socket:socket.io-client:2.1.1") {
-        exclude(group = "org.json", module = "json")
-    }
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

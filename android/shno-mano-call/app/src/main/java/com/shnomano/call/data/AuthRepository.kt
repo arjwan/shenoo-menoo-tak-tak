@@ -8,10 +8,12 @@ class AuthRepository(
     private val api: ShnoManoApi = ApiFactory.create { sessionStore.token }
 ) {
     suspend fun signIn(identifier: String, password: String): Result<SignedInUserDto> = runCatching {
+        val previousCookie = sessionStore.sessionCookie
         val response = api.signIn(SignInRequest(identifier.trim(), password))
-        if (!response.ok || response.token.isNullOrBlank() || response.user == null) {
+        if (!response.ok || (response.token.isNullOrBlank() && sessionStore.sessionCookie.isNullOrBlank()) || response.user == null) {
             error(response.message ?: "تعذر تسجيل الدخول")
         }
+        if (sessionStore.sessionCookie == previousCookie) error("لم يتم تجديد جلسة اتصال؛ يرجى إعادة المحاولة")
         sessionStore.save(response)
         response.user
     }.recoverCatching { throwable ->

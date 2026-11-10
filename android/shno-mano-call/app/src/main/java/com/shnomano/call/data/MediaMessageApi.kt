@@ -55,11 +55,10 @@ interface MediaMessageApi {
         @Query("limit") limit: Int = 100
     ): MediaMessagesResponse
 
-    @Multipart
     @POST("api/conversations/{id}/messages")
     suspend fun sendText(
         @Path("id") conversationId: String,
-        @Part("text") text: RequestBody
+        @retrofit2.http.Body body: SendMessageRequest
     ): MediaSendResponse
 
     @Multipart
@@ -74,7 +73,7 @@ interface MediaMessageApi {
 class MediaMessageRepository(
     private val session: SessionStore
 ) {
-    private val api: MediaMessageApi = createMediaApi { session.token }
+    private val api: MediaMessageApi = createMediaApi(session)
 
     suspend fun load(conversationId: String): Result<List<MediaMessageDto>> = runCatching {
         api.messages(conversationId).messages
@@ -82,11 +81,12 @@ class MediaMessageRepository(
 
     suspend fun sendText(conversationId: String, text: String): Result<MediaMessageDto> = runCatching {
         val clean = text.trim()
-        require(clean.isNotBlank()) { "الرسالة فارغة" }
-        api.sendText(
-            conversationId,
-            clean.toRequestBody("text/plain; charset=utf-8".toMediaTypeOrNull())
-        ).message ?: error("تعذر إرسال الرسالة")
+        require(clean.isNotBlank() && clean.length <= 5000) { "اكتب رسالة بين 1 و5000 حرف" }
+        api.sendText(conversationId, SendMessageRequest(clean)).message
+            ?: error("تعذر إرسال الرسالة")
+    }.recoverCatching { error ->
+        if (error is retrofit2.HttpException) throw ApiFailure.from(error)
+        throw error
     }
 
     suspend fun sendFile(
@@ -108,11 +108,10 @@ class MediaMessageRepository(
     }
 }
 
-private fun createMediaApi(tokenProvider: () -> String?): MediaMessageApi {
+private fun createMediaApi(session: SessionStore): MediaMessageApi {
     val auth = Interceptor { chain ->
-        val token = tokenProvider()
         val request = chain.request().newBuilder().apply {
-            if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+            session.sessionCookie?.takeIf { it.isNotBlank() }?.let { header("Cookie", "__Host-shino_session=$it") }
             header("Accept", "application/json")
         }.build()
         chain.proceed(request)

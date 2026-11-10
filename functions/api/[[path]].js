@@ -1,4 +1,5 @@
 import { handleCallSignaling } from '../../cloudflare/call-signaling.js';
+import { handleCallGroups } from '../../cloudflare/call-groups.js';
 import { proxyLegacy } from '../../cloudflare/pages/legacy-origin.js';
 import { handleDeveloper } from '../../cloudflare/developer-api.js';
 import { developerHelpers } from '../../cloudflare/pages/developer-helpers.js';
@@ -28,6 +29,13 @@ export async function onRequest(context) {
     if (!actor) return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401,headers:{'Cache-Control':'no-store'}});
     if (pathname.startsWith('/api/friends/qr')) return friendQrRequest(context.request,context.env,actor);
     return smartFriendRoute(context.request,context.env,actor);
+  }
+  if (pathname === '/api/call-groups' || pathname.startsWith('/api/call-groups/')) {
+    if (!context.env.DB) return Response.json({ok:false,message:'قاعدة المجموعات غير مهيأة'},{status:503});
+    const actor = await getAuthenticatedAppUser(context.request,context.env);
+    if (!actor) return Response.json({ok:false,message:'يرجى تسجيل الدخول'},{status:401});
+    try { return await handleCallGroups(context.request,context.env,actor); }
+    catch(error){ console.error('D1 group calls failure',String(error?.message||error));return Response.json({ok:false,message:'تعذر تنفيذ العملية'},{status:500}); }
   }
   // Private WebRTC signaling runs on the existing Pages D1 binding and same-origin
   // HttpOnly session. It does not depend on the retired Socket.IO origin or a

@@ -29,8 +29,8 @@
         .catch(function(e){if(typeof ack==='function')ack({ok:false,message:e.message||'تعذر توجيه المكالمة'});});
       return socket;
     }};
-    function dispatch(type,payload){
-      (listeners[type]||[]).forEach(function(fn){try{fn(payload);}catch(e){console.error('Call event',type,e);}});
+    async function dispatch(type,payload){
+      for(var fn of (listeners[type]||[])){try{await fn(payload);}catch(e){console.error('Call event',type,e);}}
     }
     async function poll(){
       if(stopped)return;
@@ -38,14 +38,17 @@
         var r=await global.SocialAPI.request('/api/call-signals?after='+cursor);
         if(r.ok){
           failures=0;socket.connected=true;
-          (r.events||[]).forEach(function(event){
+          var events=r.events||[];
+          var finished=new Set(events.filter(function(e){return ['call:end','call:reject','call:accept'].includes(e.event);}).map(function(e){return e.callId;}));
+          for(var event of events){
+            if(event.event==='call:invite' && finished.has(event.callId))continue;
             var d=event.payload||{};
-            dispatch(event.event,{
+            await dispatch(event.event,{
               callId:event.callId,conversationId:event.conversationId,
               from:event.from,userId:event.from,callerName:event.callerName,
               type:d.type,reason:d.reason,data:d.data
             });
-          });
+          }
           cursor=r.cursor||cursor;
         }
       }catch(e){

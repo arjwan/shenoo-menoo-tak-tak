@@ -10,6 +10,7 @@ import android.os.Build
 class ShnoManoApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        instance = this
         createNotificationChannels()
     }
 
@@ -34,6 +35,11 @@ class ShnoManoApp : Application() {
         ).apply {
             description = "تنبيهات الرسائل الجديدة"
             enableVibration(settings.vibrationEnabled)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build()
+            )
         }
 
         val ringtone = settings.ringtoneUri?.let(android.net.Uri::parse)
@@ -58,8 +64,10 @@ class ShnoManoApp : Application() {
     }
 
     companion object {
+        lateinit var instance: ShnoManoApp
+            private set
         const val CHANNEL_REALTIME = "shno_realtime"
-        const val CHANNEL_MESSAGES = "shno_messages"
-        const val CHANNEL_CALLS = "shno_calls"
+        const val CHANNEL_MESSAGES = "shno_messages_20261110"
+        const val CHANNEL_CALLS = "shno_calls_20261110"
     }
 }

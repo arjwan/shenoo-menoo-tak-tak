@@ -1,0 +1,124 @@
+name: Standalone Call Stability Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/shno-mano-call/**'
+      - 'call-groups.js'
+      - 'call-groups.html'
+      - 'messages.html'
+      - 'social.css'
+      - 'call-screen.css'
+      - 'screen-share.js'
+      - 'auth-guard.js'
+      - 'incoming-call-global.js'
+      - 'tests/standalone-call-runtime.test.cjs'
+      - 'cloudflare/call-groups.js'
+      - 'private-messages.js'
+      - 'call-signaling.js'
+      - 'functions/api/**'
+      - 'cloudflare/migrations/20261110_call_groups.sql'
+      - '.github/workflows/standalone-call-stability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: standalone-call-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-shared-call-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shared signaling and group scripts
+        run: |
+          node --check call-groups.js
+          node --check cloudflare/call-groups.js
+          node --check call-signaling.js
+          node --check private-messages.js
+          node --check functions/api/\[\[path\]\].js
+      - name: Validate D1 group migration SQL
+        run: |
+          python - <<'PY'
+          import sqlite3
+          c=sqlite3.connect(':memory:')
+          c.executescript('CREATE TABLE users(id TEXT PRIMARY KEY); CREATE TABLE conversations(id TEXT PRIMARY KEY);')
+          c.executescript(open('cloudflare/migrations/20261110_call_groups.sql').read())
+          print('D1 group schema syntax OK')
+          PY
+  browser-call-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install isolated browser test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/call-runtime" --no-save --ignore-scripts playwright@1.56.1
+          sudo apt-get update -qq
+          sudo apt-get install -y coturn
+      - name: Exercise real WebRTC through local TURN TCP
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+          TEST_TURN_URL: turn:127.0.0.1:53490?transport=tcp
+          CALL_TEST_ARTIFACTS: ${{ runner.temp }}/call-previews
+        run: |
+          turnserver -n --no-cli --no-tls --no-dtls --listening-ip=127.0.0.1 --relay-ip=127.0.0.1 --listening-port=53490 --min-port=49160 --max-port=49200 --allow-loopback-peers --realm=local-test --lt-cred-mech --user=test:local-test-only --pidfile="$RUNNER_TEMP/turn.pid" --log-file="$RUNNER_TEMP/turn.log" --no-stdout-log >"$RUNNER_TEMP/turn-start.log" 2>&1 &
+          TURN_PID=$!
+          trap 'kill "$TURN_PID" || true' EXIT
+          export NODE_PATH="$RUNNER_TEMP/call-runtime/node_modules"
+          node --test tests/private-call-signaling.test.mjs tests/incoming-call-global.test.mjs tests/call-audio-ringback.test.mjs tests/standalone-call-runtime.test.cjs
+      - name: Save call screen previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-call-screen-previews
+          path: ${{ runner.temp }}/call-previews
+          if-no-files-found: ignore
+  compile-standalone-call:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android/shno-mano-call
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Gradle dependencies across build runs
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+      - name: Install required Android SDK platform
+        run: |
+          test -n "$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+      - name: Compile and package isolated debug APK
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            echo "Android debug build attempt $attempt/3"
+            if bash ./gradlew :app:assembleDebug --no-daemon --console=plain; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Android build failed after three attempts. Inspect the FIRST Gradle error."
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
+      - name: Upload test APK without replacing production installation
+        uses: actions/upload-artifact@v4
+        with:
+          name: shno-mano-call-standalone-debug
+          path: android/shno-mano-call/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

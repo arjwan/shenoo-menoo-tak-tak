@@ -10,8 +10,11 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
 
     <application
         android:name=".ShnoManoApp"
@@ -36,8 +39,10 @@
         <service
             android:name=".BackgroundRealtimeService"
             android:exported="false"
-            android:foregroundServiceType="dataSync"
+            android:foregroundServiceType="remoteMessaging|microphone|camera"
             android:stopWithTask="false" />
+
+        <service android:name=".ScreenShareService" android:exported="false" android:foregroundServiceType="mediaProjection" />
 
         <receiver
             android:name=".BootCompletedReceiver"
@@ -52,7 +57,7 @@
         <activity android:name=".ContactDiscoveryActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".MediaMessagingActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WebSectionActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".WebCallActivity" android:exported="false" android:launchMode="singleTop" android:screenOrientation="portrait" />
+        <activity android:name=".WebCallActivity" android:exported="false" android:launchMode="singleTop" android:showWhenLocked="true" android:turnScreenOn="true" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" />
         <activity android:name=".RegisterActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".WelcomeActivity" android:exported="false" android:screenOrientation="portrait" />

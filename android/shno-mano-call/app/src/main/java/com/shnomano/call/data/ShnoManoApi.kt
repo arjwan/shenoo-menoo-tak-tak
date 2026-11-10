@@ -99,7 +99,7 @@ data class ConversationDto(val id: String, val otherUser: OtherUserDto? = null, 
 data class ConversationsResponse(val ok: Boolean = false, val conversations: List<ConversationDto> = emptyList())
 data class ConversationResponse(val ok: Boolean = false, val conversation: ConversationDto? = null, val message: String? = null)
 data class MessagesResponse(val ok: Boolean = false, val conversation: ConversationDto? = null, val messages: List<MessageDto> = emptyList())
-data class SendMessageRequest(val text: String)
+data class SendMessageRequest(val text: String, val type: String = "text")
 data class SendMessageResponse(val ok: Boolean = false, val message: MessageDto? = null)
 data class OkResponse(
     val ok: Boolean = false,
@@ -122,6 +122,7 @@ interface ShnoManoApi {
     @POST("api/auth/verify-registration") suspend fun verifyRegistration(@Body body: VerifyRegistrationRequest): VerificationResponse
     @POST("api/auth/resend-verification") suspend fun resendVerification(@Body body: ResendVerificationRequest): VerificationResponse
     @POST("api/auth/signin") suspend fun signIn(@Body body: SignInRequest): SignInResponse
+    @GET("api/auth/session") suspend fun currentSession(): SignInResponse
     @GET("api/phone-contacts") suspend fun phoneContacts(): PhoneContactsResponse
     @PUT("api/phone-contacts") suspend fun savePhoneContacts(@Body body: SavePhoneContactsRequest): PhoneContactsResponse
     @GET("api/friends") suspend fun friends(): FriendsResponse
@@ -142,13 +143,20 @@ interface ShnoManoApi {
 
 object ApiFactory {
     fun create(tokenProvider: () -> String?): ShnoManoApi {
+        val session = SessionStore(com.shnomano.call.ShnoManoApp.instance)
         val auth = Interceptor { chain ->
-            val token = tokenProvider()
             val request = chain.request().newBuilder().apply {
-                if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+                if (!session.sessionCookie.isNullOrBlank()) header("Cookie", "__Host-shino_session=${session.sessionCookie}")
+
                 header("Accept", "application/json")
             }.build()
-            chain.proceed(request)
+            val response = chain.proceed(request)
+            if (request.url.encodedPath == "/api/auth/signin" && response.isSuccessful) {
+                response.headers("Set-Cookie").firstOrNull { it.startsWith("__Host-shino_session=") }
+                    ?.substringAfter("__Host-shino_session=")?.substringBefore(";")
+                    ?.takeIf { it.isNotBlank() }?.let { session.saveSessionCookie(it) }
+            }
+            response
         }
         val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         val client = OkHttpClient.Builder().addInterceptor(auth).addInterceptor(logging).build()

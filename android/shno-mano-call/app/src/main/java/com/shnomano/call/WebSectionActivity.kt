@@ -5,46 +5,84 @@ import android.os.Bundle
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.CookieManager
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import com.shnomano.call.data.SessionStore
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 class WebSectionActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private var pendingMediaRequest: android.webkit.PermissionRequest? = null
+    private val mediaPermissions = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val req = pendingMediaRequest
+        pendingMediaRequest = null
+        if (req != null) {
+            if (result.values.all { it }) req.grant(req.resources.filter {
+                it == android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE || it == android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE
+            }.toTypedArray())
+            else req.deny()
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val requestedUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
+        if (android.net.Uri.parse(requestedUrl).let { it.scheme == "https" && it.host == "shinomino.com" && it.path == "/call-groups.html" }) {
+            startActivity(android.content.Intent(this, WebCallActivity::class.java).apply {
+                putExtra(WebCallActivity.EXTRA_URL, requestedUrl)
+                putExtra(WebCallActivity.EXTRA_GROUP_CALL, true)
+            })
+            finish()
+            return
+        }
+        if (intent.getBooleanExtra(EXTRA_GROUP_INVITE, false)) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            } else {
+                @Suppress("DEPRECATION")
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            }
+        }
         webView = WebView(this).apply {
             setBackgroundColor(android.graphics.Color.rgb(7, 9, 16))
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = true
+            settings.mediaPlaybackRequiresUserGesture = false
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
+                    runOnUiThread {
+                        val requested = request.resources.filter { it == android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE || it == android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE }
+                        if (requested.isEmpty()) { request.deny(); return@runOnUiThread }
+                        val needed = mutableListOf<String>()
+                        if (android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE in requested && androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) needed += android.Manifest.permission.RECORD_AUDIO
+                        if (android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE in requested && androidx.core.content.ContextCompat.checkSelfPermission(this@WebSectionActivity, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) needed += android.Manifest.permission.CAMERA
+                        if (needed.isEmpty()) request.grant(requested.toTypedArray())
+                        else { pendingMediaRequest?.deny(); pendingMediaRequest = request; mediaPermissions.launch(needed.toTypedArray()) }
+                    }
+                }
+            }
             webViewClient = WebViewClient()
         }
         setContentView(FrameLayout(this).apply { addView(webView, FrameLayout.LayoutParams(-1, -1)) })
 
         val target = intent.getStringExtra(EXTRA_URL)?.takeIf { it.startsWith(BASE) } ?: BASE
-        val token = SessionStore(this).token.orEmpty()
-        val escapedToken = token.replace("\\", "\\\\").replace("'", "\\'")
-        val escapedTarget = target.replace("'", "%27")
-        val bootstrap = """
-            <!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>
-            <style>html,body{margin:0;background:#070910;color:white;font-family:sans-serif}body{display:grid;place-items:center;height:100vh}</style>
-            </head><body>جارٍ فتح شنو منو…<script>
-            try {
-              localStorage.setItem('token','$escapedToken');
-              sessionStorage.setItem('token','$escapedToken');
-            } catch(e) {}
-            location.replace('$escapedTarget');
-            </script></body></html>
-        """.trimIndent()
-        webView.loadDataWithBaseURL(BASE, bootstrap, "text/html", "UTF-8", null)
+        val cookie = SessionStore(this).sessionCookie
+        if (cookie.isNullOrBlank()) {
+            finish()
+            return
+        }
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setCookie(
+            BASE, "__Host-shino_session=$cookie; Path=/; Secure; HttpOnly; SameSite=Lax"
+        )
+        CookieManager.getInstance().flush()
+        webView.loadUrl(target)
     }
 
     override fun onBackPressed() {
@@ -62,6 +100,7 @@ class WebSectionActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_URL = "url"
+        const val EXTRA_GROUP_INVITE = "group_invite"
         const val BASE = "https://shinomino.com/"
     }
 }

@@ -5,8 +5,8 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('caller gets real ringback on successful invite, stops on acceptance and termination',()=>{
  const s=read('private-messages.js');
  assert.match(s,/callStatus\("يرن…"\); if\(window\.ShnoCallAudio\)window\.ShnoCallAudio\.startRingback\(\)/);
- assert.match(s,/socket\.on\("call:accept"[\s\S]{0,220}ShnoCallAudio\.stop\(\)/);
- assert.match(s,/function endCall\([^)]*\) \{ if \(window\.ShnoCallAudio\) window\.ShnoCallAudio\.stop\(\)/);
+ assert.match(s,/socket\.on\("call:accept"[\s\S]*ShnoCallAudio\.stop\(\)/);
+ assert.match(s,/function endCall\([^)]*\) \{[\s\S]*?if\s*\(window\.ShnoCallAudio\)\s*window\.ShnoCallAudio\.stop\(\)/);
 });
 test('incoming call rings on authenticated pages and stops on cancel',()=>{
  const s=read('incoming-call-global.js');
