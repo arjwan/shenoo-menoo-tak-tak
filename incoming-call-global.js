@@ -21,6 +21,7 @@
     }
   }
   function startSound(){
+    if(global.ShnoAndroidCall)return; // Android notification channel is the incoming ringtone owner.
     if(global.ShnoCallAudio)global.ShnoCallAudio.startIncoming();
     if(global.ShnoManoNative&&typeof global.ShnoManoNative.showIncomingCallAlert==='function'){
       try{global.ShnoManoNative.showIncomingCallAlert(active.callId,active.callerName,active.from,active.conversationId,active.type);}catch(_){}
@@ -90,7 +91,7 @@
   function showDesktopNotification(){
     if(!active||!('Notification' in global)||Notification.permission!=='granted')return;
     // The Android bridge already owns its native incoming-call notification.
-    if(global.ShnoManoNative)return;
+    if(global.ShnoManoNative || global.ShnoAndroidCall)return;
     try{
       if(desktopNotice)desktopNotice.close();
       var callId=active.callId;

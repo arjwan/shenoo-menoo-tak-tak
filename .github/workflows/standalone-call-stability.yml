@@ -6,6 +6,14 @@ on:
     paths:
       - 'android/shno-mano-call/**'
       - 'call-groups.js'
+      - 'call-groups.html'
+      - 'messages.html'
+      - 'social.css'
+      - 'call-screen.css'
+      - 'screen-share.js'
+      - 'auth-guard.js'
+      - 'incoming-call-global.js'
+      - 'tests/standalone-call-runtime.test.cjs'
       - 'cloudflare/call-groups.js'
       - 'private-messages.js'
       - 'call-signaling.js'
@@ -42,6 +50,36 @@ jobs:
           c.executescript(open('cloudflare/migrations/20261110_call_groups.sql').read())
           print('D1 group schema syntax OK')
           PY
+  browser-call-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install isolated browser test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/call-runtime" --no-save --ignore-scripts playwright@1.56.1
+          sudo apt-get update -qq
+          sudo apt-get install -y coturn
+      - name: Exercise real WebRTC through local TURN TCP
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+          TEST_TURN_URL: turn:127.0.0.1:3478?transport=tcp
+          CALL_TEST_ARTIFACTS: ${{ runner.temp }}/call-previews
+        run: |
+          turnserver -n --no-cli --no-tls --no-dtls --listening-ip=127.0.0.1 --relay-ip=127.0.0.1 --listening-port=3478 --min-port=49160 --max-port=49200 --allow-loopback-peers --realm=local-test --lt-cred-mech --user=test:local-test-only --pidfile="$RUNNER_TEMP/turn.pid" --log-file="$RUNNER_TEMP/turn.log" --no-stdout-log &
+          TURN_PID=$!
+          trap 'kill "$TURN_PID" || true' EXIT
+          export NODE_PATH="$RUNNER_TEMP/call-runtime/node_modules"
+          node --test tests/private-call-signaling.test.mjs tests/incoming-call-global.test.mjs tests/call-audio-ringback.test.mjs tests/standalone-call-runtime.test.cjs
+      - name: Save call screen previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-call-screen-previews
+          path: ${{ runner.temp }}/call-previews
+          if-no-files-found: ignore
   compile-standalone-call:
     runs-on: ubuntu-latest
     defaults:

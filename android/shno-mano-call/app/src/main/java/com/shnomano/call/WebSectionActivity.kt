@@ -29,6 +29,15 @@ class WebSectionActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val requestedUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
+        if (android.net.Uri.parse(requestedUrl).let { it.scheme == "https" && it.host == "shinomino.com" && it.path == "/call-groups.html" }) {
+            startActivity(android.content.Intent(this, WebCallActivity::class.java).apply {
+                putExtra(WebCallActivity.EXTRA_URL, requestedUrl)
+                putExtra(WebCallActivity.EXTRA_GROUP_CALL, true)
+            })
+            finish()
+            return
+        }
         if (intent.getBooleanExtra(EXTRA_GROUP_INVITE, false)) {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
                 setShowWhenLocked(true)

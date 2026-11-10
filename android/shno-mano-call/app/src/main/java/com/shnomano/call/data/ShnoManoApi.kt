@@ -145,7 +145,6 @@ object ApiFactory {
     fun create(tokenProvider: () -> String?): ShnoManoApi {
         val session = SessionStore(com.shnomano.call.ShnoManoApp.instance)
         val auth = Interceptor { chain ->
-            val token = tokenProvider()
             val request = chain.request().newBuilder().apply {
                 if (!session.sessionCookie.isNullOrBlank()) header("Cookie", "__Host-shino_session=${session.sessionCookie}")
 

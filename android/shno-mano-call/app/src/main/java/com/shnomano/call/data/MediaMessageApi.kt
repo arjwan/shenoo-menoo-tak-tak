@@ -81,9 +81,12 @@ class MediaMessageRepository(
 
     suspend fun sendText(conversationId: String, text: String): Result<MediaMessageDto> = runCatching {
         val clean = text.trim()
-        require(clean.isNotBlank()) { "الرسالة فارغة" }
+        require(clean.isNotBlank() && clean.length <= 5000) { "اكتب رسالة بين 1 و5000 حرف" }
         api.sendText(conversationId, SendMessageRequest(clean)).message
             ?: error("تعذر إرسال الرسالة")
+    }.recoverCatching { error ->
+        if (error is retrofit2.HttpException) throw ApiFailure.from(error)
+        throw error
     }
 
     suspend fun sendFile(

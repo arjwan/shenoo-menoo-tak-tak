@@ -27,6 +27,8 @@ import org.json.JSONObject
  */
 class BackgroundRealtimeService : Service() {
     private var poller: ScheduledExecutorService? = null
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val handledCalls = java.util.Collections.synchronizedSet(linkedSetOf<String>())
     private var callCursor = 0L
     private val seenUnread = mutableMapOf<String, Int>()
     private var groupCursor = 0L
@@ -35,6 +37,7 @@ class BackgroundRealtimeService : Service() {
     private val notifiedGroupCalls = mutableSetOf<String>()
     private var baselineLoaded = false
     private var lastMessagesCheck = 0L
+    private var activeCall: JSONObject? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -46,21 +49,33 @@ class BackgroundRealtimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        startAsForeground()
+        startPolling()
+        if (intent?.action == ACTION_END_CALL) {
+            if (!WebCallActivity.endActiveCall()) {
+                activeCall?.let { call ->
+                    poller?.execute {
+                        try { sendTerminalSignal(call.optString("callId"), call.optString("conversationId"), call.optString("userId"), "call:end") }
+                        catch (error: Exception) { Log.w(TAG, "Call termination failed", error) }
+                    }
+                    clearActiveNotification(call.optString("callId"))
+                }
+            }
+            return START_STICKY
+        }
         if (intent?.action == ACTION_REJECT_CALL) {
             val callId = intent.getStringExtra("call_id").orEmpty()
             val conversationId = intent.getStringExtra("conversation_id").orEmpty()
             val from = intent.getStringExtra("from").orEmpty()
             if (callId.isNotBlank() && conversationId.isNotBlank() && from.isNotBlank()) {
-                Executors.newSingleThreadExecutor().execute {
-                    try { rejectRemoteCall(callId, conversationId, from) }
+                poller?.execute {
+                    try { sendTerminalSignal(callId, conversationId, from) }
                     catch (error: Exception) { Log.w(TAG, "Call rejection failed", error) }
                 }
                 clearCallAlert(callId)
             }
             return START_STICKY
         }
-        startAsForeground()
-        startPolling()
         return START_STICKY
     }
 
@@ -86,7 +101,17 @@ class BackgroundRealtimeService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(SERVICE_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            var types = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING else 0
+            if (activeCall != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                if (activeCall?.optString("type") == "video" && ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+            }
+            // Android enforces while-in-use grants when capture types are added.
+            try { startForeground(SERVICE_NOTIFICATION_ID, notification, types) }
+            catch (error: SecurityException) {
+                Log.w(TAG, "Capture foreground permission unavailable", error)
+                startForeground(SERVICE_NOTIFICATION_ID, notification, if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING else 0)
+            }
         } else {
             startForeground(SERVICE_NOTIFICATION_ID, notification)
         }
@@ -140,9 +165,12 @@ class BackgroundRealtimeService : Service() {
         val data = getJson("api/call-signals?after=$callCursor")
         if (!data.optBoolean("ok")) return
         val events = data.optJSONArray("events") ?: return
+        val terminated = (0 until events.length()).mapNotNull { events.optJSONObject(it) }
+            .filter { it.optString("event") in listOf("call:end", "call:reject", "call:accept") }
+            .map { it.optString("callId") }.toSet()
         for (i in 0 until events.length()) {
             val event = events.optJSONObject(i) ?: continue
-            if (event.optString("event") == "call:invite") {
+            if (event.optString("event") == "call:invite" && event.optString("callId") !in terminated) {
                 val payload = JSONObject()
                     .put("callId", event.optString("callId"))
                     .put("from", event.optString("from"))
@@ -151,7 +179,11 @@ class BackgroundRealtimeService : Service() {
                     .put("type", event.optJSONObject("payload")?.optString("type") ?: "audio")
                 handleIncomingInvite(payload, false)
             } else if (event.optString("event") in listOf("call:end", "call:reject", "call:accept")) {
-                clearCallAlert(event.optString("callId"))
+                val id = event.optString("callId")
+                clearCallAlert(id)
+                if (event.optString("event") != "call:accept" && activeCall?.optString("callId") == id) {
+                    mainHandler.post { WebCallActivity.endActiveCall(); clearActiveNotification(id) }
+                }
             }
             callCursor = maxOf(callCursor, event.optLong("id", 0L))
         }
@@ -243,7 +275,7 @@ class BackgroundRealtimeService : Service() {
     }
 
     private fun notifyGroupCall(groupId: String, name: String, callId: String) {
-        val url = SHNO_MANO_BASE_URL + "call-groups.html?group=" + Uri.encode(groupId)
+        val url = SHNO_MANO_BASE_URL + "call-groups.html?group=" + Uri.encode(groupId) + "&incomingCall=" + Uri.encode(callId)
         val open = Intent(this, WebSectionActivity::class.java).apply {
             putExtra(WebSectionActivity.EXTRA_URL, url)
             putExtra(WebSectionActivity.EXTRA_GROUP_INVITE, true)
@@ -263,6 +295,7 @@ class BackgroundRealtimeService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
+            .setTimeoutAfter(30_000)
             .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "عرض المكالمة", pending).build())
             .build()
         getSystemService(NotificationManager::class.java).notify(callId.hashCode(), notification)
@@ -281,12 +314,15 @@ class BackgroundRealtimeService : Service() {
             type = type,
             callerName = payload.optString("callerName").ifBlank { "مستخدم شنو منو" }
         )
+        if (!handledCalls.add(callId)) return
+        synchronized(handledCalls) { if (handledCalls.size > 128) handledCalls.remove(handledCalls.first()) }
         if (!PresenceStore.acceptIncomingCall(call)) return
+        mainHandler.postDelayed({ clearCallAlert(callId) }, 30_000)
         // Android notification channel owns the call ringtone (no second player).
         postIncomingCallNotification(call, isGroup)
     }
 
-    private fun rejectRemoteCall(callId: String, conversationId: String, from: String) {
+    private fun sendTerminalSignal(callId: String, conversationId: String, from: String, event: String = "call:reject") {
         val cookie = SessionStore(this).sessionCookie ?: return
         val conn = URL(SHNO_MANO_BASE_URL + "api/call-signals").openConnection() as HttpURLConnection
         try {
@@ -297,7 +333,7 @@ class BackgroundRealtimeService : Service() {
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Cookie", "__Host-shino_session=$cookie")
             val body = JSONObject()
-                .put("event", "call:reject")
+                .put("event", event)
                 .put("callId", callId)
                 .put("conversationId", conversationId)
                 .put("userId", from)
@@ -362,12 +398,46 @@ class BackgroundRealtimeService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
+            .setTimeoutAfter(30_000)
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)
             .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "قبول", answerPending).build())
             .addAction(NotificationCompat.Action.Builder(R.drawable.ic_launcher, "رفض", rejectPending).build())
-            .build()
+            .build().apply {
+                if (SettingsStore(this@BackgroundRealtimeService).callSoundEnabled) this.flags = this.flags or android.app.Notification.FLAG_INSISTENT
+            }
         getSystemService(NotificationManager::class.java).notify(CALL_NOTIFICATION_ID, notification)
+    }
+
+    private fun showActiveCall(state: JSONObject, url: String) {
+        activeCall = state
+        startAsForeground()
+        val resume = Intent(this, WebCallActivity::class.java).apply {
+            putExtra(WebCallActivity.EXTRA_URL, url)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pending = PendingIntent.getActivity(this, ACTIVE_CALL_NOTIFICATION_ID, resume, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val end = PendingIntent.getService(this, ACTIVE_CALL_NOTIFICATION_ID,
+            Intent(this, BackgroundRealtimeService::class.java).setAction(ACTION_END_CALL),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_REALTIME)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle("مكالمة شنو منو اتصال")
+            .setContentText("اضغط للرجوع إلى المكالمة")
+            .setContentIntent(pending)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .addAction(R.drawable.ic_launcher, "إنهاء المكالمة", end)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(ACTIVE_CALL_NOTIFICATION_ID, notification)
+    }
+
+    private fun clearActiveNotification(callId: String) {
+        if (activeCall?.optString("callId") != callId) return
+        activeCall = null
+        startAsForeground()
+        getSystemService(NotificationManager::class.java).cancel(ACTIVE_CALL_NOTIFICATION_ID)
     }
 
     private fun clearCallAlert(callId: String?) {
@@ -386,6 +456,8 @@ class BackgroundRealtimeService : Service() {
 
     override fun onDestroy() {
         getSystemService(NotificationManager::class.java).cancel(CALL_NOTIFICATION_ID)
+        getSystemService(NotificationManager::class.java).cancel(ACTIVE_CALL_NOTIFICATION_ID)
+        mainHandler.removeCallbacksAndMessages(null)
         poller?.shutdownNow()
         poller = null
         PresenceStore.clearAll()
@@ -395,6 +467,8 @@ class BackgroundRealtimeService : Service() {
 
     companion object {
         private const val TAG = "ShnoRealtime"
+        private const val ACTION_END_CALL = "com.shnomano.call.action.END_CALL"
+        private const val ACTIVE_CALL_NOTIFICATION_ID = 4103
         private const val ACTION_STOP = "com.shnomano.call.action.STOP_REALTIME"
         private const val ACTION_REJECT_CALL = "com.shnomano.call.action.REJECT_CALL"
         private const val SERVICE_NOTIFICATION_ID = 4101
@@ -414,6 +488,11 @@ class BackgroundRealtimeService : Service() {
             PresenceStore.clearAll()
         }
 
+        fun trackActiveCall(state: JSONObject, url: String) {
+            running?.showActiveCall(state, url)
+        }
+        fun refreshCaptureForeground() { running?.startAsForeground() }
+        fun clearActiveCall(callId: String) { running?.clearActiveNotification(callId) }
         fun acknowledgeIncomingCall(callId: String) { running?.clearCallAlert(callId) }
     }
 }

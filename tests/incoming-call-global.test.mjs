@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('every signed-in page loads a global call watcher after session validation',()=>{
  const guard=read('auth-guard.js');
- assert.match(guard,/incoming-call-global\.js\?v=20261109-1/);
+ assert.match(guard,/incoming-call-global\.js\?v=20261110-native-2/);
  assert.match(guard,/window\.shnoSessionReady=/);
  const watcher=read('incoming-call-global.js');
  assert.match(watcher,/Promise\.resolve\(global\.shnoSessionReady\|\|true\)/);

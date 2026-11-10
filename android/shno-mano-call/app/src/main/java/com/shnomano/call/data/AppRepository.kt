@@ -162,7 +162,7 @@ class AppRepository(context: Context) {
 
     suspend fun sendMessage(conversationId: String, text: String): Result<MessageDto> = withContext(Dispatchers.IO) {
         val clean = text.trim()
-        if (clean.isBlank()) return@withContext Result.failure(IllegalArgumentException("الرسالة فارغة"))
+        if (clean.isBlank() || clean.length > 5000) return@withContext Result.failure(IllegalArgumentException("اكتب رسالة بين 1 و5000 حرف"))
         try {
             val remote = api.sendMessage(conversationId, SendMessageRequest(clean)).message
                 ?: return@withContext Result.failure(IllegalStateException("تعذر إرسال الرسالة"))
@@ -180,6 +180,8 @@ class AppRepository(context: Context) {
                 )))
             }
             Result.success(dto)
+        } catch (error: HttpException) {
+            Result.failure(ApiFailure.from(error))
         } catch (error: IOException) {
             val pending = MessageEntity(
                 id = "local-${UUID.randomUUID()}",

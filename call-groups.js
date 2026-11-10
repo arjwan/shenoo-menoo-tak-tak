@@ -7,11 +7,16 @@ const $=id=>document.getElementById(id);
 const api=(path,opts)=>SocialAPI.request('/api/call-groups'+path,opts);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let selfId='',groups=[],contacts=[],current=null,members=[],signalCursor=0,messageSnapshot='',polling=false;
+let iceQueues=new Map(),ending=false,sharing=false,beforeShare='audio';
 let call=null,local=null,peers=new Map(),mediaType='audio',mute=false,layoutTwo=false,invitation=null;
 const feedback=message=>{$('group-feedback').textContent=message||'';};
 const setStatus=message=>{$('group-call-status').textContent=message;};
 const post=(path,body)=>api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 const uuid=()=>crypto.randomUUID();
+function reportNative(state,id=call?.id){
+ if(window.ShnoAndroidCall)window.ShnoAndroidCall.onCallState(JSON.stringify({state,callId:id,type:mediaType,groupId:current?.id}));
+}
+window.shnoEndCall=()=>{if(call)return leaveCall();if(window.ShnoAndroidCall)window.ShnoAndroidCall.onCallState(JSON.stringify({state:'ended',callId:''}));};
 async function init(){
  try{
   const session=await SocialAPI.request('/api/auth/session');
@@ -21,7 +26,11 @@ async function init(){
   contacts=(rows.conversations||[]).map(c=>c.otherUser).filter(u=>u&&u.id);
   await loadGroups();
   const requested=new URLSearchParams(location.search).get('group');
-  if(requested&&groups.some(g=>g.id===requested))await openGroup(requested);
+  if(requested&&groups.some(g=>g.id===requested)){
+    await openGroup(requested);
+    const params=new URLSearchParams(location.search);
+    if(['audio','video'].includes(params.get('start'))){await startCall(params.get('start'));history.replaceState(null,'','call-groups.html?group='+encodeURIComponent(current.id));}
+  }
   setInterval(tick,1800);
  }catch(e){feedback(e.message||'تعذر بدء المجموعات')}
 }
@@ -47,9 +56,9 @@ $('group-create-form').onsubmit=async event=>{
  }catch(e){feedback(e.message)}
 };
 $('group-refresh').onclick=()=>loadGroups().catch(e=>feedback(e.message));
-$('group-back').onclick=()=>{if(call)leaveCall();current=null;$('group-room').hidden=true;$('group-list').hidden=false;$('group-stage').hidden=true;$('group-invite').hidden=true};
+$('group-back').onclick=async()=>{if(call)await leaveCall();current=null;$('group-room').hidden=true;$('group-list').hidden=false;$('group-stage').hidden=true;$('group-invite').hidden=true};
 async function openGroup(id){
- if(call)leaveCall();
+ if(call)await leaveCall();
  const r=await api('/'+encodeURIComponent(id));
  current=r.group;members=r.members||[];signalCursor=0;messageSnapshot='';
  $('group-room').hidden=false;$('group-list').hidden=true;$('group-title').textContent=current.name;
@@ -90,7 +99,7 @@ async function checkSignals(){
  for(const s of data.signals||[])await dispatch(s);
 }
 async function tick(){
- if(polling||document.hidden||!current)return;
+ if(polling||(!call && document.hidden)||!current)return;
  polling=true;
  try{await checkSignals();await loadMessages()}catch(e){feedback(e.message)}
  finally{polling=false}
@@ -120,8 +129,9 @@ async function startCall(type){
  if(!current||call)return;
  try{
   mediaType=type;await takeMedia(type);
-  call={id:uuid(),hostId:selfId};
-  $('group-stage').hidden=false;setStatus('دعوة أعضاء المجموعة…');
+  const requested=new URLSearchParams(location.search).get('callId');
+  call={id:/^[a-f0-9-]{36}$/i.test(requested||'')?requested:uuid(),hostId:selfId};
+  $('group-stage').hidden=false;setStatus('دعوة أعضاء المجموعة…');reportNative('outgoing');
   await broadcast('invite',{type,name:current.name,hostId:selfId});
   setStatus('بانتظار انضمام المشاركين…');
  }catch(e){feedback('تعذر تشغيل الميكروفون أو الكاميرا: '+e.message)}
@@ -135,7 +145,7 @@ function ensurePeer(userId,initiator){
  if(local)local.getTracks().forEach(track=>pc.addTrack(track,local));
  pc.ontrack=e=>{const m=members.find(x=>x.id===userId);tile(userId,m?.fullName||'مشارك',e.streams[0])};
  pc.onicecandidate=e=>{if(e.candidate)signal(userId,'ice',e.candidate).catch(()=>{})};
- pc.onconnectionstatechange=()=>{if(pc.connectionState==='connected')setStatus('مكالمة جماعية متصلة');if(pc.connectionState==='failed')setStatus('تعذر الاتصال بأحد المشاركين')};
+ pc.onconnectionstatechange=()=>{if(pc.connectionState==='connected'){setStatus('مكالمة جماعية متصلة');reportNative('connected');}if(pc.connectionState==='failed')setStatus('تعذر الاتصال بأحد المشاركين')};
  if(initiator)sendOffer(userId,pc).catch(e=>feedback(e.message));
  return pc;
 }
@@ -145,19 +155,37 @@ async function sendOffer(userId,pc){
  await pc.setLocalDescription(offer);
  await signal(userId,'offer',pc.localDescription);
 }
+async function flushIce(id,pc){
+ const queue=iceQueues.get(id)||[];iceQueues.delete(id);
+ for(const candidate of queue)await pc.addIceCandidate(candidate).catch(()=>{});
+}
 async function dispatch(e){
+ if((e.event==='end'||e.event==='leave') && invitation?.callId===e.callId){invitation=null;$('group-invite').hidden=true;}
+
  if(e.event==='invite' && !call){
   invitation=e;
   $('group-invite-text').textContent='مكالمة '+(e.data.type==='video'?'فيديو':'صوتية')+' واردة إلى '+(current?.name||'المجموعة');
-  $('group-invite').hidden=false;return;
+  $('group-invite').hidden=false;
+  if(new URLSearchParams(location.search).get('joinCall')===e.callId)await acceptInvitation();
+  return;
  }
  if(!call||e.callId!==call.id)return;
  if(e.event==='join'){
-  ensurePeer(e.from,true);return;
+  if(!peers.has(e.from)){
+   const fresh=await api('/'+current.id);members=fresh.members||members;
+   ensurePeer(e.from,selfId<e.from);
+   await signal(e.from,'join',{type:mediaType});
+  }
+  return;
  }
  if(e.event==='offer'){
   const pc=ensurePeer(e.from,false);
+  if(pc.signalingState!=='stable'){
+   if(selfId<e.from)return;
+   await pc.setLocalDescription({type:'rollback'});
+  }
   await pc.setRemoteDescription(e.data);
+  await flushIce(e.from,pc);
   const answer=await pc.createAnswer();
   await pc.setLocalDescription(answer);
   await signal(e.from,'answer',pc.localDescription);
@@ -165,12 +193,13 @@ async function dispatch(e){
  }
  if(e.event==='answer'){
   const pc=peers.get(e.from);
-  if(pc&&pc.signalingState==='have-local-offer')await pc.setRemoteDescription(e.data);
+  if(pc&&pc.signalingState==='have-local-offer'){await pc.setRemoteDescription(e.data);await flushIce(e.from,pc);}
   return;
  }
  if(e.event==='ice'){
   const pc=peers.get(e.from);
-  if(pc)await pc.addIceCandidate(e.data).catch(()=>{});
+  if(pc?.remoteDescription)await pc.addIceCandidate(e.data).catch(()=>{});
+  else {if(!iceQueues.has(e.from))iceQueues.set(e.from,[]);iceQueues.get(e.from).push(e.data);}
   return;
  }
  if(e.event==='media'){
@@ -181,45 +210,53 @@ async function dispatch(e){
   const pc=peers.get(e.from);
   if(pc){pc.close();peers.delete(e.from)}
   $('group-tiles').querySelector('[data-tile="'+e.from+'"]')?.remove();
-  if(e.event==='end'&&e.from===call.hostId)leaveCall(false);
+  if(e.event==='end'&&e.from===call.hostId)await leaveCall(false);
  }
 }
-$('group-accept').onclick=async()=>{
+async function acceptInvitation(){
  const invite=invitation;invitation=null;$('group-invite').hidden=true;
  if(!invite||call)return;
  try{
   mediaType=invite.data.type==='video'?'video':'audio';
   await takeMedia(mediaType);
   call={id:invite.callId,hostId:invite.data.hostId||invite.from};
-  $('group-stage').hidden=false;setStatus('جارٍ الانضمام للمكالمة…');
-  await signal(invite.from,'join',{type:mediaType});
- }catch(e){feedback('تعذر قبول الدعوة: '+e.message)}
-};
-$('group-reject').onclick=()=>{invitation=null;$('group-invite').hidden=true};
-function leaveCall(notify=true){
- if(call&&notify)broadcast(call.hostId===selfId?'end':'leave').catch(()=>{});
+  $('group-stage').hidden=false;setStatus('جارٍ الانضمام للمكالمة…');reportNative('accepting');
+  await broadcast('join',{type:mediaType});
+ }catch(e){leaveCall(false);feedback('تعذر قبول الدعوة: '+e.message)}
+}
+$('group-accept').onclick=acceptInvitation;
+$('group-reject').onclick=async()=>{const invite=invitation;invitation=null;$('group-invite').hidden=true;if(invite)await signal(invite.from,'leave',{},invite.callId).catch(e=>feedback(e.message));};
+async function leaveCall(notify=true){
+ if(ending)return;
+ ending=true;
+ const endedId=call?.id;
+ // Capture identifiers before clearing state; wait for every terminal signal.
+ if(call&&notify)await broadcast(call.hostId===selfId?'end':'leave');
  for(const pc of peers.values())pc.close();
- peers.clear();
+ peers.clear();iceQueues.clear();
+ sharing=false;if(window.ShnoScreenShare)window.ShnoScreenShare.stop();
  if(local){local.getTracks().forEach(t=>t.stop());local=null}
- call=null;invitation=null;
+ call=null;invitation=null;ending=false;
  $('group-stage').hidden=true;$('group-tiles').replaceChildren();
+ reportNative('ended',endedId);
 }
 $('group-end').onclick=()=>leaveCall();
 $('group-mute').onclick=()=>{
  if(!local)return;
  mute=!mute;
  local.getAudioTracks().forEach(t=>t.enabled=!mute);
- $('group-mute').textContent=mute?'🎙 تشغيل':'🎙 كتم';
+ $('group-mute').querySelector('.call-control-label').textContent=mute?'تشغيل الصوت':'كتم الصوت';
 };
 $('group-video').onclick=async()=>{
  if(!call||!local)return;
+ if(sharing)await stopGroupShare();
  const target=mediaType==='video'?'audio':'video';
  try{
   if(target==='video'){
    const stream=await navigator.mediaDevices.getUserMedia({video:true});
    const track=stream.getVideoTracks()[0];local.addTrack(track);
    for(const pc of peers.values()){
-    const sender=pc.getSenders().find(s=>s.track?.kind==='video');
+    const sender=pc.getTransceivers().find(t=>t.receiver.track.kind==='video')?.sender;
     if(sender)await sender.replaceTrack(track);else pc.addTrack(track,local);
    }
   }else{
@@ -231,11 +268,48 @@ $('group-video').onclick=async()=>{
   for(const [id,pc] of peers)await sendOffer(id,pc);
  }catch(e){feedback('تعذر تحويل المكالمة: '+e.message)}
 };
+async function setGroupVideo(track){
+ if(!call||!local){if(track)track.stop();return;}
+ const previous=local.getVideoTracks();
+ for(const pc of peers.values()){
+  const sender=pc.getTransceivers().find(t=>t.receiver.track.kind==='video')?.sender;
+  if(sender)await sender.replaceTrack(track);else if(track)pc.addTrack(track,local);
+ }
+ previous.forEach(t=>{local.removeTrack(t);if(t!==track)t.stop()});
+ if(track)local.addTrack(track);
+ mediaType=track?'video':'audio';tile('self','أنت',local,true);
+ await broadcast('media',{type:mediaType});
+ for(const [id,pc] of peers)await sendOffer(id,pc);
+}
+async function stopGroupShare(){
+ if(!sharing)return;sharing=false;window.ShnoScreenShare.stop();
+ $('group-share').querySelector('.call-control-label').textContent='مشاركة الشاشة';
+ const track=beforeShare==='video'?(await navigator.mediaDevices.getUserMedia({video:true,audio:false})).getVideoTracks()[0]:null;
+ await setGroupVideo(track);
+}
+$('group-share').onclick=async()=>{
+ if(!call||!local)return;
+ $('group-share').disabled=true;
+ try{
+  if(sharing){await stopGroupShare();return;}
+  const original=call;beforeShare=mediaType;
+  const screen=await window.ShnoScreenShare.start();
+  if(call!==original){window.ShnoScreenShare.stop();return;}
+  await setGroupVideo(screen.getVideoTracks()[0]);sharing=true;$('group-share').querySelector('.call-control-label').textContent='إيقاف المشاركة';
+ }catch(e){window.ShnoScreenShare.stop();feedback(e.message)}
+ finally{$('group-share').disabled=false}
+};
+window.addEventListener('shno:screen-share-stopped',()=>{if(sharing)stopGroupShare().catch(e=>feedback(e.message))});
 $('group-split').onclick=()=>{
  layoutTwo=!layoutTwo;
  $('group-tiles').style.gridTemplateColumns=layoutTwo?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(130px,1fr))';
 };
-$('group-speaker').onclick=()=>feedback('يتم اختيار مخرج الصوت من نظام الجهاز؛ لا يمكن للمتصفح تغيير سماعة الهاتف مباشرة');
+let speaker=false;
+$('group-speaker').onclick=async()=>{
+ if(window.ShnoAndroidCall){speaker=!speaker;window.ShnoAndroidCall.setSpeaker(speaker);return;}
+ if(!navigator.mediaDevices.selectAudioOutput){feedback('اختر مخرج الصوت من إعدادات الجهاز');return;}
+ try{const output=await navigator.mediaDevices.selectAudioOutput();for(const video of $('group-tiles').querySelectorAll('video'))if(!video.muted&&video.setSinkId)await video.setSinkId(output.deviceId);}catch(e){feedback(e.message)}
+};
 async function addMember(){
  if(!current)return;
  const eligible=contacts.filter(u=>!members.some(m=>m.id===u.id));
@@ -253,6 +327,11 @@ async function addMember(){
 }
 $('group-add').onclick=addMember;
 $('group-add-in-call').onclick=addMember;
-addEventListener('beforeunload',()=>{if(call)leaveCall(true)});
+addEventListener('beforeunload',()=>{
+ if(call&&current){
+  for(const member of members)if(member.id!==selfId)fetch('/api/call-groups/'+current.id+'/signals',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:member.id,event:call.hostId===selfId?'end':'leave',callId:call.id,data:{}})}).catch(()=>{});
+ }
+ if(local)local.getTracks().forEach(t=>t.stop());
+});
 init();
 }());
