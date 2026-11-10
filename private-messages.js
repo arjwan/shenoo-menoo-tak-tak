@@ -396,5 +396,12 @@
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden){refreshCurrentMessages();loadList();}
   });
+  if(window.ShnoAndroidCall && typeof window.ShnoAndroidCall.getBuildInfo==='function'){
+    var build=document.querySelector('[data-call-build]');build.textContent='اتصال '+window.ShnoAndroidCall.getBuildInfo();build.hidden=false;
+    var initialType=params.get('call')||params.get('prepare');
+    if(['audio','video'].includes(initialType)){
+      callModal.hidden=false;callName('شنو منو اتصال',initialType);callStatus('جارٍ تجهيز المكالمة…');
+    }
+  }
   loadList().then(start);
 }());

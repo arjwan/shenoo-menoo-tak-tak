@@ -30,10 +30,10 @@ class WebSectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val requestedUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
-        if (android.net.Uri.parse(requestedUrl).let { it.scheme == "https" && it.host == "shinomino.com" && it.path == "/call-groups.html" }) {
+        if (isCallSurface(requestedUrl)) {
             startActivity(android.content.Intent(this, WebCallActivity::class.java).apply {
                 putExtra(WebCallActivity.EXTRA_URL, requestedUrl)
-                putExtra(WebCallActivity.EXTRA_GROUP_CALL, true)
+                putExtra(WebCallActivity.EXTRA_GROUP_CALL, android.net.Uri.parse(requestedUrl).path == "/call-groups.html")
             })
             finish()
             return
@@ -67,7 +67,17 @@ class WebSectionActivity : ComponentActivity() {
                     }
                 }
             }
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
+                    val target = request?.url?.toString().orEmpty()
+                    if (!isCallSurface(target)) return false
+                    startActivity(Intent(this@WebSectionActivity, WebCallActivity::class.java).apply {
+                        putExtra(WebCallActivity.EXTRA_URL, target)
+                        putExtra(WebCallActivity.EXTRA_GROUP_CALL, android.net.Uri.parse(target).path == "/call-groups.html")
+                    })
+                    return true
+                }
+            }
         }
         setContentView(FrameLayout(this).apply { addView(webView, FrameLayout.LayoutParams(-1, -1)) })
 
@@ -96,6 +106,11 @@ class WebSectionActivity : ComponentActivity() {
             webView.destroy()
         }
         super.onDestroy()
+    }
+
+    private fun isCallSurface(url: String): Boolean = android.net.Uri.parse(url).let {
+        it.scheme == "https" && it.host == "shinomino.com" && it.port in listOf(-1, 443) &&
+            it.path in listOf("/messages.html", "/call-groups.html")
     }
 
     companion object {

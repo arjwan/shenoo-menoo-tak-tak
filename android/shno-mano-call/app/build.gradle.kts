@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.security.MessageDigest
 
 plugins {
     id("com.android.application")
@@ -25,8 +26,8 @@ android {
         applicationId = "com.shnomano.call"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.3.4"
+        versionCode = 18
+        versionName = "1.3.5"
     }
 
     signingConfigs {
@@ -63,6 +64,38 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 }
+
+// Package the exact shared call frontend with the APK. APIs remain authenticated
+// HTTPS requests; this contains no sessions, user content, or database snapshots.
+val callWebFiles = listOf(
+    "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js",
+    "call-screen.css", "social-api.js", "call-groups.html", "call-groups.js",
+    "social.css", "mall.css", "messages-call-fix.css", "shinomino-shared-visual.css",
+    "call-audio.js", "incoming-call-global.js", "auth-guard.js", "mall.js",
+    "call-permission-guard.js"
+)
+val callWebRoot = rootProject.projectDir.resolve("../..").canonicalFile
+val callWebAssets = layout.buildDirectory.dir("generated/callWebAssets")
+val bundleCallWeb by tasks.registering(Sync::class) {
+    from(callWebRoot) { include(callWebFiles) }
+    into(callWebAssets.map { it.dir("call-web") })
+    inputs.property("callUiVersion", "1.3.5-18")
+    doFirst {
+        callWebFiles.forEach { check(callWebRoot.resolve(it).isFile) { "Missing bundled call asset: $it" } }
+    }
+    doLast {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val entries = callWebFiles.joinToString(",") { name ->
+            val hash = digest.digest(callWebRoot.resolve(name).readBytes()).joinToString("") { "%02x".format(it) }
+            "\"$name\":\"$hash\""
+        }
+        callWebAssets.get().file("call-web/call-build.json").asFile.writeText(
+            "{\"version\":\"1.3.5\",\"versionCode\":18,\"files\":{$entries}}"
+        )
+    }
+}
+android.sourceSets.getByName("main").assets.srcDir(callWebAssets)
+tasks.named("preBuild") { dependsOn(bundleCallWeb) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
