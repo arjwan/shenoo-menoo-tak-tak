@@ -40,6 +40,7 @@ class WebCallActivity : ComponentActivity() {
     private var incomingGroupCall = false
     private var webPageReady = false
     private var autoAcceptIncoming = false
+    private var currentCallId = ""
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mediaPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -65,7 +66,6 @@ class WebCallActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentActivity = java.lang.ref.WeakReference(this)
         window.statusBarColor = Color.rgb(4, 10, 8)
         window.navigationBarColor = Color.rgb(4, 10, 8)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -75,6 +75,8 @@ class WebCallActivity : ComponentActivity() {
         targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
         incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
         pendingIncomingCall = incomingCallFrom(intent)
+        currentCallId = pendingIncomingCall?.callId.orEmpty()
+        if (currentCallId.isNotBlank() && CallAlertState.isClosed(currentCallId)) { finish(); return }
         autoAcceptIncoming = intent.getBooleanExtra(EXTRA_AUTO_ACCEPT, false)
         if (pendingIncomingCall != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -88,6 +90,7 @@ class WebCallActivity : ComponentActivity() {
             prepareCallAudio()
         }
         if (!isTrustedUrl(targetUrl)) { finish(); return }
+        currentActivity = java.lang.ref.WeakReference(this)
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.rgb(4, 10, 8)) }
         webView = WebView(this).apply {
@@ -102,7 +105,8 @@ class WebCallActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(view: WebView?, request: android.webkit.WebResourceRequest?): android.webkit.WebResourceResponse? {
                     if (request == null || request.method != "GET" || !isTrustedUrl(request.url.toString())) return null
-                    val name = request.url.path?.removePrefix("/") ?: return null
+                    val path = request.url.path?.removePrefix("/") ?: return null
+                    val name = when (path.trimEnd('/')) { "messages" -> "messages.html"; "call-groups" -> "call-groups.html"; else -> path }
                     if (name !in packagedCallFiles) return null
                     val mime = when {
                         name.endsWith(".html") -> "text/html"
@@ -190,6 +194,7 @@ class WebCallActivity : ComponentActivity() {
     }
 
     private inner class CallStateBridge {
+        @JavascriptInterface fun isCallClosed(id: String): Boolean = CallAlertState.isClosed(id)
         @JavascriptInterface fun getBuildInfo(): String = buildIdentity()
 
         @JavascriptInterface fun startScreenShare() = runOnUiThread {
@@ -208,14 +213,18 @@ class WebCallActivity : ComponentActivity() {
             val callId = state.optString("callId")
             when (state.optString("state")) {
                 "outgoing", "accepting", "connected" -> {
+                    if (CallAlertState.isClosed(callId)) { returnToApp(); return@runOnUiThread }
+                    currentCallId = callId
                     BackgroundRealtimeService.acknowledgeIncomingCall(callId)
                     prepareCallAudio()
                     BackgroundRealtimeService.trackActiveCall(state, webView.url ?: targetUrl)
                 }
                 "ended" -> {
+                    if (callId.isNotBlank() && currentCallId.isNotBlank() && currentCallId != callId) return@runOnUiThread
+                    CallAlertState.close(callId)
                     BackgroundRealtimeService.acknowledgeIncomingCall(callId)
                     BackgroundRealtimeService.clearActiveCall(callId)
-                    if (!isFinishing) finish()
+                    if (!isFinishing) returnToApp()
                 }
             }
         }
@@ -273,6 +282,7 @@ class WebCallActivity : ComponentActivity() {
 
     private fun deliverPendingIncomingCall() {
         val call = pendingIncomingCall ?: return
+        if (CallAlertState.isClosed(call.callId)) { pendingIncomingCall = null; returnToApp(); return }
         if (incomingGroupCall || !webPageReady || !::webView.isInitialized) return
         val payload = JSONObject().apply { put("callId", call.callId); put("from", call.from); put("conversationId", call.conversationId); put("type", call.type); put("callerName", call.callerName) }.toString()
         webView.evaluateJavascript("(function(){var p=$payload;if(typeof window.shnoHandleIncomingCall==='function'){return window.shnoHandleIncomingCall(p)?'ready':'waiting';}return 'waiting';})()") { result ->
@@ -290,10 +300,13 @@ class WebCallActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        val incomingId = intent.getStringExtra(EXTRA_CALL_ID).orEmpty()
+        if (incomingId.isNotBlank() && CallAlertState.isClosed(incomingId)) return
         setIntent(intent)
         incomingGroupCall = intent.getBooleanExtra(EXTRA_GROUP_CALL, false)
         incomingCallFrom(intent)?.let { call ->
             pendingIncomingCall = call
+            currentCallId = call.callId
             autoAcceptIncoming = intent.getBooleanExtra(EXTRA_AUTO_ACCEPT, false)
             targetUrl = intent.getStringExtra(EXTRA_URL).orEmpty().ifBlank { targetUrl }
             if (!incomingGroupCall) deliverPendingIncomingCall()
@@ -301,6 +314,11 @@ class WebCallActivity : ComponentActivity() {
     }
 
 
+
+    private fun returnToApp() {
+        if (isTaskRoot) startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        finish()
+    }
 
     private fun isTrustedUrl(url: String): Boolean {
         val parsed = Uri.parse(url)
@@ -337,6 +355,15 @@ class WebCallActivity : ComponentActivity() {
             activity.runOnUiThread {
                 if (!activity.isFinishing && !activity.isDestroyed) activity.webView.evaluateJavascript(
                     "window.ShnoScreenShare&&window.ShnoScreenShare.onNativeStopped(" + JSONObject.quote(message) + ")", null)
+            }
+        }
+        fun dismissIncomingCall(callId: String) {
+            val activity = currentActivity?.get() ?: return
+            activity.runOnUiThread {
+                if (activity.currentCallId == callId || activity.pendingIncomingCall?.callId == callId) {
+                    activity.pendingIncomingCall = null
+                    activity.finish()
+                }
             }
         }
         fun endActiveCall(): Boolean {

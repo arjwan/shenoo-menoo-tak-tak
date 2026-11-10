@@ -78,7 +78,11 @@ data class FriendsResponse(val friends: List<FriendDto> = emptyList(), val users
         else -> data
     }
 }
-data class FriendRequestDto(val id: String, val user: FriendDto, val status: String = "pending")
+data class FriendRequestDto(
+    val id: String,
+    @SerializedName(value = "user", alternate = ["sender", "receiver"]) val user: FriendDto? = null,
+    val status: String = "pending"
+) { val contact: FriendDto get() = user ?: FriendDto() }
 data class FriendRequestsResponse(val ok: Boolean = false, val requests: List<FriendRequestDto> = emptyList())
 data class UsersSearchResponse(val ok: Boolean = false, val users: List<FriendDto> = emptyList())
 

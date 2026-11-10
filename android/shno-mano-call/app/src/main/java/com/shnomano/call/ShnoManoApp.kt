@@ -11,6 +11,11 @@ class ShnoManoApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            AppDiagnostics.record(this, error, "uncaught")
+            previous?.uncaughtException(thread, error)
+        }
         createNotificationChannels()
     }
 

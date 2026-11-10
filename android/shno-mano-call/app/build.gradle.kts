@@ -26,8 +26,8 @@ android {
         applicationId = "com.shnomano.call"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.3.5"
+        versionCode = 19
+        versionName = "1.4.0"
     }
 
     signingConfigs {
@@ -68,7 +68,7 @@ android {
 // Package the exact shared call frontend with the APK. APIs remain authenticated
 // HTTPS requests; this contains no sessions, user content, or database snapshots.
 val callWebFiles = listOf(
-    "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js", "call-surface.js",
+    "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js", "call-surface.js", "call-session-state.js", "call-ice.js",
     "call-screen.css", "social-api.js", "call-groups.html", "call-groups.js",
     "social.css", "mall.css", "messages-call-fix.css", "shinomino-shared-visual.css",
     "call-audio.js", "incoming-call-global.js", "auth-guard.js", "mall.js",
@@ -79,7 +79,7 @@ val callWebAssets = layout.buildDirectory.dir("generated/callWebAssets")
 val bundleCallWeb by tasks.registering(Sync::class) {
     from(callWebRoot) { include(callWebFiles) }
     into(callWebAssets.map { it.dir("call-web") })
-    inputs.property("callUiVersion", "1.3.5-18")
+    inputs.property("callUiVersion", "1.4.0-19")
     doFirst {
         callWebFiles.forEach { check(callWebRoot.resolve(it).isFile) { "Missing bundled call asset: $it" } }
     }
@@ -90,7 +90,7 @@ val bundleCallWeb by tasks.registering(Sync::class) {
             "\"$name\":\"$hash\""
         }
         callWebAssets.get().file("call-web/call-build.json").asFile.writeText(
-            "{\"version\":\"1.3.5\",\"versionCode\":18,\"files\":{$entries}}"
+            "{\"version\":\"1.4.0\",\"versionCode\":19,\"files\":{$entries}}"
         )
     }
 }
@@ -98,6 +98,7 @@ android.sourceSets.getByName("main").assets.srcDir(callWebAssets)
 tasks.named("preBuild") { dependsOn(bundleCallWeb) }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)

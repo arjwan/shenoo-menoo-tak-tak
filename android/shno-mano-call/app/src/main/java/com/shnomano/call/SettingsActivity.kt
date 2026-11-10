@@ -1,6 +1,8 @@
 package com.shnomano.call
 
 import android.content.Intent
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import android.media.RingtoneManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -57,7 +59,7 @@ private fun SettingsScreen(onBack: () -> Unit) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(Color(0xFF070910)).padding(20.dp),
+        Modifier.fillMaxSize().background(Color(0xFF0B1020)).verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -70,7 +72,7 @@ private fun SettingsScreen(onBack: () -> Unit) {
             val code = if (android.os.Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
             "${info.versionName} ($code)"
         }
-        Text("إصدار اتصال $version", color = Color(0xFF98A2B3), fontSize = 13.sp)
+        Text("إصدار اتصال $version", color = Color(0xFFA4B4CC), fontSize = 13.sp)
         SettingSwitch("الإشعارات", "تنبيهات الرسائل والمكالمات", notifications) {
             notifications = it; store.notificationsEnabled = it
         }
@@ -80,10 +82,10 @@ private fun SettingsScreen(onBack: () -> Unit) {
         SettingSwitch("صوت المكالمة", "تشغيل نغمة للمكالمة الواردة", callSound) {
             callSound = it; store.callSoundEnabled = it
         }
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 Text("نغمة المكالمة", color = Color.White, fontSize = 16.sp)
-                Text(ringtoneLabel, color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text(ringtoneLabel, color = Color(0xFFA4B4CC), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(10.dp))
                 Button(onClick = {
                     val intent = android.content.Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
@@ -96,10 +98,10 @@ private fun SettingsScreen(onBack: () -> Unit) {
                 }) { Text("اختيار نغمة") }
             }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 Text("البحث والإضافة", color = Color.White, fontSize = 16.sp)
-                Text("ابحث باسم المستخدم أو رقم الهاتف، وأرسل دعوة جاهزة لغير المسجلين", color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("ابحث باسم المستخدم أو رقم الهاتف، وأرسل دعوة جاهزة لغير المسجلين", color = Color(0xFFA4B4CC), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(10.dp))
                 Button(
                     onClick = { context.startActivity(Intent(context, ContactDiscoveryActivity::class.java)) },
@@ -107,10 +109,10 @@ private fun SettingsScreen(onBack: () -> Unit) {
                 ) { Text("فتح البحث وإضافة الأصدقاء") }
             }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 Text("الرسائل الصوتية والفيديو", color = Color.White, fontSize = 16.sp)
-                Text("سجّل رسالة صوتية، أرسل فيديو من الهاتف، أو سجّل فيديو جديداً وأرسله", color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("سجّل رسالة صوتية، أرسل فيديو من الهاتف، أو سجّل فيديو جديداً وأرسله", color = Color(0xFFA4B4CC), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(10.dp))
                 Button(
                     onClick = { context.startActivity(Intent(context, MediaMessagingActivity::class.java)) },
@@ -118,10 +120,10 @@ private fun SettingsScreen(onBack: () -> Unit) {
                 ) { Text("فتح دردشة الوسائط") }
             }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 Text("إضافة صديق عبر QR", color = Color.White, fontSize = 16.sp)
-                Text("اعرض رمز حسابك أو امسح رمز صديق لإرسال طلب الإضافة", color = Color(0xFF98A2B3), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("اعرض رمز حسابك أو امسح رمز صديق لإرسال طلب الإضافة", color = Color(0xFFA4B4CC), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(10.dp))
                 Button(
                     onClick = { context.startActivity(Intent(context, QrFriendActivity::class.java)) },
@@ -129,17 +131,24 @@ private fun SettingsScreen(onBack: () -> Unit) {
                 ) { Text("فتح QR شنو منو") }
             }
         }
-        Text("ملاحظة: تغيير صوت قناة المكالمات قد يحتاج إغلاق التطبيق وفتحه من جديد على بعض أجهزة أندرويد.", color = Color(0xFF98A2B3), fontSize = 11.sp)
+        var diagnostic by remember { mutableStateOf<String?>(null) }
+        OutlinedButton(onClick = { diagnostic = AppDiagnostics.last(context) }, modifier = Modifier.fillMaxWidth()) { Text("تقرير آخر إغلاق للتطبيق") }
+        diagnostic?.let { report ->
+            AlertDialog(onDismissRequest = { diagnostic = null }, title = { Text("تقرير محلي") },
+                text = { androidx.compose.foundation.text.selection.SelectionContainer { Text(report, fontSize = 11.sp, modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) } },
+                confirmButton = { TextButton(onClick = { diagnostic = null }) { Text("إغلاق") } })
+        }
+        Text("ملاحظة: تغيير صوت قناة المكالمات قد يحتاج إغلاق التطبيق وفتحه من جديد على بعض أجهزة أندرويد.", color = Color(0xFFA4B4CC), fontSize = 11.sp)
     }
 }
 
 @Composable
 private fun SettingSwitch(title: String, subtitle: String, checked: Boolean, onChanged: (Boolean) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(18.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(title, color = Color.White, fontSize = 16.sp)
-                Text(subtitle, color = Color(0xFF98A2B3), fontSize = 11.sp)
+                Text(subtitle, color = Color(0xFFA4B4CC), fontSize = 11.sp)
             }
             Switch(checked = checked, onCheckedChange = onChanged)
         }

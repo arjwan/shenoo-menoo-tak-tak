@@ -9,7 +9,7 @@ import zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 with zipfile.ZipFile(sys.argv[1]) as apk:
     manifest = json.loads(apk.read('assets/call-web/call-build.json'))
-    assert manifest['version'] == '1.3.5' and manifest['versionCode'] == 18
+    assert manifest['version'] == '1.4.0' and manifest['versionCode'] == 19
     for name, expected in manifest['files'].items():
         assert pathlib.PurePosixPath(name).name == name
         bundled = apk.read('assets/call-web/' + name)

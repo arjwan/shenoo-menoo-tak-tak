@@ -15,6 +15,8 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,11 +41,11 @@ import com.shnomano.call.data.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
-private val Bg = Color(0xFF061514)
-private val Panel = Color(0xFF10201B)
-private val Panel2 = Color(0xFF132824)
-private val Accent = Color(0xFF19D9A0)
-private val Muted = Color(0xFF91A39D)
+private val Bg = Color(0xFF0B1020)
+private val Panel = Color(0xFF151E32)
+private val Panel2 = Color(0xFF1C2941)
+private val Accent = Color(0xFF54DFCF)
+private val Muted = Color(0xFFA4B4CC)
 
 class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -108,7 +110,8 @@ fun ShnoManoCallApp() {
     Scaffold(
         containerColor = Bg,
         bottomBar = {
-            NavigationBar(containerColor = Color(0xFF071815)) {
+            Surface(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), shape = RoundedCornerShape(26.dp), color = Panel, shadowElevation = 8.dp) {
+            NavigationBar(containerColor = Color.Transparent) {
                 tabs.forEachIndexed { index, tab ->
                     NavigationBarItem(
                         selected = selected == index,
@@ -125,11 +128,12 @@ fun ShnoManoCallApp() {
                     )
                 }
             }
+            }
         }
     ) { padding ->
         Box(
             Modifier.fillMaxSize().padding(padding).background(
-                Brush.verticalGradient(listOf(Color(0xFF062522), Bg, Color(0xFF020A09)))
+                Brush.verticalGradient(listOf(Color(0xFF152540), Bg, Color(0xFF090E1A)))
             )
         ) {
             when (selected) {
@@ -167,7 +171,7 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
     val scope = rememberCoroutineScope()
 
     Box(
-        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF062522), Bg))),
+        Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).background(Brush.verticalGradient(listOf(Color(0xFF152540), Bg))),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -176,7 +180,7 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
             colors = CardDefaults.cardColors(containerColor = Panel)
         ) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                BrandHeader("تسجيل الدخول", "شنو منو اتصال")
+                BrandHeader("أهلاً بعودتك", "شنو منو اتصال · حديث يجمعنا", showQr = false)
                 Spacer(Modifier.height(22.dp))
                 OutlinedTextField(
                     value = identifier,
@@ -226,15 +230,18 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
 }
 
 @Composable
-private fun BrandHeader(title: String, subtitle: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier.size(52.dp).background(Brush.linearGradient(listOf(Accent, Color(0xFF43E0BE))), CircleShape),
-            contentAlignment = Alignment.Center
-        ) { Text("ش", color = Bg, fontSize = 24.sp, fontWeight = FontWeight.Black) }
-        Column(Modifier.padding(start = 12.dp)) {
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 21.sp)
-            Text(subtitle, color = Muted, fontSize = 12.sp)
+private fun BrandHeader(title: String, subtitle: String, showQr: Boolean = true) {
+    val context = LocalContext.current
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(48.dp).background(Brush.linearGradient(listOf(Accent, Color(0xFF7C8CFF))), RoundedCornerShape(17.dp)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Forum, null, tint = Bg, modifier = Modifier.size(25.dp))
+        }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+            Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 2)
+        }
+        if (showQr) FilledTonalIconButton(onClick = { context.startActivity(Intent(context, QrFriendActivity::class.java)) }, colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = Panel2, contentColor = Accent)) {
+            Icon(Icons.Default.QrCodeScanner, "إضافة صديق عبر QR")
         }
     }
 }
@@ -243,6 +250,7 @@ private fun BrandHeader(title: String, subtitle: String) {
 private fun ConversationsScreen(repo: AppRepository, onlineUserIds: Set<String>, onOpen: (ConversationDto) -> Unit) {
     var conversations by remember { mutableStateOf<List<ConversationDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var query by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         while (true) {
             conversations = repo.loadConversations()
@@ -253,14 +261,16 @@ private fun ConversationsScreen(repo: AppRepository, onlineUserIds: Set<String>,
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("الدردشات", "محادثات شنو منو الحقيقية")
         Spacer(Modifier.height(14.dp))
+        OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("ابحث في محادثاتك") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, shape = RoundedCornerShape(18.dp))
+        Spacer(Modifier.height(16.dp))
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Accent)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(conversations, key = { it.id }) { c ->
+            items(conversations.filter { query.isBlank() || (it.otherUser?.fullName.orEmpty()+it.otherUser?.username.orEmpty()+it.lastMessage?.text.orEmpty()).contains(query,true) }.distinctBy { it.id }, key = { it.id }) { c ->
                 val other = c.otherUser
                 val online = other?.id?.let { it in onlineUserIds } == true
                 PersonRow(
                     name = other?.fullName ?: other?.username ?: "محادثة",
-                    subtitle = if (online) "متصل الآن" else "الحالة غير مؤكدة",
+                    subtitle = c.lastMessage?.text?.takeIf { it.isNotBlank() } ?: "ابدأ حديثاً جديداً",
                     badge = c.unreadCount,
                     online = online,
                     onClick = { onOpen(c) }
@@ -296,10 +306,10 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
     }
 
     LaunchedEffect(Unit) {
-        repo.syncContacts()
+        runCatching { repo.syncContacts() }.onFailure { AppDiagnostics.record(context, it, "contacts-sync"); status = "تعذر مزامنة جهات الاتصال؛ يمكنك إعادة المحاولة" }
         friends = repo.loadFriends()
         requests = repo.loadFriendRequests()
-        sentRequestUserIds = repo.loadSentFriendRequests().map { it.user.userId }.toSet()
+        sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
     }
 
     val filteredFriends = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
@@ -308,6 +318,14 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         BrandHeader("جهات الاتصال", "الهاتف + أصدقاء شنو منو")
         Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FilledTonalButton(onClick = { context.startActivity(Intent(context, QrFriendActivity::class.java)) }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.QrCodeScanner, null); Spacer(Modifier.width(6.dp)); Text("إضافة عبر QR")
+            }
+            FilledTonalButton(onClick = { context.startActivity(Intent(context, ContactDiscoveryActivity::class.java)) }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.PersonSearch, null); Spacer(Modifier.width(6.dp)); Text("بحث عن صديق")
+            }
+        }
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -330,7 +348,7 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
         OutlinedButton(
             onClick = { scope.launch {
                 requests = repo.loadFriendRequests()
-                sentRequestUserIds = repo.loadSentFriendRequests().map { it.user.userId }.toSet()
+                sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
                 friends = repo.loadFriends()
                 status = "تم تحديث طلبات الصداقة"
             } },
@@ -347,9 +365,9 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
             items(requests, key = { "request-${it.id}" }) { request ->
                 Card(colors = CardDefaults.cardColors(containerColor = Panel2), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        AvatarLetter(request.user.displayName)
+                        AvatarLetter(request.contact.displayName)
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                            Text(request.user.displayName, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(request.contact.displayName, color = Color.White, fontWeight = FontWeight.Bold)
                             Text("يريد إضافتك إلى أصدقاء شنو منو", color = Muted, fontSize = 11.sp)
                         }
                         IconButton(onClick = {
@@ -559,7 +577,10 @@ private fun AccountScreen(repo: AppRepository, onLogout: () -> Unit) {
         BrandHeader("حسابي", repo.session.fullName ?: repo.session.username ?: "مستخدم شنو منو")
         Spacer(Modifier.height(18.dp))
         InfoRow(Icons.Default.Person, "اسم المستخدم", repo.session.username ?: "-")
-        InfoRow(Icons.Default.Cloud, "الخادم", SHNO_MANO_BASE_URL.removeSuffix("/"))
+        InfoRow(Icons.Default.Shield, "جلسة مستقلة", "تبقى محادثاتك واتصالاتك متاحة داخل اتصال")
+        OutlinedButton(onClick = { context.startActivity(Intent(context, QrFriendActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.QrCodeScanner, null); Spacer(Modifier.width(8.dp)); Text("رمزي وإضافة صديق")
+        }
         Spacer(Modifier.height(12.dp))
         OutlinedButton(
             onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
@@ -579,7 +600,7 @@ private fun PersonRow(name: String, subtitle: String, badge: Int = 0, online: Bo
     Card(
         colors = CardDefaults.cardColors(containerColor = Panel),
         shape = RoundedCornerShape(18.dp),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+        modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = .05f), RoundedCornerShape(18.dp)).clickable(onClick = onClick)
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             AvatarLetter(name, online)
@@ -617,7 +638,15 @@ private fun AvatarLetter(name: String, online: Boolean = false) {
 private fun SectionTitle(text: String) { Text(text, color = Accent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 6.dp)) }
 
 @Composable
-private fun EmptyState(text: String) { Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) { Text(text, color = Muted) } }
+private fun EmptyState(text: String) {
+    Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)) {
+        Column(Modifier.padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(Icons.Default.Forum, null, tint = Accent, modifier = Modifier.size(38.dp))
+            Text(text, color = Color.White, fontWeight = FontWeight.Medium)
+            Text("ابدأ من إضافة صديق أو مسح رمز QR", color = Muted, fontSize = 12.sp)
+        }
+    }
+}
 
 @Composable
 private fun InfoRow(icon: ImageVector, title: String, value: String) {

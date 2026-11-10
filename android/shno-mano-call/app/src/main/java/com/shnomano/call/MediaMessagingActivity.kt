@@ -40,7 +40,7 @@ import java.io.FileOutputStream
 private val MediaBg = Color(0xFF061514)
 private val MediaPanel = Color(0xFF10201B)
 private val MediaPanel2 = Color(0xFF132824)
-private val MediaAccent = Color(0xFF19D9A0)
+private val MediaAccent = Color(0xFF54DFCF)
 private val MediaMuted = Color(0xFF91A39D)
 
 class MediaMessagingActivity : ComponentActivity() {

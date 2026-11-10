@@ -1,6 +1,8 @@
 package com.shnomano.call
 
 import android.content.Intent
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -81,7 +83,7 @@ private fun QrFriendScreen(onBack: () -> Unit) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(Color(0xFF070910)).padding(20.dp),
+        Modifier.fillMaxSize().background(Color(0xFF0B1020)).verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -89,12 +91,12 @@ private fun QrFriendScreen(onBack: () -> Unit) {
             Text("إضافة صديق عبر QR", color = Color.White, fontSize = 22.sp)
         }
 
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111522)), shape = RoundedCornerShape(22.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(22.dp)) {
             Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("QR الخاص بي", color = Color.White, fontSize = 18.sp)
                 Text(
                     "رمز آمن مؤقت يعمل في تطبيق شنو مانو وتطبيق اتصال",
-                    color = Color(0xFF98A2B3),
+                    color = Color(0xFFA4B4CC),
                     fontSize = 12.sp,
                     modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
                 )
@@ -106,7 +108,7 @@ private fun QrFriendScreen(onBack: () -> Unit) {
                             modifier = Modifier.size(230.dp).padding(10.dp)
                         )
                     }
-                    Text("تنتهي صلاحيته بعد 10 دقائق", color = Color(0xFF98A2B3), fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
+                    Text("تنتهي صلاحيته بعد 10 دقائق", color = Color(0xFFA4B4CC), fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
                     Spacer(Modifier.height(8.dp))
                     Button(
                         onClick = {
@@ -140,10 +142,10 @@ private fun QrFriendScreen(onBack: () -> Unit) {
             else Text("مسح QR وإرسال طلب إضافة")
         }
 
-        status?.let { Text(it, color = Color(0xFF19D9A0), fontSize = 13.sp) }
+        status?.let { Text(it, color = Color(0xFF54DFCF), fontSize = 13.sp) }
         Text(
             "الرمز لا يحتوي رقم الهاتف أو معرّف قاعدة البيانات، ويستخدم نفس نظام الصداقة والحظر في التطبيقين.",
-            color = Color(0xFF98A2B3),
+            color = Color(0xFFA4B4CC),
             fontSize = 11.sp
         )
     }
