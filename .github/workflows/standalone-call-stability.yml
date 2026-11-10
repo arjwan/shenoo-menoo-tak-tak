@@ -11,6 +11,7 @@ on:
       - 'social.css'
       - 'call-screen.css'
       - 'screen-share.js'
+      - 'call-surface.js'
       - 'auth-guard.js'
       - 'incoming-call-global.js'
       - 'tests/standalone-call-runtime.test.cjs'

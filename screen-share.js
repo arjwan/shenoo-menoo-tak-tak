@@ -29,7 +29,7 @@
    const frame=new Image();
    frame.onload=()=>{
     if(!pending && !stream){decoding=false;return;}
-    if(!canvas){canvas=document.createElement('canvas');canvas.hidden=true;document.body.appendChild(canvas);}
+    if(!canvas){canvas=document.createElement('canvas');canvas.hidden=true;}
     if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
     canvas.getContext('2d',{alpha:false}).drawImage(frame,0,0,width,height);
     if(!stream){

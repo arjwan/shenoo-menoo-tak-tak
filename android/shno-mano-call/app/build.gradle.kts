@@ -68,7 +68,7 @@ android {
 // Package the exact shared call frontend with the APK. APIs remain authenticated
 // HTTPS requests; this contains no sessions, user content, or database snapshots.
 val callWebFiles = listOf(
-    "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js",
+    "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js", "call-surface.js",
     "call-screen.css", "social-api.js", "call-groups.html", "call-groups.js",
     "social.css", "mall.css", "messages-call-fix.css", "shinomino-shared-visual.css",
     "call-audio.js", "incoming-call-global.js", "auth-guard.js", "mall.js",

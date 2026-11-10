@@ -127,6 +127,9 @@ class WebCallActivity : ComponentActivity() {
                 }
             }
             webChromeClient = object : WebChromeClient() {
+                override fun getDefaultVideoPoster(): android.graphics.Bitmap =
+                    android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+
                 override fun onPermissionRequest(request: PermissionRequest) {
                     runOnUiThread {
                         if (request.origin.toString().trimEnd('/') != "https://shinomino.com") { request.deny(); return@runOnUiThread }
@@ -170,7 +173,7 @@ class WebCallActivity : ComponentActivity() {
         }
         val quoted = JSONObject.quote(selector)
         webView.evaluateJavascript(
-            "(function(){var button=document.querySelector($quoted);if(!button)return false;button.click();return true;})()"
+            "(function(){return typeof window.shnoClickCallControl==='function'&&window.shnoClickCallControl($quoted);})()"
         ) { result ->
             if (result != "true") Toast.makeText(this, "تعذر تنفيذ الإجراء؛ لا تزال المكالمة قيد التحميل", Toast.LENGTH_SHORT).show()
         }

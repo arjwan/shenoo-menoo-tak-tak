@@ -85,6 +85,12 @@ test('real browser WebRTC: text, reject, audio/video, group upgrade and three-wa
  for(const page of [a,b])await until(()=>page.locator('[data-call-status]').textContent().then(s=>s.includes('متصل الآن')),'audio connection');
  for(const page of [a,b])assert.equal(await page.locator('[data-remote-video]').evaluate(v=>v.srcObject.getAudioTracks().length),1);
  console.log('audio passed');
+ // Reproduce the phone's light-theme button/card overrides. They must not enter
+ // the isolated call tree, while the rest of the website may keep that theme.
+ await a.addStyleTag({content:'body *{background-color:#f5f9ff!important;color:#172334!important}body button{border-radius:24px!important;padding:24px!important}body button:nth-child(3n){background:#e9dcff!important}'});
+ const isolated=await a.locator('[data-call-mute] .call-control-icon').evaluate(el=>({radius:getComputedStyle(el).borderRadius,color:getComputedStyle(el).color,width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
+ assert.equal(isolated.radius,'50%');assert.equal(isolated.color,'rgb(255, 255, 255)');assert.equal(isolated.width,isolated.height);
+
  await a.screenshot({path:path.join(artifacts,'call-audio-preview.png')});
  await a.evaluate(()=>{window.sentTones=[];window.testPeers[0].getSenders().find(s=>s.track.kind==='audio').dtmf.ontonechange=e=>window.sentTones.push(e.tone);});
  await a.locator('[data-call-keypad]').click();await a.locator('.call-keypad-grid').getByRole('button',{name:'1',exact:true}).click();
