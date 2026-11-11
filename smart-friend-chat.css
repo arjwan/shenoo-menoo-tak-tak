@@ -9,3 +9,26 @@
 .sf-delete-persona:hover{background:#fbe3e9!important;border-color:#c95f78!important}
 .sf-delete-persona:focus-visible{outline:3px solid #cf7892;outline-offset:3px}
 .sf-delete-persona:disabled{opacity:.65;cursor:wait}
+
+
+/* Selected persona portrait belongs to the conversation UI, not only its editor. */
+.sf-portrait-stage{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;min-height:190px;padding:15px 12px 8px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at center,rgba(124,92,255,.10),transparent 70%)}
+.sf-portrait-stage[hidden]{display:none}
+.sf-portrait-frame{width:158px;height:158px;border-radius:24px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#27d8c4);box-shadow:0 8px 25px rgba(60,45,120,.14)}
+.sf-portrait-frame img{display:block;width:100%;height:100%;object-fit:cover}
+.sf-portrait-fallback{font-size:64px;line-height:1}
+.sf-portrait-status{margin:0;text-align:center;font-size:12px;color:var(--muted)}
+@media(max-width:560px){.sf-portrait-stage{min-height:152px;padding:10px}.sf-portrait-frame{width:124px;height:124px}}
+
+
+/* Ordered, touch-friendly chat actions: RTL with a clear primary send action. */
+.sf-composer .sf-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;align-items:stretch;direction:rtl}
+.sf-composer .sf-tools button{min-width:0;min-height:44px;display:inline-flex;justify-content:center;align-items:center;gap:5px;white-space:normal;text-align:center;line-height:1.4;font-size:13px;font-weight:700}
+.sf-composer .sf-tools button[type="submit"]{background:linear-gradient(135deg,#198cff,#7c5cff);border-color:transparent;color:#fff;font-weight:900;box-shadow:0 3px 10px rgba(88,79,194,.2)}
+.sf-composer .sf-tools button:disabled{opacity:.55;cursor:wait}
+.sf-composer .sf-tools button:focus-visible,.sf-chat [data-sf-extra-controls] button:focus-visible{outline:3px solid #7c5cff;outline-offset:2px}
+.sf-chat [data-sf-extra-controls]{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 12px!important;direction:rtl}
+.sf-chat [data-sf-extra-controls] button{min-height:42px;border-radius:12px;padding:9px 13px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;font-weight:700}
+.sf-chat [data-sf-extra-controls] [data-clear-chat]{margin-inline-start:auto;border-color:rgba(212,71,92,.3);color:#bd354b}
+.sf-chat [data-sf-extra-controls] [data-group-state]{flex-basis:100%;color:var(--muted)}
+@media(max-width:640px){.sf-composer .sf-tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sf-composer .sf-tools button{min-height:48px;font-size:13px}.sf-chat [data-sf-extra-controls]{margin:8px!important}.sf-chat [data-sf-extra-controls] button{flex:1 1 125px}.sf-chat [data-sf-extra-controls] [data-clear-chat]{margin-inline-start:0}}
