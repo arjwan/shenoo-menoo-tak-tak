@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl" class="shinomino-ui">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#7151c7">
+<meta name="description" content="القصص والريلز في مكان واحد على شنو منو تك تك">
+<title>القصص والريلز | شنو منو تك تك</title>
+<link rel="stylesheet" href="shinomino-shared-visual.css?v=20261106-1">
+<link rel="stylesheet" href="moments.css?v=20261107-1">
+</head>
+<body>
+<header class="moments-header">
+ <a class="moments-home" href="/taktak.html" aria-label="العودة إلى الرئيسية">⌂ <span>شنو منو تك تك</span></a>
+ <div class="moments-heading"><strong>✨ القصص والريلز</strong><small>لحظاتك ومقاطعك في مكان واحد</small></div>
+ <button class="moments-create" id="createMedia" type="button" aria-haspopup="dialog">＋ إنشاء</button>
+</header>
+<main class="moments-shell" id="main">
+ <div class="moments-tabs" role="tablist" aria-label="نوع المحتوى">
+  <button type="button" class="moments-tab" role="tab" id="tab-stories" aria-controls="panel-stories" aria-selected="true" tabindex="0" data-mode="stories">✨ القصص</button>
+  <button type="button" class="moments-tab" role="tab" id="tab-reels" aria-controls="panel-reels" aria-selected="false" tabindex="-1" data-mode="reels">🎬 الريلز</button>
+ </div>
+ <p class="moments-caption" id="modeHint">القصص تختفي بعد 24 ساعة، وتحافظ على خصوصية الجمهور الذي تختاره.</p>
+ <section class="moments-panel" role="tabpanel" id="panel-stories" aria-labelledby="tab-stories" data-panel="stories">
+  <iframe title="القصص: إنشاء القصص وعرضها" id="storiesFrame" src="/stories.html?embedded=1" loading="eager" allow="camera; microphone" referrerpolicy="same-origin"></iframe>
+ </section>
+ <section class="moments-panel" role="tabpanel" id="panel-reels" aria-labelledby="tab-reels" data-panel="reels" hidden>
+  <iframe title="الريلز: إنشاء الفيديوهات ومشاهدتها" id="reelsFrame" data-src="/reels.html?embedded=1" loading="lazy" allow="camera; microphone; autoplay" referrerpolicy="same-origin"></iframe>
+ </section>
+</main>
+<dialog class="moments-dialog" id="createDialog" aria-labelledby="createTitle">
+ <form method="dialog" class="moments-dialog-inner">
+  <div class="moments-dialog-head"><h2 id="createTitle">شنو تحب تنشر؟</h2><button type="submit" class="moments-close" aria-label="إغلاق">✕</button></div>
+  <button type="button" class="moments-choice" data-create-mode="stories"><span>✨</span><span><strong>قصة جديدة</strong><small>صورة أو فيديو، تختفي بعد 24 ساعة</small></span></button>
+  <button type="button" class="moments-choice" data-create-mode="reels"><span>🎬</span><span><strong>ريلز جديد</strong><small>فيديو يُنشر ويبقى في حسابك</small></span></button>
+ </form>
+</dialog>
+<script defer src="moments.js?v=20261107-1"></script>
+</body>
+</html>

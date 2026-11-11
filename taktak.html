@@ -56,8 +56,7 @@
         />
         <nav class="create-shortcuts" aria-label="إنشاء محتوى جديد">
           <button class="create-shortcut create-post" type="button" data-create-post aria-label="كتابة منشور جديد"><span aria-hidden="true">✎</span><span>منشور</span></button>
-          <a class="create-shortcut create-story" href="stories.html?create=1" aria-label="إنشاء قصة"><span aria-hidden="true">◉</span><span>قصة</span></a>
-          <a class="create-shortcut create-reel" href="reels.html?create=1" aria-label="إنشاء ريلز"><span aria-hidden="true">▶</span><span>ريلز</span></a>
+          <a class="create-shortcut create-story" href="moments.html?create=1" aria-label="إنشاء قصة أو ريلز"><span aria-hidden="true">✨</span><span>قصة / ريلز</span></a>
           <a class="create-shortcut create-live" href="live-create.html" aria-label="إنشاء بث مباشر"><span class="live-dot" aria-hidden="true"></span><span>بث مباشر</span></a>
         </nav>
         <div class="top-actions" aria-label="خيارات الحساب"><button id="theme-toggle" class="action-theme" type="button" aria-label="تغيير المظهر" title="تغيير المظهر">
@@ -86,7 +85,7 @@
         ><a href="game-room.html">🎲 كهوة عزاوي</a
         ><a href="islamic.html">☪ الصفحة الإسلامية</a
         ><a href="settings.html">⚙ الخصوصية والإعدادات</a>
-      <a href="services.html">🛠 خدماتي</a><a href="transport.html">🚕 النقل والحمل</a><a href="reels.html">▶ الريلز</a><a href="stories.html">✨ القصص</a><a href="tv.html">📺 شنو منو TV</a></aside>
+      <a href="services.html">🛠 خدماتي</a><a href="transport.html">🚕 النقل والحمل</a><a href="moments.html">✨ القصص والريلز</a><a href="tv.html">📺 شنو منو TV</a></aside>
       <section class="feed" tabindex="0" aria-label="القصص والمنشورات">
         <section class="profile-cover" data-home-cover>
           <div class="cover-shade"></div>
@@ -112,10 +111,10 @@
         <section class="stories-block compact-panel">
           <div class="section-head">
             <h3>القصص</h3>
-            <a href="stories.html">عرض الكل</a>
+            <a href="moments.html?tab=stories">عرض الكل</a>
           </div>
           <div class="stories-strip">
-            <a class="story-tile story-me" href="stories.html?create=1"
+            <a class="story-tile story-me" href="moments.html?tab=stories&create=1"
               ><span class="story-avatar" data-story-me-avatar>؟</span
               ><span class="story-plus">+</span><strong>قصتي</strong></a
             >
@@ -148,7 +147,7 @@
               🎵 <span>MP3</span></button
             ><button class="tool-btn" type="button" data-sf-open>
               ✨ <span>صديقي الذكي</span></button
-            ><a class="tool-btn tool-reel" href="reels.html?create=1"
+            ><a class="tool-btn tool-reel" href="moments.html?tab=reels&create=1"
               >🎬 <span>ريلز</span></a
             ><a class="tool-btn tool-ad" href="create-ad.html"
               >📣 <span>إعلان</span></a
@@ -168,7 +167,7 @@
         <section class="reels-block compact-panel">
           <div class="section-head">
             <h3>ريلز</h3>
-            <a href="reels.html">عرض الكل</a>
+            <a href="moments.html?tab=reels">عرض الكل</a>
           </div>
           <div class="reels-list" data-reels-list>
             <div class="empty inline-empty">جارٍ تحميل الريلز…</div>
@@ -353,8 +352,8 @@
     </div>
     <nav class="mobile-bar">
       <a href="taktak.html"><b>⌂</b>الرئيسية</a
-      ><a href="stories.html"><b>✨</b>القصص</a
-      ><a href="reels.html"><b>▶</b>الريلز</a
+      ><a href="moments.html?tab=stories"><b>✨</b>القصص</a
+      ><a href="moments.html?tab=reels"><b>▶</b>الريلز</a
       ><a href="notifications.html"><b>🔔</b>الإشعارات</a
       ><a href="profile.html"><b>👤</b>حسابي</a>
     </nav>

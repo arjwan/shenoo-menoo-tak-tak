@@ -16,7 +16,28 @@ function prepareVideo(video){const size=()=>{if(!video.videoWidth||!video.videoH
 function preparePostMedia(scope){(scope||document).querySelectorAll('.post-video video').forEach(prepareVideo);}
 async function loadComments(post){const box=post.querySelector('[data-comments]');box.hidden=false;if(box.dataset.loaded)return;const d=await json('/api/posts/'+post.dataset.postId+'/comments');box.querySelector('[data-comments-list]').innerHTML=(d.comments||[]).map(c=>'<div class="comment">'+avatar(c.author)+'<div class="comment-body"><strong>'+esc(c.author.fullName)+'</strong><p>'+esc(c.text)+'</p></div></div>').join('');box.dataset.loaded='1';}
 function detailUrl(id){const url=new URL(location.href);url.searchParams.set('post',id);return url.pathname+url.search+url.hash;}
-async function sharePost(post){const id=post.dataset.postId,url=new URL(detailUrl(id),location.href).href,data={title:'منشور على شنو منو تك تك',url};if(navigator.share)await navigator.share(data);else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url);alert('تم نسخ رابط المنشور');}else{prompt('انسخ رابط المنشور:',url);}const d=await json('/api/posts/'+id+'/share',{method:'POST'});const count=post.querySelector('[data-shares-count]');if(count)count.textContent='↗ '+d.sharesCount+' مشاركة';}
+async function sharePost(post){
+ const id=post.dataset.postId;
+ const url=new URL('taktak.html?post='+encodeURIComponent(id),location.href).href;
+ let completed=false;
+ if(navigator.share){
+  try{await navigator.share({title:'منشور على شنو منو تك تك',url});completed=true}
+  catch(err){if(err?.name==='AbortError')return;/* Use copy fallback if sharing is unsupported. */}
+ }
+ if(!completed){
+  try{
+   if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);completed=true}
+  }catch(_){}
+  if(!completed){const copy=prompt('انسخ رابط المنشور:',url);if(copy===null)return;completed=true}
+  if(completed)alert('رابط المنشور جاهز للمشاركة');
+ }
+ // Sharing must succeed even if this legacy analytics route is not migrated yet.
+ // Never display an invented shares count.
+ if(completed)try{
+  const d=await json('/api/posts/'+encodeURIComponent(id)+'/share',{method:'POST'});
+  if(Number.isFinite(Number(d.sharesCount))){const count=post.querySelector('[data-shares-count]');if(count)count.textContent='↗ '+Number(d.sharesCount)+' مشاركة'}
+ }catch(_){}
+}
 function closePostDetails(updateHistory){const post=feed&&feed.querySelector('.post-card.is-post-open');if(!post)return;post.classList.remove('is-post-open');document.querySelector('.post-detail-backdrop')?.remove();document.body.classList.remove('post-detail-active');if(updateHistory){const url=new URL(location.href);url.searchParams.delete('post');history.replaceState({},'',url.pathname+url.search+url.hash);}}
 async function openPostDetails(post,updateHistory=true){if(!post||post.classList.contains('is-post-open'))return;closePostDetails(false);const shade=document.createElement('button');shade.type='button';shade.className='post-detail-backdrop';shade.setAttribute('aria-label','إغلاق تفاصيل المنشور');shade.addEventListener('click',()=>closePostDetails(true));document.body.appendChild(shade);post.classList.add('is-post-open');document.body.classList.add('post-detail-active');preparePostMedia(post);if(updateHistory&&new URLSearchParams(location.search).get('post')!==post.dataset.postId)history.pushState({post:post.dataset.postId},'',detailUrl(post.dataset.postId));try{await loadComments(post);}catch(err){alert(err.message);}}
 function openRequestedPost(){const id=new URLSearchParams(location.search).get('post');if(!id)return;const post=Array.from(feed.querySelectorAll('[data-post-id]')).find(x=>x.dataset.postId===id);if(post)openPostDetails(post,false);}
