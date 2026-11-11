@@ -1,0 +1,26 @@
+name: Smart Friend official domain routing
+on:
+  push:
+    branches: [fix/smart-friend-custom-domain-routing-20261107]
+  pull_request:
+    paths:
+      - 'smart-friend-chat-enhancements.js'
+      - 'smart-friend-chat.html'
+      - 'cloudflare/pages/smart-friend.js'
+      - 'tests/cloudflare-smart-friend-domain-routes.test.mjs'
+      - '.github/workflows/smart-friend-domain-routes.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check smart-friend-chat-enhancements.js
+      - run: node --check cloudflare/pages/smart-friend.js
+      - run: node --test tests/cloudflare-smart-friend-domain-routes.test.mjs
+      - run: node --test tests/cloudflare-smart-friend-ai.test.mjs
+      - run: node --test tests/cloudflare-smart-friend-home-dock.test.mjs

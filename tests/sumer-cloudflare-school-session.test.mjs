@@ -43,7 +43,8 @@ test('Cloudflare routing and Sumer frontend use cookie verification instead of l
  assert.ok(r.indexOf("pathname === '/api/school/management/me'")<r.indexOf('return proxyLegacy(context)'));
  assert.match(html,/api\.getMe\(\)\.then/);
  assert.doesNotMatch(html,/if \(api && api\.getToken\(\)\)/);
- assert.match(html,/location\.replace\('\/developer\/#school'\)/);
+ assert.match(html,/location\.replace\('\/school-admin\.html#/);
+ assert.doesNotMatch(html,/location\.replace\('\/developer\/#school'\)/);
  assert.match(api,/credentials: 'same-origin'/);
  assert.doesNotMatch(api,/var token = options\.token \|\| this\.getToken\(\)/);
  assert.match(guest,/token: null/);

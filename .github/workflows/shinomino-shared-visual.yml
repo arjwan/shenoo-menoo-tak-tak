@@ -18,4 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/shinomino-shared-visual.test.mjs tests/shinomino-home-ui.test.mjs tests/shinomino-login-ui.test.mjs tests/sumer-cloudflare-school-session.test.mjs
+      # Run sequentially: these suites build into the same dist directory.
+      - run: node --test tests/shinomino-shared-visual.test.mjs
+      - run: node --test tests/shinomino-home-ui.test.mjs
+      - run: node --test tests/shinomino-login-ui.test.mjs
+      - run: node --test tests/sumer-cloudflare-school-session.test.mjs
