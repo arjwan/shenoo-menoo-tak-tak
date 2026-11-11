@@ -1,0 +1,26 @@
+name: Cinematic Reels interface
+on:
+  pull_request:
+    paths:
+      - 'reels.html'
+      - 'reels-cinema.css'
+      - 'reels-cinema.js'
+      - 'tests/reels-cinematic-design.test.mjs'
+      - '.github/workflows/reels-cinematic-design.yml'
+  push:
+    branches: [feat/cinematic-reels-experience-20261107]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check reels-cinema.js
+      - run: node --check reels-v2.js
+      - run: node --test tests/reels-cinematic-design.test.mjs
+      - run: bash scripts/build-cloudflare-pages.sh
+      - run: test -s dist/reels-cinema.js && test -s dist/reels-cinema.css
