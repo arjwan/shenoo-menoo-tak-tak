@@ -182,8 +182,11 @@ async function main(req,env){
     if(!object)return err('الملف غير موجود',404);
     const size=object.size;
     const rangeHeader=req.headers.get('Range');
-    const headers=new Headers({'Content-Type':m.mime_type,'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff','Content-Disposition':'inline','Accept-Ranges':'bytes','Content-Encoding':'identity'});
+    const cachePolicy=m.ad_status&&m.ad_status!=='approved'?'private, no-store':'public, max-age=86400';
+    const headers=new Headers({'Content-Type':m.mime_type,'Cache-Control':cachePolicy,'X-Content-Type-Options':'nosniff','Content-Disposition':'inline','Accept-Ranges':'bytes','Content-Encoding':'identity'});
     if(object.httpEtag)headers.set('ETag',object.httpEtag);
+    // For previously saved, public media, let the browser reuse its cached image.
+    if(cachePolicy.startsWith('public')&&!req.headers.has('Range')&&object.httpEtag&&req.headers.get('If-None-Match')===object.httpEtag){headers.delete('Content-Length');return new Response(null,{status:304,headers});}
     let range;
     if(rangeHeader){
       const match=/^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
