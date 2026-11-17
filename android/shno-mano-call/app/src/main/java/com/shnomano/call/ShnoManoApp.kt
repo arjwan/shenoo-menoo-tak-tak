@@ -17,6 +17,7 @@ class ShnoManoApp : Application() {
             previous?.uncaughtException(thread, error)
         }
         createNotificationChannels()
+        CallPushRegistration.initialize(this)
     }
 
     private fun createNotificationChannels() {

@@ -42,6 +42,7 @@ class SessionStore(context: Context) {
     fun clear() {
         // Clearing credentials is also the definitive logout signal for the
         // foreground service; it must not reconnect with an old token.
+        com.shnomano.call.CallPushRegistration.unregister(appContext)
         BackgroundRealtimeService.stop(appContext)
         prefs.edit().clear().apply()
     }

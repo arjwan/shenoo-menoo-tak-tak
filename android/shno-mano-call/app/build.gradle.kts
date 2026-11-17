@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import java.util.Properties
 import java.security.MessageDigest
 
@@ -18,6 +19,17 @@ fun signingValue(property: String, env: String): String? =
     keystoreProperties.getProperty(property)?.takeIf { it.isNotBlank() }
         ?: System.getenv(env)?.takeIf { it.isNotBlank() }
 
+// google-services.json is public Android client configuration; private service keys stay server-side.
+val firebaseConfigFile = file("google-services.json")
+val firebaseRaw = System.getenv("SHNO_FIREBASE_ANDROID_CONFIG")?.takeIf { it.isNotBlank() }
+    ?: firebaseConfigFile.takeIf { it.exists() }?.readText()
+val firebaseConfig = firebaseRaw?.let { JsonSlurper().parseText(it) as Map<*, *> }
+val firebaseClient = (firebaseConfig?.get("client") as? List<*>)?.mapNotNull { it as? Map<*, *> }?.firstOrNull {
+    val info = it["client_info"] as? Map<*, *>
+    (info?.get("android_client_info") as? Map<*, *>)?.get("package_name") == "com.shnomano.call"
+}
+if (firebaseRaw != null) require(firebaseClient != null) { "Firebase configuration must match com.shnomano.call" }
+
 android {
     namespace = "com.shnomano.call"
     compileSdk = 35
@@ -28,6 +40,15 @@ android {
         targetSdk = 35
         versionCode = 20
         versionName = "1.5.0"
+        if (firebaseClient != null) {
+            val project = firebaseConfig!!["project_info"] as Map<*, *>
+            val info = firebaseClient["client_info"] as Map<*, *>
+            val apiKeys = firebaseClient["api_key"] as List<*>
+            resValue("string", "google_app_id", info["mobilesdk_app_id"].toString())
+            resValue("string", "gcm_defaultSenderId", project["project_number"].toString())
+            resValue("string", "project_id", project["project_id"].toString())
+            resValue("string", "google_api_key", (apiKeys.first() as Map<*, *>)["current_key"].toString())
+        }
     }
 
     signingConfigs {
@@ -98,6 +119,7 @@ android.sourceSets.getByName("main").assets.srcDir(callWebAssets)
 tasks.named("preBuild") { dependsOn(bundleCallWeb) }
 
 dependencies {
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
     testImplementation("junit:junit:4.13.2")
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)

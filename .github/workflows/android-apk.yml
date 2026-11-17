@@ -12,6 +12,8 @@ on:
       - 'messages.html'
       - '.github/workflows/android-apk.yml'
 
+env:
+  SHNO_FIREBASE_ANDROID_CONFIG: ${{ secrets.SHNO_FIREBASE_ANDROID_CONFIG }}
 jobs:
   backend-tests:
     runs-on: ubuntu-latest

@@ -7,3 +7,6 @@ uploads/*
 !uploads/.gitkeep
 
 /dist/
+
+# Firebase Android public client configuration is supplied through the build environment.
+android/shno-mano-call/app/google-services.json
