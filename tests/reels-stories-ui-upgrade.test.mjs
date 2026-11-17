@@ -66,7 +66,7 @@ test('Reels and Stories JS/HTML eliminate blocking browser dialogs and preserve 
   assert.match(storiesHtml, /capturePoster/);
 });
 
-test('ShnoLicensedAudio catalog & picker UI filter, preview, select, and clear Apache-2.0 tracks', async () => {
+test('ShnoLicensedAudio catalog & picker UI filter, preview, select, and clear generated audio tracks', async () => {
   const libCode = await read('licensed-audio-library.js');
   const dom = new JSDOM('<!doctype html><html dir="rtl"><body><div id="picker"></div></body></html>', {
     url: 'https://example.test/reels.html',
@@ -78,10 +78,10 @@ test('ShnoLicensedAudio catalog & picker UI filter, preview, select, and clear A
   assert.ok(lib, 'ShnoLicensedAudio should mount on window');
   const musicTracks = lib.list('music');
   const sfxTracks = lib.list('sfx');
-  assert.ok(musicTracks.length >= 6, 'At least 6 Apache-2.0 music tracks');
-  assert.ok(sfxTracks.length >= 6, 'At least 6 Apache-2.0 sound effects');
+  assert.ok(musicTracks.length >= 6, 'At least 6 generated audio music tracks');
+  assert.ok(sfxTracks.length >= 6, 'At least 6 generated audio sound effects');
   for (const t of lib.TRACKS) {
-    assert.match(t.license, /Apache-2\.0/);
+    assert.match(t.license, /صوت مولّد برمجياً/);
   }
 
   let lastChange = null;

@@ -1,7 +1,7 @@
 const {chromium}=require('playwright');
 const fs=require('fs');
 const assert=require('node:assert/strict');
-(async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});const page=await browser.newPage();page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));page.on('console',m=>{if(m.type()==='error')console.log('CONSOLE_ERROR',m.text())});page.on('requestfailed',r=>console.log('REQUEST_FAILED',r.url(),r.failure()));
+(async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});const page=await browser.newPage({serviceWorkers: 'block'});page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));page.on('console',m=>{if(m.type()==='error')console.log('CONSOLE_ERROR',m.text())});page.on('requestfailed',r=>console.log('REQUEST_FAILED',r.url(),r.failure()));
 await page.route('**/api/**',r=>{const u=r.request().url();console.log('API_REQUEST',u);const item={id:'fixture',text:'اختبار محلي',canDelete:true,author:{id:'u1',fullName:'اختبار'},createdAt:new Date().toISOString(),media:[{type:'video',url:'/fixture.webm'}]};return r.fulfill({json:u.endsWith('/api/reels')?{reels:[item]}:u.endsWith('/api/stories')?{stories:[item]}:u.endsWith('/api/users/me')?{user:{id:'u1'}}:{ok:true}})});
 await page.route('**/fixture.webm',r=>r.fulfill({body:fs.readFileSync('/tmp/shno-fixture.webm'),contentType:'video/webm'}));
 const results=[];

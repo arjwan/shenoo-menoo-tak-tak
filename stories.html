@@ -697,9 +697,9 @@
             fitMode: selectedFit,
             originalVolume: 1,
             musicId: libraryAudio.musicId,
-            musicVolume: Number(musicVolEl.value || 70) / 100,
+            musicVolume: Number(musicVolEl.value) / 100,
             sfxId: libraryAudio.sfxId,
-            sfxVolume: Number(musicVolEl.value || 80) / 100,
+            sfxVolume: Number(musicVolEl.value) / 100,
             onProgress: (p) => setStatus('تجهيز القصة: ' + p + '%')
           });
           if (!rendered || rendered.size === 0) throw Error('تعذر دمج الصوت أو التعديلات. لن تُنشر القصة بصيغتها الأصلية دونها.');
