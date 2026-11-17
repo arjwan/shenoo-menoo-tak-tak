@@ -26,8 +26,8 @@ android {
         applicationId = "com.shnomano.call"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "1.4.0"
+        versionCode = 20
+        versionName = "1.5.0"
     }
 
     signingConfigs {
@@ -79,7 +79,7 @@ val callWebAssets = layout.buildDirectory.dir("generated/callWebAssets")
 val bundleCallWeb by tasks.registering(Sync::class) {
     from(callWebRoot) { include(callWebFiles) }
     into(callWebAssets.map { it.dir("call-web") })
-    inputs.property("callUiVersion", "1.4.0-19")
+    inputs.property("callUiVersion", "1.5.0-20")
     doFirst {
         callWebFiles.forEach { check(callWebRoot.resolve(it).isFile) { "Missing bundled call asset: $it" } }
     }
@@ -90,7 +90,7 @@ val bundleCallWeb by tasks.registering(Sync::class) {
             "\"$name\":\"$hash\""
         }
         callWebAssets.get().file("call-web/call-build.json").asFile.writeText(
-            "{\"version\":\"1.4.0\",\"versionCode\":19,\"files\":{$entries}}"
+            "{\"version\":\"1.5.0\",\"versionCode\":20,\"files\":{$entries}}"
         )
     }
 }
@@ -112,6 +112,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.5")
 

@@ -164,7 +164,7 @@ class WebCallActivity : ComponentActivity() {
             "https://shinomino.com",
             "__Host-shino_session=$cookie; Path=/; Secure; HttpOnly; SameSite=Lax"
         ) { accepted ->
-            if (accepted && !isFinishing) webView.loadUrl(targetUrl) else finish()
+            if (accepted && !isFinishing) webView.loadUrl(if (SettingsStore(this).lowData) android.net.Uri.parse(targetUrl).buildUpon().appendQueryParameter("lowData", "1").build().toString() else targetUrl) else finish()
         }
         // setCookie is asynchronous; load only after the session is available.
 

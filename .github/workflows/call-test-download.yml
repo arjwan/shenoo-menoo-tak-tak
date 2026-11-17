@@ -1,5 +1,9 @@
 name: Publish verified standalone call test APK
 on:
+  workflow_run:
+    workflows: [Build Signed Shno Mano Release APK]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       artifact_run:
@@ -13,40 +17,44 @@ permissions:
   actions: read
 jobs:
   publish-test-download:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_commit }}
+          ref: ${{ inputs.source_commit || github.event.workflow_run.head_sha }}
       - name: Download and verify the existing signed APK
         env:
           GH_TOKEN: ${{ github.token }}
-          ARTIFACT_RUN: ${{ inputs.artifact_run }}
+          ARTIFACT_RUN: ${{ inputs.artifact_run || github.event.workflow_run.id }}
         run: |
+          # Only the signed build job may supply an APK, even if unrelated backend tests failed.
+          STATE="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN/jobs" --jq '.jobs[] | select(.name == "build-release-apk") | .conclusion')"
+          test "$STATE" = success
           mkdir -p "$RUNNER_TEMP/call-apk"
-          gh run download "$ARTIFACT_RUN" --repo "$GITHUB_REPOSITORY" --name shno-mano-call-1.4.0-signed --dir "$RUNNER_TEMP/call-apk"
+          gh run download "$ARTIFACT_RUN" --repo "$GITHUB_REPOSITORY" --name shno-mano-call-1.5.0-signed --dir "$RUNNER_TEMP/call-apk"
           python scripts/verify-call-apk.py "$RUNNER_TEMP/call-apk/app-release.apk"
-          mv "$RUNNER_TEMP/call-apk/app-release.apk" "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.4.0.apk"
+          mv "$RUNNER_TEMP/call-apk/app-release.apk" "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.0.apk"
           cd "$RUNNER_TEMP/call-apk"
-          sha256sum Shno-Mano-Call-1.4.0.apk > Shno-Mano-Call-1.4.0.apk.sha256
+          sha256sum Shno-Mano-Call-1.5.0.apk > Shno-Mano-Call-1.5.0.apk.sha256
       - name: Publish a direct APK download for live testing
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          SOURCE_COMMIT: ${{ inputs.source_commit || github.event.workflow_run.head_sha }}
         run: |
           cat > "$RUNNER_TEMP/call-notes.md" <<'NOTES'
-          نسخة اختبار حي 1.4.0 (19)، الحزمة com.shnomano.call.
+          نسخة اختبار حي 1.5.0 (20)، الحزمة com.shnomano.call.
 
-          تصميم داكن موحّد للتطبيق، واستعادة إضافة الأصدقاء عبر QR، وإصلاح قراءة طلبات الصداقة وإجراءات قبول ورفض المكالمات من الإشعارات. يظهر رقم البناء أسفل شاشة المكالمة وفي الإعدادات.
+          القصص والريلز والمجموعات واكتشف والأخبار داخل اتصال، مع اختيار ملفات النشر وتحديث طلبات الأصدقاء بعد العودة.
 
-          بناء نظيف وموقّع بالمفتاح الموجود. جرى التحقق من بصمات ملفات الواجهة الـ20 داخل APK ومن تطابقها مع الكود. اجتازت اختبارات المكالمات الموسّعة، بما فيها اختبار تنسيقات الثيم الفاتح.
+          وضع نهاري/ليلي، وتوفير بيانات الفيديو، ومجموعات عامة وخاصة وقنوات. مصادر الأخبار والمحتوى الخارجية قد تتأخر أو تتعذر؛ لا تعرض النسخة أخباراً وهمية بديلاً عنها.
 
-          TURN غير مفعّل في هذه النسخة بناءً على طلب المستخدم.
+          إعداد TURN موجود في الخادم. لا يحتوي APK أسراره. شاشة المكالمة الأصلية محفوظة، مع تحديث مسار جودة الفيديو فقط.
 
-          ثبّت كتحديث دون حذف التطبيق الحالي أو مسح بياناته. هذه نسخة للاختبار الحي؛ اختبارات الهاتفين ومشاركة MediaProjection على الجهاز ما زالت مطلوبة.
+          ثبّت كتحديث دون حذف التطبيق الحالي أو مسح بياناته. هذه نسخة للاختبار الحي؛ لا تعني اكتمال خطة التطوير الشامل، واختبار الهاتفين والخلفية وشاشة القفل ما زال مطلوباً.
           NOTES
-          gh release create standalone-call-live-1.4.0 \
-            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.4.0.apk" \
-            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.4.0.apk.sha256" \
+          gh release create standalone-call-live-1.5.0 \
+            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.0.apk" \
+            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.0.apk.sha256" \
             --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" --prerelease --latest=false \
-            --title 'شنو منو اتصال 1.4.0 — تصميم جديد واستعادة QR' --notes-file "$RUNNER_TEMP/call-notes.md"
+            --title 'شنو منو اتصال 1.5.0 — تصميم جديد واستعادة QR' --notes-file "$RUNNER_TEMP/call-notes.md"

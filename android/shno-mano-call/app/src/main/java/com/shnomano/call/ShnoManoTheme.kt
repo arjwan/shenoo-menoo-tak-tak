@@ -2,6 +2,8 @@ package com.shnomano.call
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -22,10 +24,18 @@ private val ShnoDarkColors = darkColorScheme(
     onError = Color.White
 )
 
+private val ShnoLightColors = lightColorScheme(
+    primary = Color(0xFF6244C8), onPrimary = Color.White,
+    secondary = Color(0xFF087D72), background = Color(0xFFF6F7FC),
+    onBackground = Color(0xFF192238), surface = Color.White,
+    onSurface = Color(0xFF192238), surfaceVariant = Color(0xFFEBEEF8),
+    onSurfaceVariant = Color(0xFF526078), outline = Color(0xFF9AA4BA)
+)
+
 @Composable
-fun ShnoManoTheme(content: @Composable () -> Unit) {
+fun ShnoManoTheme(darkTheme: Boolean? = null, content: @Composable () -> Unit) {
     androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl) {
-        MaterialTheme(colorScheme = ShnoDarkColors, shapes = androidx.compose.material3.Shapes(
+        MaterialTheme(colorScheme = if (darkTheme ?: SettingsStore(LocalContext.current).darkTheme) ShnoDarkColors else ShnoLightColors, shapes = androidx.compose.material3.Shapes(
             small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
             medium = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
             large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)

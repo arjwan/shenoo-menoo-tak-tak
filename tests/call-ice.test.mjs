@@ -19,3 +19,13 @@ test('unconfigured relay remains explicit and transient failures are not fake su
  const fallback=await (await issueCallIce(req(),{DB:db},user)).json();assert.equal(fallback.relay,false);
  const bad=await issueCallIce(req(),{DB:db,SHNO_CALL_TURN_KEY:'x',SHNO_CALL_TURN_TOKEN:'x'},user,async()=>new Response('',{status:503}));assert.equal(bad.status,503);
 });
+
+test('Weak-network mode bounds video capture while audio calls never request a camera',async()=>{
+ const {readFile}=await import('node:fs/promises');const vm=await import('node:vm');const code=await readFile(new URL('../call-ice.js',import.meta.url),'utf8');
+ const window={navigator:{connection:{effectiveType:'2g'}},location:{search:''},localStorage:{getItem:()=>null}};
+ vm.runInNewContext(code,{window,URLSearchParams});
+ assert.equal(window.ShnoCallIce.constraints('audio').video,false);
+ assert.equal(window.ShnoCallIce.constraints('video').video.width.max,480);
+ window.navigator.connection.effectiveType='4g';assert.equal(window.ShnoCallIce.constraints('video').video.width.ideal,1280);
+ window.location.search='?lowData=1';assert.equal(window.ShnoCallIce.constraints('video').video.frameRate.max,15);
+});

@@ -52,10 +52,17 @@ $('group-create-form').onsubmit=async event=>{
  event.preventDefault();
  const members=[...document.querySelectorAll('#group-contacts input:checked')].map(e=>e.value);
  try{
-  const r=await post('',{name:$('group-name').value.trim(),members});
+  const r=await post('',{name:$('group-name').value.trim(),members,visibility:$('group-visibility').value,kind:$('group-kind').value});
   $('group-create').hidden=true;await loadGroups();await openGroup(r.group.id);
  }catch(e){feedback(e.message)}
 };
+async function searchPublicGroups(){
+ try{const d=await api('/public?q='+encodeURIComponent($('public-group-query').value));
+ $('public-group-items').innerHTML=(d.groups||[]).map(g=>'<button class="group-btn" data-join-public="'+esc(g.id)+'">'+esc(g.name)+' · '+(g.kind==='channel'?'قناة':'مجموعة')+' · '+Number(g.memberCount)+' / 8 — انضمام</button>').join('')||'<p>لا توجد مجموعات مطابقة.</p>';
+ }catch(e){feedback(e.message)}
+}
+$('public-group-search').onclick=searchPublicGroups;
+$('public-group-items').onclick=async e=>{const b=e.target.closest('[data-join-public]');if(!b)return;b.disabled=true;try{await post('/'+b.dataset.joinPublic+'/join',{});await loadGroups();await openGroup(b.dataset.joinPublic);}catch(e){feedback(e.message)}finally{b.disabled=false}};
 $('group-refresh').onclick=()=>loadGroups().catch(e=>feedback(e.message));
 $('group-back').onclick=async()=>{if(call)await leaveCall();current=null;$('group-room').hidden=true;$('group-list').hidden=false;$('group-stage').hidden=true;$('group-invite').hidden=true};
 async function openGroup(id){
@@ -64,6 +71,10 @@ async function openGroup(id){
  current=r.group;members=r.members||[];signalCursor=0;messageSnapshot='';
  $('group-room').hidden=false;$('group-list').hidden=true;$('group-title').textContent=current.name;
  $('group-members').textContent=members.map(m=>m.fullName).join('، ');
+ $('group-send').hidden=current.kind==='channel'&&current.ownerId!==selfId;
+ $('group-add').hidden=current.ownerId!==selfId;
+ $('group-start-audio').hidden=current.kind==='channel'&&current.ownerId!==selfId;
+ $('group-start-video').hidden=current.kind==='channel'&&current.ownerId!==selfId;
  await loadMessages();
  await checkSignals();
 }
@@ -122,7 +133,7 @@ function tile(id,name,stream,own=false){
 async function takeMedia(type){
  if(window.ShnoCallIce)await window.ShnoCallIce.prepare();
  if(local){local.getTracks().forEach(t=>t.stop());local=null}
- local=await navigator.mediaDevices.getUserMedia({audio:true,video:type==='video'});
+ local=await navigator.mediaDevices.getUserMedia(window.ShnoCallIce?.constraints(type)||{audio:true,video:type==='video'});
  mute=false;
  tile('self','أنت',local,true);
  return local;
@@ -324,6 +335,10 @@ async function addMember(){
   await post('/'+current.id+'/members',{userId:selected.id});
   const fresh=await api('/'+current.id);members=fresh.members||[];
   $('group-members').textContent=members.map(m=>m.fullName).join('، ');
+ $('group-send').hidden=current.kind==='channel'&&current.ownerId!==selfId;
+ $('group-add').hidden=current.ownerId!==selfId;
+ $('group-start-audio').hidden=current.kind==='channel'&&current.ownerId!==selfId;
+ $('group-start-video').hidden=current.kind==='channel'&&current.ownerId!==selfId;
   if(call)await signal(selected.id,'invite',{type:mediaType,name:current.name,hostId:call.hostId});
  }catch(e){feedback(e.message)}
 }

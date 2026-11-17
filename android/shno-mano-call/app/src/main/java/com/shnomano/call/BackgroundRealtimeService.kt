@@ -204,7 +204,7 @@ class BackgroundRealtimeService : Service() {
             val unread = row.optInt("unreadCount", 0)
             if (id.isBlank()) continue
             updated[id] = unread
-            if (baselineLoaded && unread > (seenUnread[id] ?: 0)) {
+            if (baselineLoaded && unread > (seenUnread[id] ?: 0) && SettingsStore(this).notificationsEnabled) {
                 val other = row.optJSONObject("otherUser")
                 val name = other?.optString("fullName")?.takeIf { it.isNotBlank() } ?: "شنو منو"
                 val target = Intent(this, MainActivity::class.java).apply {
@@ -351,6 +351,7 @@ class BackgroundRealtimeService : Service() {
     }
 
     private fun postIncomingCallNotification(call: IncomingCall, isGroup: Boolean) {
+        if (!SettingsStore(this).notificationsEnabled) return
         val url = "${SHNO_MANO_BASE_URL}messages.html?user=${Uri.encode(call.from)}"
         val openCall = Intent(this, WebCallActivity::class.java).apply {
             putExtra(WebCallActivity.EXTRA_URL, url)
@@ -398,6 +399,7 @@ class BackgroundRealtimeService : Service() {
             .setContentText(call.callerName)
             .setContentIntent(pendingIntent)
             .setFullScreenIntent(pendingIntent, true)
+            .setSilent(!SettingsStore(this).callSoundEnabled)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
