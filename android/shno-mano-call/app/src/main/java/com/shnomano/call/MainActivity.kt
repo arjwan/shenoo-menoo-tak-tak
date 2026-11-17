@@ -123,7 +123,7 @@ fun ShnoManoCallApp(onToggleTheme: () -> Unit = {}) {
             Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(10.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("شنو منو اتصال", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 21.sp)
-                    TextButton(onClick = onToggleTheme) { Text("☀ / ☾") }
+                    TextButton(onClick = onToggleTheme) { Text("المظهر ☀ / ☾") }
                 }
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("✨ القصص" to "stories.html", "▶ الريلز" to "reels.html", "◉ المجموعات" to "call-groups.html", "🧭 اكتشف" to "call-discover.html", "📰 الأخبار" to "call-news.html").forEach { (title, page) ->

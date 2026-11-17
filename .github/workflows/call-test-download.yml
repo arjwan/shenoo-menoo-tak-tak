@@ -1,5 +1,9 @@
 name: Publish verified standalone call test APK
 on:
+  workflow_run:
+    workflows: [Build Signed Shno Mano Release APK]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       artifact_run:
@@ -13,16 +17,20 @@ permissions:
   actions: read
 jobs:
   publish-test-download:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_commit }}
+          ref: ${{ inputs.source_commit || github.event.workflow_run.head_sha }}
       - name: Download and verify the existing signed APK
         env:
           GH_TOKEN: ${{ github.token }}
-          ARTIFACT_RUN: ${{ inputs.artifact_run }}
+          ARTIFACT_RUN: ${{ inputs.artifact_run || github.event.workflow_run.id }}
         run: |
+          # Only the signed build job may supply an APK, even if unrelated backend tests failed.
+          STATE="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN/jobs" --jq '.jobs[] | select(.name == "build-release-apk") | .conclusion')"
+          test "$STATE" = success
           mkdir -p "$RUNNER_TEMP/call-apk"
           gh run download "$ARTIFACT_RUN" --repo "$GITHUB_REPOSITORY" --name shno-mano-call-1.5.0-signed --dir "$RUNNER_TEMP/call-apk"
           python scripts/verify-call-apk.py "$RUNNER_TEMP/call-apk/app-release.apk"
@@ -32,7 +40,7 @@ jobs:
       - name: Publish a direct APK download for live testing
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          SOURCE_COMMIT: ${{ inputs.source_commit || github.event.workflow_run.head_sha }}
         run: |
           cat > "$RUNNER_TEMP/call-notes.md" <<'NOTES'
           نسخة اختبار حي 1.5.0 (20)، الحزمة com.shnomano.call.
