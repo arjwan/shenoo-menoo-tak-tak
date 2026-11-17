@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 9621)
-Total output lines: 711
-
 package com.shnomano.call
 
 import android.Manifest
@@ -329,7 +326,115 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
             repo.importPickedPhone(uri)
                 .onSuccess { status = "تم حفظ ${it.name}" }
                 .onFailure { status = it.message ?: "تعذر قراءة جهة الاتصال" }
-  …1621 tokens truncated…llMaxWidth()) {
+        }
+    }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) picker.launch(Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI))
+        else status = "يلزم السماح بقراءة جهة الاتصال التي تختارها"
+    }
+
+    LaunchedEffect(Unit) {
+        runCatching { repo.syncContacts() }.onFailure { AppDiagnostics.record(context, it, "contacts-sync"); status = "تعذر مزامنة جهات الاتصال؛ يمكنك إعادة المحاولة" }
+        friends = repo.loadFriends()
+        requests = repo.loadFriendRequests()
+        sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
+    }
+
+    val contactsLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(contactsLifecycle) {
+        contactsLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) {
+                repo.refreshFriendState().onSuccess { snapshot ->
+                    friends = snapshot.friends
+                    requests = snapshot.incoming
+                    sentRequestUserIds = snapshot.sentUserIds
+                }
+                delay(4_000)
+            }
+        }
+    }
+
+    val filteredFriends = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
+    val filteredContacts = contacts.filter { query.isBlank() || it.name.contains(query, true) || it.phone.contains(query) }
+
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
+        BrandHeader("جهات الاتصال", "الهاتف + أصدقاء شنو منو")
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FilledTonalButton(onClick = { context.startActivity(Intent(context, QrFriendActivity::class.java)) }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.QrCodeScanner, null); Spacer(Modifier.width(6.dp)); Text("إضافة عبر QR")
+            }
+            FilledTonalButton(onClick = { context.startActivity(Intent(context, ContactDiscoveryActivity::class.java)) }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.PersonSearch, null); Spacer(Modifier.width(6.dp)); Text("بحث عن صديق")
+            }
+        }
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("ابحث بالاسم أو الرقم") },
+            leadingIcon = { Icon(Icons.Default.Search, null) },
+            singleLine = true,
+            shape = RoundedCornerShape(20.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        Button(
+            onClick = { permission.launch(android.Manifest.permission.READ_CONTACTS) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg)
+        ) {
+            Icon(Icons.Default.PersonAdd, null)
+            Spacer(Modifier.width(8.dp))
+            Text("اختيار جهة من الهاتف")
+        }
+        OutlinedButton(
+            onClick = { scope.launch {
+                requests = repo.loadFriendRequests()
+                sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
+                friends = repo.loadFriends()
+                status = "تم تحديث طلبات الصداقة"
+            } },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Refresh, null)
+            Spacer(Modifier.width(8.dp))
+            Text("تحديث طلبات الصداقة")
+        }
+        status?.let { Text(it, color = Accent, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+        Spacer(Modifier.height(8.dp))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (requests.isNotEmpty()) item { SectionTitle("طلبات الصداقة الواردة") }
+            items(requests, key = { "request-${it.id}" }) { request ->
+                Card(colors = CardDefaults.cardColors(containerColor = Panel2), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        AvatarLetter(request.contact.displayName)
+                        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                            Text(request.contact.displayName, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                            Text("يريد إضافتك إلى أصدقاء شنو منو", color = Muted, fontSize = 11.sp)
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                repo.respondToFriendRequest(request.id, true).onSuccess { status = it }
+                                requests = repo.loadFriendRequests(); friends = repo.loadFriends()
+                            }
+                        }) { Icon(Icons.Default.Check, "قبول", tint = Accent) }
+                        IconButton(onClick = {
+                            scope.launch {
+                                repo.respondToFriendRequest(request.id, false).onSuccess { status = it }
+                                requests = repo.loadFriendRequests()
+                            }
+                        }) { Icon(Icons.Default.Close, "رفض", tint = MaterialTheme.colorScheme.error) }
+                    }
+                }
+            }
+            if (filteredFriends.isNotEmpty()) item { SectionTitle("أصدقاء شنو منو") }
+            items(filteredFriends, key = { "friend-${it.userId}" }) { f ->
+                val online = f.userId in onlineUserIds
+                PersonRow(f.displayName, if (online) "متصل الآن" else "الحالة غير مؤكدة", online = online, onClick = { onMessage(f.userId) })
+            }
+            if (filteredContacts.isNotEmpty()) item { SectionTitle("جهات الهاتف") }
+            items(filteredContacts, key = { "phone-${it.phone}" }) { c ->
+                Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp)) {
                         Text(c.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                         Text(c.phone, color = Muted, fontSize = 12.sp)
