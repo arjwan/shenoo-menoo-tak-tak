@@ -11,7 +11,7 @@ const assert=require('node:assert/strict');
   await page.locator('[data-reels-list] .reel-card').waitFor();
   const state=await page.evaluate(()=>{const p=document.querySelector('.home-reels-sidebar');const feed=document.querySelector('[data-feed]');return {count:document.querySelectorAll('[data-reels-list]').length,parent:p.parentElement.className,afterStories:p.previousElementSibling?.classList.contains('stories-block'),beforePosts:!!(p.compareDocumentPosition(feed)&Node.DOCUMENT_POSITION_FOLLOWING),overflow:document.documentElement.scrollWidth>innerWidth+1,visible:p.getBoundingClientRect().width>0,ads:!!document.querySelector('.paid-ads,.mobile-live-ads')};});
   assert.equal(state.count,1);assert.equal(state.visible,true);assert.equal(state.overflow,false);assert.equal(state.ads,false);
-  if(width<=1100){assert.equal(state.parent,'feed');assert.equal(state.afterStories,true);assert.equal(state.beforePosts,true);}else assert.equal(state.parent,'right-side');
+  if(width<=1200){assert.equal(state.parent,'feed');assert.equal(state.afterStories,true);assert.equal(state.beforePosts,true);}else assert.equal(state.parent,'right-side');
   console.log(width,state);
  }
  // Resizing an already loaded page must move the same list, not clone it.

@@ -4,7 +4,7 @@
   const sidebar = document.querySelector('.right-side');
   const stories = document.querySelector('.feed > .stories-block');
   if (!panel || !sidebar || !stories) return;
-  const compact = window.matchMedia('(max-width: 1100px)');
+  const compact = window.matchMedia('(max-width: 1200px)');
   function placeReels() {
     if (compact.matches) stories.after(panel);
     else sidebar.prepend(panel);
