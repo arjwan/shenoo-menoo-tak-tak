@@ -30,9 +30,12 @@ jobs:
             echo "GET /api/$route without auth => $code"
             test "$code" = "401"
           done
-          curl -fsSL --max-time 25 "$root/taktak.html" | grep -q 'home-colors-scope'
-          curl -fsSL --max-time 25 "$root/stories.html" | grep -q "API=window.location.origin"
-          curl -fsSL --max-time 25 "$root/reels-v2.js" | grep -q "api('/api/posts'"
+          curl -fsSL --max-time 25 "$root/taktak.html" -o /tmp/live-taktak.html
+          grep -q 'home-colors-scope' /tmp/live-taktak.html
+          curl -fsSL --max-time 25 "$root/stories.html" -o /tmp/live-stories.html
+          grep -Eq 'API[[:space:]]*=[[:space:]]*window.location.origin' /tmp/live-stories.html
+          curl -fsSL --max-time 25 "$root/reels-v2.js" -o /tmp/live-reels.js
+          grep -Fq "api('/api/posts'" /tmp/live-reels.js
           curl -fsSL --max-time 25 "$root/taktak-colors.css" > /dev/null
           echo 'PASS: Cloudflare home, original stories, reels, and authenticated API routing.'
       - name: Diagnose exact signup POST and resolver routing
