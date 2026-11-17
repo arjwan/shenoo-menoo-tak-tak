@@ -26,12 +26,14 @@ jobs:
         run: |
           set -euo pipefail
           host=https://shinomino.com
+          expected="$(grep -oE 'call-signaling\.js\?v=[^" ]+' messages.html | head -1)"
+          test -n "$expected"
           for attempt in $(seq 1 18); do
             code="$(curl -sSL -o /tmp/messages.html -w '%{http_code}' --max-time 15 "$host/messages.html" || true)"
-            if [ "$code" = 200 ] && grep -q 'call-signaling.js?v=20261109-d1-1' /tmp/messages.html; then break; fi
+            if [ "$code" = 200 ] && grep -Fq "$expected" /tmp/messages.html; then break; fi
             sleep 5
           done
-          grep -q 'call-signaling.js?v=20261109-d1-1' /tmp/messages.html
+          grep -Fq "$expected" /tmp/messages.html
           curl -fsSL --max-time 20 "$host/call-signaling.js" -o /tmp/signaling.js
           grep -q 'ShnoCallSignaling' /tmp/signaling.js
           for attempt in $(seq 1 12); do

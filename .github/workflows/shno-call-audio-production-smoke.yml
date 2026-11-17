@@ -28,15 +28,19 @@ jobs:
         run: |
           set -euo pipefail
           base=https://shinomino.com
+          expected="$(grep -oE 'private-messages\.js\?v=[^" ]+' messages.html | head -1)"
+          test -n "$expected"
           for i in $(seq 1 16); do
             curl -fsSL --max-time 20 "$base/messages.html" -o /tmp/shno-messages.html
-            if grep -q 'private-messages.js?v=20261109-calltone-2' /tmp/shno-messages.html; then break; fi
+            if grep -Fq "$expected" /tmp/shno-messages.html; then break; fi
             sleep 5
           done
-          grep -q 'private-messages.js?v=20261109-calltone-2' /tmp/shno-messages.html
+          grep -Fq "$expected" /tmp/shno-messages.html
           curl -fsSL --max-time 20 "$base/call-audio.js?v=20261109-ring-1" -o /tmp/shno-call-audio.js
-          curl -fsSL --max-time 20 "$base/private-messages.js?v=20261109-calltone-2" -o /tmp/shno-call-messages.js
-          curl -fsSL --max-time 20 "$base/communication-dock.js?v=20261109-livecall-1" -o /tmp/shno-dock.js
+          curl -fsSL --max-time 20 "$base/private-messages.js?smoke=$GITHUB_SHA" -o /tmp/shno-call-messages.js
+          curl -fsSL --max-time 20 "$base/communication-dock.js?smoke=$GITHUB_SHA" -o /tmp/shno-dock.js
+          cmp private-messages.js /tmp/shno-call-messages.js
+          cmp communication-dock.js /tmp/shno-dock.js
           grep -q 'startRingback' /tmp/shno-call-audio.js
           grep -q 'startIncoming' /tmp/shno-call-audio.js
           grep -q 'ShnoCallAudio.startRingback' /tmp/shno-call-messages.js
