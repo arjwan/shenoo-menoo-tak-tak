@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.shnomano.call.data.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import androidx.lifecycle.repeatOnLifecycle
 
 private val Bg: Color
     @Composable get() = MaterialTheme.colorScheme.background
@@ -339,16 +340,15 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
     }
 
     val contactsLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(contactsLifecycle) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) scope.launch {
+    LaunchedEffect(contactsLifecycle) {
+        contactsLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) {
                 friends = repo.loadFriends()
                 requests = repo.loadFriendRequests()
                 sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
+                delay(4_000)
             }
         }
-        contactsLifecycle.addObserver(observer)
-        onDispose { contactsLifecycle.removeObserver(observer) }
     }
 
     val filteredFriends = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
