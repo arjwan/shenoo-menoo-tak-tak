@@ -15,13 +15,14 @@
    if(kind==='news'&&area!==lastArea){items.append(Object.assign(text('h2',area),{className:'section-marker'}));lastArea=area}
    const card=document.createElement('article');card.className='content-card';
    if(cleanURL(item.image)){const img=document.createElement('img');img.src=cleanURL(item.image);img.alt=item.title;img.loading='lazy';card.append(img)}
+   if(cleanURL(item.video))card.append(text('small','فيديو من المصدر متاح عند الفتح'));
    card.append(text('small',item.source+(item.publishedAt?' · '+new Date(item.publishedAt).toLocaleString('ar-IQ'):'')),text('h2',item.title),text('p',item.summary));
    if(item.license)card.append(text('small',[item.credit,item.license].filter(Boolean).join(' — ')));
-   const actions=document.createElement('div');actions.className='content-actions';const read=text('button','قراءة');read.onclick=()=>openItem(item);const share=text('button','مشاركة');share.onclick=()=>shareItem(item);actions.append(read,share);card.append(actions);items.append(card);
+   const actions=document.createElement('div');actions.className='content-actions';const read=text('button','أكمل القراءة');read.onclick=()=>openItem(item);const share=text('button','مشاركة');share.onclick=()=>shareItem(item);actions.append(read,share);card.append(actions);items.append(card);
   }
   if(!list.length)items.append(text('p','لا توجد نتائج مطابقة.'));
  }
- function openItem(item){const dialog=document.getElementById('article');dialog.querySelector('h2').textContent=item.title;dialog.querySelector('.article-text').textContent=item.summary;dialog.querySelector('small').textContent=[item.source,item.credit,item.license].filter(Boolean).join(' — ');const source=dialog.querySelector('a');source.href=cleanURL(item.url);source.textContent='متابعة القراءة لدى المصدر';dialog.showModal()}
+ function openItem(item){const dialog=document.getElementById('article');dialog.querySelectorAll('.article-media').forEach(e=>e.remove());const media=document.createElement('div');media.className='article-media';if(cleanURL(item.video)){const v=document.createElement('video');v.src=cleanURL(item.video);v.controls=true;v.preload='none';v.playsInline=true;if(cleanURL(item.image))v.poster=cleanURL(item.image);media.append(v)}else if(cleanURL(item.image)){const img=document.createElement('img');img.src=cleanURL(item.image);img.alt=item.title;media.append(img)}dialog.querySelector('h2').after(media);dialog.querySelector('h2').textContent=item.title;dialog.querySelector('.article-text').textContent=item.detail||item.summary;dialog.querySelector('small').textContent=[item.source,item.credit,item.license].filter(Boolean).join(' — ');const source=dialog.querySelector('a');source.href=cleanURL(item.url);source.textContent='متابعة القراءة لدى المصدر';dialog.showModal()}
  async function shareItem(item){try{const url=cleanURL(item.url);if(navigator.share)await navigator.share({title:item.title,url});else if(navigator.clipboard){await navigator.clipboard.writeText(item.title+'\n'+url);status.textContent='تم نسخ رابط المحتوى للمشاركة'}else status.textContent='افتح المحتوى وانسخ رابط المصدر للمشاركة'}catch(e){if(e.name!=='AbortError')status.textContent='تعذرت المشاركة'}}
  async function load(){const token=++generation;busy=true;status.textContent='جارٍ جلب المحتوى من المصادر…';document.getElementById('refresh').disabled=true;
   try{if(window.shnoSessionReady&&!(await window.shnoSessionReady))throw Error('يرجى تسجيل الدخول');const r=await fetch('/api/call-content/'+kind+(kind==='discover'?'?topic='+encodeURIComponent(category):''),{credentials:'same-origin',cache:'no-store'});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.message||'تعذر جلب المحتوى');if(token!==generation)return;all=d.items||[];render();status.textContent=(d.partial?'بعض المصادر غير متاحة. ':'')+'آخر جلب: '+new Date(d.updatedAt).toLocaleString('ar-IQ');}
@@ -29,5 +30,6 @@
  }
  tabs.onclick=e=>{const b=e.target.closest('[data-category]');if(!b)return;category=b.dataset.category;tabs.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(kind==='discover')load();else render()};
  document.getElementById('search').oninput=render;document.getElementById('refresh').onclick=load;document.querySelector('[data-close-article]').onclick=()=>document.getElementById('article').close();
+ document.getElementById('article').addEventListener('close',()=>document.getElementById('article').querySelectorAll('video').forEach(v=>{v.pause();v.removeAttribute('src');v.load()}));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});setInterval(()=>{if(!document.hidden&&!busy)load()},120000);load();
 })();

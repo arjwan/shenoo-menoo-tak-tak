@@ -16,3 +16,15 @@ test('Content routes require the app session and reject writes',async()=>{
  assert.equal((await callContentRoute({request:new Request('https://shinomino.com/api/call-content/news'),env:{}})).status,401);
  assert.equal((await callContentRoute({request:new Request('https://shinomino.com/api/call-content/news',{method:'POST'}),env:{}})).status,405);
 });
+
+test('News uses source images and MP4 enclosures, rejects unsafe media and preserves encoded URLs',async()=>{
+ const {newsMedia}=await import('../cloudflare/pages/call-content.js');
+ assert.deepEqual(newsMedia('<media:thumbnail url="https://example.com/a.jpg?a=1&amp;b=2"/><enclosure type="video/mp4" url="https://example.com/clip.mp4"/>'),{image:'https://example.com/a.jpg?a=1&b=2',video:'https://example.com/clip.mp4'});
+ assert.deepEqual(newsMedia('<media:content medium="image" url="javascript:alert(1)"/><enclosure type="text/html" url="https://example.com/frame"/>'),{image:'',video:''});
+ assert.equal(newsMedia('<description><![CDATA[<img src="https://example.com/photo.jpg">]]></description>').image,'https://example.com/photo.jpg');
+});
+test('Discover cards pair a real article with its own image and expanded text',async()=>{
+ const {explore}=await import('../cloudflare/pages/call-content.js');
+ const data=await explore('food',async url=>{assert.match(url,/pageimages/);assert.match(url,/pilicense=free/);return Response.json({query:{pages:{1:{pageid:1,title:'دولمة',extract:'تفاصيل حقيقية '.repeat(70),fullurl:'https://ar.wikipedia.org/wiki/Dolma',thumbnail:{source:'https://upload.wikimedia.org/dolma.jpg'}},2:{pageid:2,title:'بلا صورة',extract:'نص',fullurl:'https://ar.wikipedia.org/wiki/Other'}}}})});
+ assert.equal(data.items.length,1);assert.ok(data.items[0].detail.length>data.items[0].summary.length);assert.equal(data.items[0].image,'https://upload.wikimedia.org/dolma.jpg');
+});
