@@ -74,6 +74,17 @@ private fun SettingsScreen(onBack: () -> Unit) {
             "${info.versionName} ($code)"
         }
         Text("إصدار اتصال $version", color = Color(0xFFA4B4CC), fontSize = 13.sp)
+        OutlinedButton(onClick = {
+            context.startActivity(Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, ShnoManoApp.CHANNEL_CALLS)
+            })
+        }, modifier = Modifier.fillMaxWidth()) { Text("إعداد رنين المكالمات وإشعارات القفل") }
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            OutlinedButton(onClick = {
+                context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, android.net.Uri.parse("package:" + context.packageName)))
+            }, modifier = Modifier.fillMaxWidth()) { Text("السماح بظهور المكالمة على شاشة القفل") }
+        }
         SettingSwitch("توفير البيانات", "تقليل دقة الفيديو ومعدل الإطارات للشبكات الضعيفة", lowData) {
             lowData = it; store.lowData = it
         }

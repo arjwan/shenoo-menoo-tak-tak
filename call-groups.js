@@ -73,6 +73,8 @@ async function openGroup(id){
  $('group-members').textContent=members.map(m=>m.fullName).join('، ');
  $('group-send').hidden=current.kind==='channel'&&current.ownerId!==selfId;
  $('group-add').hidden=current.ownerId!==selfId;
+ $('group-start-audio').hidden=current.kind==='channel'&&current.ownerId!==selfId;
+ $('group-start-video').hidden=current.kind==='channel'&&current.ownerId!==selfId;
  await loadMessages();
  await checkSignals();
 }
@@ -335,6 +337,8 @@ async function addMember(){
   $('group-members').textContent=members.map(m=>m.fullName).join('، ');
  $('group-send').hidden=current.kind==='channel'&&current.ownerId!==selfId;
  $('group-add').hidden=current.ownerId!==selfId;
+ $('group-start-audio').hidden=current.kind==='channel'&&current.ownerId!==selfId;
+ $('group-start-video').hidden=current.kind==='channel'&&current.ownerId!==selfId;
   if(call)await signal(selected.id,'invite',{type:mediaType,name:current.name,hostId:call.hostId});
  }catch(e){feedback(e.message)}
 }

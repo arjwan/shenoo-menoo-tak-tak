@@ -110,6 +110,10 @@ export async function handleCallGroups(req,env,user){
    return out({ok:true,signals,cursor:signals.length?signals[signals.length-1].id:after});
   }
   const body=await readJson(req),event=String(body?.event||""),callId=String(body?.callId||""),recipient=String(body?.userId||"");
+  if(event==='invite'){
+   const c=await db.prepare("SELECT g.owner_id,s.kind FROM shno_call_groups g LEFT JOIN shno_call_group_settings s ON s.group_id=g.id WHERE g.id=?").bind(group).first();
+   if(c?.kind==='channel'&&c.owner_id!==user.id)return out({ok:false,message:'بدء البث في القناة لصاحبها فقط'},403);
+  }
   const payload=body?.data??{};
   if(!events.has(event)||!uuid.test(callId)||!uuid.test(recipient)||recipient===user.id||!payload||typeof payload!=="object"||Array.isArray(payload))return out({ok:false,message:"إشارة غير صالحة"},400);
   if(JSON.stringify(payload).length>9000)return out({ok:false,message:"الإشارة كبيرة"},413);

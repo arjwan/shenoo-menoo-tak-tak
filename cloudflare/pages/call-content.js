@@ -37,7 +37,7 @@ export async function buildNews(fetcher=fetch){
  const items=orderNews(results.flatMap(r=>r.status==='fulfilled'?r.value:[])).slice(0,90);
  return {ok:true,items,updatedAt:new Date().toISOString(),partial:results.some(r=>r.status==='rejected'),sources:NEWS_SOURCES.map(s=>s.name)};
 }
-async function explore(topic,fetcher){
+export async function explore(topic,fetcher=fetch){
  if(topic==='photos'){
   const params=new URLSearchParams({action:'query',format:'json',generator:'search',gsrsearch:TOPICS.photos,gsrnamespace:'6',gsrlimit:'12',prop:'imageinfo',iiprop:'url|extmetadata',iiurlwidth:'640'});
   const data=JSON.parse(await boundedFetch('https://commons.wikimedia.org/w/api.php?'+params,fetcher));
