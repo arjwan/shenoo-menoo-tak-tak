@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'taktak.html'
+      - 'home-reels-sidebar.*'
+      - 'tests/home-reels-sidebar-browser.cjs'
       - 'reels*'
       - 'stories*'
       - 'licensed-audio-library.js'
@@ -32,6 +35,7 @@ jobs:
           ffmpeg -v error -f lavfi -i testsrc=size=320x180:rate=15 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 2 -c:v libvpx -pix_fmt yuv420p -c:a libopus /tmp/shno-fixture.webm -y
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/shno-http.log 2>&1 &
           node tests/reels-stories-browser.cjs
+          node tests/home-reels-sidebar-browser.cjs
           ffprobe -v error -show_entries stream=codec_type -of csv=p=0 /tmp/shno-mixed.webm | grep -q audio
           ffmpeg -i /tmp/shno-mixed.webm -af volumedetect -f null - 2>/tmp/shno-volume.log
           grep 'mean_volume' /tmp/shno-volume.log
