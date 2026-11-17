@@ -21,21 +21,29 @@ export async function handleCallGroups(req,env,user){
  }
  if(parts.length===2){
   if(method==="GET"){
-   const q=await db.prepare("SELECT g.id,g.name,g.owner_id,g.created_at,(SELECT COUNT(*) FROM shno_call_group_members x WHERE x.group_id=g.id) AS member_count FROM shno_call_groups g JOIN shno_call_group_members m ON m.group_id=g.id WHERE m.user_id=? ORDER BY g.created_at DESC LIMIT 70").bind(user.id).all();
-   return out({ok:true,groups:q.results.map(g=>({id:g.id,name:g.name,ownerId:g.owner_id,memberCount:g.member_count,createdAt:g.created_at}))});
+   const q=await db.prepare("SELECT g.id,g.name,g.owner_id,g.created_at,COALESCE(s.visibility,'private') AS visibility,COALESCE(s.kind,'group') AS kind,(SELECT COUNT(*) FROM shno_call_group_members x WHERE x.group_id=g.id) AS member_count FROM shno_call_groups g JOIN shno_call_group_members m ON m.group_id=g.id LEFT JOIN shno_call_group_settings s ON s.group_id=g.id WHERE m.user_id=? ORDER BY g.created_at DESC LIMIT 70").bind(user.id).all();
+   return out({ok:true,groups:q.results.map(g=>({id:g.id,name:g.name,ownerId:g.owner_id,memberCount:g.member_count,createdAt:g.created_at,visibility:g.visibility,kind:g.kind}))});
   }
   const body=await readJson(req),name=String(body?.name||"").trim(),requested=body?.members;
   if(name.length<2||name.length>80||!Array.isArray(requested))return out({ok:false,message:"اسم المجموعة أو الأعضاء غير صالح"},400);
+  const visibility=body.visibility||'private',kind=body.kind||'group',description=String(body.description||'').trim();
+  if(!['private','public'].includes(visibility)||!['group','channel'].includes(kind)||description.length>500)return out({ok:false,message:'إعدادات مجموعة غير صالحة'},400);
   const members=[...new Set(requested.map(String))].filter(u=>u!==user.id);
-  if(members.length<1||members.length>7||members.some(u=>!uuid.test(u)))return out({ok:false,message:"اختر من 1 إلى 7 أعضاء"},400);
+  if(members.length>7||members.some(u=>!uuid.test(u)))return out({ok:false,message:"الحد الأقصى 7 أعضاء إضافيين"},400);
   for(const member of members)if(!await allowedInvite(db,user.id,member))return out({ok:false,message:"إضافة أعضاء من محادثاتك المسموح بها فقط"},403);
   const group=crypto.randomUUID();
   await db.batch([
    db.prepare("INSERT INTO shno_call_groups(id,name,owner_id) VALUES(?,?,?)").bind(group,name,user.id),
+   db.prepare("INSERT INTO shno_call_group_settings(group_id,visibility,kind,description) VALUES(?,?,?,?)").bind(group,visibility,kind,description),
    db.prepare("INSERT INTO shno_call_group_members(group_id,user_id) VALUES(?,?)").bind(group,user.id),
    ...members.map(u=>db.prepare("INSERT INTO shno_call_group_members(group_id,user_id) VALUES(?,?)").bind(group,u))
   ]);
-  return out({ok:true,group:{id:group,name,ownerId:user.id,memberCount:members.length+1}},201);
+  return out({ok:true,group:{id:group,name,ownerId:user.id,memberCount:members.length+1,visibility,kind}},201);
+ }
+ if(parts.length===3&&parts[2]==="public"&&method==="GET"){
+  const q=String(url.searchParams.get('q')||'').trim().slice(0,80);
+  const rows=await db.prepare("SELECT g.id,g.name,s.kind,s.description,(SELECT COUNT(*) FROM shno_call_group_members m WHERE m.group_id=g.id) AS member_count FROM shno_call_groups g JOIN shno_call_group_settings s ON s.group_id=g.id WHERE s.visibility='public' AND g.name LIKE ? ORDER BY g.created_at DESC LIMIT 50").bind('%'+q+'%').all();
+  return out({ok:true,groups:rows.results.map(g=>({id:g.id,name:g.name,kind:g.kind,description:g.description,memberCount:g.member_count}))});
  }
  if(parts.length===3&&parts[2]==="message-alerts"&&method==="GET"){
   const after=Number(url.searchParams.get("after")||0);
@@ -53,11 +61,18 @@ export async function handleCallGroups(req,env,user){
  }
  if(parts.length<3||parts[0]!=="api"||parts[1]!=="call-groups"||!uuid.test(parts[2]))return out({ok:false,message:"المجموعة غير صالحة"},400);
  const group=parts[2];
+ if(parts.length===4&&parts[3]==='join'&&method==='POST'){
+  const setting=await db.prepare("SELECT visibility FROM shno_call_group_settings WHERE group_id=?").bind(group).first();
+  if(setting?.visibility!=='public')return out({ok:false,message:'المجموعة خاصة؛ تحتاج دعوة من صاحبها'},403);
+  await db.prepare("INSERT OR IGNORE INTO shno_call_group_members(group_id,user_id) SELECT ?,? WHERE (SELECT COUNT(*) FROM shno_call_group_members WHERE group_id=?)<8").bind(group,user.id,group).run();
+  if(!await isMember(db,group,user.id))return out({ok:false,message:'المجموعة مكتملة: الحد الحالي 8 أعضاء'},409);
+  return out({ok:true});
+ }
  if(!await isMember(db,group,user.id))return out({ok:false,message:"ليس لديك صلاحية الوصول إلى المجموعة"},403);
  if(parts.length===3&&method==="GET"){
-  const g=await db.prepare("SELECT id,name,owner_id,created_at FROM shno_call_groups WHERE id=?").bind(group).first();
+  const g=await db.prepare("SELECT g.id,g.name,g.owner_id,g.created_at,COALESCE(s.visibility,'private') AS visibility,COALESCE(s.kind,'group') AS kind FROM shno_call_groups g LEFT JOIN shno_call_group_settings s ON s.group_id=g.id WHERE g.id=?").bind(group).first();
   const m=await db.prepare("SELECT u.id,u.full_name,u.username FROM shno_call_group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=? AND u.status='active'").bind(group).all();
-  return out({ok:true,group:{id:g.id,name:g.name,ownerId:g.owner_id,createdAt:g.created_at},members:m.results.map(x=>({id:x.id,fullName:x.full_name,username:x.username}))});
+  return out({ok:true,group:{id:g.id,name:g.name,ownerId:g.owner_id,createdAt:g.created_at,visibility:g.visibility,kind:g.kind},members:m.results.map(x=>({id:x.id,fullName:x.full_name,username:x.username}))});
  }
  if(parts.length!==4)return out({ok:false,message:"المسار غير مدعوم"},404);
  const resource=parts[3];
@@ -78,6 +93,8 @@ export async function handleCallGroups(req,env,user){
    const messages=(after?rows.results:rows.results.reverse()).map(m=>({id:m.id,text:m.text,senderId:m.sender_id,senderName:m.full_name,mine:m.sender_id===user.id,createdAt:m.created_at}));
    return out({ok:true,messages});
   }
+  const channel=await db.prepare("SELECT g.owner_id,s.kind FROM shno_call_groups g LEFT JOIN shno_call_group_settings s ON s.group_id=g.id WHERE g.id=?").bind(group).first();
+  if(channel?.kind==='channel'&&channel.owner_id!==user.id)return out({ok:false,message:'النشر في القناة لصاحبها فقط'},403);
   const body=await readJson(req),text=String(body?.text||"").trim();
   if(!text||text.length>5000)return out({ok:false,message:"رسالة غير صالحة"},400);
   const messageId=crypto.randomUUID();

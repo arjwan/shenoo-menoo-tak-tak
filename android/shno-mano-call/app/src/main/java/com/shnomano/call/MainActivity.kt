@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
@@ -41,18 +42,28 @@ import com.shnomano.call.data.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
-private val Bg = Color(0xFF0B1020)
-private val Panel = Color(0xFF151E32)
-private val Panel2 = Color(0xFF1C2941)
-private val Accent = Color(0xFF54DFCF)
-private val Muted = Color(0xFFA4B4CC)
+private val Bg: Color
+    @Composable get() = MaterialTheme.colorScheme.background
+private val Panel: Color
+    @Composable get() = MaterialTheme.colorScheme.surface
+private val Panel2: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val Accent: Color
+    @Composable get() = MaterialTheme.colorScheme.primary
+private val Muted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { ShnoManoTheme { ShnoManoCallApp() } }
+        setContent {
+            var dark by remember { mutableStateOf(SettingsStore(this).darkTheme) }
+            ShnoManoTheme(darkTheme = dark) {
+                ShnoManoCallApp(onToggleTheme = { dark = !dark; SettingsStore(this).darkTheme = dark })
+            }
+        }
     }
 
     fun requestNotificationPermissionIfNeeded() {
@@ -67,7 +78,7 @@ class MainActivity : ComponentActivity() {
 private data class Tab(val title: String, val icon: ImageVector)
 
 @Composable
-fun ShnoManoCallApp() {
+fun ShnoManoCallApp(onToggleTheme: () -> Unit = {}) {
     val context = LocalContext.current
     val repo = remember(context) { AppRepository(context) }
     var signedIn by remember { mutableStateOf(repo.session.isSignedIn()) }
@@ -108,6 +119,21 @@ fun ShnoManoCallApp() {
     )
 
     Scaffold(
+        topBar = {
+            Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(10.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("شنو منو اتصال", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 21.sp)
+                    TextButton(onClick = onToggleTheme) { Text("☀ / ☾") }
+                }
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("✨ القصص" to "stories.html", "▶ الريلز" to "reels.html", "◉ المجموعات" to "call-groups.html", "🧭 اكتشف" to "call-discover.html", "📰 الأخبار" to "call-news.html").forEach { (title, page) ->
+                        OutlinedButton(onClick = {
+                            context.startActivity(Intent(context, WebSectionActivity::class.java).putExtra(WebSectionActivity.EXTRA_URL, WebSectionActivity.BASE + page))
+                        }) { Text(title, maxLines = 1) }
+                    }
+                }
+            }
+        },
         containerColor = Bg,
         bottomBar = {
             Surface(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), shape = RoundedCornerShape(26.dp), color = Panel, shadowElevation = 8.dp) {
@@ -133,7 +159,7 @@ fun ShnoManoCallApp() {
     ) { padding ->
         Box(
             Modifier.fillMaxSize().padding(padding).background(
-                Brush.verticalGradient(listOf(Color(0xFF152540), Bg, Color(0xFF090E1A)))
+                Brush.verticalGradient(listOf(Panel2, Bg, Panel))
             )
         ) {
             when (selected) {
@@ -171,7 +197,7 @@ private fun LoginScreen(repo: AppRepository, onSuccess: () -> Unit, onRegister: 
     val scope = rememberCoroutineScope()
 
     Box(
-        Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).background(Brush.verticalGradient(listOf(Color(0xFF152540), Bg))),
+        Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).background(Brush.verticalGradient(listOf(Panel2, Bg))),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -237,7 +263,7 @@ private fun BrandHeader(title: String, subtitle: String, showQr: Boolean = true)
             Icon(Icons.Default.Forum, null, tint = Bg, modifier = Modifier.size(25.dp))
         }
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 25.sp)
             Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 2)
         }
         if (showQr) FilledTonalIconButton(onClick = { context.startActivity(Intent(context, QrFriendActivity::class.java)) }, colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = Panel2, contentColor = Accent)) {
@@ -312,6 +338,19 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
         sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
     }
 
+    val contactsLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(contactsLifecycle) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) scope.launch {
+                friends = repo.loadFriends()
+                requests = repo.loadFriendRequests()
+                sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
+            }
+        }
+        contactsLifecycle.addObserver(observer)
+        onDispose { contactsLifecycle.removeObserver(observer) }
+    }
+
     val filteredFriends = friends.filter { query.isBlank() || it.displayName.contains(query, true) || (it.username ?: "").contains(query, true) }
     val filteredContacts = contacts.filter { query.isBlank() || it.name.contains(query, true) || it.phone.contains(query) }
 
@@ -367,7 +406,7 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         AvatarLetter(request.contact.displayName)
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                            Text(request.contact.displayName, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(request.contact.displayName, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                             Text("يريد إضافتك إلى أصدقاء شنو منو", color = Muted, fontSize = 11.sp)
                         }
                         IconButton(onClick = {
@@ -394,7 +433,7 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
             items(filteredContacts, key = { "phone-${it.phone}" }) { c ->
                 Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp)) {
-                        Text(c.name, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(c.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                         Text(c.phone, color = Muted, fontSize = 12.sp)
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -442,12 +481,12 @@ private fun CallsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMessa
                         val online = f.userId in onlineUserIds
                         AvatarLetter(f.displayName, online)
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                            Text(f.displayName, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(f.displayName, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                             Text(if (online) "متصل الآن" else "الحالة غير مؤكدة", color = if (online) Accent else Muted, fontSize = 11.sp)
                         }
                         IconButton(onClick = { openShnoCall(context, f.userId, "audio") }) { Icon(Icons.Default.Call, null, tint = Accent) }
                         IconButton(onClick = { openShnoCall(context, f.userId, "video") }) { Icon(Icons.Default.Videocam, null, tint = Accent) }
-                        IconButton(onClick = { onMessage(f.userId) }) { Icon(Icons.Default.ChatBubble, null, tint = Color.White) }
+                        IconButton(onClick = { onMessage(f.userId) }) { Icon(Icons.Default.ChatBubble, null, tint = MaterialTheme.colorScheme.onSurface) }
                     }
                 }
             }
@@ -482,10 +521,10 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
         containerColor = Bg,
         topBar = {
             Row(Modifier.fillMaxWidth().background(Panel).statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface) }
                 AvatarLetter(other?.fullName ?: other?.username ?: "ش", online)
                 Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                    Text(other?.fullName ?: other?.username ?: "محادثة", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(other?.fullName ?: other?.username ?: "محادثة", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     Text(if (online) "متصل الآن" else "الحالة غير مؤكدة", color = if (online) Accent else Muted, fontSize = 10.sp)
                 }
                 if (!other?.id.isNullOrBlank()) {
@@ -533,7 +572,7 @@ private fun ChatScreen(repo: AppRepository, conversation: ConversationDto, onlin
                     Surface(color = if (m.mine) Accent else Panel2, shape = RoundedCornerShape(16.dp)) {
                         Column(Modifier.padding(10.dp).widthIn(max = 300.dp)) {
                             m.text?.takeIf { it.isNotBlank() }?.let {
-                                Text(it, color = if (m.mine) Bg else Color.White, fontSize = 13.sp)
+                                Text(it, color = if (m.mine) Bg else MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                             }
                             m.attachment?.let { attachment ->
                                 val mime = attachment.mimeType.orEmpty()
@@ -600,12 +639,12 @@ private fun PersonRow(name: String, subtitle: String, badge: Int = 0, online: Bo
     Card(
         colors = CardDefaults.cardColors(containerColor = Panel),
         shape = RoundedCornerShape(18.dp),
-        modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = .05f), RoundedCornerShape(18.dp)).clickable(onClick = onClick)
+        modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = .05f), RoundedCornerShape(18.dp)).clickable(onClick = onClick)
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             AvatarLetter(name, online)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text(name, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 Text(subtitle, color = if (online) Accent else Muted, fontSize = 11.sp, maxLines = 1)
             }
             if (badge > 0) Badge(containerColor = Accent, contentColor = Bg) { Text(badge.toString()) }
@@ -642,7 +681,7 @@ private fun EmptyState(text: String) {
     Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)) {
         Column(Modifier.padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Default.Forum, null, tint = Accent, modifier = Modifier.size(38.dp))
-            Text(text, color = Color.White, fontWeight = FontWeight.Medium)
+            Text(text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
             Text("ابدأ من إضافة صديق أو مسح رمز QR", color = Muted, fontSize = 12.sp)
         }
     }
@@ -653,7 +692,7 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
     Card(colors = CardDefaults.cardColors(containerColor = Panel), modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = Accent)
-            Column(Modifier.padding(start = 12.dp)) { Text(title, color = Color.White, fontWeight = FontWeight.Bold); Text(value, color = Muted, fontSize = 12.sp) }
+            Column(Modifier.padding(start = 12.dp)) { Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold); Text(value, color = Muted, fontSize = 12.sp) }
         }
     }
 }

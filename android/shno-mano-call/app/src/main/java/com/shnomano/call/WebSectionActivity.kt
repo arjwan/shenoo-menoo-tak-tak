@@ -13,6 +13,11 @@ import com.shnomano.call.data.SessionStore
 
 class WebSectionActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private var fileCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
+    private val filePicker = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data))
+        fileCallback = null
+    }
     private var pendingMediaRequest: android.webkit.PermissionRequest? = null
     private val mediaPermissions = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
@@ -56,8 +61,15 @@ class WebSectionActivity : ComponentActivity() {
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             webChromeClient = object : WebChromeClient() {
+                override fun onShowFileChooser(view: WebView?, callback: android.webkit.ValueCallback<Array<android.net.Uri>>?, params: WebChromeClient.FileChooserParams?): Boolean {
+                    fileCallback?.onReceiveValue(null)
+                    fileCallback = callback
+                    return try { filePicker.launch(params?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*"; addCategory(Intent.CATEGORY_OPENABLE) }); true }
+                    catch (_: android.content.ActivityNotFoundException) { fileCallback?.onReceiveValue(null); fileCallback = null; false }
+                }
                 override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
                     runOnUiThread {
+                        if (!isTrustedSection(request.origin.toString())) { request.deny(); return@runOnUiThread }
                         val requested = request.resources.filter { it == android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE || it == android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE }
                         if (requested.isEmpty()) { request.deny(); return@runOnUiThread }
                         val needed = mutableListOf<String>()
@@ -71,6 +83,12 @@ class WebSectionActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
                     val target = request?.url?.toString().orEmpty()
+                    if (!isTrustedSection(target)) {
+                        // Content links stay inside the app; untrusted sites get no app bridge or session.
+                        val uri = android.net.Uri.parse(target)
+                        if (uri.scheme == "https") startActivity(Intent(this@WebSectionActivity, ContentArticleActivity::class.java).putExtra(EXTRA_URL, target))
+                        return true
+                    }
                     if (!isCallSurface(target)) return false
                     startActivity(Intent(this@WebSectionActivity, WebCallActivity::class.java).apply {
                         putExtra(WebCallActivity.EXTRA_URL, target)
@@ -82,7 +100,7 @@ class WebSectionActivity : ComponentActivity() {
         }
         setContentView(FrameLayout(this).apply { addView(webView, FrameLayout.LayoutParams(-1, -1)) })
 
-        val target = intent.getStringExtra(EXTRA_URL)?.takeIf { it.startsWith(BASE) } ?: BASE
+        val target = intent.getStringExtra(EXTRA_URL)?.takeIf { isTrustedSection(it) } ?: BASE
         val cookie = SessionStore(this).sessionCookie
         if (cookie.isNullOrBlank()) {
             finish()
@@ -91,9 +109,10 @@ class WebSectionActivity : ComponentActivity() {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setCookie(
             BASE, "__Host-shino_session=$cookie; Path=/; Secure; HttpOnly; SameSite=Lax"
-        )
-        CookieManager.getInstance().flush()
-        webView.loadUrl(target)
+        ) { accepted ->
+            if (accepted && !isFinishing) webView.loadUrl(target) else finish()
+        }
+
     }
 
     override fun onBackPressed() {
@@ -101,12 +120,20 @@ class WebSectionActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        fileCallback?.onReceiveValue(null)
+        fileCallback = null
+        pendingMediaRequest?.deny()
+        pendingMediaRequest = null
         if (::webView.isInitialized) {
             webView.stopLoading()
             webView.removeAllViews()
             webView.destroy()
         }
         super.onDestroy()
+    }
+
+    private fun isTrustedSection(url: String): Boolean = android.net.Uri.parse(url).let {
+        it.scheme == "https" && it.host == "shinomino.com" && it.port in listOf(-1, 443)
     }
 
     private fun isCallSurface(url: String): Boolean = android.net.Uri.parse(url).let {

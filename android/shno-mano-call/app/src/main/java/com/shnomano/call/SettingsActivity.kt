@@ -31,6 +31,7 @@ class SettingsActivity : ComponentActivity() {
 private fun SettingsScreen(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val store = remember { SettingsStore(context) }
+    var lowData by remember { mutableStateOf(store.lowData) }
     var notifications by remember { mutableStateOf(store.notificationsEnabled) }
     var vibration by remember { mutableStateOf(store.vibrationEnabled) }
     var callSound by remember { mutableStateOf(store.callSoundEnabled) }
@@ -73,6 +74,9 @@ private fun SettingsScreen(onBack: () -> Unit) {
             "${info.versionName} ($code)"
         }
         Text("إصدار اتصال $version", color = Color(0xFFA4B4CC), fontSize = 13.sp)
+        SettingSwitch("توفير البيانات", "تقليل دقة الفيديو ومعدل الإطارات للشبكات الضعيفة", lowData) {
+            lowData = it; store.lowData = it
+        }
         SettingSwitch("الإشعارات", "تنبيهات الرسائل والمكالمات", notifications) {
             notifications = it; store.notificationsEnabled = it
         }

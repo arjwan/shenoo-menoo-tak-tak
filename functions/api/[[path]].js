@@ -1,3 +1,4 @@
+import { callContentRoute } from '../../cloudflare/pages/call-content.js';
 import { handleCallSignaling } from '../../cloudflare/call-signaling.js';
 import { handleCallGroups } from '../../cloudflare/call-groups.js';
 import { proxyLegacy } from '../../cloudflare/pages/legacy-origin.js';
@@ -12,6 +13,7 @@ import { guardianStudentEnrollment, reviewStudentEnrollments } from '../../cloud
 
 export async function onRequest(context) {
   const pathname = new URL(context.request.url).pathname;
+  if (pathname === '/api/call-content/news' || pathname === '/api/call-content/discover') return callContentRoute(context);
   // Pages serves developer APIs directly against D1: no cPanel or MongoDB dependency.
   if (/^\/api\/developer(?:-mfa)?(?:\/|$)/.test(pathname)) {
     if (!context.env.DB) {

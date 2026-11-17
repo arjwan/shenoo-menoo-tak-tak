@@ -106,6 +106,7 @@ class AppRepository(context: Context) {
 
     suspend fun sendFriendRequest(userId: String): Result<String> = apiResult {
         val response = api.sendFriendRequest(userId)
+        if (!response.ok) error(response.message ?: "تعذر إرسال طلب الصداقة")
         response.message ?: when (response.outcome) {
             "already_pending" -> "طلب الصداقة مرسل مسبقاً"
             "already_friends" -> "أنتما صديقان بالفعل"
@@ -118,6 +119,7 @@ class AppRepository(context: Context) {
         val cleanToken = token.trim()
         if (cleanToken.isBlank()) error("رمز QR غير صالح")
         val response = api.sendQrFriendRequest(FriendQrRequest(cleanToken))
+        if (!response.ok) error(response.message ?: "تعذر إرسال طلب الصداقة")
         response.message ?: when (response.outcome) {
             "already_pending" -> "طلب الصداقة مرسل مسبقاً"
             "already_friends" -> "أنتما صديقان بالفعل"
@@ -126,7 +128,8 @@ class AppRepository(context: Context) {
         }
     }
     suspend fun respondToFriendRequest(requestId: String, accept: Boolean): Result<String> = runCatching {
-        api.actOnFriendRequest(requestId, if (accept) "accept" else "reject")
+        val response = api.actOnFriendRequest(requestId, if (accept) "accept" else "reject")
+        if (!response.ok) error(response.message ?: "تعذر تحديث طلب الصداقة")
         if (accept) "تم قبول طلب الصداقة" else "تم رفض الطلب"
     }
     suspend fun loadConversations(): List<ConversationDto> = runCatching { api.conversations().conversations }.getOrDefault(emptyList())

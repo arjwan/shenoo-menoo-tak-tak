@@ -5,6 +5,14 @@ import android.content.Context
 class SettingsStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("shno_mano_call_settings", Context.MODE_PRIVATE)
 
+    var lowData: Boolean
+        get() = prefs.getBoolean("low_data", false)
+        set(value) = prefs.edit().putBoolean("low_data", value).apply()
+
+    var darkTheme: Boolean
+        get() = prefs.getBoolean("dark_theme", true)
+        set(value) = prefs.edit().putBoolean("dark_theme", value).apply()
+
     var notificationsEnabled: Boolean
         get() = prefs.getBoolean("notifications_enabled", true)
         set(value) = prefs.edit().putBoolean("notifications_enabled", value).apply()

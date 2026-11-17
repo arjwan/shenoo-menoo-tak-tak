@@ -108,7 +108,7 @@
     if(!transferring)delivered.then(function(){if(!activeCall)reportCallState('ended',endedId);});
   }
   function callPayload(data) { return Object.assign({ callId: activeCall.callId, userId: activeCall.userId, conversationId: activeCall.conversationId, type: activeCall.type }, data || {}); }
-  async function getMedia(type) { if(window.ShnoCallIce)await window.ShnoCallIce.prepare(); stopMedia(); localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "video" }); var v = callRoot.querySelector("[data-local-video]"); if (type === "video") { v.srcObject = localStream; v.classList.add("is-visible"); } }
+  async function getMedia(type) { if(window.ShnoCallIce)await window.ShnoCallIce.prepare(); stopMedia(); localStream = await navigator.mediaDevices.getUserMedia(window.ShnoCallIce?.constraints(type) || { audio: true, video: type === "video" }); var v = callRoot.querySelector("[data-local-video]"); if (type === "video") { v.srcObject = localStream; v.classList.add("is-visible"); } }
   function ensurePeer() {
     if (peer) return peer; peer = new RTCPeerConnection(window.ShnoCallIce?window.ShnoCallIce.config():{iceServers:[{urls:"stun:stun.cloudflare.com:3478"}]}); localStream.getTracks().forEach(function (t) { peer.addTrack(t, localStream); });
     peer.ontrack = function (e) { var v = callRoot.querySelector("[data-remote-video]"); if (!v) return; v.srcObject = e.streams[0]; if (e.track.kind === 'video') { v.classList.add('is-visible'); v.play().catch(function(){}); } else { v.play().catch(function(){}); } };
