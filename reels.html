@@ -2,33 +2,154 @@
 <html lang="ar" dir="rtl" class="shinomino-ui">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#05070c">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>ريلز تك تك | شنو منو</title>
   <link rel="stylesheet" href="taktak-feed.css?v=20260913-social-actions-2">
-  <link rel="stylesheet" href="reels-v2.css?v=20260913-actions-2">
-  <link rel="stylesheet" href="reels-media-extra.css?v=20260911-1">
-<link rel="stylesheet" href="/shinomino-shared-visual.css?v=20261106-1">
+  <link rel="stylesheet" href="reels-v2.css?v=20261118-1">
+  <link rel="stylesheet" href="reels-media-extra.css?v=20261118-1">
+  <link rel="stylesheet" href="/shinomino-shared-visual.css?v=20261106-1">
 </head>
 <body>
   <script src="auth-guard.js?v=20260913-actions-4"></script>
   <main class="reels">
-    <div class="top"><a href="taktak.html">← الرئيسية</a><strong>🎬 ريلز تك تك</strong><button id="create" type="button">＋ إنشاء ريل</button></div>
+    <div class="top">
+      <a href="taktak.html">← الرئيسية</a>
+      <strong>🎬 ريلز تك تك</strong>
+      <button id="create" type="button">＋ إنشاء ريل</button>
+    </div>
+
     <form id="upload" class="upload">
-      <input id="clip" type="file" accept="video/mp4,video/webm,audio/mpeg,.mp4,.webm,.mp3" required>
-      <p class="format-note">يُرفع الريل إلى Cloudflare R2 عبر الـWorker، بصيغ MP4 أو WebM أو MP3، حتى 100 ميغابايت.</p>
+      <div class="editor-header">
+        <strong>🎬 استوديو الريلز</strong>
+        <button type="button" id="closeEditor" class="editor-close" aria-label="إغلاق المحرر">×</button>
+      </div>
+
+      <label class="file-drop" for="clip">
+        <input id="clip" type="file" accept="video/mp4,video/webm,audio/mpeg,.mp4,.webm,.mp3" required>
+        <span>📁 اختر فيديو أو مقطع صوتي (MP4 / WebM / MP3)</span>
+        <small id="clipName" class="muted">الحد الأقصى 100 ميغابايت</small>
+      </label>
+
+      <div id="reelStudio" class="reel-studio" hidden>
+        <div class="studio-stage-wrap">
+          <div id="reelEditorStage" class="studio-stage" data-fit="contain">
+            <video id="preview" playsinline muted preload="metadata" hidden></video>
+            <div id="reelAudioPreview" class="studio-audio-preview" hidden>
+              <span>🎵</span>
+              <strong id="reelAudioTitle">مقطع صوتي</strong>
+            </div>
+            <div id="reelEditorOverlays" class="studio-overlays"></div>
+            <button type="button" id="editorPlayToggle" class="studio-play-btn" aria-label="تشغيل أو إيقاف المعاينة">▶</button>
+          </div>
+          <div class="studio-stage-bar">
+            <span id="editorTimeInfo">0:00 / 0:00</span>
+            <button type="button" id="editorFitToggle" class="studio-chip-btn">⛶ احتواء</button>
+          </div>
+        </div>
+
+        <div class="studio-tabs" role="tablist">
+          <button type="button" class="is-active" data-studio-tab="filter">🎨 الفلتر والقص</button>
+          <button type="button" data-studio-tab="overlay">✍️ نص وملصقات</button>
+          <button type="button" data-studio-tab="audio">🎵 موسيقى ومؤثرات</button>
+        </div>
+
+        <div class="studio-panel" data-studio-panel="filter">
+          <div class="filter-strip" id="reelFilters"></div>
+          <div class="trim-controls" id="reelTrimBox">
+            <div class="range-row">
+              <label>قص البداية (<span id="trimStartLabel">0.0</span>ث)
+                <input id="trimStart" type="range" min="0" max="60" step="0.1" value="0">
+              </label>
+              <label>قص النهاية (<span id="trimEndLabel">0.0</span>ث)
+                <input id="trimEnd" type="range" min="0" max="60" step="0.1" value="0">
+              </label>
+            </div>
+            <label>إطار المعاينة / الغلاف (<span id="coverTimeLabel">0.1</span>ث)
+              <input id="coverTime" type="range" min="0" max="60" step="0.1" value="0.1">
+            </label>
+          </div>
+        </div>
+
+        <div class="studio-panel" data-studio-panel="overlay" hidden>
+          <div class="overlay-composer">
+            <input id="reelOverlayText" type="text" maxlength="120" placeholder="أضف نصاً فوق الريل...">
+            <button type="button" id="addReelOverlayText" class="studio-accent-btn">إضافة</button>
+          </div>
+          <div class="overlay-style-row">
+            <div class="color-swatches" id="reelColorSwatches">
+              <button type="button" data-color="#ffffff" style="background:#ffffff" class="is-active" aria-label="أبيض"></button>
+              <button type="button" data-color="#19d9a0" style="background:#19d9a0" aria-label="أخضر"></button>
+              <button type="button" data-color="#ffd166" style="background:#ffd166" aria-label="أصفر"></button>
+              <button type="button" data-color="#ff6b8b" style="background:#ff6b8b" aria-label="وردي"></button>
+              <button type="button" data-color="#9d7cff" style="background:#9d7cff" aria-label="بنفسجي"></button>
+            </div>
+            <label class="size-inline">الحجم
+              <input id="reelOverlaySize" type="range" min="16" max="56" value="28">
+            </label>
+            <button type="button" id="clearReelOverlays" class="studio-chip-btn">مسح الكل</button>
+          </div>
+          <div class="sticker-row" id="reelStickers"></div>
+        </div>
+
+        <div class="studio-panel" data-studio-panel="audio" hidden>
+          <div id="reelAudioLibrary"></div>
+          <div class="volume-mix">
+            <label>صوت الفيديو الأصلي (<span id="origVolLabel">100%</span>)
+              <input id="origVolume" type="range" min="0" max="100" value="100">
+            </label>
+            <label>صوت الموسيقى / المؤثر (<span id="musicVolLabel">70%</span>)
+              <input id="musicVolume" type="range" min="0" max="100" value="70">
+            </label>
+          </div>
+        </div>
+      </div>
+
       <textarea id="caption" maxlength="1000" placeholder="اكتب وصفاً للمقطع..."></textarea>
-      <select id="reelVisibility" aria-label="خصوصية الريل"><option value="everyone">🌐 عام</option><option value="friends">👥 الأصدقاء</option><option value="followers">🔔 المتابعون</option><option value="friends_followers">👥🔔 الأصدقاء والمتابعون</option></select>
-      <video id="preview" controls playsinline hidden></video>
-      <button class="publish top" type="submit">نشر الريل</button><p id="note" class="note muted"></p>
+      <div class="publish-row">
+        <select id="reelVisibility" aria-label="خصوصية الريل">
+          <option value="everyone">🌐 عام</option>
+          <option value="friends">👥 الأصدقاء</option>
+          <option value="followers">🔔 المتابعون</option>
+          <option value="friends_followers">👥🔔 الأصدقاء والمتابعون</option>
+        </select>
+        <button class="publish" type="submit">نشر الريل</button>
+      </div>
+      <p id="note" class="note muted"></p>
     </form>
+
     <section id="feed"><div class="empty">جارٍ تحميل الريلز...</div></section>
   </main>
-  <nav class="mobile-bar"><a href="taktak.html"><b>⌂</b>الرئيسية</a><a href="stories.html"><b>✨</b>قصتي</a><a href="reels.html"><b>▶</b>الريلز</a><a href="notifications.html"><b>🔔</b>الإشعارات</a><a href="profile.html"><b>👤</b>حسابي</a></nav>
-  <div class="comments-sheet" id="commentsSheet" hidden><button class="sheet-backdrop" data-close-comments aria-label="إغلاق"></button><section class="comments-card"><header><strong>التعليقات</strong><button type="button" data-close-comments>×</button></header><div id="commentsList" class="comments-list"></div><form id="commentForm"><input id="commentText" maxlength="2000" required placeholder="اكتب تعليقاً..."><button>إرسال</button></form></section></div>
+
+  <nav class="mobile-bar">
+    <a href="taktak.html"><b>⌂</b>الرئيسية</a>
+    <a href="stories.html"><b>✨</b>قصتي</a>
+    <a href="reels.html"><b>▶</b>الريلز</a>
+    <a href="notifications.html"><b>🔔</b>الإشعارات</a>
+    <a href="profile.html"><b>👤</b>حسابي</a>
+  </nav>
+
+  <div class="comments-sheet" id="commentsSheet" hidden>
+    <button class="sheet-backdrop" data-close-comments aria-label="إغلاق"></button>
+    <section class="comments-card">
+      <header>
+        <strong>التعليقات</strong>
+        <button type="button" data-close-comments>×</button>
+      </header>
+      <div id="commentsList" class="comments-list"></div>
+      <form id="commentForm">
+        <input id="commentText" maxlength="2000" required placeholder="اكتب تعليقاً...">
+        <button>إرسال</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="reelToast" class="reel-toast" hidden></div>
+
   <script src="media-cache.js?v=20260912-2"></script>
   <script src="cloudflare-upload.js?v=20261104-100mb"></script>
-  <script src="reels-v2.js?v=20261104-100mb"></script>
+  <script src="licensed-audio-library.js?v=20261118-1"></script>
+  <script src="reels-v2.js?v=20261118-1"></script>
 </body>
 </html>

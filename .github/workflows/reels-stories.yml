@@ -1,0 +1,38 @@
+name: Reels and stories verification
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'reels*'
+      - 'stories*'
+      - 'licensed-audio-library.js'
+      - 'tests/reels-stories*'
+      - '.github/workflows/reels-stories.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --check reels-v2.js && node --check licensed-audio-library.js && node --check stories-deck.js
+      - run: bash scripts/build-cloudflare-pages.sh
+      - run: node --test tests/reels-stories-safety.test.mjs tests/reels-stories-ui-upgrade.test.mjs tests/call-audio-ringback.test.mjs
+      - run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Browser layouts and real media rendering
+        run: |
+          ffmpeg -v error -f lavfi -i testsrc=size=320x180:rate=15 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 2 -c:v libvpx -pix_fmt yuv420p -c:a libopus /tmp/shno-fixture.webm -y
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/shno-http.log 2>&1 &
+          node tests/reels-stories-browser.cjs
+          ffprobe -v error -show_entries stream=codec_type -of csv=p=0 /tmp/shno-mixed.webm | grep -q audio
+          ffmpeg -i /tmp/shno-mixed.webm -af volumedetect -f null - 2>/tmp/shno-volume.log
+          grep 'mean_volume' /tmp/shno-volume.log
+          if grep -q 'mean_volume: -inf' /tmp/shno-volume.log; then exit 1; fi
