@@ -21,9 +21,9 @@
       grid.after(controls);
       controls.querySelector('[data-story-deck-prev]').onclick=function(){go(-1);};
       controls.querySelector('[data-story-deck-next]').onclick=function(){go(1);};
-      grid.addEventListener('click',function(e){var card=e.target.closest('.story-card');if(!card||card.classList.contains('is-active')||e.target.closest('button,a,input,video,audio'))return;active=cards().indexOf(card);sync();});
+      grid.addEventListener('click',function(e){if(Date.now()<Number(grid.dataset.suppressClickUntil||0))return;var card=e.target.closest('.story-card');if(!card||card.classList.contains('is-active')||e.target.closest('button,a,input,video,audio'))return;active=cards().indexOf(card);sync();});
       grid.addEventListener('pointerdown',function(e){if(e.target.closest('button,a,input,video,audio'))return;startX=e.clientX;dragging=true;grid.setPointerCapture?.(e.pointerId);});
-      grid.addEventListener('pointerup',function(e){if(!dragging)return;dragging=false;var dx=e.clientX-startX;if(Math.abs(dx)>45)go(dx<0?1:-1);});
+      grid.addEventListener('pointerup',function(e){if(!dragging)return;dragging=false;var dx=e.clientX-startX;if(Math.abs(dx)>45){grid.dataset.suppressClickUntil=String(Date.now()+350);go(dx<0?1:-1);}});
       document.addEventListener('keydown',function(e){if(e.key==='ArrowLeft')go(1);else if(e.key==='ArrowRight')go(-1);});
     }
     var wanted=new URLSearchParams(location.search).get('id'),idx=wanted?list.findIndex(function(card){return String(card.dataset.id)===String(wanted);}):-1;if(idx>=0)active=idx;sync();

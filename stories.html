@@ -1,16 +1,826 @@
-<!doctype html><html lang="ar" dir="rtl" class="shinomino-ui"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07100d"><title>قصتي | شنو منو تك تك</title><link rel="stylesheet" href="taktak-feed.css?v=20260909-2"><style>
-.story-shell{max-width:1040px;margin:82px auto 80px;padding:18px}.panel{background:var(--card,#111522);border:1px solid #26352f;border-radius:22px;padding:18px;margin-bottom:16px}.story-head,.tools,.story-row,.story-owner{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.story-head{justify-content:space-between}.story-head a,.tool{color:inherit;text-decoration:none;background:#182821;border:1px solid #2d4138;padding:10px 14px;border-radius:14px;cursor:pointer}.tools select{color:inherit;background:#182821;border:1px solid #2d4138;padding:10px 14px;border-radius:14px}.publish{background:#19d9a0;color:#04110d;border:0;font-weight:800}.editor{position:relative;min-height:320px;border-radius:20px;overflow:hidden;background:linear-gradient(145deg,#111b18,#241535);display:grid;place-items:center;margin:14px 0}.editor img,.editor video{width:100%;max-height:600px;object-fit:contain}.overlay{position:absolute;transform:translate(-50%,-50%);cursor:move;user-select:none;text-shadow:0 2px 8px #000}.story-text{width:100%;box-sizing:border-box;background:#09120f;color:inherit;border:1px solid #30423a;border-radius:14px;padding:12px;min-height:74px}.emoji-box{display:none;gap:8px;flex-wrap:wrap;margin-top:8px}.emoji-box.open{display:flex}.emoji-box button{font-size:24px;background:#17241f;border:0;border-radius:10px;padding:6px;cursor:pointer}.story-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.story-card{position:relative;overflow:hidden;min-height:330px;background:#0c1512;border:1px solid #26352f;border-radius:20px}.story-card img,.story-card video{width:100%;height:330px;object-fit:cover}.story-card .fallback{height:330px;display:grid;place-items:center;padding:24px;font-size:24px}.story-card .story-owner{position:absolute;top:10px;right:10px;left:10px;background:#0009;padding:8px;border-radius:14px}.story-card .caption{position:absolute;bottom:10px;right:10px;left:10px;background:#0009;padding:10px;border-radius:14px}.story-card .render-overlay{position:absolute;transform:translate(-50%,-50%);text-shadow:0 2px 8px #000;pointer-events:none}.story-card audio{width:calc(100% - 20px);position:absolute;bottom:58px;right:10px}.avatar-mini{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#19d9a0;display:grid;place-items:center;color:#04110d}.delete-story{margin-right:auto;background:#a82e3d;color:white;border:0;border-radius:10px;padding:7px 9px;cursor:pointer}.muted{opacity:.72}.status{min-height:24px}.status.ok{color:#45e6b7}.status.bad{color:#ff7685}@media(max-width:700px){.story-shell{margin-top:68px;padding:10px}.editor{min-height:280px}.story-grid{grid-template-columns:1fr}}
-</style><link rel="stylesheet" href="/shinomino-shared-visual.css?v=20261106-1">
-</head><body><script src="auth-guard.js"></script><main class="story-shell"><section class="panel story-head"><div><h1>✨ قصتي</h1><p class="muted">أنشئ قصة على Cloudflare تختفي بعد 24 ساعة. الحد الأقصى لكل ملف 100 ميغابايت.</p></div><a href="taktak.html">← الرئيسية</a></section><form class="panel" id="storyForm"><textarea class="story-text" id="storyText" maxlength="1000" placeholder="اكتب نص القصة..."></textarea><input id="storyMedia" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden><input id="storyMusic" type="file" accept="audio/mpeg,audio/mp3,.mp3" hidden><div class="tools"><label class="tool" for="storyMedia">📷 صورة / فيديو</label><button class="tool" type="button" id="addText">✍️ نص فوق القصة</button><button class="tool" type="button" id="emojiBtn">😊 إيموجي</button><label class="tool" for="storyMusic">🎵 موسيقى</label><label class="tool">الحجم <input id="overlaySize" type="range" min="18" max="72" value="34"></label><select id="storyVisibility" aria-label="خصوصية القصة"><option value="everyone">🌐 عام</option><option value="friends">👥 الأصدقاء</option><option value="followers">🔔 المتابعون</option><option value="friends_followers">👥🔔 الأصدقاء والمتابعون</option></select><button class="publish tool" type="submit">نشر القصة</button></div><div class="emoji-box" id="emojiBox"></div><div class="editor" id="editor"><span class="muted">اختر صورة/فيديو أو أضف نصاً وإيموجي</span></div><div id="musicInfo" class="muted"></div><p id="storyStatus" class="status muted"></p></form><section class="panel"><div class="story-head"><h2>قصصي والقصص المتاحة لي</h2><button class="tool" type="button" id="refresh">↻ تحديث</button></div><div id="storyGrid" class="story-grid"><p class="muted">جارٍ التحميل...</p></div></section></main><nav class="mobile-bar"><a href="taktak.html"><b>⌂</b>الرئيسية</a><a href="stories.html"><b>✨</b>قصتي</a><a href="reels.html"><b>▶</b>المقاطع</a><a href="notifications.html"><b>🔔</b>الإشعارات</a><a href="profile.html"><b>👤</b>حسابي</a></nav><script src="cloudflare-upload.js?v=20261104-100mb"></script><script>
-(()=>{'use strict';const API=window.location.origin,form=document.getElementById('storyForm'),media=document.getElementById('storyMedia'),music=document.getElementById('storyMusic'),editor=document.getElementById('editor'),status=document.getElementById('storyStatus'),grid=document.getElementById('storyGrid'),size=document.getElementById('overlaySize');let overlays=[],meId='';const esc=v=>String(v||'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])),abs=u=>!u?'':/^https?:/i.test(u)?u:API+u;async function api(p,o={}){if(window.shnoSessionReady&&!(await window.shnoSessionReady))throw Error('سجّل دخولك أولاً');o.credentials='same-origin';o.headers=Object.assign({Accept:'application/json'},o.headers||{});const r=await fetch(API+p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||'تعذر تنفيذ الطلب');return d}function setStatus(t,bad=false){status.textContent=t;status.className='status '+(bad?'bad':'ok')}function renderEditor(){const old=editor.querySelector('img,video');editor.innerHTML='';if(old)editor.appendChild(old);if(!old&&!overlays.length)editor.innerHTML='<span class="muted">اختر صورة/فيديو أو أضف نصاً وإيموجي</span>';overlays.forEach((o,i)=>{const el=document.createElement('span');el.className='overlay';el.textContent=o.value;el.style.left=o.x+'%';el.style.top=o.y+'%';el.style.fontSize=o.size+'px';el.dataset.i=i;editor.appendChild(el);drag(el,o)})}function drag(el,o){let down=false;const move=(x,y)=>{const r=editor.getBoundingClientRect();o.x=Math.max(0,Math.min(100,(x-r.left)/r.width*100));o.y=Math.max(0,Math.min(100,(y-r.top)/r.height*100));el.style.left=o.x+'%';el.style.top=o.y+'%'};el.onpointerdown=e=>{down=true;el.setPointerCapture(e.pointerId)};el.onpointermove=e=>{if(down)move(e.clientX,e.clientY)};el.onpointerup=()=>down=false;el.onclick=()=>{size.value=o.size}}media.onchange=()=>{const f=media.files[0];if(!f)return;const u=URL.createObjectURL(f),el=document.createElement(f.type.startsWith('video/')?'video':'img');el.src=u;if(el.tagName==='VIDEO'){el.controls=true;el.playsInline=true}editor.innerHTML='';editor.appendChild(el);overlays.forEach((o,i)=>{const s=document.createElement('span');s.className='overlay';s.textContent=o.value;s.style.left=o.x+'%';s.style.top=o.y+'%';s.style.fontSize=o.size+'px';s.dataset.i=i;editor.appendChild(s);drag(s,o)})};music.onchange=()=>document.getElementById('musicInfo').textContent=music.files[0]?'🎵 '+music.files[0].name:'';document.getElementById('addText').onclick=()=>{const v=prompt('اكتب النص الذي تريد وضعه فوق القصة');if(v&&v.trim()){overlays.push({kind:'text',value:v.trim(),x:50,y:50,size:Number(size.value)});renderEditor()}};const emojis=['😀','😂','😍','🥰','😎','🤩','❤️','🔥','👏','🎉','🇮🇶','☕','🎵','⚽','🌹','✨'];const eb=document.getElementById('emojiBox');eb.innerHTML=emojis.map(e=>'<button type="button">'+e+'</button>').join('');document.getElementById('emojiBtn').onclick=()=>eb.classList.toggle('open');eb.onclick=e=>{if(e.target.tagName==='BUTTON'){overlays.push({kind:'emoji',value:e.target.textContent,x:50,y:50,size:Number(size.value)});renderEditor()}};size.oninput=()=>{const last=overlays[overlays.length-1];if(last){last.size=Number(size.value);renderEditor()}};function storyCard(s){const m=s.media&&s.media[0],u=s.author||{},visual=m?(m.type==='video'?'<video controls playsinline src="'+esc(abs(m.url))+'"></video>':'<img src="'+esc(abs(m.url))+'" alt="">'):'<div class="fallback">'+esc(s.text||'✨')+'</div>',ovs=(s.overlays||[]).map(o=>'<span class="render-overlay" style="left:'+Number(o.x)+'%;top:'+Number(o.y)+'%;font-size:'+Number(o.size)+'px">'+esc(o.value)+'</span>').join(''),aud=s.music&&s.music.url?'<audio controls src="'+esc(abs(s.music.url))+'"></audio>':'';return '<article class="story-card" data-id="'+esc(s.id)+'">'+visual+ovs+aud+'<div class="story-owner"><span class="avatar-mini">'+esc((u.fullName||'?').slice(0,1))+'</span><strong>'+esc(u.fullName||u.username||'مستخدم')+'</strong>'+(String(u.id)===String(meId)?'<button class="delete-story" type="button">حذف</button>':'')+'</div>'+(s.text?'<div class="caption">'+esc(s.text)+'</div>':'')+'</article>'}async function load(){try{const [d,m]=await Promise.all([api('/api/stories'),api('/api/users/me')]);meId=m.user?.id||'';grid.innerHTML=(d.stories||[]).length?d.stories.map(storyCard).join(''):'<p class="muted">لا توجد قصص نشطة الآن.</p>'}catch(e){grid.innerHTML='<p class="status bad">'+esc(e.message)+'</p>'}}form.onsubmit=async e=>{e.preventDefault();const btn=form.querySelector('[type=submit]');btn.disabled=true;setStatus('جارٍ رفع القصة إلى Cloudflare...');
-try{
-const uploads={};
-if(typeof window.uploadMediaToCloudflare!=='function')throw Error('خدمة الرفع غير محمّلة، حدّث الصفحة');
-if(media.files[0])uploads.main=await window.uploadMediaToCloudflare(media.files[0],'stories',p=>setStatus('رفع الصورة/الفيديو: '+p+'%'));
-if(music.files[0])uploads.music=await window.uploadMediaToCloudflare(music.files[0],'story-music',p=>setStatus('رفع الصوت: '+p+'%'));
-setStatus('جارٍ حفظ القصة في D1...');
-await api('/api/stories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:document.getElementById('storyText').value.trim(),overlays:JSON.stringify(overlays),visibility:document.getElementById('storyVisibility').value,uploads})});
-setStatus('تم نشر القصة بنجاح.');form.reset();overlays=[];editor.innerHTML='<span class="muted">اختر صورة/فيديو أو أضف نصاً وإيموجي</span>';document.getElementById('musicInfo').textContent='';await load()
-}catch(err){setStatus(err.message,true)}finally{btn.disabled=false}};
-grid.onclick=async e=>{const b=e.target.closest('.delete-story');if(!b)return;const card=b.closest('[data-id]');if(!confirm('حذف هذه القصة؟'))return;try{await api('/api/stories/'+card.dataset.id,{method:'DELETE'});card.remove()}catch(err){alert(err.message)}};document.getElementById('refresh').onclick=load;load()})();
-</script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl" class="shinomino-ui">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07100d">
+  <title>قصتي | شنو منو تك تك</title>
+  <link rel="stylesheet" href="taktak-feed.css?v=20260909-2">
+  <style>
+    .story-shell{max-width:1040px;margin:76px auto 86px;padding:16px}
+    .panel{background:var(--card,#111522);border:1px solid #26352f;border-radius:22px;padding:16px;margin-bottom:16px}
+    .story-head,.tools,.story-row,.story-owner{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .story-head{justify-content:space-between}
+    .story-head a,.tool{color:inherit;text-decoration:none;background:#182821;border:1px solid #2d4138;padding:8px 12px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:700}
+    .tools select{color:inherit;background:#182821;border:1px solid #2d4138;padding:9px 12px;border-radius:12px}
+    .publish{background:#19d9a0!important;color:#04110d!important;border:0!important;font-weight:800}
+    .story-editor-layout{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}
+    .editor-stage-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+    .editor{position:relative;width:min(100%,290px);aspect-ratio:9/16;max-height:58dvh;min-height:0!important;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,#111b18,#241535);display:grid;place-items:center;margin:0;border:1px solid rgba(255,255,255,.16);touch-action:none}
+    .editor img,.editor video{width:100%;height:100%;max-height:none;object-fit:contain;background:transparent}
+    .editor[data-fit="cover"] img,.editor[data-fit="cover"] video{object-fit:cover}
+    .editor-empty{padding:24px;text-align:center;font-size:13px;color:rgba(255,255,255,.78)}
+    .editor-play-btn{position:absolute;z-index:5;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.32);background:rgba(10,16,24,.66);color:#fff;font-size:18px;cursor:pointer;backdrop-filter:blur(8px)}
+    .editor-stage-bar{width:min(100%,290px);display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .overlay{position:absolute;z-index:6;transform:translate(-50%,-50%);cursor:move;user-select:none;text-shadow:0 2px 8px #000;font-weight:800;padding:3px 9px;border-radius:10px;white-space:nowrap}
+    .overlay.is-selected{outline:2px dashed #19d9a0;background:rgba(0,0,0,.35)}
+    .editor-controls{display:grid;gap:10px}
+    .story-text{width:100%;box-sizing:border-box;background:#09120f;color:inherit;border:1px solid #30423a;border-radius:14px;padding:11px;min-height:66px}
+    .editor-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+    .editor-tabs button{padding:8px 6px;border-radius:11px;border:1px solid rgba(120,130,150,.28);background:rgba(120,130,150,.12);color:inherit;font-size:12px;font-weight:700;cursor:pointer}
+    .editor-tabs button.is-active{background:#19d9a0;color:#04120d;border-color:transparent}
+    .editor-subpanel{background:rgba(120,130,150,.08);border-radius:14px;padding:10px;display:grid;gap:8px}
+    .editor-subpanel[hidden]{display:none}
+    .chip-strip{display:flex;gap:6px;flex-wrap:wrap}
+    .chip-btn{padding:6px 10px;border-radius:10px;border:1px solid rgba(120,130,150,.3);background:rgba(120,130,150,.12);color:inherit;font-size:12px;cursor:pointer}
+    .chip-btn.is-active{background:#7540ce;color:#fff;border-color:transparent}
+    .inline-text-row{display:flex;gap:6px}
+    .inline-text-row input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(120,130,150,.3);background:#09120f;color:inherit}
+    html[data-theme="light"] .inline-text-row input{background:#fff}
+    .color-dots{display:flex;gap:6px;align-items:center}
+    .color-dots button{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.35);cursor:pointer}
+    .color-dots button.is-active{outline:2px solid #19d9a0;outline-offset:2px}
+    .emoji-box{display:none;gap:6px;flex-wrap:wrap;margin-top:4px}
+    .emoji-box.open{display:flex}
+    .emoji-box button{font-size:22px;background:#17241f;border:0;border-radius:10px;padding:5px 7px;cursor:pointer}
+    .trim-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .trim-row label,.range-label{display:grid;gap:4px;font-size:12px}
+    .trim-row input[type=range],.range-label input[type=range]{width:100%;accent-color:#19d9a0}
+    .story-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+    .story-card{position:relative;overflow:hidden;min-height:330px;background:#0c1512;border:1px solid #26352f;border-radius:20px}
+    .story-card .fallback{height:100%;min-height:420px;display:grid;place-items:center;padding:24px;font-size:22px;text-align:center;background:linear-gradient(160deg,#18233d,#392653);color:#fff}
+    .story-card .render-overlay{position:absolute;z-index:4;transform:translate(-50%,-50%);text-shadow:0 2px 8px #000;pointer-events:none;font-weight:800}
+    .avatar-mini{width:30px;height:30px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#19d9a0,#7540ce);display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex:0 0 auto}
+    .muted{opacity:.72}
+    .status{min-height:22px;font-size:13px;margin:8px 0 0}
+    .status.ok{color:#45e6b7}
+    .status.bad{color:#ff7685}
+
+    /* Licensed Audio Picker */
+    .shno-audio-lib{display:grid;gap:8px}
+    .shno-audio-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .shno-audio-head small{display:block;font-size:11px;opacity:.75}
+    .shno-cc0-badge{padding:3px 8px;border-radius:999px;background:rgba(25,217,160,.16);color:#19d9a0;font-size:10px;font-weight:800;white-space:nowrap}
+    .shno-audio-filters{display:grid;gap:6px}
+    .shno-audio-tabs{display:flex;gap:6px;flex-wrap:wrap}
+    .shno-audio-tabs button{padding:5px 10px;border-radius:999px;border:1px solid rgba(120,130,150,.3);background:transparent;color:inherit;font-size:11px;cursor:pointer}
+    .shno-audio-tabs button.is-active{background:#19d9a0;color:#04120d;border-color:transparent;font-weight:800}
+    .shno-audio-search{width:100%;box-sizing:border-box;padding:7px 10px;border-radius:10px;border:1px solid rgba(120,130,150,.28);background:#09120f;color:inherit;font-size:12px}
+    html[data-theme="light"] .shno-audio-search{background:#fff}
+    .shno-audio-list{display:grid;gap:6px;max-height:190px;overflow:auto}
+    .shno-audio-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:7px 9px;border-radius:12px;border:1px solid rgba(120,130,150,.22);background:rgba(120,130,150,.08)}
+    .shno-audio-row.is-chosen{border-color:#19d9a0;background:rgba(25,217,160,.12)}
+    .shno-audio-play{width:30px;height:30px;padding:0;border-radius:50%;border:0;background:#7540ce;color:#fff;font-size:12px;cursor:pointer}
+    .shno-audio-play.is-playing{background:#e63956}
+    .shno-audio-meta strong{display:flex;align-items:center;gap:6px;font-size:12px}
+    .shno-audio-meta small{display:block;font-size:10px;opacity:.75;margin-top:2px}
+    .shno-audio-tag{padding:1px 6px;border-radius:6px;background:rgba(117,64,206,.2);font-size:10px}
+    .shno-audio-pick{padding:5px 10px;border-radius:9px;border:1px solid rgba(120,130,150,.3);background:rgba(120,130,150,.15);color:inherit;font-size:11px;font-weight:700;cursor:pointer}
+    .shno-audio-row.is-chosen .shno-audio-pick{background:#19d9a0;color:#04120d;border-color:transparent}
+    .shno-audio-selected{display:flex;gap:6px;flex-wrap:wrap}
+    .shno-audio-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(25,217,160,.18);font-size:11px;font-weight:700}
+    .shno-audio-chip button{border:0;background:transparent;color:inherit;padding:0;cursor:pointer;font-size:14px}
+    .shno-audio-empty{text-align:center;padding:14px;font-size:12px;opacity:.7}
+    .story-toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);z-index:200;padding:9px 16px;border-radius:999px;background:rgba(12,18,28,.92);color:#fff;font-size:13px;border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .story-toast[hidden]{display:none}
+    @media(max-width:860px){.story-editor-layout{grid-template-columns:1fr}.editor{width:min(100%,270px);max-height:52dvh}.editor-stage-bar{width:min(100%,270px)}}
+    @media(max-width:700px){.story-shell{margin-top:64px;padding:8px}.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.story-grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="stories-reels-polish.css?v=20261118-1">
+  <link rel="stylesheet" href="/shinomino-shared-visual.css?v=20261106-1">
+</head>
+<body>
+  <script src="auth-guard.js"></script>
+  <main class="story-shell">
+    <section class="panel story-head">
+      <div>
+        <h1>✨ قصتي</h1>
+        <p class="muted">استوديو القصص التفاعلي — تختفي القصة بعد 24 ساعة. الحد الأقصى للملف 100 ميغابايت.</p>
+      </div>
+      <div class="tools">
+        <button class="tool" type="button" id="toggleComposer">＋ قصة جديدة</button>
+        <a href="taktak.html">← الرئيسية</a>
+      </div>
+    </section>
+
+    <form class="panel" id="storyForm">
+      <textarea class="story-text" id="storyText" maxlength="1000" placeholder="اكتب نص القصة..."></textarea>
+      <input id="storyMedia" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden>
+      <input id="storyMusic" type="file" accept="audio/mpeg,audio/mp3,.mp3" hidden>
+
+      <div class="tools" style="margin-top:10px">
+        <label class="tool" for="storyMedia">📷 صورة / فيديو</label>
+        <button class="tool" type="button" id="emojiBtn">😊 ملصقات وإيموجي</button>
+        <label class="tool" for="storyMusic">🎧 ملف MP3 خاص</button>
+        <select id="storyVisibility" aria-label="خصوصية القصة">
+          <option value="everyone">🌐 عام</option>
+          <option value="friends">👥 الأصدقاء</option>
+          <option value="followers">🔔 المتابعون</option>
+          <option value="friends_followers">👥🔔 الأصدقاء والمتابعون</option>
+        </select>
+        <button class="publish tool" type="submit">نشر القصة</button>
+      </div>
+
+      <div class="story-editor-layout">
+        <div class="editor-stage-wrap">
+          <div class="editor" id="editor" data-fit="contain">
+            <span class="editor-empty">اختر صورة أو فيديو أو صمّم قصة نصية مع موسيقى وفلاتر</span>
+          </div>
+          <div class="editor-stage-bar">
+            <span id="editorMediaMeta" class="muted">إطار 9:16 متجاوب</span>
+            <button type="button" id="storyFitToggle" class="chip-btn">⛶ احتواء</button>
+          </div>
+        </div>
+
+        <div class="editor-controls">
+          <div class="editor-tabs" role="tablist">
+            <button type="button" class="is-active" data-stab="text">✍️ نص وملصقات</button>
+            <button type="button" data-stab="style">🎨 الخلفية والفلتر</button>
+            <button type="button" data-stab="trim" id="storyTrimTab" hidden>✂️ قص الفيديو</button>
+            <button type="button" data-stab="audio">🎵 موسيقى ومؤثرات</button>
+          </div>
+
+          <div class="editor-subpanel" data-spanel="text">
+            <div class="inline-text-row">
+              <input id="inlineOverlayInput" type="text" maxlength="120" placeholder="اكتب نصاً لوضعه فوق القصة...">
+              <button class="tool" type="button" id="addText">إضافة نص</button>
+            </div>
+            <div class="tools">
+              <div class="color-dots" id="storyColorDots">
+                <button type="button" data-scolor="#ffffff" style="background:#ffffff" class="is-active" aria-label="أبيض"></button>
+                <button type="button" data-scolor="#19d9a0" style="background:#19d9a0" aria-label="أخضر"></button>
+                <button type="button" data-scolor="#ffd166" style="background:#ffd166" aria-label="أصفر"></button>
+                <button type="button" data-scolor="#ff6b8b" style="background:#ff6b8b" aria-label="وردي"></button>
+                <button type="button" data-scolor="#9d7cff" style="background:#9d7cff" aria-label="بنفسجي"></button>
+              </div>
+              <label class="range-label" style="flex:1">الحجم
+                <input id="overlaySize" type="range" min="18" max="72" value="34">
+              </label>
+              <button type="button" id="removeLastOverlay" class="chip-btn">حذف المحدد</button>
+            </div>
+            <div class="emoji-box open" id="emojiBox"></div>
+          </div>
+
+          <div class="editor-subpanel" data-spanel="style" hidden>
+            <small class="muted">خلفية القصة النصية / الإطار</small>
+            <div class="chip-strip" id="storyBgThemes"></div>
+            <small class="muted">الفلتر البصري</small>
+            <div class="chip-strip" id="storyFilters"></div>
+          </div>
+
+          <div class="editor-subpanel" data-spanel="trim" hidden>
+            <div class="trim-row">
+              <label>بداية المقطع (<span id="storyTrimStartLabel">0.0</span>ث)
+                <input id="storyTrimStart" type="range" min="0" max="45" step="0.1" value="0">
+              </label>
+              <label>نهاية المقطع (<span id="storyTrimEndLabel">0.0</span>ث)
+                <input id="storyTrimEnd" type="range" min="0" max="45" step="0.1" value="0">
+              </label>
+            </div>
+          </div>
+
+          <div class="editor-subpanel" data-spanel="audio" hidden>
+            <div id="storyAudioLibrary"></div>
+            <label class="range-label">مستوى صوت الموسيقى / المؤثر (<span id="storyMusicVolLabel">70%</span>)
+              <input id="storyMusicVol" type="range" min="10" max="100" value="70">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="musicInfo" class="muted" style="margin-top:8px;font-size:12.5px"></div>
+      <p id="storyStatus" class="status muted"></p>
+    </form>
+
+    <section class="panel">
+      <div class="story-head">
+        <h2>قصصي والقصص المتاحة لي</h2>
+        <button class="tool" type="button" id="refresh">↻ تحديث</button>
+      </div>
+      <div id="storyGrid" class="story-grid"><p class="muted">جارٍ التحميل...</p></div>
+    </section>
+  </main>
+
+  <nav class="mobile-bar">
+    <a href="taktak.html"><b>⌂</b>الرئيسية</a>
+    <a href="stories.html"><b>✨</b>قصتي</a>
+    <a href="reels.html"><b>▶</b>المقاطع</a>
+    <a href="notifications.html"><b>🔔</b>الإشعارات</a>
+    <a href="profile.html"><b>👤</b>حسابي</a>
+  </nav>
+
+  <div id="storyToast" class="story-toast" hidden></div>
+
+  <script src="cloudflare-upload.js?v=20261104-100mb"></script>
+  <script src="licensed-audio-library.js?v=20261118-1"></script>
+  <script>
+  (() => {
+    'use strict';
+    const API = window.location.origin;
+    const form = document.getElementById('storyForm');
+    const media = document.getElementById('storyMedia');
+    const music = document.getElementById('storyMusic');
+    const editor = document.getElementById('editor');
+    const status = document.getElementById('storyStatus');
+    const grid = document.getElementById('storyGrid');
+    const size = document.getElementById('overlaySize');
+    const inlineInput = document.getElementById('inlineOverlayInput');
+    const musicInfoEl = document.getElementById('musicInfo');
+    const toastEl = document.getElementById('storyToast');
+    const trimTabBtn = document.getElementById('storyTrimTab');
+    const trimStartEl = document.getElementById('storyTrimStart');
+    const trimEndEl = document.getElementById('storyTrimEnd');
+    const trimStartLbl = document.getElementById('storyTrimStartLabel');
+    const trimEndLbl = document.getElementById('storyTrimEndLabel');
+    const musicVolEl = document.getElementById('storyMusicVol');
+    const musicVolLbl = document.getElementById('storyMusicVolLabel');
+
+    const BG_THEMES = [
+      { id: 'emerald', name: 'ليلي زمردي', colors: ['#111b18', '#241535'] },
+      { id: 'sumer', name: 'بنفسجي سومر', colors: ['#241342', '#4c1d75'] },
+      { id: 'tigris', name: 'غروب دجلة', colors: ['#1a2940', '#0e5c63'] },
+      { id: 'gold', name: 'فجر ذهبي', colors: ['#3b1d14', '#854d0e'] },
+      { id: 'navy', name: 'كحلي عميق', colors: ['#0b1324', '#1e3a5f'] },
+      { id: 'rose', name: 'وردي دافئ', colors: ['#3f1428', '#7c2d54'] }
+    ];
+    const FILTERS = [
+      { id: 'none', name: 'أصلي', css: 'none' },
+      { id: 'warm', name: 'دافئ', css: 'sepia(0.28) saturate(1.3) brightness(1.04)' },
+      { id: 'cool', name: 'بارد', css: 'hue-rotate(14deg) saturate(1.12) contrast(1.06)' },
+      { id: 'cinema', name: 'سينما', css: 'contrast(1.22) saturate(0.9) brightness(0.95)' },
+      { id: 'noir', name: 'أبيض وأسود', css: 'grayscale(1) contrast(1.18)' },
+      { id: 'vivid', name: 'مشرق', css: 'saturate(1.48) contrast(1.08) brightness(1.05)' }
+    ];
+
+    let overlays = [];
+    let selectedOverlayIdx = -1;
+    let selectedColor = '#ffffff';
+    let selectedTheme = BG_THEMES[0];
+    let selectedFilter = FILTERS[0];
+    let selectedFit = 'contain';
+    let libraryAudio = { musicId: '', sfxId: '' };
+    let storyAudioPicker = null;
+    let meId = '';
+    let globalStoryMuted = false;
+    let toastTimer = null;
+
+    const esc = (v) => String(v || '').replace(/[&<>"']/g, (s) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+    const abs = (u) => (!u ? '' : /^https?:/i.test(u) ? u : API + u);
+
+    function showToast(msg) {
+      if (!toastEl) return;
+      toastEl.textContent = msg;
+      toastEl.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toastEl.hidden = true; }, 2500);
+    }
+
+    async function api(p, o = {}) {
+      if (window.shnoSessionReady && !(await window.shnoSessionReady)) throw Error('سجّل دخولك أولاً');
+      o.credentials = 'same-origin';
+      o.headers = Object.assign({ Accept: 'application/json' }, o.headers || {});
+      const r = await fetch(API + p, o);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw Error(d.message || 'تعذر تنفيذ الطلب');
+      return d;
+    }
+
+    function setStatus(t, bad = false) {
+      status.textContent = t;
+      status.className = 'status ' + (bad ? 'bad' : 'ok');
+    }
+
+    function capturePoster(video, ambientEl) {
+      if (!video || video.dataset.posterCaptured === '1') return;
+      const draw = () => {
+        try {
+          if (!video.videoWidth || !video.videoHeight) return;
+          const c = document.createElement('canvas');
+          const scale = Math.min(1, 520 / video.videoWidth);
+          c.width = Math.max(1, Math.round(video.videoWidth * scale));
+          c.height = Math.max(1, Math.round(video.videoHeight * scale));
+          c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+          const url = c.toDataURL('image/jpeg', 0.8);
+          video.poster = url;
+          video.dataset.posterCaptured = '1';
+          if (ambientEl) ambientEl.style.backgroundImage = `url("${url}")`;
+        } catch (_) {}
+      };
+      const onMeta = () => {
+        try {
+          if (video.paused && Number.isFinite(video.duration) && video.duration > 0.05) {
+            video.addEventListener('seeked', draw, { once: true });
+            video.currentTime = Math.min(0.18, video.duration / 3);
+          } else draw();
+        } catch (_) { draw(); }
+      };
+      if (video.readyState >= 1) onMeta();
+      else video.addEventListener('loadeddata', onMeta, { once: true });
+    }
+
+    function syncEditorStyle() {
+      editor.style.background = `linear-gradient(145deg, ${selectedTheme.colors[0]}, ${selectedTheme.colors[1]})`;
+      editor.dataset.fit = selectedFit;
+      const mediaEl = editor.querySelector('img,video');
+      if (mediaEl) mediaEl.style.filter = selectedFilter.css;
+    }
+
+    function renderEditor() {
+      const old = editor.querySelector('img,video');
+      editor.innerHTML = '';
+      if (old) editor.appendChild(old);
+      if (old && old.tagName === 'VIDEO') {
+        const playBtn = document.createElement('button');
+        playBtn.type = 'button';
+        playBtn.className = 'editor-play-btn';
+        playBtn.textContent = old.paused ? '▶' : '⏸';
+        playBtn.onclick = () => {
+          if (old.paused) {
+            const s = Number(trimStartEl.value || 0);
+            if (old.currentTime < s || old.currentTime >= Number(trimEndEl.value || old.duration)) old.currentTime = s;
+            old.play().catch(() => {});
+            playBtn.textContent = '⏸';
+          } else {
+            old.pause();
+            playBtn.textContent = '▶';
+          }
+        };
+        editor.appendChild(playBtn);
+      }
+      if (!old && !overlays.length) {
+        const empty = document.createElement('span');
+        empty.className = 'editor-empty';
+        empty.textContent = 'اختر صورة أو فيديو أو صمّم قصة نصية مع موسيقى وفلاتر';
+        editor.appendChild(empty);
+      }
+      overlays.forEach((o, i) => {
+        const el = document.createElement('span');
+        el.className = 'overlay' + (i === selectedOverlayIdx ? ' is-selected' : '');
+        el.textContent = o.value;
+        el.style.left = o.x + '%';
+        el.style.top = o.y + '%';
+        el.style.fontSize = o.size + 'px';
+        el.style.color = o.color || '#ffffff';
+        el.dataset.i = i;
+        editor.appendChild(el);
+        drag(el, o, i);
+      });
+      syncEditorStyle();
+    }
+
+    function drag(el, o, idx) {
+      let down = false;
+      const move = (x, y) => {
+        const r = editor.getBoundingClientRect();
+        o.x = Math.max(6, Math.min(94, ((x - r.left) / r.width) * 100));
+        o.y = Math.max(6, Math.min(94, ((y - r.top) / r.height) * 100));
+        el.style.left = o.x + '%';
+        el.style.top = o.y + '%';
+      };
+      el.onpointerdown = (e) => {
+        e.stopPropagation();
+        down = true;
+        selectedOverlayIdx = idx;
+        size.value = o.size;
+        el.setPointerCapture?.(e.pointerId);
+      };
+      el.onpointermove = (e) => { if (down) move(e.clientX, e.clientY); };
+      el.onpointerup = () => { down = false; };
+      el.onclick = () => {
+        selectedOverlayIdx = idx;
+        size.value = o.size;
+      };
+    }
+
+    document.getElementById('toggleComposer').onclick = () => {
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('storyText').focus();
+    };
+    if (new URLSearchParams(location.search).get('create') === '1') {
+      setTimeout(() => document.getElementById('storyText')?.focus(), 150);
+    }
+
+    document.querySelectorAll('[data-stab]').forEach((tab) => {
+      tab.onclick = () => {
+        const k = tab.dataset.stab;
+        document.querySelectorAll('[data-stab]').forEach((t) => t.classList.toggle('is-active', t === tab));
+        document.querySelectorAll('[data-spanel]').forEach((p) => { p.hidden = p.dataset.spanel !== k; });
+      };
+    });
+
+    document.getElementById('storyFitToggle').onclick = () => {
+      selectedFit = selectedFit === 'contain' ? 'cover' : 'contain';
+      document.getElementById('storyFitToggle').textContent = selectedFit === 'cover' ? '⛶ ملء' : '⛶ احتواء';
+      syncEditorStyle();
+    };
+
+    const bgWrap = document.getElementById('storyBgThemes');
+    bgWrap.innerHTML = BG_THEMES.map((t) =>
+      `<button type="button" class="chip-btn ${t.id === selectedTheme.id ? 'is-active' : ''}" data-bg-id="${t.id}">${t.name}</button>`
+    ).join('');
+    bgWrap.onclick = (e) => {
+      const b = e.target.closest('[data-bg-id]');
+      if (!b) return;
+      selectedTheme = BG_THEMES.find((t) => t.id === b.dataset.bgId) || BG_THEMES[0];
+      bgWrap.querySelectorAll('.chip-btn').forEach((x) => x.classList.toggle('is-active', x === b));
+      syncEditorStyle();
+    };
+
+    const fltWrap = document.getElementById('storyFilters');
+    fltWrap.innerHTML = FILTERS.map((f) =>
+      `<button type="button" class="chip-btn ${f.id === selectedFilter.id ? 'is-active' : ''}" data-sflt-id="${f.id}">${f.name}</button>`
+    ).join('');
+    fltWrap.onclick = (e) => {
+      const b = e.target.closest('[data-sflt-id]');
+      if (!b) return;
+      selectedFilter = FILTERS.find((f) => f.id === b.dataset.sfltId) || FILTERS[0];
+      fltWrap.querySelectorAll('.chip-btn').forEach((x) => x.classList.toggle('is-active', x === b));
+      syncEditorStyle();
+    };
+
+    media.onchange = () => {
+      const f = media.files[0];
+      if (!f) return;
+      const u = URL.createObjectURL(f);
+      const isVid = f.type.startsWith('video/');
+      const el = document.createElement(isVid ? 'video' : 'img');
+      el.src = u;
+      if (isVid) {
+        el.playsInline = true;
+        el.preload = 'metadata';
+        trimTabBtn.hidden = false;
+        el.onloadedmetadata = () => {
+          const dur = Math.max(1, Number(el.duration || 10));
+          trimStartEl.max = dur.toFixed(1);
+          trimEndEl.max = dur.toFixed(1);
+          trimStartEl.value = '0';
+          trimEndEl.value = dur.toFixed(1);
+          trimStartLbl.textContent = '0.0';
+          trimEndLbl.textContent = dur.toFixed(1);
+          capturePoster(el, null);
+        };
+        el.ontimeupdate = () => {
+          const end = Number(trimEndEl.value || el.duration || 0);
+          if (!el.paused && end > 0 && el.currentTime >= end) el.currentTime = Number(trimStartEl.value || 0);
+        };
+      } else {
+        trimTabBtn.hidden = true;
+      }
+      editor.innerHTML = '';
+      editor.appendChild(el);
+      renderEditor();
+    };
+
+    trimStartEl.oninput = () => {
+      if (Number(trimStartEl.value) >= Number(trimEndEl.value)) {
+        trimStartEl.value = Math.max(0, Number(trimEndEl.value) - 0.5).toFixed(1);
+      }
+      trimStartLbl.textContent = Number(trimStartEl.value).toFixed(1);
+      const v = editor.querySelector('video');
+      if (v && Number.isFinite(v.duration)) v.currentTime = Number(trimStartEl.value);
+    };
+    trimEndEl.oninput = () => {
+      if (Number(trimEndEl.value) <= Number(trimStartEl.value)) {
+        trimEndEl.value = Math.min(Number(trimEndEl.max || 45), Number(trimStartEl.value) + 0.5).toFixed(1);
+      }
+      trimEndLbl.textContent = Number(trimEndEl.value).toFixed(1);
+    };
+    musicVolEl.oninput = () => { musicVolLbl.textContent = musicVolEl.value + '%'; };
+
+    function updateMusicLabel() {
+      const parts = [];
+      if (music.files[0]) parts.push('🎧 ' + music.files[0].name);
+      if (libraryAudio.music) parts.push('🎵 ' + libraryAudio.music.title + ' (CC0)');
+      if (libraryAudio.sfx) parts.push('🔊 ' + libraryAudio.sfx.title + ' (CC0)');
+      musicInfoEl.textContent = parts.join('  ·  ');
+    }
+
+    music.onchange = updateMusicLabel;
+
+    if (window.ShnoLicensedAudio && document.getElementById('storyAudioLibrary')) {
+      storyAudioPicker = window.ShnoLicensedAudio.createPickerUI(document.getElementById('storyAudioLibrary'), {
+        onChange: (sel) => {
+          libraryAudio = sel;
+          updateMusicLabel();
+        }
+      });
+    }
+
+    document.getElementById('addText').onclick = () => {
+      const v = (inlineInput.value || '').trim();
+      if (!v) {
+        inlineInput.focus();
+        showToast('اكتب النص في الخانة أولاً');
+        return;
+      }
+      overlays.push({ kind: 'text', value: v, x: 50, y: 50, size: Number(size.value), color: selectedColor });
+      selectedOverlayIdx = overlays.length - 1;
+      inlineInput.value = '';
+      renderEditor();
+    };
+
+    const colorDots = document.getElementById('storyColorDots');
+    colorDots.onclick = (e) => {
+      const b = e.target.closest('[data-scolor]');
+      if (!b) return;
+      selectedColor = b.dataset.scolor;
+      colorDots.querySelectorAll('[data-scolor]').forEach((x) => x.classList.toggle('is-active', x === b));
+      if (selectedOverlayIdx >= 0 && overlays[selectedOverlayIdx]) {
+        overlays[selectedOverlayIdx].color = selectedColor;
+        renderEditor();
+      }
+    };
+
+    document.getElementById('removeLastOverlay').onclick = () => {
+      if (!overlays.length) return;
+      const target = selectedOverlayIdx >= 0 ? selectedOverlayIdx : overlays.length - 1;
+      overlays.splice(target, 1);
+      selectedOverlayIdx = overlays.length - 1;
+      renderEditor();
+    };
+
+    const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤩', '❤️', '🔥', '👏', '🎉', '🇮🇶', '☕', '🎵', '⚽', '🌹', '✨'];
+    const eb = document.getElementById('emojiBox');
+    eb.innerHTML = emojis.map((e) => '<button type="button">' + e + '</button>').join('');
+    document.getElementById('emojiBtn').onclick = () => eb.classList.toggle('open');
+    eb.onclick = (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        overlays.push({ kind: 'emoji', value: e.target.textContent, x: 50, y: 50, size: Number(size.value) });
+        selectedOverlayIdx = overlays.length - 1;
+        renderEditor();
+      }
+    };
+
+    size.oninput = () => {
+      const target = selectedOverlayIdx >= 0 ? overlays[selectedOverlayIdx] : overlays[overlays.length - 1];
+      if (target) {
+        target.size = Number(size.value);
+        renderEditor();
+      }
+    };
+
+    function storyCard(s) {
+      const m = s.media && s.media[0];
+      const u = s.author || {};
+      const isVideo = Boolean(m && m.type === 'video');
+      const visual = m
+        ? (isVideo
+          ? `<div class="story-ambient"></div><video loop playsinline preload="metadata" src="${esc(abs(m.url))}#t=0.05"></video><div class="story-play-overlay"><button class="story-play-btn" type="button" aria-label="تشغيل القصة">▶</button><span class="story-preview-label">معاينة الفيديو</span></div>`
+          : `<div class="story-ambient" style="background-image:url('${esc(abs(m.url))}')"></div><img src="${esc(abs(m.url))}" alt="">`)
+        : `<div class="fallback">${esc(s.text || '✨')}</div>`;
+
+      const ovs = (s.overlays || []).map((o) =>
+        `<span class="render-overlay" style="left:${Number(o.x)}%;top:${Number(o.y)}%;font-size:${Number(o.size)}px">${esc(o.value)}</span>`
+      ).join('');
+
+      const hasAudio = Boolean(s.music && s.music.url);
+      const aud = hasAudio ? `<audio loop preload="metadata" src="${esc(abs(s.music.url))}"></audio>` : '';
+      const isMine = String(u.id) === String(meId);
+
+      return `
+        <article class="story-card" data-id="${esc(s.id)}" data-play-state="paused" data-ui-hidden="false" data-fit="contain">
+          <div class="story-card-progress"><div class="story-card-progress-fill"></div></div>
+          <div class="story-hidden-hint">المس لإظهار الأزرار</div>
+          <div class="story-media-stage">${visual}${ovs}${aud}</div>
+          <div class="story-owner">
+            <span class="avatar-mini">${esc((u.fullName || '?').slice(0, 1))}</span>
+            <div class="story-owner-meta">
+              <strong>${esc(u.fullName || u.username || 'مستخدم')}</strong>
+              <small>${new Date(s.createdAt).toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}</small>
+            </div>
+            <div class="story-top-actions">
+              ${isVideo || hasAudio ? `<button class="story-mini-btn" type="button" data-story-mute aria-label="كتم أو تشغيل الصوت">${globalStoryMuted ? '🔇' : '🔊'}</button>` : ''}
+              ${isVideo ? `<button class="story-mini-btn" type="button" data-story-play-toggle aria-label="تشغيل أو إيقاف">▶</button>` : ''}
+              <button class="story-mini-btn" type="button" data-story-fit title="تبديل الأبعاد" aria-label="تبديل الأبعاد">⛶</button>
+              <button class="story-mini-btn" type="button" data-story-toggle-ui title="إخفاء أو إظهار الأزرار" aria-label="إخفاء أو إظهار الأزرار">👁</button>
+              ${isMine ? '<button class="story-mini-btn delete-story" type="button" title="حذف القصة" aria-label="حذف القصة">🗑</button>' : ''}
+            </div>
+          </div>
+          ${hasAudio ? `<div class="story-music-pill">🎵 ${esc(s.music.name || 'موسيقى مرفقة')}</div>` : ''}
+          ${isMine ? `
+            <div class="story-confirm-bar" hidden>
+              <span>حذف هذه القصة؟</span>
+              <div>
+                <button type="button" class="story-confirm-yes" data-story-confirm-delete>حذف</button>
+                <button type="button" class="story-confirm-no" data-story-cancel-delete>إلغاء</button>
+              </div>
+            </div>
+          ` : ''}
+          <div class="story-bottom-bar">
+            ${s.text && m ? `<div class="caption">${esc(s.text)}</div>` : '<span></span>'}
+            <div class="story-bottom-actions">
+              <button class="story-mini-btn" type="button" data-story-share title="مشاركة القصة" aria-label="مشاركة القصة">↗</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function wireStoryCards() {
+      grid.querySelectorAll('.story-card').forEach((card) => {
+        const v = card.querySelector('.story-media-stage > video');
+        const ambient = card.querySelector('.story-ambient');
+        const fill = card.querySelector('.story-card-progress-fill');
+        const playTopBtn = card.querySelector('[data-story-play-toggle]');
+        if (!v) return;
+        capturePoster(v, ambient);
+        v.addEventListener('play', () => {
+          card.dataset.playState = 'playing';
+          if (playTopBtn) playTopBtn.textContent = '⏸';
+          const bgAudio = card.querySelector('audio');
+          if (bgAudio) { bgAudio.muted = globalStoryMuted; bgAudio.play().catch(() => {}); }
+        });
+        v.addEventListener('pause', () => {
+          card.dataset.playState = 'paused';
+          if (playTopBtn) playTopBtn.textContent = '▶';
+          const bgAudio = card.querySelector('audio');
+          if (bgAudio && !bgAudio.paused) bgAudio.pause();
+        });
+        v.addEventListener('timeupdate', () => {
+          if (fill && v.duration > 0) fill.style.width = ((v.currentTime / v.duration) * 100).toFixed(2) + '%';
+        });
+      });
+    }
+
+    async function load() {
+      try {
+        const [d, m] = await Promise.all([api('/api/stories'), api('/api/users/me')]);
+        meId = m.user?.id || '';
+        grid.innerHTML = (d.stories || []).length
+          ? d.stories.map(storyCard).join('')
+          : '<p class="muted">لا توجد قصص نشطة الآن.</p>';
+        wireStoryCards();
+      } catch (e) {
+        grid.innerHTML = '<p class="status bad">' + esc(e.message) + '</p>';
+      }
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('[type=submit]');
+      btn.disabled = true;
+      setStatus('جارٍ تجهيز القصة...');
+      try {
+        if (typeof window.uploadMediaToCloudflare !== 'function') throw Error('خدمة الرفع غير محمّلة، حدّث الصفحة');
+        const uploads = {};
+        let mainFile = media.files[0] || null;
+        const rawText = document.getElementById('storyText').value.trim();
+        const videoEl = editor.querySelector('video');
+        const imgEl = editor.querySelector('img');
+        const dur = Number(videoEl?.duration || 0);
+        const trimmed = Boolean(videoEl && dur > 0 && (Number(trimStartEl.value) > 0.2 || Math.abs(Number(trimEndEl.value) - dur) > 0.3));
+        const hasLibraryAudio = Boolean(libraryAudio.musicId || libraryAudio.sfxId);
+        const hasVisualEdits = selectedFilter.id !== 'none' || selectedTheme.id !== 'emerald' || selectedFit === 'cover';
+
+        const needsVideoRender = hasLibraryAudio || trimmed || (videoEl && hasVisualEdits);
+        if (needsVideoRender) {
+          if (!window.ShnoLicensedAudio || typeof MediaRecorder === 'undefined') {
+            throw Error('هذا المتصفح لا يدعم دمج الموسيقى والتعديلات. لن تُنشر القصة بدون التعديلات المختارة.');
+          }
+          const segmentDuration = videoEl ? (trimmed ? Number(trimEndEl.value) - Number(trimStartEl.value) : dur) : 6;
+          if (!Number.isFinite(segmentDuration) || segmentDuration <= 0 || segmentDuration > 45) {
+            throw Error('معالجة الفيديو داخل هذا المتصفح تدعم حتى 45 ثانية. اختصر المقطع قبل النشر.');
+          }
+          setStatus('جارٍ دمج الموسيقى والفلتر داخل القصة...');
+          const rendered = await window.ShnoLicensedAudio.mixAndRenderVideo({
+            videoEl: videoEl || null,
+            imgEl: imgEl || null,
+            text: !mainFile ? rawText : '',
+            bgColors: selectedTheme.colors,
+            filterCss: selectedFilter.css,
+            overlays,
+            bakeOverlays: false,
+            trimStart: Number(trimStartEl.value || 0),
+            trimEnd: Number(trimEndEl.value || dur || 6),
+            durationSec: videoEl ? Math.max(1, Number(trimEndEl.value || dur) - Number(trimStartEl.value || 0)) : 6,
+            fitMode: selectedFit,
+            originalVolume: 1,
+            musicId: libraryAudio.musicId,
+            musicVolume: Number(musicVolEl.value || 70) / 100,
+            sfxId: libraryAudio.sfxId,
+            sfxVolume: Number(musicVolEl.value || 80) / 100,
+            onProgress: (p) => setStatus('تجهيز القصة: ' + p + '%')
+          });
+          if (!rendered || rendered.size === 0) throw Error('تعذر دمج الصوت أو التعديلات. لن تُنشر القصة بصيغتها الأصلية دونها.');
+          if (rendered.size > 100 * 1024 * 1024) throw Error('حجم القصة الناتجة يتجاوز 100 ميغابايت');
+          mainFile = rendered;
+        } else if (imgEl && hasVisualEdits && window.ShnoLicensedAudio) {
+          setStatus('جارٍ تطبيق الفلتر على الصورة...');
+          mainFile = await window.ShnoLicensedAudio.renderImageStory({
+            imgEl,
+            bgColors: selectedTheme.colors,
+            filterCss: selectedFilter.css,
+            fitMode: selectedFit
+          });
+        }
+
+        if (mainFile) {
+          uploads.main = await window.uploadMediaToCloudflare(mainFile, 'stories', (p) => setStatus('رفع الوسائط: ' + p + '%'));
+        }
+        if (music.files[0]) {
+          uploads.music = await window.uploadMediaToCloudflare(music.files[0], 'story-music', (p) => setStatus('رفع الصوت: ' + p + '%'));
+        }
+
+        const safeOverlays = overlays.slice(0, 20).map((o) => ({
+          kind: o.kind === 'emoji' ? 'emoji' : 'text',
+          value: String(o.value || '').trim().slice(0, 140),
+          x: Math.min(100, Math.max(0, Number(o.x) || 50)),
+          y: Math.min(100, Math.max(0, Number(o.y) || 50)),
+          size: Math.min(96, Math.max(12, Number(o.size) || 32))
+        }));
+
+        setStatus('جارٍ حفظ القصة في D1...');
+        await api('/api/stories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: rawText,
+            overlays: JSON.stringify(safeOverlays),
+            visibility: document.getElementById('storyVisibility').value,
+            uploads
+          })
+        });
+        setStatus('تم نشر القصة بنجاح.');
+        form.reset();
+        overlays = [];
+        selectedOverlayIdx = -1;
+        selectedFilter = FILTERS[0];
+        selectedTheme = BG_THEMES[0];
+        if (storyAudioPicker) storyAudioPicker.clear();
+        libraryAudio = { musicId: '', sfxId: '' };
+        trimTabBtn.hidden = true;
+        renderEditor();
+        musicInfoEl.textContent = '';
+        await load();
+      } catch (err) {
+        setStatus(err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    grid.onclick = async (e) => {
+      const card = e.target.closest('.story-card');
+      if (!card || Date.now() < Number(grid.dataset.suppressClickUntil || 0)) return;
+      if (!e.target.closest('button,a,input,video,audio') && e.target.closest('.story-media-stage')) {
+        card.dataset.uiHidden = card.dataset.uiHidden === 'true' ? 'false' : 'true';
+        return;
+      }
+
+      if (e.target.closest('.story-play-btn,[data-story-play-toggle]')) {
+        const v = card.querySelector('.story-media-stage > video');
+        if (v) {
+          if (v.paused) { v.muted = globalStoryMuted; v.play().catch(() => {}); }
+          else v.pause();
+        }
+        return;
+      }
+      if (e.target.closest('[data-story-mute]')) {
+        globalStoryMuted = !globalStoryMuted;
+        grid.querySelectorAll('video,audio').forEach((m) => { m.muted = globalStoryMuted; });
+        grid.querySelectorAll('[data-story-mute]').forEach((b) => { b.textContent = globalStoryMuted ? '🔇' : '🔊'; });
+        return;
+      }
+      if (e.target.closest('[data-story-fit]')) {
+        card.dataset.fit = card.dataset.fit === 'cover' ? 'contain' : 'cover';
+        return;
+      }
+      if (e.target.closest('[data-story-toggle-ui]')) {
+        card.dataset.uiHidden = card.dataset.uiHidden === 'true' ? 'false' : 'true';
+        return;
+      }
+      if (e.target.closest('[data-story-share]')) {
+        const url = location.origin + location.pathname + '?id=' + encodeURIComponent(card.dataset.id);
+        try {
+          if (navigator.share) await navigator.share({ title: 'قصتي | شنو منو', url });
+          else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); showToast('تم نسخ رابط القصة'); }
+        } catch (_) {}
+        return;
+      }
+      if (e.target.closest('.delete-story')) {
+        const bar = card.querySelector('.story-confirm-bar');
+        if (bar) bar.hidden = !bar.hidden;
+        return;
+      }
+      if (e.target.closest('[data-story-cancel-delete]')) {
+        const bar = card.querySelector('.story-confirm-bar');
+        if (bar) bar.hidden = true;
+        return;
+      }
+      if (e.target.closest('[data-story-confirm-delete]')) {
+        try {
+          await api('/api/stories/' + card.dataset.id, { method: 'DELETE' });
+          card.remove();
+          showToast('تم حذف القصة');
+        } catch (err) {
+          showToast(err.message);
+        }
+      }
+    };
+
+    document.getElementById('refresh').onclick = load;
+    load();
+  })();
+  </script>
+</body>
+</html>
