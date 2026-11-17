@@ -29,7 +29,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Browser layouts and real media rendering
         run: |
-          ffmpeg -v error -f lavfi -i testsrc=size=320x180:rate=15 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 2 -c:v libx264 -pix_fmt yuv420p -c:a aac /tmp/shno-fixture.mp4 -y
+          ffmpeg -v error -f lavfi -i testsrc=size=320x180:rate=15 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 2 -c:v libvpx -pix_fmt yuv420p -c:a libopus /tmp/shno-fixture.webm -y
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/shno-http.log 2>&1 &
           node tests/reels-stories-browser.cjs
           ffprobe -v error -show_entries stream=codec_type -of csv=p=0 /tmp/shno-mixed.webm | grep -q audio
