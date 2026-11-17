@@ -100,11 +100,13 @@ jobs:
           import {buildNews,explore} from './cloudflare/pages/call-content.js';
           const news=await buildNews();
           console.log('News',news.items.length,'partial',news.partial);
+          console.log('News images',news.items.filter(i=>i.image).length,'videos',news.items.filter(i=>i.video).length);
+          if (!news.items.some(i=>i.image)) throw Error('No live news images');
           if (!news.items.length) throw Error('No live news source responded');
-          for (const topic of ['food','photos']) {
+          for (const topic of ['food','flowers','photos','tourism','knowledge']) {
             const data=await explore(topic);
             console.log('Discover',topic,data.items.length);
-            if (!data.items.length) throw Error('No content for '+topic);
+            if (!data.items.length || !data.items.every(i=>i.image)) throw Error('No content for '+topic);
           }
           JS
   compile-standalone-call:

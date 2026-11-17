@@ -6,6 +6,17 @@ const NEWS_SOURCES = [
 const TOPICS = {food:'مطبخ عراقي',flowers:'زهرة',tourism:'السياحة في العراق',knowledge:'علوم',photos:'Iraq nature landscape'};
 const plain = value => String(value || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/<[^>]*>/g,' ').replace(/&(?:amp|lt|gt|quot|apos|#39);/g,s=>({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'",'&#39;':"'"}[s])).replace(/\s+/g,' ').trim();
 const secure = value => {try{const u=new URL(value);return u.protocol==='https:'?u.href:''}catch{return ''}};
+const attribute=(tag,name)=>plain(tag.match(new RegExp('\\b'+name+'=["\']([^"\']*)["\']','i'))?.[1]||'');
+export function newsMedia(item){
+ const tags=[...item.matchAll(/<(?:media:(?:thumbnail|content)|enclosure)\b[^>]*>/gi)].map(m=>m[0]);
+ let image='',video='';
+ for(const tag of tags){const url=secure(attribute(tag,'url')),type=attribute(tag,'type'),medium=attribute(tag,'medium');if(!url)continue;
+  if(/video\/mp4/i.test(type)||medium==='video'&&/\.mp4(?:[?#]|$)/i.test(url))video ||=url;
+  else if(/media:thumbnail/i.test(tag)||/^image\//i.test(type)||medium==='image'||/\.(?:jpg|jpeg|png|webp)(?:[?#]|$)/i.test(url))image ||=url;
+ }
+ if(!image){const raw=item.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1');const img=raw.match(/<img\b[^>]*>/i)?.[0];if(img)image=secure(attribute(img,'src'));}
+ return {image,video};
+}
 export function parseNews(xml,source,now=Date.now()) {
   return [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].slice(0,60).map(([,item])=>{
     const tag=n=>item.match(new RegExp('<'+n+'(?:\\s[^>]*)?>([\\s\\S]*?)<\\/'+n+'>','i'))?.[1]||'';
@@ -15,7 +26,7 @@ export function parseNews(xml,source,now=Date.now()) {
     const text=title+' '+summary;
     const area=/العراق|عراقي|بغداد|الموصل|البصرة|كردستان|دهوك|أربيل/.test(text)?'iraq':/إيران|إسرائيل|فلسطين|لبنان|سوريا|الأردن|تركيا|السعودية|الخليج|غزة|مصر|اليمن/.test(text)?'region':'world';
     const category=/عاجل/.test(title)?'breaking':/رياض|مباراة|كرة|منتخب|بطولة/.test(text)?'sport':/فن|سينما|موسيقى|مهرجان/.test(text)?'arts':/انتخاب|حكومة|رئيس|حرب|سياس/.test(text)?'politics':'general';
-    return {id:url,title,summary,url,source,area,category,publishedAt:new Date(timestamp).toISOString()};
+    return {id:url,title,summary,url,source,area,category,...newsMedia(item),publishedAt:new Date(timestamp).toISOString()};
   }).filter(Boolean);
 }
 export function orderNews(items){return [...new Map(items.map(x=>[x.url,x])).values()].sort((a,b)=>{
@@ -44,9 +55,9 @@ export async function explore(topic,fetcher=fetch){
   const items=Object.values(data.query?.pages||{}).map(p=>{const i=p.imageinfo?.[0],m=i?.extmetadata||{};return {id:String(p.pageid),title:plain(p.title).replace(/^File:/,''),image:secure(i?.thumburl),url:secure(i?.descriptionurl),credit:plain(m.Artist?.value).slice(0,200),license:plain(m.LicenseShortName?.value),summary:plain(m.ImageDescription?.value).slice(0,450),source:'Wikimedia Commons'}}).filter(i=>i.image&&i.url&&i.credit&&i.license);
   return {ok:true,items,updatedAt:new Date().toISOString()};
  }
- const params=new URLSearchParams({action:'query',format:'json',generator:'search',gsrsearch:TOPICS[topic],gsrnamespace:'0',gsrlimit:'12',prop:'extracts|info',inprop:'url',exintro:'1',explaintext:'1',exchars:'550'});
+ const params=new URLSearchParams({action:'query',format:'json',generator:'search',gsrsearch:TOPICS[topic],gsrnamespace:'0',gsrlimit:'24',prop:'extracts|info|pageimages',piprop:'thumbnail',pithumbsize:'800',pilicense:'free',inprop:'url',exintro:'1',explaintext:'1',exchars:'1800'});
  const data=JSON.parse(await boundedFetch('https://ar.wikipedia.org/w/api.php?'+params,fetcher));
- return {ok:true,items:Object.values(data.query?.pages||{}).map(p=>({id:String(p.pageid),title:p.title,summary:plain(p.extract).slice(0,550),url:secure(p.fullurl),source:'ويكيبيديا',license:'CC BY-SA — راجع صفحة المصدر ونسب المساهمين'})).filter(i=>i.url),updatedAt:new Date().toISOString()};
+ return {ok:true,items:Object.values(data.query?.pages||{}).map(p=>({id:String(p.pageid),title:p.title,image:secure(p.thumbnail?.source),summary:plain(p.extract).slice(0,320),detail:plain(p.extract).slice(0,1800),url:secure(p.fullurl),source:'ويكيبيديا',license:'CC BY-SA — راجع صفحة المصدر ونسب المساهمين'})).filter(i=>i.url&&i.image&&i.detail).slice(0,12),updatedAt:new Date().toISOString()};
 }
 export async function callContentRoute({request,env},fetcher=fetch,cache=globalThis.caches?.default){
  if(request.method!=='GET')return Response.json({ok:false,message:'الطريقة غير مدعومة'},{status:405});
@@ -56,7 +67,7 @@ export async function callContentRoute({request,env},fetcher=fetch,cache=globalT
  const u=new URL(request.url),kind=u.pathname.endsWith('/news')?'news':u.pathname.endsWith('/discover')?'discover':'';
  const topic=u.searchParams.get('topic')||'food';
  if(!kind||kind==='discover'&&!Object.hasOwn(TOPICS,topic))return Response.json({ok:false,message:'قسم غير معروف'},{status:404});
- const key=new Request(u.origin+'/__call-content-cache/'+kind+'/'+(kind==='news'?'all':topic));
+ const key=new Request(u.origin+'/__call-content-cache-v2/'+kind+'/'+(kind==='news'?'all':topic));
  const hit=cache&&await cache.match(key);if(hit)return hit;
  try{
   const body=kind==='news'?await buildNews(fetcher):await explore(topic,fetcher);
