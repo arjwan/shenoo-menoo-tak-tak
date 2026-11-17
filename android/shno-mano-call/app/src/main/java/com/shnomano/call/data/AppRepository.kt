@@ -93,6 +93,16 @@ class AppRepository(context: Context) {
         contacts
     }
 
+    data class FriendState(val friends: List<FriendDto>, val incoming: List<FriendRequestDto>, val sentUserIds: Set<String>)
+    suspend fun refreshFriendState(): Result<FriendState> = apiResult {
+        val friends = api.friends().all()
+        val incoming = api.friendRequests()
+        val sent = api.friendRequests("sent")
+        if (!incoming.ok || !sent.ok) error("تعذر تحديث طلبات الصداقة")
+        FriendState(friends, incoming.requests.filter { !it.id.isNullOrBlank() && it.user != null },
+            sent.requests.filter { it.user != null }.map { it.contact.userId }.toSet())
+    }
+
     suspend fun loadFriends(): List<FriendDto> = runCatching { api.friends().all() }.getOrDefault(emptyList())
     suspend fun loadFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests().requests.orEmpty().filter { !it.id.isNullOrBlank() && it.user != null } }.getOrDefault(emptyList())
     suspend fun loadSentFriendRequests(): List<FriendRequestDto> = runCatching { api.friendRequests("sent").requests.orEmpty().filter { !it.id.isNullOrBlank() && it.user != null } }.getOrDefault(emptyList())

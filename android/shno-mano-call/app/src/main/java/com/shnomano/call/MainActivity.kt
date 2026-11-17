@@ -343,9 +343,11 @@ private fun ContactsScreen(repo: AppRepository, onlineUserIds: Set<String>, onMe
     LaunchedEffect(contactsLifecycle) {
         contactsLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
             while (true) {
-                friends = repo.loadFriends()
-                requests = repo.loadFriendRequests()
-                sentRequestUserIds = repo.loadSentFriendRequests().map { it.contact.userId }.toSet()
+                repo.refreshFriendState().onSuccess { snapshot ->
+                    friends = snapshot.friends
+                    requests = snapshot.incoming
+                    sentRequestUserIds = snapshot.sentUserIds
+                }
                 delay(4_000)
             }
         }
