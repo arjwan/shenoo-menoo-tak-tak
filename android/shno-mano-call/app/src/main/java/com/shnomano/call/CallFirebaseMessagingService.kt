@@ -21,7 +21,8 @@ class CallFirebaseMessagingService : FirebaseMessagingService() {
         CallPushRegistration.updated(this, token)
     }
     override fun onMessageReceived(message: RemoteMessage) {
-        if (message.data["kind"] != "call:invite") return
+        val kind = message.data["kind"]
+        if (kind != "call:invite" && kind != "call:missed") return
         if (!SessionStore(this).isSignedIn()) return
         val data = message.data
         val callId = data["callId"].orEmpty()
@@ -35,6 +36,33 @@ class CallFirebaseMessagingService : FirebaseMessagingService() {
 
         val name = data["callerName"]?.take(100)?.ifBlank { "مستخدم شنو منو" } ?: "مستخدم شنو منو"
         val type = if (data["type"] == "video") "video" else "audio"
+        if (kind == "call:missed") {
+            val prefs = getSharedPreferences("shno_missed_call_badges", MODE_PRIVATE)
+            val ids = (prefs.getStringSet("ids", emptySet()) ?: emptySet()).toMutableSet()
+            ids.add(callId)
+            if (ids.size > 50) ids.clear().also { ids.add(callId) }
+            prefs.edit().putStringSet("ids", ids).apply()
+            val intent = Intent(this, WebSectionActivity::class.java).apply {
+                putExtra(WebSectionActivity.EXTRA_URL, SHNO_MANO_BASE_URL + "call-history.html")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pending = PendingIntent.getActivity(this, 4203, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_MISSED)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentTitle("مكالمة فائتة")
+                .setContentText(name)
+                .setContentIntent(pending)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setNumber(ids.size)
+                .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
+                .build()
+            getSystemService(NotificationManager::class.java).notify(4203, notification)
+            return
+        }
         val open = Intent(this, WebCallActivity::class.java).apply {
             putExtra(WebCallActivity.EXTRA_URL, SHNO_MANO_BASE_URL + "messages.html?user=" + Uri.encode(from))
             putExtra(WebCallActivity.EXTRA_INCOMING, true)
