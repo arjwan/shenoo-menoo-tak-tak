@@ -93,6 +93,7 @@ fun ShnoManoCallApp(onToggleTheme: () -> Unit = {}) {
                 signedIn = false
             } else {
                 (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
+                CallPushRegistration.refresh(context)
                 BackgroundRealtimeService.start(context)
             }
         } else {
