@@ -36,6 +36,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <service android:name=".CallFirebaseMessagingService" android:exported="false">
+            <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>
+        </service>
+        <receiver android:name=".CallRejectReceiver" android:exported="false" />
+
         <service
             android:name=".BackgroundRealtimeService"
             android:exported="false"
