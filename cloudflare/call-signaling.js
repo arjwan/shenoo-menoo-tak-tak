@@ -75,10 +75,32 @@ export async function handleCallSignaling(req,env,user,waitUntil) {
     await env.DB.prepare(
       "INSERT INTO call_active_sessions(call_id,conversation_id,caller_id,recipient_id,expires_at) VALUES(?,?,?,?,unixepoch()+14400) ON CONFLICT(call_id) DO NOTHING"
     ).bind(callId,conversationId,user.id,recipient).run();
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO call_history(call_id,conversation_id,caller_id,recipient_id,type) VALUES(?,?,?,?,?)"
+    ).bind(callId,conversationId,user.id,recipient,safePayload.type).run();
+  }else if(event==='call:accept'){
+    await env.DB.prepare(
+      "UPDATE call_history SET state='answered',answered_at=CURRENT_TIMESTAMP WHERE call_id=? AND recipient_id=? AND caller_id=? AND ended_at IS NULL AND state='ringing'"
+    ).bind(callId,user.id,recipient).run();
   }else if(event==='call:end'||event==='call:reject'){
     await env.DB.prepare(
       "UPDATE call_active_sessions SET ended_at=unixepoch() WHERE call_id=? AND conversation_id=? AND ended_at IS NULL"
     ).bind(callId,conversationId).run();
+    await env.DB.prepare(
+      "UPDATE call_history SET state=CASE WHEN answered_at IS NOT NULL THEN 'answered' WHEN ?='call:reject' THEN 'declined' ELSE 'missed' END,ended_at=CURRENT_TIMESTAMP WHERE call_id=? AND ended_at IS NULL AND (caller_id=? OR recipient_id=?)"
+    ).bind(event,callId,user.id,user.id).run();
+    if(event==='call:end'){
+      const missed=await env.DB.prepare(
+        "SELECT caller_id,recipient_id,type FROM call_history WHERE call_id=? AND state='missed'"
+      ).bind(callId).first();
+      if(missed&&missed.caller_id===user.id&&missed.recipient_id===recipient){
+        const caller=await env.DB.prepare('SELECT full_name FROM users WHERE id=?').bind(user.id).first();
+        const notice=pushIncomingCall(env,{recipient,callId,conversationId,from:user.id,
+          callerName:caller?.full_name||'مستخدم شنو منو',type:missed.type,kind:'call:missed'})
+          .catch(e=>console.error('Missed call push failed',String(e?.message||e)));
+        if(typeof waitUntil==='function')waitUntil(notice);else await notice;
+      }
+    }
   }
   // Persist the invite before attempting best-effort device delivery.
   // Push failures must never prevent the existing D1/WebRTC signaling flow.
