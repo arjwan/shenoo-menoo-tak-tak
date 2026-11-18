@@ -25,7 +25,7 @@ export function privateMediaType(type,name,bytes){
 }
 const b64=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const un64=value=>Uint8Array.from(atob(value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4)),v=>v.charCodeAt(0));
-async function key(env){return crypto.subtle.importKey('raw',new TextEncoder().encode(env.AUTH_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}
+async function key(env){return crypto.subtle.importKey('raw',new TextEncoder().encode(env.AUTH_SECRET||env.DEVELOPER_RATE_LIMIT_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}
 export async function signedPrivateMediaUrl(env,request,messageId){
  const expiry=Math.floor(Date.now()/1000)+3600;
  const value=messageId+'.'+expiry;
