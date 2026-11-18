@@ -69,9 +69,13 @@ class CallFirebaseMessagingService : FirebaseMessagingService() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setTimeoutAfter(30_000L)
+            .setOnlyAlertOnce(true)
             .addAction(R.drawable.ic_launcher, "قبول", acceptPending)
             .addAction(R.drawable.ic_launcher, "رفض", rejectPending)
-            .build()
+            .build().apply {
+                if (SettingsStore(this@CallFirebaseMessagingService).callSoundEnabled)
+                    flags = flags or android.app.Notification.FLAG_INSISTENT
+            }
         getSystemService(NotificationManager::class.java).notify(4102, notification)
     }
     companion object {
