@@ -30,3 +30,6 @@ body.call-group-app{background:radial-gradient(ellipse at top,#182943,#0b1020 70
 .call-modal .call-location-actions [hidden]{display:none}
 .call-modal .call-location-disclaimer{font-size:10px;opacity:.75;line-height:1.5;margin-top:7px}
 @media(max-height:700px){.call-modal .call-location{padding:7px}.call-modal .call-location-actions button{padding:5px;font-size:10px}}
+
+.call-modal .call-dock{max-height:70dvh;overflow-y:auto;overscroll-behavior:contain}
+.call-modal .call-location-info:focus-visible{outline:2px solid #81c7ff}
