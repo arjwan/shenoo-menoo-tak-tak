@@ -44,6 +44,15 @@ export async function handleCallSignaling(req,env,user,waitUntil) {
   // Location is disclosed only as an explicitly sent call-scoped event.
   // No location is attached to invites, profile data or FCM notifications.
   if(event==='call:location'){
+    // Never allow location disclosure outside a currently invited private call.
+    const live=await env.DB.prepare(
+      "SELECT id FROM private_call_signals WHERE call_id=? AND conversation_id=? AND event_type='call:invite' AND created_at>unixepoch()-90 AND ((sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?)) LIMIT 1"
+    ).bind(callId,conversationId,user.id,recipient,recipient,user.id).first();
+    if(!live)return response({ok:false,message:'لا يمكن مشاركة الموقع خارج مكالمة نشطة'},403);
+    const terminal=await env.DB.prepare(
+      "SELECT id FROM private_call_signals WHERE call_id=? AND event_type IN ('call:end','call:reject') ORDER BY id DESC LIMIT 1"
+    ).bind(callId).first();
+    if(terminal && terminal.id>live.id)return response({ok:false,message:'المكالمة منتهية'},403);
     if(!payload || typeof payload!=='object' || Array.isArray(payload))return response({ok:false,message:'بيانات الموقع غير صالحة'},400);
     if(!['city','precise','revoke'].includes(payload.kind))return response({ok:false,message:'نوع الموقع غير صالح'},400);
     if(payload.kind==='city'){
