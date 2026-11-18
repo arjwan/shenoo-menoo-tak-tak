@@ -34,8 +34,16 @@ else {
       if(!trusted(request.securityOrigin))return;
       try{
         const sources=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:160,height:90}});
-        const target=sources.find(x=>x.id.startsWith('screen:'))||sources[0];
-        if(target)callback({video:target});
+        if(!sources.length)return;
+        const choices=sources.slice(0,12);
+        const result=await dialog.showMessageBox(win||undefined,{
+          type:'question',
+          title:'مشاركة الشاشة — شنو منو ماسنجر',
+          message:'اختر النافذة أو الشاشة التي تريد مشاركتها',
+          buttons:[...choices.map((x,i)=>(i+1)+'. '+x.name),'إلغاء'],
+          cancelId:choices.length,defaultId:choices.length,noLink:true
+        });
+        if(result.response<choices.length)callback({video:choices[result.response]});
       }catch(e){console.error('Screen capture unavailable:',e.message);}
     });
   }
