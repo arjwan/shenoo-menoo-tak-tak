@@ -44,15 +44,11 @@ export async function handleCallSignaling(req,env,user,waitUntil) {
   // Location is disclosed only as an explicitly sent call-scoped event.
   // No location is attached to invites, profile data or FCM notifications.
   if(event==='call:location'){
-    // Never allow location disclosure outside a currently invited private call.
+    // A private call session is required even after its short-lived SDP/ICE signals expire.
     const live=await env.DB.prepare(
-      "SELECT id FROM private_call_signals WHERE call_id=? AND conversation_id=? AND event_type='call:invite' AND created_at>unixepoch()-90 AND ((sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?)) LIMIT 1"
+      "SELECT call_id FROM call_active_sessions WHERE call_id=? AND conversation_id=? AND ended_at IS NULL AND expires_at>unixepoch() AND ((caller_id=? AND recipient_id=?) OR (caller_id=? AND recipient_id=?)) LIMIT 1"
     ).bind(callId,conversationId,user.id,recipient,recipient,user.id).first();
     if(!live)return response({ok:false,message:'لا يمكن مشاركة الموقع خارج مكالمة نشطة'},403);
-    const terminal=await env.DB.prepare(
-      "SELECT id FROM private_call_signals WHERE call_id=? AND event_type IN ('call:end','call:reject') ORDER BY id DESC LIMIT 1"
-    ).bind(callId).first();
-    if(terminal && terminal.id>live.id)return response({ok:false,message:'المكالمة منتهية'},403);
     if(!payload || typeof payload!=='object' || Array.isArray(payload))return response({ok:false,message:'بيانات الموقع غير صالحة'},400);
     if(!['city','precise','revoke'].includes(payload.kind))return response({ok:false,message:'نوع الموقع غير صالح'},400);
     if(payload.kind==='city'){
@@ -73,6 +69,17 @@ export async function handleCallSignaling(req,env,user,waitUntil) {
   const inserted=await env.DB.prepare(
     'INSERT INTO private_call_signals(sender_id,recipient_id,conversation_id,call_id,event_type,payload) VALUES(?,?,?,?,?,?)'
   ).bind(user.id,recipient,conversationId,callId,event,JSON.stringify(safePayload)).run();
+  // Call-lifetime metadata contains no location data; it supports consensual
+  // sharing after the 120-second signaling retention period.
+  if(event==='call:invite'){
+    await env.DB.prepare(
+      "INSERT INTO call_active_sessions(call_id,conversation_id,caller_id,recipient_id,expires_at) VALUES(?,?,?,?,unixepoch()+14400) ON CONFLICT(call_id) DO NOTHING"
+    ).bind(callId,conversationId,user.id,recipient).run();
+  }else if(event==='call:end'||event==='call:reject'){
+    await env.DB.prepare(
+      "UPDATE call_active_sessions SET ended_at=unixepoch() WHERE call_id=? AND conversation_id=? AND ended_at IS NULL"
+    ).bind(callId,conversationId).run();
+  }
   // Persist the invite before attempting best-effort device delivery.
   // Push failures must never prevent the existing D1/WebRTC signaling flow.
   if(event==='call:invite') {
