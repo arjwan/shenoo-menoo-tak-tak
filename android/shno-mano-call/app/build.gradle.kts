@@ -8,9 +8,6 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-// Local Firebase configuration is required for a working Push-enabled APK.
-if (file("google-services.json").isFile) apply(plugin = "com.google.gms.google-services")
-
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 if (keystorePropertiesFile.exists()) {
@@ -98,6 +95,13 @@ val bundleCallWeb by tasks.registering(Sync::class) {
     }
 }
 android.sourceSets.getByName("main").assets.srcDir(callWebAssets)
+val firebaseClientAssets = layout.buildDirectory.dir("generated/firebaseClientAssets")
+val bundleFirebaseClient by tasks.registering(Copy::class) {
+    from(file("google-services.json"))
+    into(firebaseClientAssets)
+}
+android.sourceSets.getByName("main").assets.srcDir(firebaseClientAssets)
+tasks.named("preBuild") { dependsOn(bundleFirebaseClient) }
 tasks.named("preBuild") { dependsOn(bundleCallWeb) }
 
 dependencies {
