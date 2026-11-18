@@ -71,7 +71,7 @@ val callWebFiles = listOf(
     "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js", "call-surface.js", "call-session-state.js", "call-ice.js",
     "call-screen.css", "social-api.js", "call-groups.html", "call-groups.js",
     "social.css", "mall.css", "messages-call-fix.css", "shinomino-shared-visual.css",
-    "call-audio.js", "incoming-call-global.js", "auth-guard.js", "mall.js",
+    "call-audio.js", "incoming-call-global.js", "call-location.js", "auth-guard.js", "mall.js",
     "call-permission-guard.js"
 )
 val callWebRoot = rootProject.projectDir.resolve("../..").canonicalFile
