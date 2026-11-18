@@ -37,3 +37,18 @@ test('precise sharing is scoped to the call and never starts after it ends',asyn
  await assert.rejects(api.precise('call-id'));
  assert.equal(requests(),1);
 });
+
+test('call UI requests consent only through modal and removes GPS toolbar',()=>{
+ const html=fs.readFileSync(new URL('../messages.html',import.meta.url),'utf8');
+ const script=fs.readFileSync(new URL('../private-messages.js',import.meta.url),'utf8');
+ const settings=fs.readFileSync(new URL('../android/shno-mano-call/app/src/main/java/com/shnomano/call/SettingsStore.kt',import.meta.url),'utf8');
+ assert.match(html,/data-call-location-consent/);
+ assert.match(html,/data-call-location-allow/);
+ assert.match(html,/data-call-location-deny/);
+ assert.doesNotMatch(html,/data-call-location-city/);
+ assert.doesNotMatch(html,/data-call-location-precise/);
+ assert.match(script,/locationPromptedFor===call.callId/);
+ assert.match(script,/locationDialog.hidden=false/);
+ assert.match(script,/getLocationSharingMode/);
+ assert.match(settings,/location_sharing_mode", "none"/);
+});
