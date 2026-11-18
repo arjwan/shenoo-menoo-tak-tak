@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.location.Geocoder
+import android.webkit.GeolocationPermissions
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -53,6 +55,16 @@ class WebCallActivity : ComponentActivity() {
         } else request?.deny()
     }
 
+    private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+    private var pendingGeoOrigin: String? = null
+    private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        pendingGeoCallback?.invoke(pendingGeoOrigin, granted, false)
+        pendingGeoCallback = null
+        pendingGeoOrigin = null
+    }
+
     private val screenConsent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val consent = result.data
         if (result.resultCode == android.app.Activity.RESULT_OK && consent != null && !isFinishing) {
@@ -97,6 +109,7 @@ class WebCallActivity : ComponentActivity() {
             setBackgroundColor(Color.rgb(4, 10, 8))
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            settings.setGeolocationEnabled(true)
             settings.mediaPlaybackRequiresUserGesture = false
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
@@ -131,6 +144,21 @@ class WebCallActivity : ComponentActivity() {
                 }
             }
             webChromeClient = object : WebChromeClient() {
+                override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
+                    if (origin?.trimEnd('/') != "https://shinomino.com" || callback == null) {
+                        callback?.invoke(origin, false, false)
+                        return
+                    }
+                    if (ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                        ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        callback.invoke(origin, true, false)
+                    } else {
+                        pendingGeoCallback = callback
+                        pendingGeoOrigin = origin
+                        locationPermission.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
+                    }
+                }
+
                 override fun getDefaultVideoPoster(): android.graphics.Bitmap =
                     android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
 
@@ -194,6 +222,30 @@ class WebCallActivity : ComponentActivity() {
     }
 
     private inner class CallStateBridge {
+        @JavascriptInterface fun reverseLocation(latitude: Double, longitude: Double, requestId: String) {
+            if (!latitude.isFinite() || !longitude.isFinite() || latitude !in -90.0..90.0 ||
+                longitude !in -180.0..180.0 || !Regex("^gps[0-9]{1,8}$").matches(requestId)) return
+            Thread {
+                var city = ""
+                var province = ""
+                try {
+                    val addresses = Geocoder(this@WebCallActivity, java.util.Locale("ar", "IQ"))
+                        .getFromLocation(latitude, longitude, 1)
+                    val address = addresses?.firstOrNull()
+                    city = (address?.locality ?: address?.subAdminArea ?: "").take(80)
+                    province = (address?.adminArea ?: "").take(80)
+                } catch (error: Exception) {
+                    android.util.Log.w("CallGPS", "Reverse geocoding unavailable", error)
+                }
+                val script = "window.ShnoCallLocation&&window.ShnoCallLocation.onReverseLocation(" +
+                    JSONObject.quote(requestId) + "," + JSONObject.quote(city) + "," +
+                    JSONObject.quote(province) + ")"
+                runOnUiThread {
+                    if (!isFinishing && ::webView.isInitialized) webView.evaluateJavascript(script, null)
+                }
+            }.start()
+        }
+
         @JavascriptInterface fun isCallClosed(id: String): Boolean = CallAlertState.isClosed(id)
         @JavascriptInterface fun getBuildInfo(): String = buildIdentity()
 
