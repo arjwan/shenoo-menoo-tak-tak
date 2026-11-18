@@ -22,9 +22,41 @@ class CallFirebaseMessagingService : FirebaseMessagingService() {
     }
     override fun onMessageReceived(message: RemoteMessage) {
         val kind = message.data["kind"]
-        if (kind != "call:invite" && kind != "call:missed") return
+        if (kind != "call:invite" && kind != "call:missed" && kind != "chat:message") return
         if (!SessionStore(this).isSignedIn()) return
         val data = message.data
+        if (kind == "chat:message") {
+            val fromId = data["from"].orEmpty()
+            val chatId = data["conversationId"].orEmpty()
+            if (!UUID_PATTERN.matches(chatId) || !UUID_PATTERN.matches(fromId)) return
+            if (Build.VERSION.SDK_INT >= 33 &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+            if (!SettingsStore(this).notificationsEnabled) return
+            val open = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pending = PendingIntent.getActivity(this, chatId.hashCode(), open,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val type = data["messageType"].orEmpty()
+            val text = when (type) {
+                "audio" -> "رسالة صوتية جديدة"
+                "video" -> "رسالة فيديو جديدة"
+                "image" -> "صورة جديدة"
+                else -> "رسالة جديدة"
+            }
+            val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_MESSAGES)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentTitle("شنو منو اتصال")
+                .setContentText(text)
+                .setContentIntent(pending)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .build()
+            getSystemService(NotificationManager::class.java).notify(chatId.hashCode(), notification)
+            return
+        }
         val callId = data["callId"].orEmpty()
         val from = data["from"].orEmpty()
         val conversationId = data["conversationId"].orEmpty()
