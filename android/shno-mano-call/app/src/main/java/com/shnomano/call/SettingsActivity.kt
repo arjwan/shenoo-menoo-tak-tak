@@ -3,12 +3,9 @@ package com.shnomano.call
 import android.content.Intent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
-import android.media.RingtoneManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,30 +39,6 @@ private fun SettingsScreen(onBack: () -> Unit) {
     var notifications by remember { mutableStateOf(store.notificationsEnabled) }
     var vibration by remember { mutableStateOf(store.vibrationEnabled) }
     var callSound by remember { mutableStateOf(store.callSoundEnabled) }
-    var ringtoneLabel by remember { mutableStateOf("نغمة الهاتف الافتراضية") }
-
-    val ringtonePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = if (android.os.Build.VERSION.SDK_INT >= 33) {
-            result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, android.net.Uri::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
-        }
-        if (uri != null) {
-            store.ringtoneUri = uri.toString()
-            ringtoneLabel = RingtoneManager.getRingtone(context, uri)?.getTitle(context) ?: "نغمة مختارة"
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        store.ringtoneUri?.let { saved ->
-            runCatching {
-                val uri = android.net.Uri.parse(saved)
-                ringtoneLabel = RingtoneManager.getRingtone(context, uri)?.getTitle(context) ?: "نغمة مختارة"
-            }
-        }
-    }
-
     Column(
         Modifier.fillMaxSize().background(Color(0xFF0B1020)).verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -156,18 +129,9 @@ private fun SettingsScreen(onBack: () -> Unit) {
         }
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("نغمة المكالمة", color = Color.White, fontSize = 16.sp)
-                Text(ringtoneLabel, color = Color(0xFFA4B4CC), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
-                Spacer(Modifier.height(10.dp))
-                Button(onClick = {
-                    val intent = android.content.Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                        store.ringtoneUri?.let { putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, android.net.Uri.parse(it)) }
-                    }
-                    ringtonePicker.launch(intent)
-                }) { Text("اختيار نغمة") }
+                Text("نغمة الهاتف الأصلية", color = Color.White, fontSize = 16.sp)
+                Text("المكالمة الواردة تستخدم نغمة الجهاز الافتراضية. تغيير الرنين من إعدادات صوت الجهاز أو إشعارات المكالمات.",
+                    color = Color(0xFFA4B4CC), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)), shape = RoundedCornerShape(18.dp)) {

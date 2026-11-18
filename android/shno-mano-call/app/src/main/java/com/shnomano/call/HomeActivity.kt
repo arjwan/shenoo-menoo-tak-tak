@@ -81,6 +81,12 @@ class HomeActivity : ComponentActivity() {
                 HomeCard("🧰", "الخدمات", "صفحة الخدمات جاهزة للإضافات القادمة") { openSection("services.html") }
                 Spacer(Modifier.height(10.dp))
                 HomeCard("☎️", "شنو منو اتصال", "جهات الهاتف، الأصدقاء، المكالمات والرسائل") { openConnection() }
+                Spacer(Modifier.height(10.dp))
+                HomeCard("📞", "سجل المكالمات", "المكالمات الصادرة والواردة والفائتة") {
+                    getSystemService(android.app.NotificationManager::class.java).cancel(4203)
+                    getSharedPreferences("shno_missed_call_badges", MODE_PRIVATE).edit().remove("ids").apply()
+                    openSection("call-history.html")
+                }
             }
         }
     }

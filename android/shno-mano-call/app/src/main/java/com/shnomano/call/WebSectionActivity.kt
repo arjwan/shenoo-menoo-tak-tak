@@ -36,6 +36,10 @@ class WebSectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val requestedUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
+        if (requestedUrl == BASE + "call-history.html") {
+            getSystemService(android.app.NotificationManager::class.java).cancel(4203)
+            getSharedPreferences("shno_missed_call_badges", MODE_PRIVATE).edit().remove("ids").apply()
+        }
         if (isCallSurface(requestedUrl)) {
             startActivity(android.content.Intent(this, WebCallActivity::class.java).apply {
                 putExtra(WebCallActivity.EXTRA_URL, requestedUrl)
