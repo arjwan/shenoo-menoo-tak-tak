@@ -24,6 +24,7 @@ on:
       - 'cloudflare/call-push.js'
       - 'cloudflare/call-signaling.js'
       - 'cloudflare/migrations/20261118_call_push_tokens.sql'
+      - 'cloudflare/migrations/20261118_call_location_sessions.sql'
       - 'private-messages.js'
       - 'call-signaling.js'
       - 'functions/api/**'
@@ -64,6 +65,7 @@ jobs:
           c.executescript(open('cloudflare/migrations/20261110_call_groups.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_group_settings.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_push_tokens.sql').read())
+          c.executescript(open('cloudflare/migrations/20261118_call_location_sessions.sql').read())
           print('D1 group schema syntax OK')
           PY
   browser-call-runtime:
