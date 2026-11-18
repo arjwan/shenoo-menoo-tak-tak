@@ -6,11 +6,30 @@ import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
+import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
+import org.json.JSONObject
 
 class ShnoManoApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        try {
+            val config = assets.open("google-services.json").bufferedReader().use { JSONObject(it.readText()) }
+            val project = config.getJSONObject("project_info")
+            val clients = config.getJSONArray("client")
+            val client = (0 until clients.length()).map { clients.getJSONObject(it) }
+                .first { it.getJSONObject("client_info").getJSONObject("android_client_info").getString("package_name") == "com.shnomano.call" }
+            val options = FirebaseOptions.Builder()
+                .setApplicationId(client.getJSONObject("client_info").getString("mobilesdk_app_id"))
+                .setApiKey(client.getJSONArray("api_key").getJSONObject(0).getString("current_key"))
+                .setGcmSenderId(project.getString("project_number"))
+                .setProjectId(project.getString("project_id"))
+                .build()
+            if (FirebaseApp.getApps(this).isEmpty()) FirebaseApp.initializeApp(this, options)
+        } catch (error: Exception) {
+            android.util.Log.e("CallFCM", "Firebase client setup unavailable", error)
+        }
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             AppDiagnostics.record(this, error, "uncaught")

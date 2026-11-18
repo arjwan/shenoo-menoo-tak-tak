@@ -19,6 +19,9 @@ on:
       - 'incoming-call-global.js'
       - 'tests/standalone-call-runtime.test.cjs'
       - 'cloudflare/call-groups.js'
+      - 'cloudflare/call-push.js'
+      - 'cloudflare/call-signaling.js'
+      - 'cloudflare/migrations/20261118_call_push_tokens.sql'
       - 'private-messages.js'
       - 'call-signaling.js'
       - 'functions/api/**'
@@ -42,6 +45,10 @@ jobs:
         run: |
           node --check call-groups.js
           node --check cloudflare/call-groups.js
+          node --check cloudflare/call-push.js
+          node --check cloudflare/call-signaling.js
+          node --check functions/api/call-signals.js
+          node --check functions/api/call-push-token.js
           node --check call-signaling.js
           node --check private-messages.js
           node --check functions/api/\[\[path\]\].js
@@ -53,6 +60,7 @@ jobs:
           c.executescript('CREATE TABLE users(id TEXT PRIMARY KEY); CREATE TABLE conversations(id TEXT PRIMARY KEY);')
           c.executescript(open('cloudflare/migrations/20261110_call_groups.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_group_settings.sql').read())
+          c.executescript(open('cloudflare/migrations/20261118_call_push_tokens.sql').read())
           print('D1 group schema syntax OK')
           PY
   browser-call-runtime:

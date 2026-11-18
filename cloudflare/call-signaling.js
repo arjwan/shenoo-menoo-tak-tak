@@ -1,9 +1,10 @@
+import { pushIncomingCall } from './call-push.js';
 // Short-lived one-to-one WebRTC signaling over the existing authenticated D1 API.
 // No legacy bearer tokens, shared broadcast room, or client-supplied sender identity.
 const events = new Set(['call:invite','call:accept','call:reject','call:end','webrtc:offer','webrtc:answer','webrtc:ice']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const response = (body,status=200) => new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
-export async function handleCallSignaling(req,env,user) {
+export async function handleCallSignaling(req,env,user,waitUntil) {
   const path = new URL(req.url).pathname;
   if(path !== '/api/call-signals') return null;
   if(req.method==='GET') {
@@ -44,6 +45,19 @@ export async function handleCallSignaling(req,env,user) {
   const inserted=await env.DB.prepare(
     'INSERT INTO private_call_signals(sender_id,recipient_id,conversation_id,call_id,event_type,payload) VALUES(?,?,?,?,?,?)'
   ).bind(user.id,recipient,conversationId,callId,event,JSON.stringify(safePayload)).run();
+  // Persist the invite before attempting best-effort device delivery.
+  // Push failures must never prevent the existing D1/WebRTC signaling flow.
+  if(event==='call:invite') {
+    try {
+      const caller=await env.DB.prepare('SELECT full_name FROM users WHERE id=?').bind(user.id).first();
+      const deliver=pushIncomingCall(env,{
+        recipient, callId, conversationId, from:user.id,
+        callerName:caller?.full_name||'مستخدم شنو منو',type:safePayload.type
+      }).catch(error=>console.error('Call FCM delivery failed',String(error?.message||error)));
+      if(typeof waitUntil==='function')waitUntil(deliver);
+      else await deliver;
+    } catch(error) { console.error('Call push preparation failed',String(error?.message||error)); }
+  }
   // Never disclose signaling to another user: GET always filters by recipient session.
   // Bound retention without a scheduled service; best-effort deletion.
   if(Math.random()<0.03)await env.DB.prepare('DELETE FROM private_call_signals WHERE expires_at<unixepoch()').run().catch(()=>{});

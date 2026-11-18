@@ -95,9 +95,18 @@ val bundleCallWeb by tasks.registering(Sync::class) {
     }
 }
 android.sourceSets.getByName("main").assets.srcDir(callWebAssets)
+val firebaseClientAssets = layout.buildDirectory.dir("generated/firebaseClientAssets")
+val bundleFirebaseClient by tasks.registering(Copy::class) {
+    from(file("google-services.json"))
+    into(firebaseClientAssets)
+}
+android.sourceSets.getByName("main").assets.srcDir(firebaseClientAssets)
+tasks.named("preBuild") { dependsOn(bundleFirebaseClient) }
 tasks.named("preBuild") { dependsOn(bundleCallWeb) }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
     testImplementation("junit:junit:4.13.2")
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)

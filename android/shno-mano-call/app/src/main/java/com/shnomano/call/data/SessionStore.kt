@@ -2,6 +2,7 @@ package com.shnomano.call.data
 
 import android.content.Context
 import com.shnomano.call.BackgroundRealtimeService
+import com.shnomano.call.CallPushRegistration
 
 class SessionStore(context: Context) {
     private val appContext = context.applicationContext
@@ -14,7 +15,7 @@ class SessionStore(context: Context) {
         get() = prefs.getString(KEY_SESSION_COOKIE, null)
 
     fun saveSessionCookie(cookie: String) {
-        if (cookie.isNotBlank()) prefs.edit().putString(KEY_SESSION_COOKIE, cookie).commit()
+        if (cookie.isNotBlank()) { prefs.edit().putString(KEY_SESSION_COOKIE, cookie).commit(); CallPushRegistration.refresh(appContext) }
     }
 
     val userId: String?
@@ -37,11 +38,13 @@ class SessionStore(context: Context) {
             .putString(KEY_FULL_NAME, user.fullName)
             .putString(KEY_USERNAME, user.username)
             .commit()
+        CallPushRegistration.refresh(appContext)
     }
 
     fun clear() {
         // Clearing credentials is also the definitive logout signal for the
         // foreground service; it must not reconnect with an old token.
+        CallPushRegistration.unregister(appContext)
         BackgroundRealtimeService.stop(appContext)
         prefs.edit().clear().apply()
     }
