@@ -94,7 +94,7 @@ fun ShnoManoCallApp(onToggleTheme: () -> Unit = {}) {
             } else {
                 (context as? MainActivity)?.requestNotificationPermissionIfNeeded()
                 CallPushRegistration.refresh(context)
-                BackgroundRealtimeService.start(context)
+                // Firebase delivers idle notifications; no permanent polling service.
             }
         } else {
             BackgroundRealtimeService.stop(context)
