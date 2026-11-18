@@ -34,7 +34,7 @@ async function accessToken(account) {
   cached={email:account.client_email,token:body.access_token,exp:now+Math.min(3300,body.expires_in||3300)};
   return cached.token;
 }
-export async function pushIncomingCall(env,{recipient,callId,conversationId,from,callerName,type}) {
+export async function pushIncomingCall(env,{recipient,callId,conversationId,from,callerName,type,kind='call:invite'}) {
   const account=parseCredential(env);
   if(!account)return;
   const tokens=await env.DB.prepare('SELECT token FROM call_push_tokens WHERE user_id=? ORDER BY updated_at DESC LIMIT 10').bind(recipient).all();
@@ -46,8 +46,8 @@ export async function pushIncomingCall(env,{recipient,callId,conversationId,from
       headers:{Authorization:'Bearer '+bearer,'Content-Type':'application/json'},
       body:JSON.stringify({message:{
         token:row.token,
-        android:{priority:'HIGH',ttl:'30s'},
-        data:{kind:'call:invite',callId,conversationId,from,callerName:(callerName||'مستخدم شنو منو').slice(0,100),type}
+        android:{priority:'HIGH',ttl:kind==='call:missed'?'3600s':'30s'},
+        data:{kind,callId,conversationId,from,callerName:(callerName||'مستخدم شنو منو').slice(0,100),type}
       }})
     });
     if(res.status===404||res.status===400) {
