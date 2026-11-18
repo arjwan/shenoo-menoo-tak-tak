@@ -51,9 +51,18 @@ class BackgroundRealtimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        val callState = intent?.getStringExtra(EXTRA_ACTIVE_CALL_JSON)
+        if (!callState.isNullOrBlank()) {
+            activeCall = runCatching { JSONObject(callState) }.getOrNull()
+        }
+        // FCM receives idle calls/messages. This foreground service exists only during an active call.
+        if (activeCall == null) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         try { startAsForeground() }
         catch (error: Exception) { AppDiagnostics.record(this, error, "foreground-service"); stopSelf(); return START_NOT_STICKY }
-        startPolling()
+        if (callState != null) showActiveCall(activeCall!!, intent.getStringExtra(EXTRA_ACTIVE_CALL_URL).orEmpty())
         if (intent?.action == ACTION_END_CALL) {
             if (!WebCallActivity.endActiveCall()) {
                 activeCall?.let { call ->
@@ -483,8 +492,8 @@ class BackgroundRealtimeService : Service() {
     private fun clearActiveNotification(callId: String) {
         if (activeCall?.optString("callId") != callId) return
         activeCall = null
-        startAsForeground()
         getSystemService(NotificationManager::class.java).cancel(ACTIVE_CALL_NOTIFICATION_ID)
+        stopSelf()
     }
 
     private fun clearCallAlert(callId: String?) {
@@ -514,6 +523,8 @@ class BackgroundRealtimeService : Service() {
 
     companion object {
         private const val TAG = "ShnoRealtime"
+        private const val EXTRA_ACTIVE_CALL_JSON = "active_call_json"
+        private const val EXTRA_ACTIVE_CALL_URL = "active_call_url"
         private const val ACTION_END_CALL = "com.shnomano.call.action.END_CALL"
         private const val ACTIVE_CALL_NOTIFICATION_ID = 4103
         private const val ACTION_STOP = "com.shnomano.call.action.STOP_REALTIME"
@@ -522,12 +533,8 @@ class BackgroundRealtimeService : Service() {
         private const val CALL_NOTIFICATION_ID = 4102
         @Volatile private var running: BackgroundRealtimeService? = null
 
-        fun start(context: Context) {
-            val app = context.applicationContext
-            if (!SessionStore(app).isSignedIn()) return
-            try { ContextCompat.startForegroundService(app, Intent(app, BackgroundRealtimeService::class.java)) }
-            catch (error: Exception) { AppDiagnostics.record(app, error, "background-start"); Log.e(TAG, "Unable to start background alerts", error) }
-        }
+        // Idle incoming calls and messages are delivered by Firebase, without a permanent foreground service.
+        fun start(context: Context) { stop(context) }
 
         fun stop(context: Context) {
             val app = context.applicationContext
@@ -537,7 +544,18 @@ class BackgroundRealtimeService : Service() {
         }
 
         fun trackActiveCall(state: JSONObject, url: String) {
-            running?.showActiveCall(state, url)
+            val app = ShnoManoApp.instance
+            if (!SessionStore(app).isSignedIn()) return
+            val service = running
+            if (service != null) service.showActiveCall(state, url)
+            else try {
+                ContextCompat.startForegroundService(app, Intent(app, BackgroundRealtimeService::class.java)
+                    .putExtra(EXTRA_ACTIVE_CALL_JSON, state.toString())
+                    .putExtra(EXTRA_ACTIVE_CALL_URL, url))
+            } catch (error: Exception) {
+                AppDiagnostics.record(app, error, "active-call-foreground")
+                Log.w(TAG, "Unable to create active call foreground notification", error)
+            }
         }
         fun refreshCaptureForeground() {
             val service = running ?: return
