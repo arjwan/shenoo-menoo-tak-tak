@@ -8,7 +8,7 @@
   var reset=document.createElement('style');
   reset.textContent=':host{position:fixed;inset:0;z-index:2147482000;display:block;font-family:Arial,Tahoma,sans-serif;font-size:16px;color:#fff;color-scheme:dark;direction:rtl}:host([hidden]){display:none}*,*::before,*::after{box-sizing:border-box}button,input{font:inherit}button{color:inherit;cursor:pointer}h2,h3,p{margin:0}';
   root.appendChild(reset);
-  var sheet=document.createElement('link');sheet.rel='stylesheet';sheet.href='call-screen.css?v=20261110-isolated-1';
+  var sheet=document.createElement('link');sheet.rel='stylesheet';sheet.href='call-screen.css?v=20261118-gps-1';
   var ready=false;
   function sync(){host.hidden=!ready||stage.hidden;document.body.classList.toggle('shno-call-open',!host.hidden);}
   sheet.onload=function(){ready=true;sync();};

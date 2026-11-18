@@ -32,18 +32,18 @@ jobs:
           STATE="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN/jobs" --jq '.jobs[] | select(.name == "build-release-apk") | .conclusion')"
           test "$STATE" = success
           mkdir -p "$RUNNER_TEMP/call-apk"
-          gh run download "$ARTIFACT_RUN" --repo "$GITHUB_REPOSITORY" --name shno-mano-call-1.5.0-signed --dir "$RUNNER_TEMP/call-apk"
+          gh run download "$ARTIFACT_RUN" --repo "$GITHUB_REPOSITORY" --name shno-mano-call-1.5.1-signed --dir "$RUNNER_TEMP/call-apk"
           python scripts/verify-call-apk.py "$RUNNER_TEMP/call-apk/app-release.apk"
-          mv "$RUNNER_TEMP/call-apk/app-release.apk" "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.0.apk"
+          mv "$RUNNER_TEMP/call-apk/app-release.apk" "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.1.apk"
           cd "$RUNNER_TEMP/call-apk"
-          sha256sum Shno-Mano-Call-1.5.0.apk > Shno-Mano-Call-1.5.0.apk.sha256
+          sha256sum Shno-Mano-Call-1.5.1.apk > Shno-Mano-Call-1.5.1.apk.sha256
       - name: Publish a direct APK download for live testing
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_COMMIT: ${{ inputs.source_commit || github.event.workflow_run.head_sha }}
         run: |
           cat > "$RUNNER_TEMP/call-notes.md" <<'NOTES'
-          نسخة اختبار حي 1.5.0 (20)، الحزمة com.shnomano.call.
+          نسخة اختبار حي 1.5.1 (21)، الحزمة com.shnomano.call.
 
           القصص والريلز والمجموعات واكتشف والأخبار داخل اتصال، مع اختيار ملفات النشر وتحديث طلبات الأصدقاء بعد العودة.
 
@@ -53,8 +53,8 @@ jobs:
 
           ثبّت كتحديث دون حذف التطبيق الحالي أو مسح بياناته. هذه نسخة للاختبار الحي؛ لا تعني اكتمال خطة التطوير الشامل، واختبار الهاتفين والخلفية وشاشة القفل ما زال مطلوباً.
           NOTES
-          gh release create standalone-call-live-1.5.0 \
-            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.0.apk" \
-            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.0.apk.sha256" \
+          gh release create standalone-call-live-1.5.1 \
+            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.1.apk" \
+            "$RUNNER_TEMP/call-apk/Shno-Mano-Call-1.5.1.apk.sha256" \
             --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" --prerelease --latest=false \
-            --title 'شنو منو اتصال 1.5.0 — تصميم جديد واستعادة QR' --notes-file "$RUNNER_TEMP/call-notes.md"
+            --title 'شنو منو اتصال 1.5.1 — تصميم جديد واستعادة QR' --notes-file "$RUNNER_TEMP/call-notes.md"

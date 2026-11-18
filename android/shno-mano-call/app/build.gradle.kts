@@ -26,8 +26,8 @@ android {
         applicationId = "com.shnomano.call"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
-        versionName = "1.5.0"
+        versionCode = 21
+        versionName = "1.5.1"
     }
 
     signingConfigs {
@@ -71,7 +71,7 @@ val callWebFiles = listOf(
     "messages.html", "private-messages.js", "call-signaling.js", "screen-share.js", "call-surface.js", "call-session-state.js", "call-ice.js",
     "call-screen.css", "social-api.js", "call-groups.html", "call-groups.js",
     "social.css", "mall.css", "messages-call-fix.css", "shinomino-shared-visual.css",
-    "call-audio.js", "incoming-call-global.js", "auth-guard.js", "mall.js",
+    "call-audio.js", "incoming-call-global.js", "call-location.js", "auth-guard.js", "mall.js",
     "call-permission-guard.js"
 )
 val callWebRoot = rootProject.projectDir.resolve("../..").canonicalFile
@@ -79,7 +79,7 @@ val callWebAssets = layout.buildDirectory.dir("generated/callWebAssets")
 val bundleCallWeb by tasks.registering(Sync::class) {
     from(callWebRoot) { include(callWebFiles) }
     into(callWebAssets.map { it.dir("call-web") })
-    inputs.property("callUiVersion", "1.5.0-20")
+    inputs.property("callUiVersion", "1.5.1-21")
     doFirst {
         callWebFiles.forEach { check(callWebRoot.resolve(it).isFile) { "Missing bundled call asset: $it" } }
     }
@@ -90,7 +90,7 @@ val bundleCallWeb by tasks.registering(Sync::class) {
             "\"$name\":\"$hash\""
         }
         callWebAssets.get().file("call-web/call-build.json").asFile.writeText(
-            "{\"version\":\"1.5.0\",\"versionCode\":20,\"files\":{$entries}}"
+            "{\"version\":\"1.5.1\",\"versionCode\":21,\"files\":{$entries}}"
         )
     }
 }

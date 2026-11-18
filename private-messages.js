@@ -90,6 +90,7 @@
   function stopMedia() { if (localStream) localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; callRoot.querySelectorAll("[data-local-video],[data-remote-video]").forEach(function (v) { v.pause(); v.srcObject = null; v.classList.remove("is-visible"); }); }
   function endCall(notify, status, reason, transferring) {
     var endedId=activeCall && activeCall.callId;
+    resetLocation('');
     if(window.ShnoCallSession)window.ShnoCallSession.close(endedId);
     if(window.ShnoCallAudio)window.ShnoCallAudio.stop();
     if(window.ShnoIncomingCalls && activeCall)window.ShnoIncomingCalls.end(endedId);
@@ -106,6 +107,55 @@
     if(status)show(status,status==='تعذر الاتصال'?'error':'success');
     // Keep the WebView alive until its terminal signal has reached the server.
     if(!transferring)delivered.then(function(){if(!activeCall)reportCallState('ended',endedId);});
+  }
+  // Per-call location is opt-in; do not store exact positions in profiles.
+  var sharedLocation=false,remoteLocation=null;
+  function locationInfo(message){var e=callRoot.querySelector('[data-call-location-info]');if(e)e.textContent=message;}
+  function resetLocation(callId){
+    sharedLocation=false;remoteLocation=null;
+    window.ShnoCallLocation?.reset(callId||'');
+    var stop=callRoot.querySelector('[data-call-location-stop]');if(stop)stop.hidden=true;
+    locationInfo('📍 الموقع غير مُشارك');
+  }
+  async function sendLocation(kind){
+    if(!activeCall||!socket)return;
+    var call=activeCall,button=callRoot.querySelector(kind==='precise'?'[data-call-location-precise]':'[data-call-location-city]');
+    if(kind==='precise'&&!confirm('هل توافق على إرسال إحداثيات موقعك الدقيق إلى الطرف الآخر في هذه المكالمة؟'))return;
+    if(kind==='city'&&!confirm('هل توافق على إظهار مدينتك ومحافظتك للطرف الآخر في هذه المكالمة؟'))return;
+    button.disabled=true;
+    try{
+      var data=await window.ShnoCallLocation[kind](call.callId);
+      if(activeCall!==call)return;
+      await sendCallSignal('call:location',callPayload({data:data}));
+      sharedLocation=true;
+      callRoot.querySelector('[data-call-location-stop]').hidden=false;
+      locationInfo(kind==='city'?'📍 شاركت المدينة والمحافظة: '+data.city+'، '+data.province:'📍 شاركت موقعك الدقيق مع الطرف الآخر');
+    }catch(e){show(e.message||'تعذرت مشاركة الموقع','error');}
+    finally{button.disabled=false;}
+  }
+  callRoot.querySelector('[data-call-location-city]').onclick=function(){sendLocation('city');};
+  callRoot.querySelector('[data-call-location-precise]').onclick=function(){sendLocation('precise');};
+  callRoot.querySelector('[data-call-location-stop]').onclick=async function(){
+    if(!activeCall)return;
+    try{await sendCallSignal('call:location',callPayload({data:{kind:'revoke'}}));sharedLocation=false;this.hidden=true;locationInfo('📍 أوقفت مشاركة موقعك');}
+    catch(e){show('تعذّر إبلاغ الطرف الآخر بإيقاف المشاركة','error');}
+  };
+  function incomingLocation(payload){
+    if(!activeCall || String(payload.callId)!==activeCall.callId || !payload.data)return;
+    var data=payload.data;
+    if(data.kind==='revoke'){remoteLocation=null;locationInfo('📍 أوقف الطرف الآخر مشاركة موقعه');return;}
+    if(data.kind==='city'&&typeof data.city==='string'&&typeof data.province==='string'){
+      remoteLocation={kind:'city'};locationInfo('📍 موقع الطرف الآخر: '+data.city.slice(0,80)+'، '+data.province.slice(0,80));
+    }else if(data.kind==='precise'&&Number.isFinite(data.latitude)&&Number.isFinite(data.longitude)&&Math.abs(data.latitude)<=90&&Math.abs(data.longitude)<=180){
+      remoteLocation={kind:'precise',latitude:data.latitude,longitude:data.longitude};
+      locationInfo('📍 أرسل الطرف الآخر موقعه الدقيق. اضغط لفتح الخريطة');
+      var info=callRoot.querySelector('[data-call-location-info]');
+      info.onclick=function(){
+        if(remoteLocation?.kind!=='precise')return;
+        if(window.ShnoAndroidCall?.openLocation)window.ShnoAndroidCall.openLocation(remoteLocation.latitude,remoteLocation.longitude);
+        else window.open('https://www.openstreetmap.org/?mlat='+remoteLocation.latitude+'&mlon='+remoteLocation.longitude+'#map=16/'+remoteLocation.latitude+'/'+remoteLocation.longitude,'_blank','noopener,noreferrer');
+      };
+    }
   }
   function callPayload(data) { return Object.assign({ callId: activeCall.callId, userId: activeCall.userId, conversationId: activeCall.conversationId, type: activeCall.type }, data || {}); }
   async function getMedia(type) { if(window.ShnoCallIce)await window.ShnoCallIce.prepare(); stopMedia(); localStream = await navigator.mediaDevices.getUserMedia(window.ShnoCallIce?.constraints(type) || { audio: true, video: type === "video" }); var v = callRoot.querySelector("[data-local-video]"); if (type === "video") { v.srcObject = localStream; v.classList.add("is-visible"); } }
@@ -133,6 +183,7 @@
       return true;
     }
     activeCall = { callId: callId, userId: from, conversationId: conversationId, type: type, incoming: true };
+    resetLocation(callId);
     callModal.hidden = false;
     callName(payload.callerName || "مستخدم شنو منو", type);
     callStatus("مكالمة واردة");
@@ -152,7 +203,7 @@
 
   async function startCall(type) { if(window.ShnoCallAudio)window.ShnoCallAudio.unlock();
     if (activeCall) return show("لديك مكالمة قائمة الآن", "error");
-    if (!socket || !socket.connected || !currentOther || !currentOther.id) return show("تعذر بدء المكالمة الآن", "error"); activeCall = { callId: newCallId(), userId: String(currentOther.id), conversationId: currentId, type: type, incoming: false }; callModal.hidden = false; callName(currentOther.fullName, type); callStatus("جارٍ الاتصال…"); reportCallState("outgoing");
+    if (!socket || !socket.connected || !currentOther || !currentOther.id) return show("تعذر بدء المكالمة الآن", "error"); activeCall = { callId: newCallId(), userId: String(currentOther.id), conversationId: currentId, type: type, incoming: false }; resetLocation(activeCall.callId); callModal.hidden = false; callName(currentOther.fullName, type); callStatus("جارٍ الاتصال…"); reportCallState("outgoing");
     try { var starting=activeCall; await getMedia(type); if(activeCall!==starting){stopMedia();return;} socket.emit("call:invite", callPayload(), function (result) { if (!activeCall) return; if (result && result.ok) { callStatus("يرن…"); if(window.ShnoCallAudio)window.ShnoCallAudio.startRingback(); return; } endCall(false); show((result && result.message) || "تعذر الاتصال", "error"); }); callTimer = setTimeout(function () { if (!activeCall || activeCall.incoming) return; endCall(true, "لا يوجد رد", "no-answer"); }, 30000); } catch (_) { endCall(false); show("تعذر الوصول إلى الكاميرا أو الميكروفون", "error"); }
   }
   async function acceptCall() {
@@ -356,6 +407,7 @@
     socket.on("presence:online", function (p) { updatePresence(p, true); });
     socket.on("presence:offline", function (p) { updatePresence(p, false); });
     socket.on("call:invite", receiveIncomingCall);
+    socket.on("call:location", incomingLocation);
     socket.on("call:accept", async function (p) { if (!activeCall || activeCall.incoming || String(p.callId) !== activeCall.callId) return; clearTimeout(callTimer); connectionTimer=setTimeout(function(){if(activeCall)endCall(true,"تعذر الاتصال","connect-timeout");},30000); if(window.ShnoCallAudio)window.ShnoCallAudio.stop(); try { var pc = ensurePeer(), offer = await pc.createOffer(); await pc.setLocalDescription(offer); socket.emit("webrtc:offer", callPayload({ data: pc.localDescription })); } catch (_) { endCall(true, "تعذر الاتصال", "offer-failed"); } });
     socket.on("call:reject", function (p) { if (activeCall && String(p.callId) === activeCall.callId) endCall(false, p.reason === "busy" ? "المستخدم مشغول بمكالمة أخرى" : "رفض المكالمة"); });
     socket.on("call:end", function (p) { if(activeCall && String(p.callId)===activeCall.callId && p.reason==='group-transfer' && p.data && /^[a-f0-9-]{36}$/i.test(p.data.groupId) && /^[a-f0-9-]{36}$/i.test(p.data.callId)) {

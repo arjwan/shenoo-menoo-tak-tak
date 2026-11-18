@@ -1,7 +1,7 @@
 import { pushIncomingCall } from './call-push.js';
 // Short-lived one-to-one WebRTC signaling over the existing authenticated D1 API.
 // No legacy bearer tokens, shared broadcast room, or client-supplied sender identity.
-const events = new Set(['call:invite','call:accept','call:reject','call:end','webrtc:offer','webrtc:answer','webrtc:ice']);
+const events = new Set(['call:invite','call:accept','call:reject','call:end','webrtc:offer','webrtc:answer','webrtc:ice','call:location']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const response = (body,status=200) => new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 export async function handleCallSignaling(req,env,user,waitUntil) {
@@ -41,10 +41,45 @@ export async function handleCallSignaling(req,env,user,waitUntil) {
     reason:String(data.reason||'').slice(0,80),
     data:payload
   };
+  // Location is disclosed only as an explicitly sent call-scoped event.
+  // No location is attached to invites, profile data or FCM notifications.
+  if(event==='call:location'){
+    // A private call session is required even after its short-lived SDP/ICE signals expire.
+    const live=await env.DB.prepare(
+      "SELECT call_id FROM call_active_sessions WHERE call_id=? AND conversation_id=? AND ended_at IS NULL AND expires_at>unixepoch() AND ((caller_id=? AND recipient_id=?) OR (caller_id=? AND recipient_id=?)) LIMIT 1"
+    ).bind(callId,conversationId,user.id,recipient,recipient,user.id).first();
+    if(!live)return response({ok:false,message:'لا يمكن مشاركة الموقع خارج مكالمة نشطة'},403);
+    if(!payload || typeof payload!=='object' || Array.isArray(payload))return response({ok:false,message:'بيانات الموقع غير صالحة'},400);
+    if(!['city','precise','revoke'].includes(payload.kind))return response({ok:false,message:'نوع الموقع غير صالح'},400);
+    if(payload.kind==='city'){
+      const city=String(payload.city||'').trim(),province=String(payload.province||'').trim();
+      if(!city || !province || city.length>80 || province.length>80 || /[<>\x00-\x1f]/.test(city+province))
+        return response({ok:false,message:'اسم المدينة أو المحافظة غير صالح'},400);
+      safePayload.data={kind:'city',city,province};
+    }else if(payload.kind==='precise'){
+      const latitude=payload.latitude,longitude=payload.longitude,accuracy=payload.accuracy;
+      if(typeof latitude!=='number'||typeof longitude!=='number'||typeof accuracy!=='number'||
+         !Number.isFinite(latitude)||!Number.isFinite(longitude)||!Number.isFinite(accuracy)||
+         Math.abs(latitude)>90||Math.abs(longitude)>180||accuracy<0||accuracy>300)
+        return response({ok:false,message:'إحداثيات الموقع غير صالحة'},400);
+      safePayload.data={kind:'precise',latitude,longitude,accuracy};
+    }else safePayload.data={kind:'revoke'};
+  }
   if(JSON.stringify(safePayload).length>8500)return response({ok:false,message:'إشارة المكالمة كبيرة'},413);
   const inserted=await env.DB.prepare(
     'INSERT INTO private_call_signals(sender_id,recipient_id,conversation_id,call_id,event_type,payload) VALUES(?,?,?,?,?,?)'
   ).bind(user.id,recipient,conversationId,callId,event,JSON.stringify(safePayload)).run();
+  // Call-lifetime metadata contains no location data; it supports consensual
+  // sharing after the 120-second signaling retention period.
+  if(event==='call:invite'){
+    await env.DB.prepare(
+      "INSERT INTO call_active_sessions(call_id,conversation_id,caller_id,recipient_id,expires_at) VALUES(?,?,?,?,unixepoch()+14400) ON CONFLICT(call_id) DO NOTHING"
+    ).bind(callId,conversationId,user.id,recipient).run();
+  }else if(event==='call:end'||event==='call:reject'){
+    await env.DB.prepare(
+      "UPDATE call_active_sessions SET ended_at=unixepoch() WHERE call_id=? AND conversation_id=? AND ended_at IS NULL"
+    ).bind(callId,conversationId).run();
+  }
   // Persist the invite before attempting best-effort device delivery.
   // Push failures must never prevent the existing D1/WebRTC signaling flow.
   if(event==='call:invite') {

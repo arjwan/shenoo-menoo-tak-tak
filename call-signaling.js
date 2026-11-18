@@ -3,7 +3,7 @@
    retired DuckDNS host or bearer-token dependency. */
 (function(global){
   'use strict';
-  var allowed={ 'call:invite':1,'call:accept':1,'call:reject':1,'call:end':1,'webrtc:offer':1,'webrtc:answer':1,'webrtc:ice':1 };
+  var allowed={ 'call:invite':1,'call:accept':1,'call:reject':1,'call:end':1,'webrtc:offer':1,'webrtc:answer':1,'webrtc:ice':1,'call:location':1 };
   function create(){
     var listeners=Object.create(null), cursor=0, stopped=false, failures=0;
     var socket={connected:true,on:function(type,handler){

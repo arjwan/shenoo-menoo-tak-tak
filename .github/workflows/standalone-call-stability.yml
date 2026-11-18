@@ -10,6 +10,9 @@ on:
       - 'messages.html'
       - 'social.css'
       - 'call-screen.css'
+      - 'call-location.js'
+      - 'tests/private-call-signaling.test.mjs'
+      - 'tests/call-location.test.mjs'
       - 'screen-share.js'
       - 'call-surface.js'
       - 'call-session-state.js'
@@ -22,6 +25,7 @@ on:
       - 'cloudflare/call-push.js'
       - 'cloudflare/call-signaling.js'
       - 'cloudflare/migrations/20261118_call_push_tokens.sql'
+      - 'cloudflare/migrations/20261118_call_location_sessions.sql'
       - 'private-messages.js'
       - 'call-signaling.js'
       - 'functions/api/**'
@@ -50,6 +54,8 @@ jobs:
           node --check functions/api/call-signals.js
           node --check functions/api/call-push-token.js
           node --check call-signaling.js
+          node --check call-location.js
+          node --test tests/call-location.test.mjs
           node --check private-messages.js
           node --check functions/api/\[\[path\]\].js
       - name: Validate D1 group migration SQL
@@ -61,6 +67,7 @@ jobs:
           c.executescript(open('cloudflare/migrations/20261110_call_groups.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_group_settings.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_push_tokens.sql').read())
+          c.executescript(open('cloudflare/migrations/20261118_call_location_sessions.sql').read())
           print('D1 group schema syntax OK')
           PY
   browser-call-runtime:
