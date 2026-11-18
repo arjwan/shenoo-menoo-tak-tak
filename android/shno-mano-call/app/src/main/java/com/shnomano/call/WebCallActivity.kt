@@ -222,6 +222,22 @@ class WebCallActivity : ComponentActivity() {
     }
 
     private inner class CallStateBridge {
+        @JavascriptInterface fun openLocation(latitude: Double, longitude: Double) = runOnUiThread {
+            if (!latitude.isFinite() || !longitude.isFinite() ||
+                latitude !in -90.0..90.0 || longitude !in -180.0..180.0) return@runOnUiThread
+            val map = Uri.parse("geo:${latitude},${longitude}?q=${latitude},${longitude}")
+            val geoIntent = Intent(Intent.ACTION_VIEW, map)
+            try { startActivity(geoIntent) }
+            catch (_: Exception) {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}")))
+                } catch (_: Exception) {
+                    Toast.makeText(this@WebCallActivity, "تعذّر فتح الخريطة", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         @JavascriptInterface fun reverseLocation(latitude: Double, longitude: Double, requestId: String) {
             if (!latitude.isFinite() || !longitude.isFinite() || latitude !in -90.0..90.0 ||
                 longitude !in -180.0..180.0 || !Regex("^gps[0-9]{1,8}$").matches(requestId)) return
