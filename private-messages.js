@@ -74,7 +74,7 @@
     if (!e.target.matches("[data-attachment]") || !e.target.files[0]) return; var f = e.target.files[0], form = new FormData();
     if (f.size > 10 * 1024 * 1024) { e.target.value = ""; return show("حجم الملف أكبر من 10 ميغابايت", "error"); }
     form.append("type", f.type.startsWith("image/") ? "image" : f.type.startsWith("video/") ? "video" : f.type.startsWith("audio/") ? "audio" : "file"); form.append("attachment", f);
-    try { await SocialAPI.request("/api/conversations/" + encodeURIComponent(currentId) + "/messages", { method: "POST", body: form }); e.target.value = ""; } catch (err) { show(err.message, "error"); }
+    try { await SocialAPI.request("/api/conversations/" + encodeURIComponent(currentId) + "/messages", { method: "POST", body: form }); e.target.value = ""; await openConversation(currentId); } catch (err) { show(err.message, "error"); }
   });
   function toggleRecording(button) {
     if (recorder && recorder.state === "recording") { recorder.stop(); button.textContent = "◉"; return; }
