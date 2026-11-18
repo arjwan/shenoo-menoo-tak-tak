@@ -13,6 +13,8 @@ export async function onRequest({request,env}){
    return reply({ok:true,marked:changed.meta?.changes||0});
   }
   if(request.method==='GET'){
+   // Recover calls whose sender crashed before transmitting a terminal event.
+   await env.DB.prepare("UPDATE call_history SET state='missed',ended_at=CURRENT_TIMESTAMP WHERE state='ringing' AND started_at<datetime('now','-50 seconds') AND (caller_id=? OR recipient_id=?)").bind(user.id,user.id).run();
    const rows=await env.DB.prepare(
     "SELECT h.call_id,h.conversation_id,h.type,h.state,h.started_at,h.answered_at,h.ended_at,h.recipient_read_at,h.caller_id,h.recipient_id,u.id AS other_id,u.full_name AS other_name FROM call_history h JOIN users u ON u.id=CASE WHEN h.caller_id=? THEN h.recipient_id ELSE h.caller_id END WHERE h.caller_id=? OR h.recipient_id=? ORDER BY h.started_at DESC,h.call_id DESC LIMIT 100"
    ).bind(user.id,user.id,user.id).all();
