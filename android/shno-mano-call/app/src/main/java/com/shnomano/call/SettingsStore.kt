@@ -5,6 +5,14 @@ import android.content.Context
 class SettingsStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("shno_mano_call_settings", Context.MODE_PRIVATE)
 
+    /** Default is disabled. A new per-call confirmation is always required. */
+    var locationSharingMode: String
+        get() = prefs.getString("location_sharing_mode", "none")?.takeIf { it in setOf("none", "city", "precise") } ?: "none"
+        set(value) {
+            require(value in setOf("none", "city", "precise"))
+            prefs.edit().putString("location_sharing_mode", value).apply()
+        }
+
     var lowData: Boolean
         get() = prefs.getBoolean("low_data", false)
         set(value) = prefs.edit().putBoolean("low_data", value).apply()
