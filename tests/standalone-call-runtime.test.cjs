@@ -21,7 +21,7 @@ function database(){
  CREATE TABLE conversation_members(conversation_id TEXT REFERENCES conversations(id),user_id TEXT REFERENCES users(id));
  CREATE TABLE follows(follower_id TEXT,followed_id TEXT);
  CREATE TABLE messages(id TEXT PRIMARY KEY,conversation_id TEXT REFERENCES conversations(id),sender_id TEXT REFERENCES users(id),text TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
- for(const file of ['0007_revocable_sessions.sql','0011_private_message_read_state.sql','20261109_private_call_signaling.sql','20261110_call_groups.sql','20261118_call_group_settings.sql','20261118_call_location_sessions.sql'])db.exec(fs.readFileSync(path.join(root,'cloudflare/migrations',file),'utf8'));
+ for(const file of ['0007_revocable_sessions.sql','0011_private_message_read_state.sql','20261109_private_call_signaling.sql','20261110_call_groups.sql','20261118_call_group_settings.sql','20261118_call_location_sessions.sql','20261118_call_history.sql'])db.exec(fs.readFileSync(path.join(root,'cloudflare/migrations',file),'utf8'));
  for(const u of users){
   db.prepare('INSERT INTO users(id,username,full_name) VALUES(?,?,?)').run(u.id,u.name.toLowerCase(),u.name);
   db.prepare("INSERT INTO auth_sessions(id,user_id,secret_hash,expires_at) VALUES(?,?,?,datetime('now','+1 day'))").run(randomUUID(),u.id,createHash('sha256').update(u.secret).digest('base64url'));
