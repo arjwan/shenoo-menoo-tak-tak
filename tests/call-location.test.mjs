@@ -50,5 +50,5 @@ test('call UI requests consent only through modal and removes GPS toolbar',()=>{
  assert.match(script,/locationPromptedFor===call.callId/);
  assert.match(script,/locationDialog.hidden=false/);
  assert.match(script,/getLocationSharingMode/);
- assert.match(settings,/location_sharing_mode", "none"/);
+ assert.match(settings,/location_sharing_mode", "city"/);
 });
