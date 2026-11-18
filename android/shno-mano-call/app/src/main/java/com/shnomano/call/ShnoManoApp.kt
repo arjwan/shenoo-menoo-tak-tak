@@ -66,8 +66,8 @@ class ShnoManoApp : Application() {
             )
         }
 
-        val ringtone = settings.ringtoneUri?.let(android.net.Uri::parse)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        // Always use the current Android device ringtone, never an app-owned sound.
+        val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
         val audio = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
             .build()
@@ -83,9 +83,20 @@ class ShnoManoApp : Application() {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
+        val missedChannel = NotificationChannel(
+            CHANNEL_MISSED,
+            "مكالمات شنو منو الفائتة",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "إشعار المكالمة الفائتة والعدد على أيقونة التطبيق"
+            setShowBadge(true)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+        }
+
         manager.createNotificationChannel(realtimeChannel)
         manager.createNotificationChannel(messageChannel)
         manager.createNotificationChannel(callChannel)
+        manager.createNotificationChannel(missedChannel)
     }
 
     companion object {
@@ -93,6 +104,7 @@ class ShnoManoApp : Application() {
             private set
         const val CHANNEL_REALTIME = "shno_realtime"
         const val CHANNEL_MESSAGES = "shno_messages_20261110"
-        const val CHANNEL_CALLS = "shno_calls_ring_20261118_v2"
+        const val CHANNEL_CALLS = "shno_calls_device_ringtone_20261118_v3"
+        const val CHANNEL_MISSED = "shno_missed_calls_20261118"
     }
 }
