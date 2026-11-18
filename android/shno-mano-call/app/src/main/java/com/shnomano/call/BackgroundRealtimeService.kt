@@ -134,7 +134,7 @@ class BackgroundRealtimeService : Service() {
                     pollIncomingCalls()
                     if (System.currentTimeMillis() - lastCallHistoryCheck > 10000) {
                         lastCallHistoryCheck = System.currentTimeMillis()
-                        pollMissedCalls()
+                        try { pollMissedCalls() } catch (error: Exception) { Log.w(TAG, "Missed call history unavailable", error) }
                     }
                     if (System.currentTimeMillis() - lastMessagesCheck > 5000) {
                         lastMessagesCheck = System.currentTimeMillis()
