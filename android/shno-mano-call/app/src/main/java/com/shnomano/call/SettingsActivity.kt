@@ -31,6 +31,13 @@ class SettingsActivity : ComponentActivity() {
 private fun SettingsScreen(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val store = remember { SettingsStore(context) }
+    var locationMode by remember { mutableStateOf(store.locationSharingMode) }
+    var locationPickerVisible by remember { mutableStateOf(false) }
+    val locationModeLabel = when (locationMode) {
+        "city" -> "الموقع التقريبي — المدينة والمحافظة"
+        "precise" -> "الموقع الدقيق — إحداثيات الموقع"
+        else -> "عدم السماح"
+    }
     var lowData by remember { mutableStateOf(store.lowData) }
     var notifications by remember { mutableStateOf(store.notificationsEnabled) }
     var vibration by remember { mutableStateOf(store.vibrationEnabled) }
@@ -84,6 +91,56 @@ private fun SettingsScreen(onBack: () -> Unit) {
             OutlinedButton(onClick = {
                 context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, android.net.Uri.parse("package:" + context.packageName)))
             }, modifier = Modifier.fillMaxWidth()) { Text("السماح بظهور المكالمة على شاشة القفل") }
+        }
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF151E32)),
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("الموقع أثناء المكالمات", color = Color.White, fontSize = 16.sp)
+                Text(locationModeLabel, color = Color(0xFFA4B4CC), fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 6.dp))
+                Text("يُطلب إذنك مرة لكل مكالمة، ولا تتم مشاركة الموقع تلقائياً.",
+                    color = Color(0xFFA4B4CC), fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 6.dp))
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = { locationPickerVisible = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("إعدادات مشاركة الموقع")
+                }
+            }
+        }
+        if (locationPickerVisible) {
+            AlertDialog(
+                onDismissRequest = { locationPickerVisible = false },
+                title = { Text("مشاركة الموقع") },
+                text = {
+                    Column {
+                        Text("اختر ما يمكن للتطبيق عرضه عند موافقتك أثناء المكالمة.")
+                        listOf(
+                            "city" to "الموقع التقريبي (المدينة والمحافظة)",
+                            "precise" to "الموقع الدقيق",
+                            "none" to "عدم السماح"
+                        ).forEach { (value, title) ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = locationMode == value,
+                                    onClick = {
+                                        locationMode = value
+                                        store.locationSharingMode = value
+                                        locationPickerVisible = false
+                                    }
+                                )
+                                TextButton(onClick = {
+                                    locationMode = value
+                                    store.locationSharingMode = value
+                                    locationPickerVisible = false
+                                }) { Text(title) }
+                            }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { locationPickerVisible = false }) { Text("إغلاق") } }
+            )
         }
         SettingSwitch("توفير البيانات", "تقليل دقة الفيديو ومعدل الإطارات للشبكات الضعيفة", lowData) {
             lowData = it; store.lowData = it

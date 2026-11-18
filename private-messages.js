@@ -108,53 +108,91 @@
     // Keep the WebView alive until its terminal signal has reached the server.
     if(!transferring)delivered.then(function(){if(!activeCall)reportCallState('ended',endedId);});
   }
-  // Per-call location is opt-in; do not store exact positions in profiles.
-  var sharedLocation=false,remoteLocation=null;
-  function locationInfo(message){var e=callRoot.querySelector('[data-call-location-info]');if(e)e.textContent=message;}
+  // GPS is never requested before the user's one-time confirmation for this call.
+  var remoteLocation=null,locationPromptedFor='',locationSharing=false;
+  var locationDialog=callRoot.querySelector('[data-call-location-consent]');
+  var locationSummary=callRoot.querySelector('[data-call-location-info]');
+  function locationInfo(message,action){
+    if(!locationSummary)return;
+    locationSummary.hidden=!message;
+    locationSummary.textContent=message||'';
+    locationSummary.onclick=action||null;
+    locationSummary.style.cursor=action?'pointer':'default';
+  }
+  function closeLocationPrompt(){
+    if(locationDialog)locationDialog.hidden=true;
+  }
   function resetLocation(callId){
-    sharedLocation=false;remoteLocation=null;
+    remoteLocation=null;locationSharing=false;locationPromptedFor='';
+    closeLocationPrompt();locationInfo('');
     window.ShnoCallLocation?.reset(callId||'');
-    var stop=callRoot.querySelector('[data-call-location-stop]');if(stop)stop.hidden=true;
-    locationInfo('📍 الموقع غير مُشارك');
   }
-  async function sendLocation(kind){
-    if(!activeCall||!socket)return;
-    var call=activeCall,button=callRoot.querySelector(kind==='precise'?'[data-call-location-precise]':'[data-call-location-city]');
-    if(kind==='precise'&&!confirm('هل توافق على إرسال إحداثيات موقعك الدقيق إلى الطرف الآخر في هذه المكالمة؟'))return;
-    if(kind==='city'&&!confirm('هل توافق على إظهار مدينتك ومحافظتك للطرف الآخر في هذه المكالمة؟'))return;
-    button.disabled=true;
-    try{
-      var data=await window.ShnoCallLocation[kind](call.callId);
+  function preferredLocationMode(){
+    try {
+      var nativeMode=window.ShnoAndroidCall?.getLocationSharingMode?.();
+      return nativeMode==='precise'||nativeMode==='city'?nativeMode:'none';
+    }catch(_){return 'none';}
+  }
+  function promptLocationOnce(){
+    if(!activeCall||activeCall.incoming||!locationDialog)return;
+    var call=activeCall;
+    if(locationPromptedFor===call.callId)return;
+    locationPromptedFor=call.callId;
+    var kind=preferredLocationMode();
+    if(kind==='none')return;
+    var title=callRoot.querySelector('[data-call-location-description]');
+    if(title) title.textContent=kind==='precise'
+      ?'هل تسمح بمشاركة موقعك الدقيق مع الطرف الآخر لهذه المكالمة فقط؟'
+      :'هل تسمح بمشاركة مدينتك ومحافظتك مع الطرف الآخر لهذه المكالمة فقط؟';
+    locationDialog.hidden=false;
+    callRoot.querySelector('[data-call-location-deny]').focus();
+  }
+  async function sendApprovedLocation(call,kind){
+    var allow=callRoot.querySelector('[data-call-location-allow]');
+    allow.disabled=true;
+    try {
+      var locationData=await window.ShnoCallLocation[kind](call.callId);
       if(activeCall!==call)return;
-      await sendCallSignal('call:location',callPayload({data:data}));
-      sharedLocation=true;
-      callRoot.querySelector('[data-call-location-stop]').hidden=false;
-      locationInfo(kind==='city'?'📍 شاركت المدينة والمحافظة: '+data.city+'، '+data.province:'📍 شاركت موقعك الدقيق مع الطرف الآخر');
-    }catch(e){show(e.message||'تعذرت مشاركة الموقع','error');}
-    finally{button.disabled=false;}
+      await sendCallSignal('call:location',callPayload({data:locationData}));
+      if(activeCall!==call)return;
+      locationSharing=true;
+      locationInfo(kind==='city'
+        ?'📍 تمت مشاركة '+locationData.city+'، '+locationData.province+' · اضغط لإيقاف المشاركة'
+        :'📍 الموقع الدقيق مُشارك · اضغط لإيقاف المشاركة',function(){
+        if(!activeCall||!locationSharing)return;
+        var original=activeCall;
+        sendCallSignal('call:location',callPayload({data:{kind:'revoke'}}))
+          .then(function(){
+            if(activeCall!==original)return;
+            locationSharing=false;locationInfo('📍 أوقفت مشاركة موقعك');
+          }).catch(function(){show('تعذّر إيقاف مشاركة الموقع','error');});
+      });
+    } catch(error){
+      if(activeCall===call)show(error.message||'تعذرت مشاركة الموقع','error');
+    } finally {allow.disabled=false;}
   }
-  callRoot.querySelector('[data-call-location-city]').onclick=function(){sendLocation('city');};
-  callRoot.querySelector('[data-call-location-precise]').onclick=function(){sendLocation('precise');};
-  callRoot.querySelector('[data-call-location-stop]').onclick=async function(){
-    if(!activeCall)return;
-    try{await sendCallSignal('call:location',callPayload({data:{kind:'revoke'}}));sharedLocation=false;this.hidden=true;locationInfo('📍 أوقفت مشاركة موقعك');}
-    catch(e){show('تعذّر إبلاغ الطرف الآخر بإيقاف المشاركة','error');}
+  callRoot.querySelector('[data-call-location-deny]').onclick=function(){closeLocationPrompt();};
+  callRoot.querySelector('[data-call-location-allow]').onclick=function(){
+    if(!activeCall)return closeLocationPrompt();
+    var call=activeCall,kind=preferredLocationMode();
+    closeLocationPrompt();
+    if(kind!=='city'&&kind!=='precise')return;
+    sendApprovedLocation(call,kind);
   };
   function incomingLocation(payload){
-    if(!activeCall || String(payload.callId)!==activeCall.callId || !payload.data)return;
+    if(!activeCall||String(payload.callId)!==activeCall.callId||!payload.data)return;
     var data=payload.data;
     if(data.kind==='revoke'){remoteLocation=null;locationInfo('📍 أوقف الطرف الآخر مشاركة موقعه');return;}
     if(data.kind==='city'&&typeof data.city==='string'&&typeof data.province==='string'){
-      remoteLocation={kind:'city'};locationInfo('📍 موقع الطرف الآخر: '+data.city.slice(0,80)+'، '+data.province.slice(0,80));
+      remoteLocation={kind:'city'};
+      locationInfo('📍 موقع المتصل: '+data.city.slice(0,80)+'، '+data.province.slice(0,80));
     }else if(data.kind==='precise'&&Number.isFinite(data.latitude)&&Number.isFinite(data.longitude)&&Math.abs(data.latitude)<=90&&Math.abs(data.longitude)<=180){
       remoteLocation={kind:'precise',latitude:data.latitude,longitude:data.longitude};
-      locationInfo('📍 أرسل الطرف الآخر موقعه الدقيق. اضغط لفتح الخريطة');
-      var info=callRoot.querySelector('[data-call-location-info]');
-      info.onclick=function(){
+      locationInfo('📍 شارك الطرف الآخر موقعه · اضغط لعرض الخريطة',function(){
         if(remoteLocation?.kind!=='precise')return;
         if(window.ShnoAndroidCall?.openLocation)window.ShnoAndroidCall.openLocation(remoteLocation.latitude,remoteLocation.longitude);
         else window.open('https://www.openstreetmap.org/?mlat='+remoteLocation.latitude+'&mlon='+remoteLocation.longitude+'#map=16/'+remoteLocation.latitude+'/'+remoteLocation.longitude,'_blank','noopener,noreferrer');
-      };
+      });
     }
   }
   function callPayload(data) { return Object.assign({ callId: activeCall.callId, userId: activeCall.userId, conversationId: activeCall.conversationId, type: activeCall.type }, data || {}); }
@@ -163,7 +201,7 @@
     if (peer) return peer; peer = new RTCPeerConnection(window.ShnoCallIce?window.ShnoCallIce.config():{iceServers:[{urls:"stun:stun.cloudflare.com:3478"}]}); localStream.getTracks().forEach(function (t) { peer.addTrack(t, localStream); });
     peer.ontrack = function (e) { var v = callRoot.querySelector("[data-remote-video]"); if (!v) return; v.srcObject = e.streams[0]; if (e.track.kind === 'video') { v.classList.add('is-visible'); v.play().catch(function(){}); } else { v.play().catch(function(){}); } };
     peer.onicecandidate = function (e) { if (e.candidate) socket.emit("webrtc:ice", callPayload({ data: e.candidate })); };
-    peer.onconnectionstatechange = function () { if (!peer) return; if (peer.connectionState === "connected") { clearTimeout(connectionTimer); callStatus("متصل الآن"); startDuration(); reportCallState("connected"); } else if (["failed", "closed"].includes(peer.connectionState)) endCall(true, "تعذر الاتصال", "connection-failed"); else if (peer.connectionState === "disconnected") { clearTimeout(connectionTimer); connectionTimer = setTimeout(function () { if (peer && peer.connectionState === "disconnected") endCall(true, "تعذر الاتصال", "disconnected"); }, 8000); } };
+    peer.onconnectionstatechange = function () { if (!peer) return; if (peer.connectionState === "connected") { clearTimeout(connectionTimer); callStatus("متصل الآن"); startDuration(); reportCallState("connected"); promptLocationOnce(); } else if (["failed", "closed"].includes(peer.connectionState)) endCall(true, "تعذر الاتصال", "connection-failed"); else if (peer.connectionState === "disconnected") { clearTimeout(connectionTimer); connectionTimer = setTimeout(function () { if (peer && peer.connectionState === "disconnected") endCall(true, "تعذر الاتصال", "disconnected"); }, 8000); } };
     return peer;
   }
   function receiveIncomingCall(payload) {

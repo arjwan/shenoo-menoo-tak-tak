@@ -58,8 +58,14 @@ class WebCallActivity : ComponentActivity() {
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingGeoOrigin: String? = null
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val mode = SettingsStore(this).locationSharingMode
+        val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val granted = when (mode) {
+            "precise" -> fine
+            "city" -> coarse || fine
+            else -> false
+        }
         pendingGeoCallback?.invoke(pendingGeoOrigin, granted, false)
         pendingGeoCallback = null
         pendingGeoOrigin = null
@@ -149,13 +155,21 @@ class WebCallActivity : ComponentActivity() {
                         callback?.invoke(origin, false, false)
                         return
                     }
-                    if (ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                        ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    val mode = SettingsStore(this@WebCallActivity).locationSharingMode
+                    if (mode == "none") {
+                        callback.invoke(origin, false, false)
+                        return
+                    }
+                    val coarseGranted = ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    val fineGranted = ContextCompat.checkSelfPermission(this@WebCallActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    if (if (mode == "precise") fineGranted else (coarseGranted || fineGranted)) {
                         callback.invoke(origin, true, false)
                     } else {
                         pendingGeoCallback = callback
                         pendingGeoOrigin = origin
-                        locationPermission.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
+                        locationPermission.launch(if (mode == "precise")
+                            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+                            else arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION))
                     }
                 }
 
@@ -222,6 +236,8 @@ class WebCallActivity : ComponentActivity() {
     }
 
     private inner class CallStateBridge {
+        @JavascriptInterface fun getLocationSharingMode(): String = SettingsStore(this@WebCallActivity).locationSharingMode
+
         @JavascriptInterface fun openLocation(latitude: Double, longitude: Double) = runOnUiThread {
             if (!latitude.isFinite() || !longitude.isFinite() ||
                 latitude !in -90.0..90.0 || longitude !in -180.0..180.0) return@runOnUiThread
