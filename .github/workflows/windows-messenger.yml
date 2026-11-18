@@ -1,0 +1,46 @@
+name: Build Shno Mano Messenger for Windows
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'desktop/shno-messenger-windows/**'
+      - '.github/workflows/windows-messenger.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/shno-messenger-windows/**'
+      - '.github/workflows/windows-messenger.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: desktop/shno-messenger-windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install packaging dependencies
+        run: npm install --no-audit --no-fund
+      - name: Test secure desktop origin and permission policies
+        run: npm test
+      - name: Build Windows x64 installer
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'false'
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: shno-mano-windows-messenger-installer
+          path: desktop/shno-messenger-windows/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
