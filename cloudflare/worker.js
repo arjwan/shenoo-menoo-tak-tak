@@ -1,3 +1,4 @@
+import {readPrivateMedia,savePrivateAttachment,signedPrivateMediaUrl} from './private-message-media.js';
 import { handleDeveloper } from './developer-api.js';
 import { handleIslamic } from './islamic-api.js';
 import { handleServices } from './service-providers-api.js';
@@ -100,6 +101,8 @@ function hasSignature(u,mime){
 }
 async function main(req,env){
   const path=new URL(req.url).pathname;
+  const privateMediaMatch=path.match(/^\/api\/private-message-media\/([a-f0-9-]{36})$/i);
+  if(privateMediaMatch&&req.method==='GET')return readPrivateMedia(req,env,privateMediaMatch[1]);
   // Signed, short-lived access to R2 story attachments. The story must still be active.
   const storyMediaRoute=path.match(/^\/api\/story-media\/([a-f0-9-]{36})$/i);
   if(req.method==='GET'&&storyMediaRoute){
@@ -732,10 +735,19 @@ async function main(req,env){
       const q="SELECT id,sender_id,text,created_at FROM messages WHERE conversation_id=?"+(before?" AND created_at<?":"")+" ORDER BY created_at DESC,id DESC LIMIT 51";
       const rows=await (before?env.DB.prepare(q).bind(id,before):env.DB.prepare(q).bind(id)).all();
       const result=rows.results.slice(0,50),more=rows.results.length>50;
-      return json({ok:true,conversation:{id,otherUser:other?{id:other.id,username:other.username,fullName:other.full_name}:null},messages:result.reverse().map(m=>({id:m.id,senderId:m.sender_id,text:m.text,type:'text',mine:m.sender_id===user.id,createdAt:m.created_at})),nextCursor:more?result[0]?.created_at:null});
+      const ids=result.map(m=>m.id);
+      const attachments=ids.length?(await env.DB.prepare('SELECT message_id,mime_type,file_name,file_size FROM private_message_attachments WHERE conversation_id=? AND message_id IN ('+ids.map(()=>'?').join(',')+')').bind(id,...ids).all()).results:[];
+      const lookup=new Map(attachments.map(x=>[x.message_id,x]));
+      const messages=await Promise.all(result.reverse().map(async m=>{
+        const a=lookup.get(m.id),kind=a?.mime_type.startsWith('audio/')?'audio':a?.mime_type.startsWith('video/')?'video':a?'image':'text';
+        return {id:m.id,senderId:m.sender_id,text:m.text,type:kind,mine:m.sender_id===user.id,createdAt:m.created_at,
+          attachment:a?{url:await signedPrivateMediaUrl(env,req,m.id),name:a.file_name,mimeType:a.mime_type,size:a.file_size}:null};
+      }));
+      return json({ok:true,conversation:{id,otherUser:other?{id:other.id,username:other.username,fullName:other.full_name}:null},messages,nextCursor:more?result[0]?.created_at:null});
     }
     if(suffix==='messages'&&req.method==='POST'){
-      if(!(req.headers.get('Content-Type')||'').includes('application/json'))return err('المرفقات الصوتية والمرئية غير مفعلة بعد؛ الرسائل النصية فقط',415);
+      if((req.headers.get('Content-Type')||'').toLowerCase().includes('multipart/form-data'))return savePrivateAttachment(req,env,user,id);
+      if(!(req.headers.get('Content-Type')||'').includes('application/json'))return err('صيغة الرسالة غير مدعومة',415);
       const b=await bodyJSON(req),message=String(b.text||'').trim();
       if(b.type!=='text'||!message||message.length>5000)return err('الرسالة النصية غير صالحة',400);
       const idMessage=crypto.randomUUID();

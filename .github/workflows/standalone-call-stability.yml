@@ -24,6 +24,11 @@ on:
       - 'cloudflare/call-groups.js'
       - 'cloudflare/call-push.js'
       - 'cloudflare/call-signaling.js'
+      - 'cloudflare/private-message-media.js'
+      - 'cloudflare/pages/call-content.js'
+      - 'tests/private-message-media.test.mjs'
+      - 'tests/call-content.test.mjs'
+      - 'cloudflare/migrations/20261118_private_message_attachments.sql'
       - 'cloudflare/migrations/20261118_call_push_tokens.sql'
       - 'cloudflare/migrations/20261118_call_location_sessions.sql'
       - 'private-messages.js'
@@ -51,6 +56,9 @@ jobs:
           node --check cloudflare/call-groups.js
           node --check cloudflare/call-push.js
           node --check cloudflare/call-signaling.js
+          node --check cloudflare/private-message-media.js
+          node --check cloudflare/worker.js
+          node --test tests/private-message-media.test.mjs
           node --check functions/api/call-signals.js
           node --check functions/api/call-push-token.js
           node --check call-signaling.js
@@ -68,6 +76,8 @@ jobs:
           c.executescript(open('cloudflare/migrations/20261118_call_group_settings.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_push_tokens.sql').read())
           c.executescript(open('cloudflare/migrations/20261118_call_location_sessions.sql').read())
+          c.executescript('CREATE TABLE messages(id TEXT PRIMARY KEY,conversation_id TEXT,sender_id TEXT,text TEXT,created_at TEXT);')
+          c.executescript(open('cloudflare/migrations/20261118_private_message_attachments.sql').read())
           print('D1 group schema syntax OK')
           PY
   browser-call-runtime:

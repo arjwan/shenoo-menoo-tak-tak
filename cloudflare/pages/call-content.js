@@ -1,5 +1,9 @@
 // Authenticated, bounded content feeds. Never accepts an upstream URL from a client.
 const NEWS_SOURCES = [
+  {name:'أخبار Google العراق',url:'https://news.google.com/rss/search?q=%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82%20when%3A3d&hl=ar&gl=IQ&ceid=IQ:ar'},
+  {name:'الرشيد عبر أخبار Google',url:'https://news.google.com/rss/search?q=site%3Aalrasheedmedia.com%20when%3A7d&hl=ar&gl=IQ&ceid=IQ:ar'},
+  {name:'الشرقية عبر أخبار Google',url:'https://news.google.com/rss/search?q=%D9%82%D9%86%D8%A7%D8%A9%20%D8%A7%D9%84%D8%B4%D8%B1%D9%82%D9%8A%D8%A9%20when%3A3d&hl=ar&gl=IQ&ceid=IQ:ar'},
+  {name:'العربية',url:'https://www.alarabiya.net/feed/rss2'},
   {name:'BBC عربي',url:'https://feeds.bbci.co.uk/arabic/rss.xml'},
   {name:'الجزيرة',url:'https://www.aljazeera.net/aljazeerarss/'}
 ];
@@ -67,7 +71,7 @@ export async function callContentRoute({request,env},fetcher=fetch,cache=globalT
  const u=new URL(request.url),kind=u.pathname.endsWith('/news')?'news':u.pathname.endsWith('/discover')?'discover':'';
  const topic=u.searchParams.get('topic')||'food';
  if(!kind||kind==='discover'&&!Object.hasOwn(TOPICS,topic))return Response.json({ok:false,message:'قسم غير معروف'},{status:404});
- const key=new Request(u.origin+'/__call-content-cache-v2/'+kind+'/'+(kind==='news'?'all':topic));
+ const key=new Request(u.origin+'/__call-content-cache-v3/'+kind+'/'+(kind==='news'?'all':topic));
  const hit=cache&&await cache.match(key);if(hit)return hit;
  try{
   const body=kind==='news'?await buildNews(fetcher):await explore(topic,fetcher);

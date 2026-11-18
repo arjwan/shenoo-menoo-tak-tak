@@ -9,7 +9,7 @@ test('News removes unsafe URLs, markup and stale items and orders Iraq/breaking 
  assert.deepEqual(orderNews(data).map(x=>x.area),['iraq','region','world']);assert.equal(orderNews([...data,...data]).length,3);
 });
 test('Partial feed outage is explicit and never fabricates news',async()=>{
- const data=await buildNews(async url=>{if(url.includes('bbc'))throw Error('offline');return new Response('<rss>'+item('العراق','https://example.com/news')+'</rss>')});
+ const data=await buildNews(async url=>{if(!url.includes('aljazeera'))throw Error('offline');return new Response('<rss>'+item('العراق','https://example.com/news')+'</rss>')});
  assert.equal(data.partial,true);assert.equal(data.items.length,1);assert.equal(data.items[0].source,'الجزيرة');
 });
 test('Content routes require the app session and reject writes',async()=>{
@@ -27,4 +27,13 @@ test('Discover cards pair a real article with its own image and expanded text',a
  const {explore}=await import('../cloudflare/pages/call-content.js');
  const data=await explore('food',async url=>{assert.match(url,/pageimages/);assert.match(url,/pilicense=free/);return Response.json({query:{pages:{1:{pageid:1,title:'دولمة',extract:'تفاصيل حقيقية '.repeat(70),fullurl:'https://ar.wikipedia.org/wiki/Dolma',thumbnail:{source:'https://upload.wikimedia.org/dolma.jpg'}},2:{pageid:2,title:'بلا صورة',extract:'نص',fullurl:'https://ar.wikipedia.org/wiki/Other'}}}})});
  assert.equal(data.items.length,1);assert.ok(data.items[0].detail.length>data.items[0].summary.length);assert.equal(data.items[0].image,'https://upload.wikimedia.org/dolma.jpg');
+});
+
+test('News sources include Iraq Google News, Al Rasheed, Al Sharqiya and Al Arabiya',async()=>{
+ const data=await buildNews(async()=>new Response('<rss>'+item('آخر الأخبار العراقية','https://example.com/latest')+'</rss>'));
+ assert.ok(data.sources.some(x=>x.includes('Google')));
+ assert.ok(data.sources.some(x=>x.includes('الرشيد')));
+ assert.ok(data.sources.some(x=>x.includes('الشرقية')));
+ assert.ok(data.sources.some(x=>x.includes('العربية')));
+ assert.equal(data.items.length,1);
 });
