@@ -8,6 +8,9 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Local Firebase configuration is required for a working Push-enabled APK.
+if (file("google-services.json").isFile) apply(plugin = "com.google.gms.google-services")
+
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 if (keystorePropertiesFile.exists()) {
@@ -98,6 +101,8 @@ android.sourceSets.getByName("main").assets.srcDir(callWebAssets)
 tasks.named("preBuild") { dependsOn(bundleCallWeb) }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
     testImplementation("junit:junit:4.13.2")
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)
