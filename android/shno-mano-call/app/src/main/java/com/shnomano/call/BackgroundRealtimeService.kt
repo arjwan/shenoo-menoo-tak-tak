@@ -37,6 +37,8 @@ class BackgroundRealtimeService : Service() {
     private val notifiedGroupCalls = mutableSetOf<String>()
     private var baselineLoaded = false
     private var lastMessagesCheck = 0L
+    private var lastCallHistoryCheck = 0L
+    private var lastMissedCount = -1
     private var activeCall: JSONObject? = null
 
     override fun onCreate() {
@@ -130,6 +132,10 @@ class BackgroundRealtimeService : Service() {
             worker.scheduleWithFixedDelay({
                 try {
                     pollIncomingCalls()
+                    if (System.currentTimeMillis() - lastCallHistoryCheck > 10000) {
+                        lastCallHistoryCheck = System.currentTimeMillis()
+                        pollMissedCalls()
+                    }
                     if (System.currentTimeMillis() - lastMessagesCheck > 5000) {
                         lastMessagesCheck = System.currentTimeMillis()
                         pollMessages()
@@ -192,6 +198,41 @@ class BackgroundRealtimeService : Service() {
             callCursor = maxOf(callCursor, event.optLong("id", 0L))
         }
         callCursor = maxOf(callCursor, data.optLong("cursor", callCursor))
+    }
+
+    /** Reconcile durable missed calls even when FCM temporarily fails while app is running. */
+    private fun pollMissedCalls() {
+        val data = getJson("api/call-history")
+        if (!data.optBoolean("ok")) return
+        val count = data.optInt("missedCount", 0)
+        if (count == lastMissedCount) return
+        lastMissedCount = count
+        val manager = getSystemService(NotificationManager::class.java)
+        if (count <= 0) {
+            manager.cancel(4203)
+            return
+        }
+        if (!SettingsStore(this).notificationsEnabled) return
+        val open = Intent(this, WebSectionActivity::class.java).apply {
+            putExtra(WebSectionActivity.EXTRA_URL, SHNO_MANO_BASE_URL + "call-history.html")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pending = PendingIntent.getActivity(this, 4203, open,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val notification = NotificationCompat.Builder(this, ShnoManoApp.CHANNEL_MISSED)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle(if (count == 1) "مكالمة فائتة" else "$count مكالمات فائتة")
+            .setContentText("افتح سجل المكالمات لمراجعة المكالمات الفائتة")
+            .setContentIntent(pending)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setNumber(count)
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .build()
+        manager.notify(4203, notification)
     }
 
     private fun pollMessages() {
