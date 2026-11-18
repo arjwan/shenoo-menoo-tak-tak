@@ -36,6 +36,10 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <service android:name=".CallPushMessagingService" android:exported="false">
+            <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>
+        </service>
+
         <service
             android:name=".BackgroundRealtimeService"
             android:exported="false"

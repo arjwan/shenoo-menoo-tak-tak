@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "561713424806",
+    "project_id": "shinomino-call",
+    "storage_bucket": "shinomino-call.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:561713424806:android:f40dccdb539c5f5e268767",
+        "android_client_info": {
+          "package_name": "com.shnomano.call"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1oTxmrc7W44UQt_IeQnq0Cpf6CXWSxXw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

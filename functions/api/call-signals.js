@@ -1,7 +1,8 @@
+import {wakeCallDevices} from '../../cloudflare/call-push.js';
 import { getAuthenticatedAppUser } from '../../cloudflare/pages/profile-session.js';
 import { handleCallSignaling } from '../../cloudflare/call-signaling.js';
 const denied=(message,status)=>Response.json({ok:false,message},{status,headers:{'Cache-Control':'no-store'}});
-export async function onRequest({request,env}){
+export async function onRequest({request,env,waitUntil}){
   if(!env.DB)return denied('خدمة المكالمات غير مهيأة',503);
   if(!['GET','HEAD','OPTIONS'].includes(request.method)){
     const origin=request.headers.get('Origin'),site=request.headers.get('Sec-Fetch-Site');
@@ -10,6 +11,14 @@ export async function onRequest({request,env}){
   }
   const actor=await getAuthenticatedAppUser(request,env);
   if(!actor)return denied('يرجى تسجيل الدخول',401);
-  try{return await handleCallSignaling(request,env,actor)}
+  try{
+    const pushRequest=request.method==='POST'?request.clone():null;
+    const result=await handleCallSignaling(request,env,actor);
+    if(request.method==='POST'&&result.status===201){
+      const data=await pushRequest.json().catch(()=>null);
+      if(data?.event==='call:invite'){const task=wakeCallDevices(env,data.userId,data.callId).catch(()=>console.warn('Incoming-call push delivery failed'));if(waitUntil)waitUntil(task);else await task;}
+    }
+    return result;
+  }
   catch(e){console.error('Private calls routing failure',String(e?.message||e));return denied('تعذر توجيه المكالمة',500)}
 }

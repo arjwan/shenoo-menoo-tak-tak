@@ -78,7 +78,7 @@ jobs:
           TURN_PID=$!
           trap 'kill "$TURN_PID" || true' EXIT
           export NODE_PATH="$RUNNER_TEMP/call-runtime/node_modules"
-          node --test tests/call-content.test.mjs tests/call-group-privacy.test.mjs tests/call-content-browser.cjs tests/private-call-signaling.test.mjs tests/incoming-call-global.test.mjs tests/call-audio-ringback.test.mjs tests/call-ice.test.mjs tests/standalone-call-runtime.test.cjs
+          node --test tests/call-push.test.mjs tests/call-content.test.mjs tests/call-group-privacy.test.mjs tests/call-content-browser.cjs tests/private-call-signaling.test.mjs tests/incoming-call-global.test.mjs tests/call-audio-ringback.test.mjs tests/call-ice.test.mjs tests/standalone-call-runtime.test.cjs
       - name: Save call screen previews
         if: always()
         uses: actions/upload-artifact@v4
@@ -110,6 +110,8 @@ jobs:
           }
           JS
   compile-standalone-call:
+    env:
+      SHNO_FIREBASE_ANDROID_CONFIG: ${{ secrets.SHNO_FIREBASE_ANDROID_CONFIG }}
     runs-on: ubuntu-latest
     defaults:
       run:
