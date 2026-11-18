@@ -1,3 +1,4 @@
+import {pushPrivateMessage} from '../call-push.js';
 // Cloudflare Pages handles private chat uploads directly against its existing D1/R2 bindings.
 import {readPrivateMedia,savePrivateAttachment,signedPrivateMediaUrl} from '../private-message-media.js';
 import {getAuthenticatedAppUser} from './profile-session.js';
@@ -10,9 +11,8 @@ export async function privateChatRoute({request,env}){
  if(media){return request.method==='GET'?readPrivateMedia(request,env,media[1]):reply({ok:false},405);}
  const target=path.match(pattern);if(!target)return null;
  if(request.method!=='GET'&&request.method!=='POST')return reply({ok:false},405);
- // Only uploads are intercepted; existing D1 Worker continues handling text messages.
+ // All private messages are handled by Pages so FCM uses the same configured server credential.
  const multipart=(request.headers.get('Content-Type')||'').toLowerCase().includes('multipart/form-data');
- if(request.method==='POST'&&!multipart)return null;
  if(!env.DB||!env.MEDIA)return reply({ok:false,message:'خدمة المرفقات غير مهيأة'},503);
  const user=await getAuthenticatedAppUser(request,env);
  if(!user)return reply({ok:false,message:'يرجى تسجيل الدخول'},401);
@@ -22,8 +22,31 @@ export async function privateChatRoute({request,env}){
  if(request.method==='POST'){
   const origin=request.headers.get('Origin'),site=request.headers.get('Sec-Fetch-Site');
   if((origin&&origin!==new URL(request.url).origin)||(!origin&&site==='cross-site'))return reply({ok:false,message:'طلب غير موثوق'},403);
-  try{return await savePrivateAttachment(request,env,user,conversationId);}
-  catch(error){console.error('Private media upload failed',String(error?.message||error));return reply({ok:false,message:'تعذر حفظ الرسالة الصوتية أو الفيديو'},500);}
+  try{
+   let result,kind='text';
+   if(multipart){
+    result=await savePrivateAttachment(request,env,user,conversationId);
+    if(result.status===201){
+     const clone=await result.clone().json();kind=clone.message?.type||'file';
+    }
+   }else if((request.headers.get('Content-Type')||'').toLowerCase().includes('application/json')){
+    const body=await request.json().catch(()=>null);
+    const text=String(body?.text||'').trim();
+    if(body?.type!=='text'||!text||text.length>5000)return reply({ok:false,message:'الرسالة النصية غير صالحة'},400);
+    const messageId=crypto.randomUUID();
+    await env.DB.prepare('INSERT INTO messages(id,conversation_id,sender_id,text) VALUES(?,?,?,?)').bind(messageId,conversationId,user.id,text).run();
+    result=reply({ok:true,message:{id:messageId,text,senderId:user.id,type:'text',createdAt:new Date().toISOString()}},201);
+   }else return reply({ok:false,message:'صيغة الطلب غير مدعومة'},415);
+   if(result.status===201){
+    const recipient=await env.DB.prepare('SELECT user_id FROM conversation_members WHERE conversation_id=? AND user_id<>? LIMIT 1').bind(conversationId,user.id).first();
+    if(recipient?.user_id){
+     const task=pushPrivateMessage(env,{recipient:recipient.user_id,conversationId,from:user.id,kind})
+       .catch(e=>console.error('Chat push delivery failed',String(e?.message||e)));
+     await task;
+    }
+   }
+   return result;
+  }catch(error){console.error('Private message send failed',String(error?.message||error));return reply({ok:false,message:'تعذر إرسال الرسالة'},500);}
  }
  const before=new URL(request.url).searchParams.get('before')||'';
  if(before&&!/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/.test(before))return reply({ok:false,message:'مؤشر الصفحة غير صالح'},400);
