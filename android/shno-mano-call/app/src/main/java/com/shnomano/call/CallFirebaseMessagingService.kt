@@ -29,7 +29,7 @@ class CallFirebaseMessagingService : FirebaseMessagingService() {
         val from = data["from"].orEmpty()
         val conversationId = data["conversationId"].orEmpty()
         if (!UUID_PATTERN.matches(callId) || !UUID_PATTERN.matches(from) || !UUID_PATTERN.matches(conversationId)) return
-        if (CallAlertState.isClosed(callId)) return
+        if (kind == "call:invite" && CallAlertState.isClosed(callId)) return
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         if (!SettingsStore(this).notificationsEnabled) return
