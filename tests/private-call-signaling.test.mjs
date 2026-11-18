@@ -7,23 +7,34 @@ const bob={id:'22222222-2222-4222-8222-222222222222',full_name:'Bob'};
 const conversationId='33333333-3333-4333-8333-333333333333';
 const callId='44444444-4444-4444-8444-444444444444';
 function fakeDb(members=2){
- const events=[];let index=0;
- return {events,prepare(sql){
+ const events=[];const sessions=new Map();let index=0;
+ return {events,sessions,prepare(sql){
    let values=[];
    return {bind(...v){values=v;return this;},
      async first(){
        if(sql.includes('COUNT(*) AS n FROM conversation_members'))return {n:members};
        if(sql.includes('SELECT id FROM users'))return {id:values[0]};
        if(sql.includes('COUNT(*) AS n FROM private_call_signals'))return {n:events.length};
-       if(sql.includes("event_type='call:invite'"))return events.find(e=>e.call_id===values[0] && e.conversation_id===values[1] && e.event_type==='call:invite' && ((e.sender_id===values[2]&&e.recipient_id===values[3])||(e.sender_id===values[4]&&e.recipient_id===values[5])))||null;
-       if(sql.includes("event_type IN ('call:end','call:reject')"))return events.filter(e=>e.call_id===values[0] && (e.event_type==='call:end'||e.event_type==='call:reject')).at(-1)||null;
-
+       if(sql.includes('FROM call_active_sessions')){
+         const item=sessions.get(values[0]);
+         return item && item.conversation_id===values[1] && !item.ended_at &&
+           ((item.caller_id===values[2]&&item.recipient_id===values[3])||
+           (item.caller_id===values[4]&&item.recipient_id===values[5])) ? {call_id:item.call_id}:null;
+       }
        throw Error('unexpected first '+sql);
      },
      async run(){
        if(sql.startsWith('INSERT INTO private_call_signals')){
          events.push({id:++index,sender_id:values[0],recipient_id:values[1],conversation_id:values[2],call_id:values[3],event_type:values[4],payload:values[5],full_name:'Alice',expires_at:Date.now()/1000+120,created_at:Date.now()/1000});
          return {meta:{last_row_id:index}};
+       }
+       if(sql.startsWith('INSERT INTO call_active_sessions')){
+         sessions.set(values[0],{call_id:values[0],conversation_id:values[1],caller_id:values[2],recipient_id:values[3],ended_at:null});
+         return {meta:{changes:1}};
+       }
+       if(sql.startsWith('UPDATE call_active_sessions')){
+         const item=sessions.get(values[0]);if(item)item.ended_at=Date.now();
+         return {meta:{changes:item?1:0}};
        }
        if(sql.startsWith('DELETE FROM private_call_signals'))return {meta:{changes:0}};
        throw Error('unexpected run '+sql);
