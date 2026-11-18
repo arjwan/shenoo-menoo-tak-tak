@@ -489,7 +489,7 @@ class BackgroundRealtimeService : Service() {
 
     private fun clearCallAlert(callId: String?) {
         val current = PresenceStore.incomingCall.value
-        if (callId.isNullOrBlank() || current?.callId == callId) {
+        if (callId.isNullOrBlank() || current == null || current.callId == callId) {
             PresenceStore.clearIncomingCall(callId)
             getSystemService(NotificationManager::class.java).cancel(CALL_NOTIFICATION_ID)
         }
@@ -544,6 +544,10 @@ class BackgroundRealtimeService : Service() {
             try { service.startAsForeground() } catch (error: Exception) { AppDiagnostics.record(service, error, "foreground-capture") }
         }
         fun clearActiveCall(callId: String) { running?.clearActiveNotification(callId) }
-        fun acknowledgeIncomingCall(callId: String) { running?.clearCallAlert(callId) }
+        fun acknowledgeIncomingCall(callId: String) {
+            val service = running
+            if (service != null) service.clearCallAlert(callId)
+            else ShnoManoApp.instance.getSystemService(NotificationManager::class.java).cancel(CALL_NOTIFICATION_ID)
+        }
     }
 }
