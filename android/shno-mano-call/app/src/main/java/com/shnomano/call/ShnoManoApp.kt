@@ -78,7 +78,8 @@ class ShnoManoApp : Application() {
         ).apply {
             description = "تنبيهات المكالمات الواردة"
             enableVibration(settings.vibrationEnabled)
-            if (settings.callSoundEnabled) setSound(ringtone, audio) else setSound(null, null)
+            setSound(ringtone, audio)
+            enableLights(true)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
@@ -92,6 +93,6 @@ class ShnoManoApp : Application() {
             private set
         const val CHANNEL_REALTIME = "shno_realtime"
         const val CHANNEL_MESSAGES = "shno_messages_20261110"
-        const val CHANNEL_CALLS = "shno_calls_20261110"
+        const val CHANNEL_CALLS = "shno_calls_ring_20261118_v2"
     }
 }
