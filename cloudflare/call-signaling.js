@@ -57,7 +57,7 @@ export async function handleCallSignaling(req,env,user,waitUntil) {
     if(!['city','precise','revoke'].includes(payload.kind))return response({ok:false,message:'نوع الموقع غير صالح'},400);
     if(payload.kind==='city'){
       const city=String(payload.city||'').trim(),province=String(payload.province||'').trim();
-      if(!city || !province || city.length>80 || province.length>80 || /[<>\\x00-\\x1f]/.test(city+province))
+      if(!city || !province || city.length>80 || province.length>80 || /[<>\x00-\x1f]/.test(city+province))
         return response({ok:false,message:'اسم المدينة أو المحافظة غير صالح'},400);
       safePayload.data={kind:'city',city,province};
     }else if(payload.kind==='precise'){
