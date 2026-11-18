@@ -1,7 +1,8 @@
 import { getAuthenticatedAppUser } from '../../cloudflare/pages/profile-session.js';
 import { handleCallSignaling } from '../../cloudflare/call-signaling.js';
 const denied=(message,status)=>Response.json({ok:false,message},{status,headers:{'Cache-Control':'no-store'}});
-export async function onRequest({request,env,waitUntil}){
+export async function onRequest(context){
+  const {request,env}=context;
   if(!env.DB)return denied('خدمة المكالمات غير مهيأة',503);
   if(!['GET','HEAD','OPTIONS'].includes(request.method)){
     const origin=request.headers.get('Origin'),site=request.headers.get('Sec-Fetch-Site');
@@ -10,6 +11,6 @@ export async function onRequest({request,env,waitUntil}){
   }
   const actor=await getAuthenticatedAppUser(request,env);
   if(!actor)return denied('يرجى تسجيل الدخول',401);
-  try{return await handleCallSignaling(request,env,actor,waitUntil)}
+  try{return await handleCallSignaling(request,env,actor,promise=>context.waitUntil(promise))}
   catch(e){console.error('Private calls routing failure',String(e?.message||e));return denied('تعذر توجيه المكالمة',500)}
 }
