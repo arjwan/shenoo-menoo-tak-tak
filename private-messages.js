@@ -150,7 +150,11 @@
       remoteLocation={kind:'precise',latitude:data.latitude,longitude:data.longitude};
       locationInfo('📍 أرسل الطرف الآخر موقعه الدقيق. اضغط لفتح الخريطة');
       var info=callRoot.querySelector('[data-call-location-info]');
-      info.onclick=function(){if(remoteLocation?.kind==='precise')window.open('https://www.openstreetmap.org/?mlat='+remoteLocation.latitude+'&mlon='+remoteLocation.longitude+'#map=16/'+remoteLocation.latitude+'/'+remoteLocation.longitude,'_blank','noopener,noreferrer');};
+      info.onclick=function(){
+        if(remoteLocation?.kind!=='precise')return;
+        if(window.ShnoAndroidCall?.openLocation)window.ShnoAndroidCall.openLocation(remoteLocation.latitude,remoteLocation.longitude);
+        else window.open('https://www.openstreetmap.org/?mlat='+remoteLocation.latitude+'&mlon='+remoteLocation.longitude+'#map=16/'+remoteLocation.latitude+'/'+remoteLocation.longitude,'_blank','noopener,noreferrer');
+      };
     }
   }
   function callPayload(data) { return Object.assign({ callId: activeCall.callId, userId: activeCall.userId, conversationId: activeCall.conversationId, type: activeCall.type }, data || {}); }
