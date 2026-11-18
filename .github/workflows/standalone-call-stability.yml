@@ -12,6 +12,7 @@ on:
       - 'call-screen.css'
       - 'call-location.js'
       - 'tests/private-call-signaling.test.mjs'
+      - 'tests/call-location.test.mjs'
       - 'screen-share.js'
       - 'call-surface.js'
       - 'call-session-state.js'
@@ -54,6 +55,7 @@ jobs:
           node --check functions/api/call-push-token.js
           node --check call-signaling.js
           node --check call-location.js
+          node --test tests/call-location.test.mjs
           node --check private-messages.js
           node --check functions/api/\[\[path\]\].js
       - name: Validate D1 group migration SQL
