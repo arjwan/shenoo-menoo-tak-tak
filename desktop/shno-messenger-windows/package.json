@@ -1,0 +1,49 @@
+{
+  "name": "shno-mano-messenger-windows",
+  "version": "0.1.0",
+  "private": true,
+  "description": "شنو منو ماسنجر — تطبيق Windows مستقل",
+  "main": "src/main.cjs",
+  "author": "Arjwan",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "45.3.4",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.shnomano.messenger",
+    "productName": "Shno Mano Messenger",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ShnoManoMessenger-${version}-${arch}-setup.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "شنو منو ماسنجر"
+    }
+  }
+}
