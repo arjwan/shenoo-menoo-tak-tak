@@ -58,3 +58,29 @@ export async function pushIncomingCall(env,{recipient,callId,conversationId,from
     if(!res.ok)console.warn('FCM delivery request failed',res.status);
   }));
 }
+
+/** Device-only notification of a stored direct message. No private text or media sent to FCM. */
+export async function pushPrivateMessage(env,{recipient,conversationId,from,kind='text'}) {
+  const account=parseCredential(env);
+  if(!account)return {delivered:0,reason:'not-configured'};
+  const tokens=await env.DB.prepare('SELECT token FROM call_push_tokens WHERE user_id=? ORDER BY updated_at DESC LIMIT 10').bind(recipient).all();
+  if(!tokens.results?.length)return {delivered:0,reason:'no-recipient-token'};
+  const bearer=await accessToken(account);
+  const results=await Promise.allSettled(tokens.results.map(async row=>{
+    const res=await fetch('https://fcm.googleapis.com/v1/projects/shinomino-call/messages:send',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+bearer,'Content-Type':'application/json'},
+      body:JSON.stringify({message:{token:row.token,android:{priority:'HIGH',ttl:'3600s'},
+        data:{kind:'chat:message',conversationId,from,messageType:kind}}})
+    });
+    if(!res.ok){
+      const error=await res.text().catch(()=>'');
+      if((res.status===400||res.status===404)&&error.includes('UNREGISTERED'))
+        await env.DB.prepare('DELETE FROM call_push_tokens WHERE token=?').bind(row.token).run();
+      console.warn('Chat FCM delivery request failed',res.status);
+      return false;
+    }
+    return true;
+  }));
+  return {delivered:results.filter(x=>x.status==='fulfilled'&&x.value).length};
+}
