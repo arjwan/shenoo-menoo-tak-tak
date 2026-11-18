@@ -15,6 +15,9 @@ function fakeDb(members=2){
        if(sql.includes('COUNT(*) AS n FROM conversation_members'))return {n:members};
        if(sql.includes('SELECT id FROM users'))return {id:values[0]};
        if(sql.includes('COUNT(*) AS n FROM private_call_signals'))return {n:events.length};
+       if(sql.includes("event_type='call:invite'"))return events.find(e=>e.call_id===values[0] && e.conversation_id===values[1] && e.event_type==='call:invite' && ((e.sender_id===values[2]&&e.recipient_id===values[3])||(e.sender_id===values[4]&&e.recipient_id===values[5])))||null;
+       if(sql.includes("event_type IN ('call:end','call:reject')"))return events.filter(e=>e.call_id===values[0] && (e.event_type==='call:end'||e.event_type==='call:reject')).at(-1)||null;
+
        throw Error('unexpected first '+sql);
      },
      async run(){
@@ -79,4 +82,35 @@ test('Pages API routes calls through its authenticated D1 session with CSRF prot
  assert.match(source,/getAuthenticatedAppUser\(context.request,context.env\)/);
  assert.match(source,/handleCallSignaling\(context.request,context.env,actor\)/);
  assert.match(source,/Sec-Fetch-Site/);
+});
+
+test('location cannot be sent without a live authenticated private call',async()=>{
+ const DB=fakeDb();
+ const result=await handleCallSignaling(request('POST',alice,{...payload,event:'call:location',data:{kind:'city',city:'بغداد',province:'بغداد'}}),{DB},alice);
+ assert.equal(result.status,403);
+ assert.equal(DB.events.length,0);
+});
+test('city location is visible only to the invited recipient and never includes coordinates',async()=>{
+ const DB=fakeDb();
+ await handleCallSignaling(request('POST',alice,payload),{DB},alice);
+ const result=await handleCallSignaling(request('POST',alice,{...payload,event:'call:location',data:{kind:'city',city:'دهوك',province:'دهوك'}}),{DB},alice);
+ assert.equal(result.status,201);
+ const receiver=await(await handleCallSignaling(request('GET',bob),{DB},bob)).json();
+ const cityEvent=receiver.events.find(x=>x.event==='call:location');
+ assert.deepEqual(cityEvent.payload.data,{kind:'city',city:'دهوك',province:'دهوك'});
+ assert.equal(JSON.stringify(cityEvent.payload).includes('latitude'),false);
+ const sender=await(await handleCallSignaling(request('GET',alice),{DB},alice)).json();
+ assert.equal(sender.events.some(x=>x.event==='call:location'),false);
+});
+test('precise coordinates are checked and revocation is sent as a separate event',async()=>{
+ const DB=fakeDb();
+ await handleCallSignaling(request('POST',alice,payload),{DB},alice);
+ const bad=await handleCallSignaling(request('POST',alice,{...payload,event:'call:location',data:{kind:'precise',latitude:300,longitude:45,accuracy:10}}),{DB},alice);
+ assert.equal(bad.status,400);
+ const valid=await handleCallSignaling(request('POST',alice,{...payload,event:'call:location',data:{kind:'precise',latitude:36.86,longitude:42.99,accuracy:14}}),{DB},alice);
+ assert.equal(valid.status,201);
+ const revoke=await handleCallSignaling(request('POST',alice,{...payload,event:'call:location',data:{kind:'revoke'}}),{DB},alice);
+ assert.equal(revoke.status,201);
+ assert.equal(DB.events.at(-1).event_type,'call:location');
+ assert.deepEqual(JSON.parse(DB.events.at(-1).payload).data,{kind:'revoke'});
 });
