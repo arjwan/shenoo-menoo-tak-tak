@@ -75,27 +75,270 @@
       name: 'أ. سارة الذكية',
       label: 'معلم افتراضي / AI',
       role: 'مساعدة ذكية تفاعلية',
-      title: 'معلمة ذكاء اصطناعي متخصصة في العلوم والرياضيات وتنمية مهارات التفكير التحليلي',
-      specialties: ['الرياضيات', 'العلوم', 'الكيمياء', 'الفيزياء'],
+      title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات، العلوم',
+      specialties: ['الرياضيات', 'العلوم'],
       avatarInitial: 'س'
     },
     {
-      profileId: 'ali-wise',
-      name: 'أ. علي الحكيم',
+      profileId: 'zahra',
+      name: 'أ. زهراء الوردي',
       label: 'معلم افتراضي / AI',
-      role: 'مساعد ذكي تفاعلي',
-      title: 'معلم ذكاء اصطناعي متخصص في اللغة العربية، قواعد النحو، والبلاغة والتربية الإسلامية',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في اللغة العربية، القراءة',
+      specialties: ['اللغة العربية', 'القراءة'],
+      avatarInitial: 'ز'
+    },
+    {
+      profileId: 'rana',
+      name: 'أ. رنا السعيدة',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات، الأنشطة',
+      specialties: ['الرياضيات', 'الأنشطة'],
+      avatarInitial: 'ر'
+    },
+    {
+      profileId: 'hadeel',
+      name: 'أ. هديل النور',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في التربية الإسلامية',
+      specialties: ['التربية الإسلامية'],
+      avatarInitial: 'ه'
+    },
+    {
+      profileId: 'farah',
+      name: 'أ. فرح باسم',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في اللغة الإنكليزية',
+      specialties: ['اللغة الإنكليزية'],
+      avatarInitial: 'ف'
+    },
+    {
+      profileId: 'aya',
+      name: 'أ. آية الحكيمة',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في العلوم',
+      specialties: ['العلوم'],
+      avatarInitial: 'آ'
+    },
+    {
+      profileId: 'saja',
+      name: 'أ. سجى الفرات',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في القراءة، القصص',
+      specialties: ['القراءة', 'القصص'],
+      avatarInitial: 'س'
+    },
+    {
+      profileId: 'taiba',
+      name: 'أ. طيبة الرافدين',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات',
+      specialties: ['الرياضيات'],
+      avatarInitial: 'ط'
+    },
+    {
+      profileId: 'riyam',
+      name: 'أ. ريام الجبوري',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات',
+      specialties: ['الاجتماعيات'],
+      avatarInitial: 'ر'
+    },
+    {
+      profileId: 'jana',
+      name: 'أ. جنى الربيعي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الفنية، الأنشطة',
+      specialties: ['الفنية', 'الأنشطة'],
+      avatarInitial: 'ج'
+    },
+    {
+      profileId: 'ali-wise',
+      name: 'أ. علياء الحكيم',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في اللغة العربية، القراءة، التربية الإسلامية',
       specialties: ['اللغة العربية', 'القراءة', 'التربية الإسلامية'],
       avatarInitial: 'ع'
     },
     {
       profileId: 'mariam-nour',
       name: 'أ. مريم النور',
-      label: 'معلمة افتراضية / AI',
+      label: 'معلم افتراضي / AI',
       role: 'مساعدة ذكية تفاعلية',
-      title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات، الجغرافيا، والتاريخ العراقي الأصيل',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات، التاريخ، الجغرافيا',
       specialties: ['الاجتماعيات', 'التاريخ', 'الجغرافيا'],
       avatarInitial: 'م'
+    },
+    {
+      profileId: 'laila',
+      name: 'أ. ليلى حسن',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في العلوم، الكيمياء',
+      specialties: ['العلوم', 'الكيمياء'],
+      avatarInitial: 'ل'
+    },
+    {
+      profileId: 'tara',
+      name: 'أ. تارا عادل',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في اللغة الإنكليزية',
+      specialties: ['اللغة الإنكليزية'],
+      avatarInitial: 'ت'
+    },
+    {
+      profileId: 'shaimaa',
+      name: 'أ. شيماء الدليمي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات',
+      specialties: ['الرياضيات'],
+      avatarInitial: 'ش'
+    },
+    {
+      profileId: 'raghad',
+      name: 'أ. رغد سامي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الفيزياء',
+      specialties: ['الفيزياء'],
+      avatarInitial: 'ر'
+    },
+    {
+      profileId: 'hala',
+      name: 'أ. هالة الزيدي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الأحياء',
+      specialties: ['الأحياء'],
+      avatarInitial: 'ه'
+    },
+    {
+      profileId: 'israa',
+      name: 'أ. إسراء كريم',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الحاسوب',
+      specialties: ['الحاسوب'],
+      avatarInitial: 'إ'
+    },
+    {
+      profileId: 'ban',
+      name: 'أ. بان العاني',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في التاريخ',
+      specialties: ['التاريخ'],
+      avatarInitial: 'ب'
+    },
+    {
+      profileId: 'sama',
+      name: 'أ. سما وليد',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في اللغة العربية',
+      specialties: ['اللغة العربية'],
+      avatarInitial: 'س'
+    },
+    {
+      profileId: 'huda',
+      name: 'أ. هدى الرصينة',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في قواعد اللغة العربية، الأدب',
+      specialties: ['قواعد اللغة العربية', 'الأدب'],
+      avatarInitial: 'ه'
+    },
+    {
+      profileId: 'zainab',
+      name: 'أ. زينب الوقورة',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات، الفيزياء',
+      specialties: ['الرياضيات', 'الفيزياء'],
+      avatarInitial: 'ز'
+    },
+    {
+      profileId: 'sahar',
+      name: 'أ. سحر الفيزيائية',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الفيزياء',
+      specialties: ['الفيزياء'],
+      avatarInitial: 'س'
+    },
+    {
+      profileId: 'alaa',
+      name: 'أ. آلاء الكيميائية',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الكيمياء',
+      specialties: ['الكيمياء'],
+      avatarInitial: 'آ'
+    },
+    {
+      profileId: 'rasha',
+      name: 'أ. رشا الحمداني',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الأحياء',
+      specialties: ['الأحياء'],
+      avatarInitial: 'ر'
+    },
+    {
+      profileId: 'muna',
+      name: 'أ. منى الشمري',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في اللغة الإنكليزية',
+      specialties: ['اللغة الإنكليزية'],
+      avatarInitial: 'م'
+    },
+    {
+      profileId: 'haifaa',
+      name: 'أ. هيفاء الراوي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في التاريخ',
+      specialties: ['التاريخ'],
+      avatarInitial: 'ه'
+    },
+    {
+      profileId: 'salma',
+      name: 'أ. سلمى الجميلي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الجغرافية',
+      specialties: ['الجغرافية'],
+      avatarInitial: 'س'
+    },
+    {
+      profileId: 'dina',
+      name: 'أ. دينا فؤاد',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الاقتصاد',
+      specialties: ['الاقتصاد'],
+      avatarInitial: 'د'
+    },
+    {
+      profileId: 'wafaa',
+      name: 'أ. وفاء النعيمي',
+      label: 'معلم افتراضي / AI',
+      role: 'مساعدة ذكية تفاعلية',
+      title: 'معلمة ذكاء اصطناعي متخصصة في الفلسفة، علم النفس',
+      specialties: ['الفلسفة', 'علم النفس'],
+      avatarInitial: 'و'
     }
   ];
 
@@ -118,7 +361,7 @@
       html += '    </div>';
 
       html += '    <h1 class="sumer-hero-title" id="welcome-hero-title">';
-      html += '      مرحباً بكم في <span class="sumer-hero-title-highlight">مدرسة سومر الأهلية الإلكترونية</span>';
+      html += '      مرحباً بكم في <span class="sumer-hero-title-highlight">مدرسة سومر الإلكترونية</span>';
       html += '    </h1>';
 
       html += '    <p class="sumer-hero-subtitle">';
@@ -211,7 +454,7 @@
       html += '          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 3.3 2 6.2 5 7.4V20a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2.6c3-1.2 5-4.1 5-7.4a8 8 0 0 0-8-8z"/><path d="M10 14h4"/></svg>';
       html += '        </div>';
       html += '        <h3 class="sumer-service-title">المعلمون الافتراضيون (AI Personas)</h3>';
-      html += '        <p class="sumer-service-desc">مساعدون أذكياء بشارات واضحة (أ. سارة، أ. علي، أ. مريم) يجيبون بصدق مستندين إلى نصوص المنهج الرسمي ودون اختلاق إجابات وهمية.</p>';
+      html += '        <p class="sumer-service-desc">مساعدون أذكياء بشارات واضحة (أ. سارة، أ. علياء، أ. مريم) يجيبون بصدق مستندين إلى نصوص المنهج الرسمي ودون اختلاق إجابات وهمية.</p>';
       html += '        <div class="sumer-service-footer">';
       html += '          <a href="#guest" class="sumer-btn sumer-btn-outline sumer-btn-sm" style="width: 100%;">التعرف على المعلمين الأذكياء</a>';
       html += '        </div>';
@@ -241,6 +484,18 @@
       html += '        </div>';
       html += '      </div>';
 
+      // 7. دخول المطور — بلا تسجيل جديد؛ مشروط بحساب مطور داخل شنو منو
+      html += '      <div class="sumer-service-card" style="border-color: var(--sumer-gold-400);">';
+      html += '        <div class="sumer-service-icon" style="background-color: var(--sumer-gold-50); color: var(--sumer-gold-600);">';
+      html += '          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>';
+      html += '        </div>';
+      html += '        <h3 class="sumer-service-title">المطور</h3>';
+      html += '        <p class="sumer-service-desc">دخول المطور مشروط بأن تكون داخل تطبيق شنو منو بحساب المطور، بلا تسجيل جديد وبلا حساب منفصل. التحقق من صلاحية المطور يتم داخل شنو منو.</p>';
+      html += '        <div class="sumer-service-footer">';
+      html += '          <a href="#auth/login" class="sumer-btn sumer-btn-gold sumer-btn-sm" style="width: 100%;">دخول المطور</a>';
+      html += '        </div>';
+      html += '      </div>';
+
       html += '    </div>';
       html += '  </section>';
       html += '</div>';
@@ -256,7 +511,7 @@
 
       var html = '<div class="sumer-guest-view">';
       html += '  <div class="sumer-section-title-wrap">';
-      html += '    <h1 class="sumer-section-title">استكشاف أركان مدرسة سومر الأهلية</h1>';
+      html += '    <h1 class="sumer-section-title">استكشاف أركان مدرسة سومر</h1>';
       html += '    <p class="sumer-section-desc">تعرف على المنظومة التعليمية الرقمية الأولى المصممة وفق البيئة والمنهج الوطني العراقي</p>';
       html += '  </div>';
 
@@ -608,7 +863,7 @@
         html += '    </div>';
         html += '    <h2 style="font-size: var(--sumer-font-xl); font-weight: var(--sumer-weight-bold); color: var(--sumer-text-primary); margin-bottom: 0.5rem;">تم استلام طلب انضمامك بنجاح</h2>';
         html += '    <p style="font-size: var(--sumer-font-sm); color: var(--sumer-text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">';
-        html += '      شكراً لاهتمامك بالانضمام للكوادر التدريسية لمدرسة سومر الأهلية. تم قيد طلبك في السجل الإداري وهو يخضع للتدقيق وفق المعايير الأكاديمية لوزارة التربية العراقية.';
+        html += '      شكراً لاهتمامك بالانضمام للكوادر التدريسية لمدرسة سومر. تم قيد طلبك في السجل الإداري وهو يخضع للتدقيق وفق المعايير الأكاديمية لوزارة التربية العراقية.';
         html += '    </p>';
 
         html += '    <div class="sumer-alert sumer-alert-info" style="text-align: right; margin-bottom: 1.5rem;">';
