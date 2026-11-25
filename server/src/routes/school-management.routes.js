@@ -45,6 +45,7 @@ router.use((req, res, next) => {
 router.get('/me', (req, res) => {
   res.json({
     ok: true,
+    authenticated: true,
     user: {
       id: String(req.user._id),
       fullName: req.user.fullName,
