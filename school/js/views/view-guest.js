@@ -388,6 +388,9 @@
       } else {
         html += '      <a href="#auth/login" class="sumer-btn sumer-btn-secondary" style="background: rgba(255,255,255,0.15); color: #ffffff;">دخول المنصة</a>';
       }
+      if (isAuth) {
+        html += '      <a href="#classroom/virtual" class="sumer-btn sumer-btn-outline" style="border-color: rgba(255,255,255,0.4); color: #ffffff;">دخول الصف الافتراضي الذكي</a>';
+      }
       html += '      <a href="#auth/apply-teacher" class="sumer-btn sumer-btn-outline" style="border-color: var(--sumer-gold-400); color: var(--sumer-gold-300);">طلب انضمام كمعلم</a>';
       if (isAuth) {
         html += '      <span class="sumer-welcome-user" style="color: var(--sumer-gold-300); font-size: var(--sumer-font-sm);">أهلاً بك، ' + escapeHtml(user ? user.fullName : 'عضو مدرستنا') + '</span>';
@@ -432,7 +435,7 @@
       html += '        <h3 class="sumer-service-title">الفصول الدراسية الحية (Live Star)</h3>';
       html += '        <p class="sumer-service-desc">حصص مباشرة صوت وصورة عبر شبكة WebRTC المباشرة مع المعلمين المعتمدين، متوافقة مع ضوابط الخصوصية وبدون تشغيل تلقائي للوسائط.</p>';
       html += '        <div class="sumer-service-footer">';
-      html += '          <span class="sumer-badge badge-teal">تفاعل مباشر مع رصد الحضور</span>';
+      html += '          <a href="#classroom/live" class="sumer-btn sumer-btn-outline sumer-btn-sm" style="width: 100%;">دخول الصف المباشر (Live Star)</a>';
       html += '        </div>';
       html += '      </div>';
 
@@ -456,7 +459,7 @@
       html += '        <h3 class="sumer-service-title">المعلمون الافتراضيون (AI Personas)</h3>';
       html += '        <p class="sumer-service-desc">مساعدون أذكياء بشارات واضحة (أ. سارة، أ. علياء، أ. مريم) يجيبون بصدق مستندين إلى نصوص المنهج الرسمي ودون اختلاق إجابات وهمية.</p>';
       html += '        <div class="sumer-service-footer">';
-      html += '          <a href="#guest" class="sumer-btn sumer-btn-outline sumer-btn-sm" style="width: 100%;">التعرف على المعلمين الأذكياء</a>';
+      html += '          <a href="#classroom/virtual" class="sumer-btn sumer-btn-outline sumer-btn-sm" style="width: 100%;">دخول الصف الافتراضي الذكي</a>';
       html += '        </div>';
       html += '      </div>';
 
@@ -492,7 +495,7 @@
       html += '        <h3 class="sumer-service-title">المطور</h3>';
       html += '        <p class="sumer-service-desc">دخول المطور مشروط بأن تكون داخل تطبيق شنو منو بحساب المطور، بلا تسجيل جديد وبلا حساب منفصل. التحقق من صلاحية المطور يتم داخل شنو منو.</p>';
       html += '        <div class="sumer-service-footer">';
-      html += '          <a href="#auth/login" class="sumer-btn sumer-btn-gold sumer-btn-sm" style="width: 100%;">دخول المطور</a>';
+      html += '          <a href="#auth/login" data-login-role-link="developer" class="sumer-btn sumer-btn-gold sumer-btn-sm" style="width: 100%;">دخول المطور</a>';
       html += '        </div>';
       html += '      </div>';
 
@@ -612,6 +615,29 @@
       html += '    </div>';
       html += '  </section>';
 
+      // الصف الافتراضي الذكي — مدخل حقيقي قابل للنقر (كان قسماً وصفياً بلا رابط)
+      html += '  <section class="sumer-card" style="margin-bottom: 3rem;">';
+      html += '    <h3 class="sumer-card-title">الصف الافتراضي الذكي والصف المباشر</h3>';
+      html += '    <p style="font-size: var(--sumer-font-sm); color: var(--sumer-text-secondary); line-height: 1.7; margin: 0.75rem 0;">';
+      html += '      ادخل الصف الافتراضي مع المعلمة الذكية، أو انضم إلى حصة مباشرة مع معلم معتمد. الدخول يتطلب تسجيل الدخول أولاً؛ إن لم تكن مسجلاً ستوجهك المنصة إلى صفحة الدخول.';
+      html += '    </p>';
+      html += '    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">';
+      html += '      <a href="#classroom/virtual" class="sumer-btn sumer-btn-primary">دخول الصف الافتراضي الذكي</a>';
+      html += '      <a href="#classroom/live" class="sumer-btn sumer-btn-outline">دخول الصف المباشر (Live Star)</a>';
+      html += '    </div>';
+      html += '  </section>';
+
+      // دخول المطور — البطاقة نفسها الموجودة في صفحة الترحيب؛ كانت غائبة هنا
+      html += '  <section class="sumer-card" style="border-color: var(--sumer-gold-400); margin-bottom: 3rem;">';
+      html += '    <h3 class="sumer-card-title">المطور</h3>';
+      html += '    <p style="font-size: var(--sumer-font-sm); color: var(--sumer-text-secondary); line-height: 1.7; margin: 0.75rem 0;">';
+      html += '      دخول المطور مشروط بأن تكون داخل تطبيق شنو منو بحساب المطور، بلا تسجيل جديد وبلا حساب منفصل. التحقق من صلاحية المطور يتم داخل شنو منو.';
+      html += '    </p>';
+      html += '    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">';
+      html += '      <a href="#auth/login" data-login-role-link="developer" class="sumer-btn sumer-btn-gold">دخول المطور</a>';
+      html += '    </div>';
+      html += '  </section>';
+
       html += '</div>';
       return html;
     },
@@ -664,17 +690,27 @@
       html += '        </div>';
       html += '      </div>';
 
-      // اختيار بوابة الدخول — لا يمنح صلاحية؛ الخادم يبقى المصدر الحاكم للدور
+      // اختيار بوابة الدخول — لا يمنح صلاحية؛ الخادم يبقى المصدر الحاكم للدور.
+      // دور «مطور» يوجَّه إلى لوحة الإدارة بعد التحقق من الخادم، بلا تسجيل جديد.
+      var requestedLoginRole = 'student';
+      try {
+        var savedLoginRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('sumer_login_role') : null;
+        if (savedLoginRole === 'developer' || savedLoginRole === 'admin' || savedLoginRole === 'teacher' || savedLoginRole === 'guardian') {
+          requestedLoginRole = savedLoginRole;
+        }
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('sumer_login_role');
+      } catch (e) {}
       html += '      <div class="sumer-form-group">';
       html += '        <label class="sumer-label">الدخول بصفتي</label>';
       html += '        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;">';
-      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role active" data-login-role="student" aria-pressed="true">طالب</button>';
-      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role" data-login-role="guardian" aria-pressed="false">ولي أمر</button>';
-      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role" data-login-role="teacher" aria-pressed="false">معلم</button>';
-      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role" data-login-role="admin" aria-pressed="false">إدارة</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role' + (requestedLoginRole === 'student' ? ' active' : '') + '" data-login-role="student" aria-pressed="' + (requestedLoginRole === 'student' ? 'true' : 'false') + '">طالب</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role' + (requestedLoginRole === 'guardian' ? ' active' : '') + '" data-login-role="guardian" aria-pressed="' + (requestedLoginRole === 'guardian' ? 'true' : 'false') + '">ولي أمر</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role' + (requestedLoginRole === 'teacher' ? ' active' : '') + '" data-login-role="teacher" aria-pressed="' + (requestedLoginRole === 'teacher' ? 'true' : 'false') + '">معلم</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role' + (requestedLoginRole === 'admin' ? ' active' : '') + '" data-login-role="admin" aria-pressed="' + (requestedLoginRole === 'admin' ? 'true' : 'false') + '">إدارة</button>';
+      html += '          <button type="button" class="sumer-btn sumer-btn-outline sumer-login-role' + (requestedLoginRole === 'developer' ? ' active' : '') + '" data-login-role="developer" aria-pressed="' + (requestedLoginRole === 'developer' ? 'true' : 'false') + '">مطور</button>';
       html += '        </div>';
-      html += '        <input type="hidden" id="login-role" value="student">';
-      html += '        <p class="sumer-form-help">يُستخدم الاختيار لتوجيهك فقط؛ صلاحية الحساب الفعلية تُتحقق من الخادم.</p>';
+      html += '        <input type="hidden" id="login-role" value="' + requestedLoginRole + '">';
+      html += '        <p class="sumer-form-help">يُستخدم الاختيار لتوجيهك فقط؛ صلاحية الحساب الفعلية تُتحقق من الخادم. دور المطور للمطور المعتمد داخل شنو منو فقط، بلا تسجيل جديد.</p>';
       html += '      </div>';
 
       // زر الدخول
@@ -1112,6 +1148,10 @@
     render: function (routeKey, mountEl) {
       routeKey = routeKey || '#welcome';
       var state = SumerStore.getState();
+      // الاحتفاظ بعنصر التركيب حتى يعيد fetchCatalog رسم صفحة المنهج بعد
+      // وصول البيانات؛ تغييرات المخزن وحدها لا تعيد رسم المحتوى.
+      this._lastMountEl = mountEl;
+      this._lastRouteKey = routeKey;
 
       var renderedHtml = '';
       if (routeKey === '#welcome') {
@@ -1126,8 +1166,10 @@
         renderedHtml = this.renderTeacherApply(state);
       } else if (routeKey === '#curriculum') {
         renderedHtml = this.renderCurriculum(state);
-        // عند فتح صفحة المنهج: تحميل الكتالوج إن لم يكن محملاً
-        if (!state.curriculumCatalog.items || state.curriculumCatalog.items.length === 0) {
+        // عند فتح صفحة المنهج: تحميل الكتالوج إن لم يكن محملاً ولم يفشل
+        // من قبل؛ الفشل يعرض حالة الخطأ مع زر إعادة المحاولة بدل حلقة جلب.
+        var catState = state.curriculumCatalog || {};
+        if ((!catState.items || catState.items.length === 0) && !catState.loading && !catState.error) {
           this.fetchCatalog();
         }
       } else {
@@ -1146,6 +1188,7 @@
     // 8. جلب بيانات الكتالوج من الخادم
     // ------------------------------------------------------------------------
     fetchCatalog: function () {
+      var self = this;
       SumerStore.setCurriculumCatalog({ loading: true, error: null });
       var filters = {};
       var catalogState = SumerStore.getState().curriculumCatalog;
@@ -1154,6 +1197,15 @@
       }
       if (catalogState.selectedGrade) {
         filters.grade = catalogState.selectedGrade;
+      }
+
+      // بعد وصول البيانات (أو فشلها) يعاد رسم صفحة المنهج إن كانت مفتوحة،
+      // لأن اشتراك الهيكل في school.html يعيد رسم الشريط فقط لا المحتوى،
+      // فتبقى الصفحة عالقة على «عرض 0 كتاباً» حتى بعد نجاح الجلب.
+      function rerenderCurriculumIfOpen() {
+        if (typeof window !== 'undefined' && window.location && window.location.hash === '#curriculum' && self._lastMountEl) {
+          self.render('#curriculum', self._lastMountEl);
+        }
       }
 
       SumerAPI.getCatalog(filters).then(function (res) {
@@ -1170,11 +1222,13 @@
             error: res.message || 'تعذر جلب كتالوج المناهج من الخادم'
           });
         }
+        rerenderCurriculumIfOpen();
       }).catch(function (err) {
         SumerStore.setCurriculumCatalog({
           loading: false,
           error: 'فشل الاتصال بالخادم أثناء جلب المناهج'
         });
+        rerenderCurriculumIfOpen();
       });
     },
 
@@ -1184,6 +1238,22 @@
     bindEvents: function (routeKey, mountEl) {
       if (!mountEl) return;
       var self = this;
+
+      // روابط اختيار الدور (مثل بطاقة «المطور»): تحفظ الدور المطلوب حتى
+      // تختاره صفحة الدخول مسبقاً؛ لا تمنح صلاحية، الخادم هو الحاكم.
+      // يربط مرة واحدة فقط لأن bindEvents يعاد استدعاؤه عند كل رسم.
+      if (!mountEl._sumerRoleLinkBound) {
+        mountEl._sumerRoleLinkBound = true;
+        mountEl.addEventListener('click', function (ev) {
+          var link = ev.target && ev.target.closest ? ev.target.closest('[data-login-role-link]') : null;
+          if (!link) return;
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('sumer_login_role', link.getAttribute('data-login-role-link') || 'student');
+            }
+          } catch (e) {}
+        });
+      }
 
       // ----------------------------------------------------------------------
       // أ) شاشة تسجيل الدخول (#auth/login)
@@ -1212,9 +1282,9 @@
             if (roleInput) roleInput.value = selected;
             var current = SumerStore.getState();
             var context = current.schoolContext || {};
-            var permitted = { student: !!context.isStudent, guardian: !!context.isGuardian, teacher: !!context.isTeacher, admin: !!(context.isManager || context.isDeveloper) };
+            var permitted = { student: !!context.isStudent, guardian: !!context.isGuardian, teacher: !!context.isTeacher, admin: !!(context.isManager || context.isDeveloper), developer: !!context.isDeveloper };
             if (current.auth && current.auth.isAuthenticated) {
-              if (permitted[selected]) { window.location.hash = selected === 'admin' ? '#admin/overview' : '#' + selected + '/overview'; return; }
+              if (permitted[selected]) { window.location.hash = (selected === 'admin' || selected === 'developer') ? '#admin/overview' : '#' + selected + '/overview'; return; }
               var roleError = mountEl.querySelector('#login-error-text');
               var roleAlert = mountEl.querySelector('#login-error-alert');
               if (roleError && roleAlert) { roleError.textContent = selected === 'student' ? 'هذا الحساب ليس حساب طالب معتمدًا. أنشئ حساب الطالب أو قدّم طلب تسجيله وانتظر الموافقة.' : 'هذا الحساب غير مرتبط بالدور المختار.'; roleAlert.style.display = 'flex'; }
@@ -1271,6 +1341,11 @@
                 return;
               }
 
+              // نجاح تسجيل الدخول: حفظ رمز الجلسة أولاً، فبدونه يصل getMe
+              // وكل طلب لاحق بلا مصادقة فيعيد الخادم 401 وتعود حلقة الدخول.
+              if (res.token) {
+                SumerAPI.setToken(res.token);
+              }
               // نجاح تسجيل الدخول: جلب سياق المدرسة
               SumerAPI.getMe().then(function (meRes) {
                 if (meRes.ok && meRes.data) {
@@ -1289,10 +1364,14 @@
                     student: !!ctx.isStudent,
                     guardian: !!ctx.isGuardian,
                     teacher: !!ctx.isTeacher,
-                    admin: !!(ctx.isManager || ctx.isDeveloper)
+                    admin: !!(ctx.isManager || ctx.isDeveloper),
+                    developer: !!ctx.isDeveloper
                   };
                   if (requestedRole && allowed[requestedRole]) {
-                    window.location.hash = requestedRole === 'admin' ? '#admin/overview' : '#' + requestedRole + '/overview';
+                    window.location.hash = (requestedRole === 'admin' || requestedRole === 'developer') ? '#admin/overview' : '#' + requestedRole + '/overview';
+                  } else if (requestedRole === 'developer') {
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>دخول المنصة</span>'; }
+                    if (errAlert && errText) { errText.textContent = 'هذا الحساب ليس حساب مطور معتمداً داخل شنو منو. دخول المطور محصور بالمطور المعتمد فقط، بلا تسجيل جديد.'; errAlert.style.display = 'flex'; }
                   } else if (requestedRole === 'student' && !ctx.isStudent) {
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>دخول المنصة</span>'; }
                     if (errAlert && errText) { errText.textContent = ctx.isGuardian ? 'هذا حساب ولي أمر. للدخول كطالب، استخدم حساب الطالب المستقل أو قدّم طلب تسجيل طالب من الرابط أدناه.' : 'لم يُعتمد حساب طالب مرتبط بهذا الدخول بعد. قدّم طلب التسجيل وانتظر موافقة الإدارة.'; errAlert.style.display = 'flex'; }
