@@ -3,9 +3,13 @@ async function resolveToken(token) {
   const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
   if (payload.scope) throw new Error('Temporary token cannot authorize API access');
   if (payload.aud === 'developer') return require('../mariadb/developer-auth').authenticate(token);
-  if (payload.role === 'developer') throw new Error('A native developer session is required');
+  // A plain platform JWT (no aud) whose Mongo account has role 'developer'
+  // IS the developer session for school endpoints: school-auth.js grants it
+  // developer/manager context. Rejecting it here locked the developer out
+  // of every school endpoint, so /me always answered 401 and the client
+  // bounced the signed-in developer back to #auth/login.
   const user = await require('../models/User').findById(payload.userId);
-  if (!user || user.status !== 'active' || user.role === 'developer') throw new Error('Account unavailable or developer session required');
+  if (!user || user.status !== 'active') throw new Error('Account unavailable');
   return user;
 }
 
