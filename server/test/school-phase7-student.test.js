@@ -200,7 +200,7 @@ test('Sumer Phase 7: Real Student Workspace Full Integration Test', async (t) =>
     await VirtualTeacherProfile.deleteMany({});
     await VirtualTeacherProfile.create([
       { profileId: 'sarah-smart', name: 'أ. سارة الذكية', label: 'معلم افتراضي / AI', title: 'معلمة ذكاء اصطناعي متخصصة في العلوم والرياضيات', specialties: ['الرياضيات', 'العلوم'], active: true },
-      { profileId: 'ali-wise', name: 'أ. علي الحكيم', label: 'معلم افتراضي / AI', title: 'معلم ذكاء اصطناعي متخصص في اللغة العربية', specialties: ['اللغة العربية'], active: true },
+      { profileId: 'ali-wise', name: 'أ. علياء الحكيم', label: 'معلم افتراضي / AI', title: 'معلم ذكاء اصطناعي متخصص في اللغة العربية', specialties: ['اللغة العربية'], active: true },
       { profileId: 'mariam-nour', name: 'أ. مريم النور', label: 'معلمة افتراضية / AI', title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات', specialties: ['الاجتماعيات'], active: true }
     ]);
   });
@@ -401,13 +401,13 @@ test('Sumer Phase 7: Real Student Workspace Full Integration Test', async (t) =>
     });
     assert.equal(resProfiles.status, 200);
     assert.equal(resProfiles.data.ok, true);
-    assert.equal(resProfiles.data.profiles.length, 6);
+    assert.equal(resProfiles.data.profiles.length, 30);
     const profileNames = resProfiles.data.profiles.map(p => p.name);
     assert.ok(profileNames.includes('أ. سارة الذكية'));
-    assert.ok(profileNames.includes('أ. ليلى الحكيمة'));
+    assert.ok(profileNames.includes('أ. علياء الحكيم'));
     assert.ok(profileNames.includes('أ. مريم النور'));
-    assert.ok(profileNames.includes('أ. نور الإنكليزية'));
-    assert.ok(profileNames.includes('أ. هدى الفيزياء'));
-    assert.ok(profileNames.includes('أ. ريم الأحياء'));
+    assert.ok(profileNames.includes('أ. تارا عادل'));
+    assert.ok(profileNames.includes('أ. زينب الوقورة'));
+    assert.ok(profileNames.includes('أ. هالة الزيدي'));
   });
 });

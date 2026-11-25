@@ -147,9 +147,9 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
     const { status, data } = await call('GET', '/api/school/virtual/profiles', { token: teacherToken });
     assert.equal(status, 200);
     assert.ok(data.ok);
-    assert.equal(data.profiles.length, 6);
+    assert.equal(data.profiles.length, 30);
     assert.ok(data.profiles.every((p) => p.voiceSettings.voiceGender === 'female' && p.avatar));
-    assert.equal(data.profiles.find((p) => p.profileId === 'english-global').defaultDialect, 'en');
+    assert.equal(data.profiles.find((p) => p.profileId === 'tara').defaultDialect, 'en');
     data.profiles.forEach((p) => {
       assert.match(p.label, /معلم افتراضي|AI/);
     });
@@ -296,7 +296,7 @@ test('Virtual Classroom V1: Full Lifecycle, Permissions, Curriculum, and Q&A', a
         token: teacherToken,
         body: {
           stage: 'ابتدائي', grade: 'السادس ابتدائي', subject: 'اللغة الإنكليزية',
-          lesson: 'Unit 1 Hello', profileId: 'english-global', dialect: 'en'
+          lesson: 'Unit 1 Hello', profileId: 'tara', dialect: 'en'
         }
       });
       assert.equal(status, 201);
