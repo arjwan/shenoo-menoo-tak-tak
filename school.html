@@ -194,19 +194,29 @@
           renderContent(routeKey, contract);
         });
       }
-      // Restore school identity from Cloudflare's HttpOnly D1 or developer MFA
-      // cookie, never from the legacy browser-token heuristic. Visitors stay guests.
+      // Restore school identity from the server. The /me endpoint answers
+      // { ok, user, schoolContext } (no `authenticated` field), so accept
+      // that shape. A failed /me (API unreachable) must NEVER wipe the
+      // stored شنو منو session token: wiping it logs a signed-in developer
+      // out and bounces them to #auth/login although they are logged in.
+      // The token is cleared only by an explicit logout (SumerStore.logout).
       if (api && api.getMe) {
         api.getMe().then(function (res) {
-          if (res.ok && res.data && res.data.authenticated && res.data.user) {
+          if (res.ok && res.data && res.data.user) {
             store.setSchoolContext(res.data.schoolContext, res.data.user);
-            store.setAuth({ token: null, user: res.data.user, isAuthenticated: true, error: null });
-          } else {
+            store.setAuth({ token: SumerAPI.getToken() || null, user: res.data.user, isAuthenticated: true, error: null });
+          } else if (res.status === 401) {
+            // رمز مرفوض فعلاً من الخادم (أو غائب): الجلسة غير صالحة.
             api.clearToken();
             store.setAuth({ token: null, user: null, isAuthenticated: false, error: null });
+          } else {
+            // تعذر الوصول إلى الخادم أو خطأ خادم: الجلسة المحفوظة تبقى
+            // كما هي؛ سياق المدرسة فقط غير مؤكد بعد.
+            var kept = store.getState();
+            store.setAuth({ token: kept.auth ? kept.auth.token : null, user: kept.auth ? kept.auth.user : null, isAuthenticated: !!(kept.auth && kept.auth.isAuthenticated), error: null });
           }
         }).catch(function () {
-          store.setAuth({ token: null, user: null, isAuthenticated: false, error: null });
+          // فشل الاتصال بالخادم لا يلغي جلسة الدخول المحفوظة.
         }).then(startRouter);
       } else startRouter();
     })();
