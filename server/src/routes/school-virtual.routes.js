@@ -50,7 +50,7 @@ async function loadSessionByCode(code, req, res) {
   }
   // Existing sessions retain the old persona ID; display the updated female teacher.
   if (session.virtualTeacher?.profileId === 'ali-wise') {
-    session.virtualTeacher.name = 'أ. ليلى الحكيمة';
+    session.virtualTeacher.name = 'أ. علياء الحكيم';
     session.virtualTeacher.title = 'معلمة افتراضية للغة العربية والتربية الإسلامية';
   }
   return session;
@@ -107,9 +107,8 @@ router.post('/sessions', async (req, res, next) => {
       return res.status(400).json({ ok: false, message: 'شخصية المعلم الافتراضي المحددة غير موجودة' });
     }
 
-    const dialect = profile.profileId === 'english-global'
-      ? 'en'
-      : (['ar-standard', 'ar-iraqi'].includes(req.body.dialect) ? req.body.dialect : 'ar-standard');
+    const supportedDialects = (profile.supportedDialects || []).map((d) => d.id);
+    const dialect = supportedDialects.includes(req.body.dialect) ? req.body.dialect : (profile.defaultDialect || 'ar-standard');
     const code = await generateUniqueSessionCode();
     const now = new Date();
 
@@ -440,7 +439,8 @@ router.patch('/sessions/:code/teacher', async (req, res, next) => {
     const profile = await VirtualProfile.findProfile(String(req.body.profileId || '').trim().toLowerCase());
     if (!profile) return res.status(400).json({ ok: false, message: 'شخصية المعلم الافتراضي غير متاحة' });
     const dialect = String(req.body.dialect || '');
-    const allowedDialects = profile.profileId === 'english-global' ? ['en'] : ['ar-standard', 'ar-iraqi'];
+    const allowedDialects = (profile.supportedDialects || []).map((d) => d.id).filter(Boolean);
+    if (!allowedDialects.length) allowedDialects.push('ar-standard', 'ar-iraqi');
     if (!allowedDialects.includes(dialect)) return res.status(400).json({ ok: false, message: 'لغة الشرح غير متاحة' });
     session.virtualTeacher.profileId = profile.profileId;
     session.virtualTeacher.name = profile.name;
