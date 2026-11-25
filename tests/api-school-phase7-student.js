@@ -232,10 +232,10 @@ assert.ok(virtualProfilesRes instanceof Promise);
 
 virtualProfilesRes.then((res) => {
   const profiles = res.profiles || [];
-  assert.equal(profiles.length, 3, 'يجب أن يحتوي الدليل على 3 شخصيات افتراضية رسمية فقط');
+  assert.equal(profiles.length, 30, 'يجب أن يحتوي الدليل على 30 معلمة افتراضية رسمية');
   const ids = profiles.map(p => p.profileId);
   assert.ok(ids.includes('sarah-smart'), 'أ. سارة الذكية يجب أن تكون ضمن المعلمين الافتراضيين');
-  assert.ok(ids.includes('ali-wise'), 'أ. علي الحكيم يجب أن يكون ضمن المعلمين الافتراضيين');
+  assert.ok(ids.includes('ali-wise'), 'أ. علياء الحكيم يجب أن تكون ضمن المعلمات الافتراضيات');
   assert.ok(ids.includes('mariam-nour'), 'أ. مريم النور يجب أن تكون ضمن المعلمين الافتراضيين');
   assert.ok(!ids.includes('omar-genius'), 'يحظر وجود شخصيات وهمية مثل عمر النابغة');
 });

@@ -39,8 +39,8 @@ function check(name, fn) {
 
 // 1) Virtual Teacher Personas
 check('virtual teacher profiles: multiple personas, each clearly labeled "معلم افتراضي / AI"', () => {
-  assert.ok(Array.isArray(core.PROFILES) && core.PROFILES.length === 6, 'six virtual teacher personas');
-  assert.equal(core.getProfile('english-global').defaultDialect, 'en');
+  assert.ok(Array.isArray(core.PROFILES) && core.PROFILES.length === 30, 'thirty virtual teacher personas');
+  assert.equal(core.getProfile('tara').defaultDialect, 'en');
   assert.ok(core.PROFILES.every((profile) => profile.avatar && profile.voiceSettings.voiceGender === 'female'));
   core.PROFILES.forEach((p) => {
     assert.ok(p.profileId && p.name && p.title, 'persona has id, name, title');

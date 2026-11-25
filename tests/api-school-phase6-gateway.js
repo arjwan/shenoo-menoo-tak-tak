@@ -11,7 +11,7 @@
  * 4. حظر تخزين أو تكييش كلمات المرور في الحالة أو التخزين المحلي (No Password Caching).
  * 5. عقود واجهات الاستقبال (ViewGuest):
  *    - #welcome: الهيرو، وروابط التنقل، والبطاقات الخدمية السبع الحقيقية.
- *    - #guest: شخصيات المعلمين الافتراضيين الرسمية الثلاثة ومراحل المنهج العراقي.
+ *    - #guest: شخصيات المعلمات الافتراضيات الرسمية الثلاثون ومراحل المنهج العراقي.
  *    - #auth/login: نموذج الدخول الحقيقي وربطه بالباك اند والتوجيه حسب الدور.
  *    - #auth/register-student: نموذج التسجيل وحساب بطاقة التجربة المجانية 30 يوماً.
  *    - #auth/apply-teacher: نموذج طلب الانضمام، وحالة قيد المراجعة، ومنع التصعيد المحلي، ومعالجة 409.
@@ -204,7 +204,7 @@ const ViewGuest = require('../school/js/views/view-guest');
 // أولاً: كزائر غير مسجل
 SumerStore.setAuth({ token: null, user: null, isAuthenticated: false });
 const welcomeGuestHtml = ViewGuest.render('#welcome');
-assert.match(welcomeGuestHtml, /مدرسة سومر الأهلية الإلكترونية/);
+assert.match(welcomeGuestHtml, /مدرسة سومر الإلكترونية/);
 assert.match(welcomeGuestHtml, /#auth\/register-student/);
 assert.match(welcomeGuestHtml, /#curriculum/);
 assert.match(welcomeGuestHtml, /#auth\/login/);
@@ -226,7 +226,7 @@ assert.match(welcomeGuestHtml, /تجربة مجانية كاملة لمدة 30 �
 // ب) فحص واجهة استكشاف الزائر #guest
 const guestHtml = ViewGuest.render('#guest');
 assert.match(guestHtml, /أ\. سارة الذكية/);
-assert.match(guestHtml, /أ\. علي الحكيم/);
+assert.match(guestHtml, /أ\. علياء الحكيم/);
 assert.match(guestHtml, /أ\. مريم النور/);
 assert.match(guestHtml, /المرحلة الابتدائية/);
 assert.match(guestHtml, /المرحلة المتوسطة/);
@@ -329,10 +329,10 @@ for (const rel of PHASE6_FILES) {
 
 (async function runAllTests() {
   // فحص المعلمين الافتراضيين المعتمدين حصراً
-  const validVirtualTeachers = ['sarah-smart', 'ali-wise', 'mariam-nour'];
+  const validVirtualTeachers = ['sarah-smart', 'zahra', 'rana', 'hadeel', 'farah', 'aya', 'saja', 'taiba', 'riyam', 'jana', 'ali-wise', 'mariam-nour', 'laila', 'tara', 'shaimaa', 'raghad', 'hala', 'israa', 'ban', 'sama', 'huda', 'zainab', 'sahar', 'alaa', 'rasha', 'muna', 'haifaa', 'salma', 'dina', 'wafaa'];
   const virtualRes = await SumerAPI.getVirtualProfiles();
   assert.ok(virtualRes.ok, 'جلب المعلمين الافتراضيين يجب أن ينجح');
-  assert.equal(virtualRes.profiles.length, 3, 'يجب أن يكون هناك 3 شخصيات معتمدة فقط');
+  assert.equal(virtualRes.profiles.length, 30, 'يجب أن يكون هناك 30 معلمة معتمدة');
   for (const vt of virtualRes.profiles) {
     assert.ok(validVirtualTeachers.includes(vt.profileId), `المعلم الافتراضي ${vt.profileId} غير معتمد`);
   }
