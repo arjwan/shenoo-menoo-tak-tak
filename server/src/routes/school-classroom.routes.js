@@ -234,7 +234,18 @@ router.get('/books/:id/reader', async (req, res, next) => {
     let knowledge = null;
     try { knowledge = await Knowledge.findById(id).lean(); } catch (_) { knowledge = null; }
     if (knowledge) {
-      const fileUrl = (knowledge.file && knowledge.file.url) || knowledge.sourceUrl || '';
+      // Prefer the real local PDF from the 136-file manifest when the same
+      // book exists on disk: a Drive link in file.url/sourceUrl must never
+      // win over uploads/school-curriculum/<driveId>.pdf.
+      let fileUrl = (knowledge.file && knowledge.file.url) || knowledge.sourceUrl || '';
+      const driveMatch = String(knowledge.sourceUrl || knowledge.file && knowledge.file.url || '').match(/\/file\/d\/([A-Za-z0-9_-]{10,})/);
+      if (driveMatch) {
+        const local = filesByDriveId().get(driveMatch[1]);
+        if (local && local.fileName) {
+          const disk = path.resolve(__dirname, '../../../uploads/school-curriculum', local.fileName);
+          if (fs.existsSync(disk)) fileUrl = '/uploads/school-curriculum/' + local.fileName;
+        }
+      }
       return res.json({
         ok: true,
         readable: Boolean(fileUrl),
