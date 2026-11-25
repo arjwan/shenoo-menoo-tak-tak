@@ -101,9 +101,13 @@
       headers['Accept'] = 'application/json';
     }
 
-    // School Cloudflare calls authenticate with HttpOnly same-origin cookies.
-    // Never send a stale legacy JWT stored in the browser to these endpoints.
-    var token = options.token || '';
+    // School calls authenticate with the same JWT the شنو منو session stores
+    // in localStorage ('token' / 'sumer_token'). The stored token must travel
+    // with every authenticated call: without it the server answers 401 to
+    // getMe()/getCatalog(), the bootstrap wipes the session and the user is
+    // bounced back to #auth/login even though they are already logged in.
+    // An explicit options.token still wins when a caller passes one.
+    var token = options.token || readStoredToken();
     if (token && !headers['Authorization']) {
       headers['Authorization'] = 'Bearer ' + token;
     }
