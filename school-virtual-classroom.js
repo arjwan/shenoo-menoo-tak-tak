@@ -112,6 +112,7 @@
     // Bind event listeners
     bindLobbyEvents();
     bindWhiteboardToolbar();
+    setupLandscapeOverlay();
     bindMediaControls();
     bindQuestionControls();
     bindSettingsControls();
@@ -280,7 +281,8 @@
       var profileSelect = $(profileId);
       var dialectSelect = $(dialectId);
       if (!profileSelect || !dialectSelect) return;
-      var english = profileSelect.value === 'english-global';
+      var _prof = core.getProfile(profileSelect.value);
+      var english = _prof && _prof.defaultDialect === 'en';
       var englishOption = dialectSelect.querySelector('option[value="en"]');
       if (englishOption) englishOption.disabled = !english;
       if (english) dialectSelect.value = 'en';
@@ -873,7 +875,13 @@
       fsBtn.addEventListener('click', function () {
         var surface = $('whiteboardSurface');
         if (!document.fullscreenElement) {
-          if (surface.requestFullscreen) surface.requestFullscreen();
+          if (surface.requestFullscreen) {
+            var p = surface.requestFullscreen();
+            if (p && p.catch) p.catch(function () {});
+            if (window.screen && screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(function () {});
+            }
+          }
         } else {
           if (document.exitFullscreen) document.exitFullscreen();
         }
@@ -1404,10 +1412,25 @@
       var voices = window.speechSynthesis.getVoices();
       var dialect = state.session && state.session.virtualTeacher && state.session.virtualTeacher.dialect || 'ar-standard';
       var english = dialect === 'en';
-      var selectedVoice = english
-        ? (voices.find(function (v) { return /^en[-_]US$/i.test(v.lang); }) || voices.find(function (v) { return /^en[-_]/i.test(v.lang); }))
-        : ((dialect === 'ar-iraqi' && voices.find(function (v) { return /^ar[-_]IQ$/i.test(v.lang); })) ||
-          voices.find(function (v) { return /^ar[-_]/i.test(v.lang); }));
+      // Female voice ONLY: a male/default device voice must never be used.
+      // Score voices: +100 confirmed female Arabic/English name, -100 male name.
+      function voiceScore(v) {
+        var n = String(v.name || '').toLowerCase();
+        var score = 0;
+        if (/female|نسائي|أنثى|سلمى|زارية|ليلى|نورا|أمينة|هدى|مريم|سارة|zira|salma|noura|amina|laila|female/i.test(v.name || '')) score += 100;
+        if (/male|ذكر|رجل|david|daniel|mark|john|male/i.test(v.name || '')) score -= 100;
+        if (/^ar[-_]iq$/i.test(v.lang)) score += 20;
+        else if (/^ar[-_]/i.test(v.lang)) score += 10;
+        if (english && /^en[-_]us$/i.test(v.lang)) score += 20;
+        else if (english && /^en[-_]/i.test(v.lang)) score += 10;
+        return score;
+      }
+      var femaleVoices = voices.filter(function (v) { return voiceScore(v) >= 100; });
+      var selectedVoice = null;
+      if (femaleVoices.length) {
+        femaleVoices.sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
+        selectedVoice = femaleVoices[0];
+      }
       if (!selectedVoice) {
         if (key) spokenAnswers.delete(key);
         notify('صوت الخادم غير متاح حاليًا، ولا يوجد صوت ' + (english ? 'إنجليزي' : 'عربي') + ' محلي على هذا الجهاز. اضغط 🔊 لإعادة المحاولة بعد عودة الخادم.', true);
@@ -1423,7 +1446,9 @@
         var utterance = new SpeechSynthesisUtterance(part);
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
-        utterance.pitch = 1;
+        var teacherProfile = null;
+        try { teacherProfile = core.getProfile(state.session && state.session.virtualTeacher && state.session.virtualTeacher.profileId); } catch (_) { teacherProfile = null; }
+        utterance.pitch = (teacherProfile && teacherProfile.voiceSettings && teacherProfile.voiceSettings.defaultPitch) || 1.15;
         utterance.rate = 1;
         utterance.volume = 1;
         utterance.onstart = function () { if (window.SumerTeacherAvatar) window.SumerTeacherAvatar.setSpeakingState(true); };
@@ -1503,7 +1528,8 @@
     var profile = $('modalProfileSelect');
     var dialect = $('modalDialectSelect');
     if (!profile || !dialect) return;
-    var english = profile.value === 'english-global';
+    var _mprof = core.getProfile(profile.value);
+    var english = _mprof && _mprof.defaultDialect === 'en';
     var englishOption = dialect.querySelector('option[value="en"]');
     if (englishOption) englishOption.disabled = !english;
     if (english) dialect.value = 'en';
@@ -1674,6 +1700,49 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
+  // -------------------------------------------------------------
+  // Mobile landscape overlay: one tap opens the board landscape.
+  // Browsers need a user gesture for fullscreen + orientation lock,
+  // so the overlay IS that gesture: it appears on its own in portrait.
+  // -------------------------------------------------------------
+  function setupLandscapeOverlay() {
+    var overlay = $('wbLandscapeOverlay');
+    var btn = $('wbLandscapeBtn');
+    if (!overlay || !btn) return;
+    function isPortraitMobile() {
+      return window.innerWidth <= 820 && window.innerHeight > window.innerWidth;
+    }
+    function refresh() {
+      var board = $('whiteboardSurface');
+      var visible = isPortraitMobile() && !document.fullscreenElement;
+      overlay.classList.toggle('show', visible);
+      if (board) board.classList.toggle('wb-rotated', false);
+    }
+    btn.addEventListener('click', function () {
+      var surface = $('whiteboardSurface');
+      overlay.classList.remove('show');
+      if (surface && surface.requestFullscreen) {
+        var p = surface.requestFullscreen();
+        if (p && p.catch) p.catch(function () {});
+      }
+      if (window.screen && screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(function () {
+          if (surface) surface.classList.add('wb-rotated');
+        });
+      } else if (surface) {
+        surface.classList.add('wb-rotated');
+      }
+    });
+    document.addEventListener('fullscreenchange', function () {
+      var surface = $('whiteboardSurface');
+      if (!document.fullscreenElement && surface) surface.classList.remove('wb-rotated');
+      refresh();
+    });
+    window.addEventListener('resize', refresh);
+    window.addEventListener('orientationchange', function () { setTimeout(refresh, 300); });
+    refresh();
+  }
+
     init();
   }
 })();

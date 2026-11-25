@@ -115,12 +115,36 @@
           <div class="form-group">
             <label for="selectProfile">شخصية المعلم الافتراضي</label>
             <select id="selectProfile">
-              <option value="sarah-smart">أ. سارة الذكية (رياضيات وعلوم) — AI</option>
-              <option value="ali-wise">أ. ليلى الحكيمة (عربية وإسلامية) — AI</option>
-              <option value="mariam-nour">أ. مريم النور (اجتماعيات وتاريخ) — AI</option>
-              <option value="english-global">أ. نور الإنكليزية (لكل المراحل) — AI</option>
-              <option value="science-physics">أ. هدى الفيزياء (فيزياء وكيمياء) — AI</option>
-              <option value="science-biology">أ. ريم الأحياء (أحياء وعلوم) — AI</option>
+              <option value="sarah-smart">أ. سارة الذكية (الرياضيات والعلوم) — AI</option>
+              <option value="zahra">أ. زهراء الوردي (اللغة العربية والقراءة) — AI</option>
+              <option value="rana">أ. رنا السعيدة (الرياضيات والأنشطة) — AI</option>
+              <option value="hadeel">أ. هديل النور (التربية الإسلامية) — AI</option>
+              <option value="farah">أ. فرح باسم (اللغة الإنكليزية) — AI</option>
+              <option value="aya">أ. آية الحكيمة (العلوم) — AI</option>
+              <option value="saja">أ. سجى الفرات (القراءة والقصص) — AI</option>
+              <option value="taiba">أ. طيبة الرافدين (الرياضيات) — AI</option>
+              <option value="riyam">أ. ريام الجبوري (الاجتماعيات) — AI</option>
+              <option value="jana">أ. جنى الربيعي (الفنية والأنشطة) — AI</option>
+              <option value="ali-wise">أ. علياء الحكيم (اللغة العربية والقراءة والتربية الإسلامية) — AI</option>
+              <option value="mariam-nour">أ. مريم النور (الاجتماعيات والتاريخ والجغرافيا) — AI</option>
+              <option value="laila">أ. ليلى حسن (العلوم والكيمياء) — AI</option>
+              <option value="tara">أ. تارا عادل (اللغة الإنكليزية) — AI</option>
+              <option value="shaimaa">أ. شيماء الدليمي (الرياضيات) — AI</option>
+              <option value="raghad">أ. رغد سامي (الفيزياء) — AI</option>
+              <option value="hala">أ. هالة الزيدي (الأحياء) — AI</option>
+              <option value="israa">أ. إسراء كريم (الحاسوب) — AI</option>
+              <option value="ban">أ. بان العاني (التاريخ) — AI</option>
+              <option value="sama">أ. سما وليد (اللغة العربية) — AI</option>
+              <option value="huda">أ. هدى الرصينة (قواعد اللغة العربية والأدب) — AI</option>
+              <option value="zainab">أ. زينب الوقورة (الرياضيات والفيزياء) — AI</option>
+              <option value="sahar">أ. سحر الفيزيائية (الفيزياء) — AI</option>
+              <option value="alaa">أ. آلاء الكيميائية (الكيمياء) — AI</option>
+              <option value="rasha">أ. رشا الحمداني (الأحياء) — AI</option>
+              <option value="muna">أ. منى الشمري (اللغة الإنكليزية) — AI</option>
+              <option value="haifaa">أ. هيفاء الراوي (التاريخ) — AI</option>
+              <option value="salma">أ. سلمى الجميلي (الجغرافية) — AI</option>
+              <option value="dina">أ. دينا فؤاد (الاقتصاد) — AI</option>
+              <option value="wafaa">أ. وفاء النعيمي (الفلسفة وعلم النفس) — AI</option>
             </select>
           </div>
           <div class="form-group">
@@ -218,6 +242,14 @@
       <!-- Column 2: Large Interactive Whiteboard (Center) -->
       <section class="col-whiteboard">
         <div class="whiteboard-container">
+          <!-- غطاء العرض الأفقي للموبايل: يظهر وحده بالطول، ولمسة واحدة تفتح السبورة أفقياً -->
+          <div id="wbLandscapeOverlay" class="wb-landscape-overlay" role="button" tabindex="0">
+            <div class="wb-landscape-card">
+              <div class="wb-landscape-title">السبورة بالعرض</div>
+              <p>هذه السبورة تُعرض أفقياً على الموبايل. اضغط الزر لفتحها بملء الشاشة بالعرض.</p>
+              <button id="wbLandscapeBtn" type="button" class="btn-landscape">فتح أفقياً ⛶</button>
+            </div>
+          </div>
           
           <!-- Whiteboard Top Toolbar -->
           <div class="whiteboard-toolbar">
@@ -305,6 +337,7 @@
               <span id="zoomLabel" class="zoom-label">100%</span>
               <button id="zoomInBtn" type="button" class="btn-zoom" title="تكبير">🔍+</button>
               <button id="fullscreenBtn" type="button" class="btn-fullscreen" title="ملء الشاشة">⛶</button>
+              <button id="wbLandscapeBtnTop" type="button" class="btn-fullscreen" title="فتح أفقياً">↔ أفقي</button>
             </div>
           </div>
         </div>
