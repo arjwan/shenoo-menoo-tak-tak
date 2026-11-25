@@ -312,24 +312,240 @@
         profileId: 'sarah-smart',
         name: 'أ. سارة الذكية',
         label: 'معلم افتراضي / AI',
-        title: 'معلمة ذكاء اصطناعي متخصصة في العلوم والرياضيات وتنمية التفكير التحليلي',
-        specialties: ['الرياضيات', 'العلوم', 'الكيمياء', 'الفيزياء'],
+        title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات، العلوم',
+        specialties: ['الرياضيات', 'العلوم'],
+        active: true
+      },
+      {
+        profileId: 'zahra',
+        name: 'أ. زهراء الوردي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في اللغة العربية، القراءة',
+        specialties: ['اللغة العربية', 'القراءة'],
+        active: true
+      },
+      {
+        profileId: 'rana',
+        name: 'أ. رنا السعيدة',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات، الأنشطة',
+        specialties: ['الرياضيات', 'الأنشطة'],
+        active: true
+      },
+      {
+        profileId: 'hadeel',
+        name: 'أ. هديل النور',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في التربية الإسلامية',
+        specialties: ['التربية الإسلامية'],
+        active: true
+      },
+      {
+        profileId: 'farah',
+        name: 'أ. فرح باسم',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في اللغة الإنكليزية',
+        specialties: ['اللغة الإنكليزية'],
+        active: true
+      },
+      {
+        profileId: 'aya',
+        name: 'أ. آية الحكيمة',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في العلوم',
+        specialties: ['العلوم'],
+        active: true
+      },
+      {
+        profileId: 'saja',
+        name: 'أ. سجى الفرات',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في القراءة، القصص',
+        specialties: ['القراءة', 'القصص'],
+        active: true
+      },
+      {
+        profileId: 'taiba',
+        name: 'أ. طيبة الرافدين',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات',
+        specialties: ['الرياضيات'],
+        active: true
+      },
+      {
+        profileId: 'riyam',
+        name: 'أ. ريام الجبوري',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات',
+        specialties: ['الاجتماعيات'],
+        active: true
+      },
+      {
+        profileId: 'jana',
+        name: 'أ. جنى الربيعي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الفنية، الأنشطة',
+        specialties: ['الفنية', 'الأنشطة'],
         active: true
       },
       {
         profileId: 'ali-wise',
-        name: 'أ. علي الحكيم',
+        name: 'أ. علياء الحكيم',
         label: 'معلم افتراضي / AI',
-        title: 'معلم ذكاء اصطناعي متخصص في اللغة العربية، البلاغة، والتربية الإسلامية',
+        title: 'معلمة ذكاء اصطناعي متخصصة في اللغة العربية، القراءة، التربية الإسلامية',
         specialties: ['اللغة العربية', 'القراءة', 'التربية الإسلامية'],
         active: true
       },
       {
         profileId: 'mariam-nour',
         name: 'أ. مريم النور',
-        label: 'معلمة افتراضية / AI',
-        title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات، الجغرافيا، والتاريخ العراقي الأصيل',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الاجتماعيات، التاريخ، الجغرافيا',
         specialties: ['الاجتماعيات', 'التاريخ', 'الجغرافيا'],
+        active: true
+      },
+      {
+        profileId: 'laila',
+        name: 'أ. ليلى حسن',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في العلوم، الكيمياء',
+        specialties: ['العلوم', 'الكيمياء'],
+        active: true
+      },
+      {
+        profileId: 'tara',
+        name: 'أ. تارا عادل',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في اللغة الإنكليزية',
+        specialties: ['اللغة الإنكليزية'],
+        active: true
+      },
+      {
+        profileId: 'shaimaa',
+        name: 'أ. شيماء الدليمي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات',
+        specialties: ['الرياضيات'],
+        active: true
+      },
+      {
+        profileId: 'raghad',
+        name: 'أ. رغد سامي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الفيزياء',
+        specialties: ['الفيزياء'],
+        active: true
+      },
+      {
+        profileId: 'hala',
+        name: 'أ. هالة الزيدي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الأحياء',
+        specialties: ['الأحياء'],
+        active: true
+      },
+      {
+        profileId: 'israa',
+        name: 'أ. إسراء كريم',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الحاسوب',
+        specialties: ['الحاسوب'],
+        active: true
+      },
+      {
+        profileId: 'ban',
+        name: 'أ. بان العاني',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في التاريخ',
+        specialties: ['التاريخ'],
+        active: true
+      },
+      {
+        profileId: 'sama',
+        name: 'أ. سما وليد',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في اللغة العربية',
+        specialties: ['اللغة العربية'],
+        active: true
+      },
+      {
+        profileId: 'huda',
+        name: 'أ. هدى الرصينة',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في قواعد اللغة العربية، الأدب',
+        specialties: ['قواعد اللغة العربية', 'الأدب'],
+        active: true
+      },
+      {
+        profileId: 'zainab',
+        name: 'أ. زينب الوقورة',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الرياضيات، الفيزياء',
+        specialties: ['الرياضيات', 'الفيزياء'],
+        active: true
+      },
+      {
+        profileId: 'sahar',
+        name: 'أ. سحر الفيزيائية',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الفيزياء',
+        specialties: ['الفيزياء'],
+        active: true
+      },
+      {
+        profileId: 'alaa',
+        name: 'أ. آلاء الكيميائية',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الكيمياء',
+        specialties: ['الكيمياء'],
+        active: true
+      },
+      {
+        profileId: 'rasha',
+        name: 'أ. رشا الحمداني',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الأحياء',
+        specialties: ['الأحياء'],
+        active: true
+      },
+      {
+        profileId: 'muna',
+        name: 'أ. منى الشمري',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في اللغة الإنكليزية',
+        specialties: ['اللغة الإنكليزية'],
+        active: true
+      },
+      {
+        profileId: 'haifaa',
+        name: 'أ. هيفاء الراوي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في التاريخ',
+        specialties: ['التاريخ'],
+        active: true
+      },
+      {
+        profileId: 'salma',
+        name: 'أ. سلمى الجميلي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الجغرافية',
+        specialties: ['الجغرافية'],
+        active: true
+      },
+      {
+        profileId: 'dina',
+        name: 'أ. دينا فؤاد',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الاقتصاد',
+        specialties: ['الاقتصاد'],
+        active: true
+      },
+      {
+        profileId: 'wafaa',
+        name: 'أ. وفاء النعيمي',
+        label: 'معلم افتراضي / AI',
+        title: 'معلمة ذكاء اصطناعي متخصصة في الفلسفة، علم النفس',
+        specialties: ['الفلسفة', 'علم النفس'],
         active: true
       }
     ];
