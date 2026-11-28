@@ -9,6 +9,7 @@
   var products = [];
   var PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 70'%3E%3Crect width='100' height='70' fill='%23111728'/%3E%3Cpath d='M30 45l13-15 9 10 7-7 13 12' fill='none' stroke='%2327d8c4' stroke-width='3'/%3E%3C/svg%3E";
 
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function text(selector, value) { var element = document.querySelector(selector); if (element) element.textContent = value; }
   function renderStore(store) {
     document.body.dataset.storeTemplate = store.template || "elegant";
@@ -16,10 +17,10 @@
     text(".store-title h1", store.name || "متجر محفوظ");
     text(".store-title p", store.description || "تم تحميل بيانات هذا المتجر وحفظها على جهازك.");
     var meta = document.querySelector(".store-meta");
-    if (meta) meta.innerHTML = '<span class="meta-chip">' + (store.category || "التصنيف غير محدد") + '</span><span class="meta-chip">' + ([store.governorate, store.area].filter(Boolean).join(" · ") || "الموقع غير محدد") + '</span><span class="status-badge">حسب آخر تحديث</span>';
+    if (meta) meta.innerHTML = '<span class="meta-chip">' + esc(store.category || "التصنيف غير محدد") + '</span><span class="meta-chip">' + esc([store.governorate, store.area].filter(Boolean).join(" · ") || "الموقع غير محدد") + '</span><span class="status-badge">حسب آخر تحديث</span>';
     var logo = document.querySelector(".store-logo");
-    if (logo && (store.logoUrl || store.logo)) logo.innerHTML = '<img src="' + (store.logoUrl || store.logo) + '" alt="">';
-    if (store.coverUrl || store.cover) document.querySelector(".store-cover").innerHTML = '<img src="' + (store.coverUrl || store.cover) + '" alt="">';
+    if (logo && (store.logoUrl || store.logo)) logo.innerHTML = '<img src="' + esc(store.logoUrl || store.logo) + '" alt="">';
+    if (store.coverUrl || store.cover) document.querySelector(".store-cover").innerHTML = '<img src="' + esc(store.coverUrl || store.cover) + '" alt="">';
   }
   function bindImageFallback() {
     document.querySelectorAll("img").forEach(function (image) {
