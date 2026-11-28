@@ -5,6 +5,7 @@ const fs = require('fs');
 const ServiceProvider = require('../models/ServiceProvider');
 const ServiceRequest = require('../models/ServiceRequest');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { validateStoredFile } = require('../middleware/upload');
 
 const router = express.Router();
 const uploadDir = path.resolve(__dirname, '../../../uploads/service-providers');
@@ -44,6 +45,10 @@ function publicProvider(doc, req) {
 
 router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   try {
+    if (req.file && !(await validateStoredFile(req.file))) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ ok:false, message:'محتوى الصورة لا يطابق نوعها أو غير مسموح' });
+    }
     const kind = clean(req.body.kind, 20);
     if (!['profession','transport'].includes(kind)) return res.status(400).json({ ok:false, message:'نوع الخدمة غير صالح' });
     const required = ['category','name','governorate','area','address','phone'];

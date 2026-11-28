@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const Store = require('../models/Store');
 const { requireAuth } = require('../middleware/auth');
+const { validateStoredFile } = require('../middleware/upload');
 
 const router = express.Router();
 const uploadDir = path.resolve(__dirname, '../../../uploads/stores');
@@ -23,6 +24,12 @@ router.post('/', requireAuth, (req,res,next)=>upload.fields([{name:'logo',maxCou
     [[delegate1Name,delegate1Phone],[delegate2Name,delegate2Phone]].forEach(([n,p])=>{if(clean(n)||clean(p)) delegates.push({name:clean(n,120),phone:clean(p,30),role:'sales'});});
     if(delegates.some(d=>!d.name||!d.phone)) return res.status(400).json({ok:false,message:'أدخل اسم ورقم هاتف كل مندوب، أو اترك حقليه فارغين'});
     const files=req.files||{};
+    for (const group of Object.values(files)) for (const uploaded of group || []) {
+      if (!(await validateStoredFile(uploaded))) {
+        for (const g of Object.values(files)) for (const f of g || []) fs.unlink(f.path, () => {});
+        return res.status(400).json({ok:false,message:'محتوى الصورة لا يطابق نوعها أو غير مسموح'});
+      }
+    }
     const store=await Store.create({ owner:req.user._id,name:clean(name,120),category:clean(category,120),description:clean(description,1000),governorate:clean(governorate,80),area:clean(area,100),address:clean(address,240),phone:clean(phone,30),whatsapp:clean(whatsapp,30),facebook:clean(facebook,220),instagram:clean(instagram,220),website:clean(website,220),plan,template,spaceSize,logoUrl:files.logo?.[0]?`/uploads/stores/${files.logo?.[0].filename}`:'',coverUrl:files.cover?.[0]?`/uploads/stores/${files.cover?.[0].filename}`:'',delegates,status:'pending' });
     return res.status(201).json({ok:true,message:'تم استلام طلب إنشاء المتجر وهو بانتظار موافقة الإدارة',store:{id:store._id,name:store.name,status:store.status}});
   } catch(error){ if(error?.code===11000)return res.status(409).json({ok:false,message:'لديك متجر بهذا الاسم بالفعل'}); console.error('Store create failed:',error.message); return res.status(500).json({ok:false,message:'تعذر إنشاء المتجر'}); }

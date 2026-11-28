@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const { requireAuth } = require('../middleware/auth');
 const Group = require('../models/Group');
@@ -139,6 +140,10 @@ router.get('/:id/messages', async (req, res) => {
 });
 
 router.post('/:id/messages', requireMessagePermission, upload.single('attachment'), async (req, res) => {
+  if (req.file && !(await upload.validateStoredFile(req.file))) {
+    await fs.promises.unlink(req.file.path).catch(() => {});
+    return res.status(400).json({ ok: false, message: 'محتوى الملف لا يطابق نوعه أو غير مسموح' });
+  }
   const group = req.group;
   const text = String(req.body.text || '').trim();
   if ((!text && !req.file) || text.length > 5000) return res.status(400).json({ ok: false, message: 'أضف نصاً أو ملفاً صالحاً' });
