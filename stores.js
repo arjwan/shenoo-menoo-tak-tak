@@ -9,13 +9,14 @@
   var empty = document.querySelector("[data-store-empty]");
   var stores = [];
 
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function storeId(store) { return String(store.id || store._id); }
-  function image(url, name) { return url ? '<img src="' + url + '" alt="" loading="lazy">' : (name || "م").slice(0, 1); }
+  function image(url, name) { return url ? '<img src="' + esc(url) + '" alt="" loading="lazy">' : esc((name || "م").slice(0, 1)); }
   function render(list) {
     count.textContent = list.length + " متجر محفوظ";
     empty.hidden = list.length > 0;
     grid.innerHTML = list.map(function (store) {
-      return '<article class="stored-store-card"><div class="stored-store-head"><span class="stored-store-logo">' + image(store.logoUrl || store.logo, store.name) + '</span><div><h3>' + (store.name || "متجر محفوظ") + '</h3><p>' + ([store.category, store.governorate, store.area].filter(Boolean).join(" · ") || "تفاصيل محفوظة محلياً") + '</p></div></div><div class="stored-store-footer"><small>آخر تحديث محفوظ</small><a class="text-link" href="store.html?id=' + encodeURIComponent(storeId(store)) + '">فتح المتجر ←</a></div></article>';
+      return '<article class="stored-store-card"><div class="stored-store-head"><span class="stored-store-logo">' + image(store.logoUrl || store.logo, store.name) + '</span><div><h3>' + esc(store.name || "متجر محفوظ") + '</h3><p>' + esc([store.category, store.governorate, store.area].filter(Boolean).join(" · ") || "تفاصيل محفوظة محلياً") + '</p></div></div><div class="stored-store-footer"><small>آخر تحديث محفوظ</small><a class="text-link" href="store.html?id=' + encodeURIComponent(storeId(store)) + '">فتح المتجر ←</a></div></article>';
     }).join("");
   }
   function filter() {
