@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const { requireAuth } = require('../middleware/auth');
+const { validateStoredFile } = require('../middleware/upload');
 const IslamicPost = require('../models/IslamicPost');
 const Post = require('../models/Post');
 
@@ -107,6 +108,10 @@ router.post('/posts', upload.single('media'), async (req, res) => {
   const category = ['dua', 'ziyarat', 'books', 'lecture', 'quran', 'general'].includes(req.body.category) ? req.body.category : 'general';
   if (!title && !text && !req.file) return res.status(400).json({ ok: false, message: 'أضف عنواناً أو نصاً أو ملفاً' });
   if (title.length > 180 || text.length > 10000) return res.status(400).json({ ok: false, message: 'المحتوى أطول من الحد المسموح' });
+  if (req.file && !(await validateStoredFile(req.file))) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ ok: false, message: 'محتوى الملف لا يطابق نوعه أو غير مسموح' });
+  }
   const post = await IslamicPost.create({ author: req.user._id, category, title, text, media: mediaFromFile(req.file) });
   await post.populate('author', 'fullName displayName username profile');
   res.status(201).json({ ok: true, post: postView(post, req.user) });
